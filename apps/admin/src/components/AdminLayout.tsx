@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, Navigate, Outlet, useNavigate } from 'react-router-dom';
 import { queryClient, useTRPC } from '../lib/trpc.js';
+import { SidebarTree } from '../features/navigation/SidebarTree.js';
 
 /**
  * Layout protegido: resolve auth.me; não autenticado → /login.
@@ -28,7 +29,7 @@ export function AdminLayout() {
   }
 
   return (
-    <div style={{ fontFamily: 'system-ui', maxWidth: 960, margin: '0 auto', padding: '1rem' }}>
+    <div style={{ fontFamily: 'system-ui', maxWidth: 1100, margin: '0 auto', padding: '1rem' }}>
       <header
         style={{
           display: 'flex',
@@ -49,7 +50,22 @@ export function AdminLayout() {
           Sair
         </button>
       </header>
-      <Outlet context={{ me: me.data }} />
+      <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start' }}>
+        <aside
+          style={{
+            width: 280,
+            flexShrink: 0,
+            borderRight: '1px solid #eee',
+            paddingRight: '1rem',
+            minHeight: '60vh',
+          }}
+        >
+          <SidebarTree />
+        </aside>
+        <main style={{ flex: 1, minWidth: 0 }}>
+          <Outlet context={{ me: me.data }} />
+        </main>
+      </div>
     </div>
   );
 }

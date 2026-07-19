@@ -2,7 +2,10 @@ export function DashboardPage() {
   return (
     <section>
       <h1>Bem-vindo ao SystemBook</h1>
-      <p>A estrutura de documentação (seções, páginas e tabs) chega na Fase 2.</p>
+      <p>
+        Use a árvore ao lado para montar a estrutura da documentação (seções → páginas → tabs). O
+        editor de conteúdo chega na Fase 3.
+      </p>
     </section>
   );
 }
