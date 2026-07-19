@@ -1,0 +1,22 @@
+# Dependências
+node_modules/
+
+# Builds
+dist/
+*.tsbuildinfo
+
+# Banco local (SQLite)
+data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Segredos — NUNCA commitar
+.env
+.env.local
+.env.*.local
+
+# Logs e temporários
+*.log
+.DS_Store
