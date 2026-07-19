@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import type { BlockType } from '@systembook/schema';
 
 /**
  * Tabelas de auth do modelo conceitual (PRD seção 9).
@@ -81,5 +82,45 @@ export const tabs = sqliteTable('tabs', {
     .notNull()
     .references(() => pages.id, { onDelete: 'cascade' }),
   titulo: text('titulo').notNull(),
+  ordem: integer('ordem').notNull(),
+});
+
+/**
+ * Tipos de bloco válidos, espelhando o union `BlockType` de @systembook/schema
+ * (o pacote é types-only, então o array de runtime vive aqui). O `satisfies`
+ * garante que só valores do union entram; o `_assertAllBlockTypes` abaixo
+ * garante a direção oposta (nenhum tipo do union esquecido).
+ *
+ * Decisão TASK-30: `tipo` é validado na aplicação (este array + zod enum em
+ * blocks.ts), **não** via CHECK no SQLite — o conjunto deve crescer pós-MVP e
+ * um CHECK exigiria migration para cada tipo novo.
+ */
+export const BLOCK_TYPES = [
+  'heading',
+  'paragraph',
+  'list',
+  'code',
+  'image',
+  'table',
+  'callout',
+  'component-embed',
+] as const satisfies readonly BlockType[];
+
+const _assertAllBlockTypes: [Exclude<BlockType, (typeof BLOCK_TYPES)[number]>] extends [never]
+  ? true
+  : never = true;
+
+// Cada linha é um nó top-level do doc Tiptap da tab, tipado e ordenado.
+// `conteudo_json` guarda o JSON serializado; parse/stringify só nos helpers
+// de blocks.ts. Deletar a tab leva os blocks via FK cascade.
+export const blocks = sqliteTable('blocks', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  tabId: text('tab_id')
+    .notNull()
+    .references(() => tabs.id, { onDelete: 'cascade' }),
+  tipo: text('tipo', { enum: BLOCK_TYPES }).notNull(),
+  conteudoJson: text('conteudo_json').notNull(),
   ordem: integer('ordem').notNull(),
 });

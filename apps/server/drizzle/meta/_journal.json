@@ -29,6 +29,13 @@
       "when": 1784480421535,
       "tag": "0003_calm_wildside",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1784491800599,
+      "tag": "0004_parched_shadow_king",
+      "breakpoints": true
     }
   ]
 }
