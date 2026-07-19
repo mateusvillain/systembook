@@ -1,0 +1,43 @@
+{
+  "id": "TASK-42",
+  "title": "component_previews data model and migration",
+  "category": "data-model",
+  "description": "Add the `component_previews` table (`id, component_name, variant_id, commit_sha, path_estatico, publicado_em`) to the Drizzle schema, tracking every published preview artifact version.",
+  "acceptanceCriteria": [
+    "`component_previews` table exists with `id, component_name (text), variant_id (text), commit_sha (text), path_estatico (text), publicado_em (timestamp)`",
+    "A query helper exists to fetch the *latest* `component_previews` row for a given `(component_name, variant_id)` pair, ordered by `publicado_em` descending",
+    "No uniqueness constraint blocks multiple historical entries for the same `(component_name, variant_id)` — history is intentionally append-only (each publish is a new row), enabling 'latest wins' resolution",
+    "Migration applies cleanly on top of prior migrations"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Add component_previews table to schema.ts",
+      "details": "Define `componentPreviews` with `id`, `componentName: text('component_name').notNull()`, `variantId: text('variant_id').notNull()`, `commitSha: text('commit_sha').notNull()`, `pathEstatico: text('path_estatico').notNull()`, `publicadoEm: integer('publicado_em', { mode: 'timestamp' }).notNull()`.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Add an index for latest-lookup performance",
+      "details": "Add a Drizzle index on `(component_name, variant_id, publicado_em)` to make the 'latest per component+variant' query efficient.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Implement getLatestPreview helper",
+      "details": "In `apps/server/src/db/componentPreviews.ts`, add `getLatestPreview(componentName: string, variantId: string)` returning the most recent row for that pair, or `null` if none exists.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Generate and verify migration",
+      "details": "Run `drizzle-kit generate`, then insert two rows for the same `(component_name, variant_id)` with different `publicado_em`, and confirm `getLatestPreview` returns the more recent one.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-4"],
+  "estimatedComplexity": "low",
+  "technicalNotes": [
+    "Keeping this table append-only (rather than upserting) preserves a full history of preview publishes per component/variant, which is useful for debugging 'why did my preview change' even though the MVP UI only surfaces the latest."
+  ]
+}

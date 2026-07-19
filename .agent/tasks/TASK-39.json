@@ -1,0 +1,51 @@
+{
+  "id": "TASK-39",
+  "title": "connector CLI discovers *.preview.tsx files in target repo",
+  "category": "functional",
+  "description": "Implement the first stage of the `packages/connector` CLI: recursively scan a target repository for `*.preview.tsx` files and load their `PreviewConfig` default export.",
+  "acceptanceCriteria": [
+    "CLI command (e.g. `systembook-connector discover [--root <dir>]`) walks the given root directory (default cwd) and finds all files matching `*.preview.tsx`, excluding `node_modules`",
+    "For each discovered file, the CLI dynamically imports/transpiles it enough to read its default export and validates it against the `PreviewConfig` shape from `packages/schema`",
+    "A file whose default export doesn't match `PreviewConfig` produces a clear, actionable error identifying the file and the validation failure, without crashing the whole discovery run for other valid files",
+    "Discovery output is a list of `{ filePath, config: PreviewConfig }` consumable by the next stage (TASK-40)",
+    "Running discovery against a sample repo fixture with 2 valid and 1 intentionally malformed `*.preview.tsx` file reports 2 successes and 1 clearly-described failure"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Set up the CLI entrypoint",
+      "details": "In `packages/connector/src/cli.ts`, use a lightweight CLI arg parser (e.g. `commander` or manual `process.argv` parsing) to expose a `discover` command accepting `--root`.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Implement file globbing",
+      "details": "Use a glob utility (e.g. `fast-glob`) to find `**/*.preview.tsx` under `--root`, excluding `**/node_modules/**`.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Load and validate each file's default export",
+      "details": "For each matched file, use `esbuild`'s transform/build API (already needed for TASK-41's Vite pipeline) to transpile and evaluate the module in a sandboxed context, extracting the default export. Validate it against a zod schema mirroring `PreviewConfig`.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Collect and report results",
+      "details": "Aggregate `{ filePath, config }` for valid files and `{ filePath, error }` for invalid ones. Print a human-readable summary (counts and per-file errors) to stdout/stderr.",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Test against a fixture repo",
+      "details": "Create a small fixture directory with 2 valid `*.preview.tsx` files and 1 malformed one (e.g. missing `variants`), run discovery against it, and confirm the reported counts and error message match expectations.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-37", "TASK-2"],
+  "estimatedComplexity": "high",
+  "technicalNotes": [
+    "Evaluating arbitrary TSX files from a target repo requires care — use a proper bundler/transpiler (esbuild) rather than naive `eval`/`require`, since these files may use JSX and TypeScript syntax not natively runnable by Node.",
+    "This discovery step only reads `PreviewConfig` metadata; it does not yet build the component itself for preview — that's TASK-40/41."
+  ]
+}

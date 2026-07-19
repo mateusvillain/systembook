@@ -1,0 +1,57 @@
+{
+  "id": "TASK-13",
+  "title": "User management screen (admin creates user, sets role)",
+  "category": "ui-ux",
+  "description": "Build an admin-only screen listing all users and allowing creation of new users with email, initial password, and role (admin/editor).",
+  "acceptanceCriteria": [
+    "`/admin/users` route is only reachable by users with role `admin`; editors attempting to navigate there see an access-denied state or are redirected",
+    "Screen lists existing users with email and role columns",
+    "'Create user' form collects email, initial password, and role, and calls the `users.create` mutation (TASK-14)",
+    "Successful creation adds the new user to the list without a full page reload",
+    "Duplicate email submission shows an inline error from the server's unique constraint violation",
+    "Verify in browser using playwright"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Build UsersList component",
+      "details": "Create `apps/admin/src/features/users/UsersList.tsx` querying `users.list` and rendering a table with email and role columns.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Build CreateUserForm component",
+      "details": "Create a form with email (validated), password (min length), and a role select (`admin`/`editor`). On submit, call `users.create` mutation.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Handle duplicate email error",
+      "details": "Catch the `CONFLICT`/`BAD_REQUEST` error returned by `users.create` on duplicate email and display it inline on the email field.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Refresh list after creation",
+      "details": "On successful creation, invalidate/refetch the `users.list` query (or optimistically prepend the new user) so the table updates without reload.",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Guard the route for admin-only access",
+      "details": "Wrap `/admin/users` in a route guard checking the current user's role is `admin`; render an access-denied message for editors.",
+      "pass": false
+    },
+    {
+      "step": 6,
+      "description": "Verify in browser",
+      "details": "Using Playwright: log in as admin, navigate to `/admin/users`, create a new editor user, assert it appears in the list; log in as that editor and confirm navigating to `/admin/users` is blocked.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-14", "TASK-11"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "This is admin-only regardless of the confirmed 'editor has full CRUD on content structure' decision — user/role management remains admin-exclusive per PRD Fase 1."
+  ]
+}

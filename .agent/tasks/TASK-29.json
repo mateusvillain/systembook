@@ -1,0 +1,51 @@
+{
+  "id": "TASK-29",
+  "title": "Custom component-embed node (placeholder slot, no live preview yet)",
+  "category": "functional",
+  "description": "Build the `component-embed` Tiptap node as a placeholder in this phase: it reserves the slot with a `componentName`/`variantId` attribute pair and renders a static placeholder box, without an actual live iframe preview (that lands in TASK-47).",
+  "acceptanceCriteria": [
+    "A custom Tiptap `Node` extension `componentEmbed` is registered as an atomic (non-editable-content) block node",
+    "Node has `componentName: string` and `variantId: string | null` attributes",
+    "Toolbar provides an 'insert component embed' action that inserts the node with `componentName: ''` and `variantId: null` (selection UI for a real component/variant lands in TASK-48)",
+    "NodeView renders a clearly-labeled placeholder box (e.g. 'Component preview placeholder — select a component') when `componentName` is empty",
+    "`editor.getJSON()` output for this node matches the `ComponentEmbedBlockContent` shape defined in TASK-3",
+    "Verify in browser using playwright"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Define the ComponentEmbed Tiptap Node",
+      "details": "Create `apps/admin/src/features/editor/nodes/ComponentEmbed.ts` extending `Node.create({ name: 'componentEmbed', group: 'block', atom: true, ... })` with `componentName` and `variantId` attrs.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Build the placeholder NodeView",
+      "details": "Implement a React NodeView rendering a dashed-border box with a placeholder label and an icon, showing `componentName` if set, or a call-to-action to select one if empty.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Add insert-component-embed toolbar action",
+      "details": "Add a toolbar button inserting `{ type: 'componentEmbed', attrs: { componentName: '', variantId: null } }` at the cursor position.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Reconcile output shape with packages/schema",
+      "details": "Confirm the node's JSON shape matches `ComponentEmbedBlockContent` in `packages/schema/src/block.ts`.",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Verify in browser",
+      "details": "Using Playwright: insert a component-embed placeholder, confirm it renders the empty-state placeholder box, and confirm `editor.getJSON()` reflects the correct node type and attrs.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-28", "TASK-3"],
+  "estimatedComplexity": "low",
+  "technicalNotes": [
+    "Deliberately no iframe or network call here — this task only reserves the slot in the editor's node schema. Real rendering is layered on top of this same node in TASK-47 without changing its JSON shape, so persisted content created in Fase 3 remains valid once Fase 5 ships."
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "id": "TASK-28",
+  "title": "Custom callout node (info, warning, tip variants)",
+  "category": "functional",
+  "description": "Build a custom Tiptap node extension for `callout`, rendering a styled box with a variant (`info | warning | tip`), containing rich text content, insertable and switchable via the toolbar.",
+  "acceptanceCriteria": [
+    "A custom Tiptap `Node` extension `callout` is registered, allowing nested rich-text content inside it (at least paragraphs, bold/italic)",
+    "Callout has a `variant` attribute constrained to `info | warning | tip`, stored in the node's attrs",
+    "Toolbar provides an 'insert callout' action with a variant picker (defaults to `info`)",
+    "An existing callout's variant can be changed after insertion (e.g. via a small in-editor control on the callout itself)",
+    "Each variant renders with a distinct visual style (icon/color) matching the variant",
+    "`editor.getJSON()` output for a callout matches the `CalloutBlockContent` shape defined in TASK-3",
+    "Verify in browser using playwright"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Define the Callout Tiptap Node",
+      "details": "Create `apps/admin/src/features/editor/nodes/Callout.ts` extending `Node.create({ name: 'callout', group: 'block', content: 'block+', ... })` with an `variant` attribute (default `'info'`) parsed/rendered via `data-variant`.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Build the NodeView for visual rendering",
+      "details": "Implement a React NodeView (`ReactNodeViewRenderer`) rendering a bordered/colored box with an icon matching `variant`, and a `<NodeViewContent />` slot for nested rich text.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Add insert-callout toolbar action with variant picker",
+      "details": "Add a toolbar dropdown/button group to insert a callout node with a chosen variant, calling `editor.chain().focus().insertContent({ type: 'callout', attrs: { variant }, content: [...] }).run()`.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Add in-place variant switcher",
+      "details": "In the NodeView, add small variant-selector controls (e.g. three icon buttons) that update the node's `variant` attribute via `updateAttributes({ variant })` without recreating the node or losing its content.",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Reconcile output shape with packages/schema",
+      "details": "Confirm the callout's `editor.getJSON()` node shape (`{ type: 'callout', attrs: { variant }, content: [...] }`) matches `CalloutBlockContent` in `packages/schema/src/block.ts`; adjust the schema type if needed.",
+      "pass": false
+    },
+    {
+      "step": 6,
+      "description": "Verify in browser",
+      "details": "Using Playwright: insert a warning callout, type text inside it, switch it to tip, and confirm the visual style updates and the content is preserved.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-26", "TASK-3"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "This is the first custom node in the editor — establish the NodeView/React pattern cleanly here since `component-embed` (TASK-29, TASK-47) will follow the same structure."
+  ]
+}

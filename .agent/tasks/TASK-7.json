@@ -1,0 +1,48 @@
+{
+  "id": "TASK-7",
+  "title": "docker-compose.yml for local development",
+  "category": "setup",
+  "description": "Provide a development-time docker-compose setup that runs the server with hot-reload against source (not the production multi-stage image), mounting a local volume for the SQLite file and reading env vars from `.env.local`.",
+  "acceptanceCriteria": [
+    "`docker-compose.yml` at repo root defines a single service running the server in dev mode",
+    "Service mounts the repo as a bind volume for hot-reload of source changes",
+    "Service mounts a named volume or local folder for the SQLite database file, persisting across `docker-compose down`/`up`",
+    "Service reads env vars from `.env.local` via `env_file`",
+    "`docker-compose up` starts the stack and the health-check endpoint responds within a reasonable startup time",
+    "`docker-compose down` followed by `docker-compose up` preserves previously created data (e.g. the bootstrap admin is not recreated with a duplicate)"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Define the dev service",
+      "details": "In `docker-compose.yml`, define service `app` using a lightweight dev Dockerfile target (or the `builder` stage from TASK-6 run with a dev command instead of the compiled `dist`), running `pnpm --filter @systembook/server dev`.",
+      "pass": true
+    },
+    {
+      "step": 2,
+      "description": "Configure volumes",
+      "details": "Bind-mount the repo root into the container for hot-reload. Add a named volume `sqlite-data` mounted at the directory containing `DATABASE_PATH` so the database persists independently of the bind mount.",
+      "pass": true
+    },
+    {
+      "step": 3,
+      "description": "Wire env_file and ports",
+      "details": "Set `env_file: .env.local` on the service. Map container `PORT` to the same host port for local browser access.",
+      "pass": true
+    },
+    {
+      "step": 4,
+      "description": "Verify up/down cycle preserves data",
+      "details": "Run `docker-compose up`, confirm health-check responds and the bootstrap admin exists. Run `docker-compose down` then `docker-compose up` again, and confirm the admin user was not duplicated (seed script from TASK-4 is idempotent).",
+      "pass": true
+    }
+  ],
+  "dependencies": [
+    "TASK-6"
+  ],
+  "estimatedComplexity": "low",
+  "technicalNotes": [
+    "This compose file is for local development only — TASK-59 covers the separate production-reference compose file using the built image from TASK-58.",
+    "Do not commit `.env.local` — `docker-compose.yml` should reference it via `env_file` so real secrets never enter the repo."
+  ]
+}

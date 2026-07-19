@@ -1,0 +1,44 @@
+{
+  "id": "TASK-58",
+  "title": "Docker image build and publish to registry via CI",
+  "category": "setup",
+  "description": "Extend the project's CI (TASK-8) with a workflow that builds the production Dockerfile (TASK-6) and pushes it to a public registry (Docker Hub or GHCR) on release, so third parties can pull a ready-made image.",
+  "acceptanceCriteria": [
+    "`.github/workflows/docker-publish.yml` builds the image from the root `Dockerfile` and pushes it to a chosen registry (GHCR recommended — no extra account needed beyond GitHub)",
+    "Workflow triggers on version tags (e.g. `v*`) and/or pushes to the default branch, tagging the resulting image accordingly (`latest` plus the version tag)",
+    "Registry credentials are sourced from GitHub Actions' built-in `GITHUB_TOKEN` (for GHCR) or documented repository secrets (for Docker Hub) — never hardcoded",
+    "A successful workflow run results in a pullable image (`docker pull ghcr.io/<org>/systembook:<tag>`) that runs correctly with the same env vars documented in TASK-60",
+    "README (TASK-62) references the published image location"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Choose the registry and document the decision",
+      "details": "Default to GHCR (`ghcr.io/<org>/systembook`) since it requires no separate account setup beyond the GitHub repo itself, using `GITHUB_TOKEN` for auth.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Write the publish workflow",
+      "details": "Create `.github/workflows/docker-publish.yml`: on tag push matching `v*` (and optionally `main` for a `latest`/`edge` tag), log in to the registry, `docker build` using the root `Dockerfile` (TASK-6), and `docker push` with appropriate tags.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Use build caching for reasonable CI speed",
+      "details": "Add `docker/build-push-action` with GitHub Actions cache (`cache-from`/`cache-to: type=gha`) to avoid full rebuilds on every run.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Verify a real publish and pull",
+      "details": "Push a test tag, confirm the workflow succeeds, then `docker pull` the resulting image from a separate machine/context and run it with a valid `.env.local` to confirm the health-check endpoint responds.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-6", "TASK-8"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "GHCR images are private by default even in public repos until explicitly set to public in package settings — document this one-time manual step in the release process if GHCR is chosen."
+  ]
+}

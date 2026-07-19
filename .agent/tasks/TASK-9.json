@@ -1,0 +1,52 @@
+{
+  "id": "TASK-9",
+  "title": "Password hashing with argon2 and pepper",
+  "category": "security",
+  "description": "Implement a shared password hashing utility using argon2id, combined with a server-side pepper from `ARGON2_SECRET`, used by both the bootstrap seed script and user creation/password reset flows.",
+  "acceptanceCriteria": [
+    "`hashPassword(plain: string): Promise<string>` produces an argon2id hash incorporating `ARGON2_SECRET` as additional data (pepper)",
+    "`verifyPassword(plain: string, hash: string): Promise<boolean>` correctly validates matching and non-matching passwords",
+    "Hashing uses argon2id variant with reasonable memory/time cost defaults (e.g. `memoryCost: 19456, timeCost: 2` or library defaults tuned for a single-container deployment)",
+    "The pepper (`ARGON2_SECRET`) is read from env once at module load, never logged, never included in the stored hash string itself",
+    "Two calls to `hashPassword` with the same input produce different hashes (per-call random salt)",
+    "TASK-4's seed script and any future login/reset code use this utility instead of ad-hoc hashing"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Install argon2 library",
+      "details": "Add `argon2` (node-argon2, which wraps a native argon2id implementation) as a dependency of `apps/server`.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Implement hashPassword",
+      "details": "Create `apps/server/src/auth/password.ts` exporting `hashPassword(plain: string)` that calls `argon2.hash(plain + ARGON2_SECRET, { type: argon2.argon2id })`. Read `ARGON2_SECRET` from `process.env` at module load and throw at startup if missing.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Implement verifyPassword",
+      "details": "Add `verifyPassword(plain: string, hash: string)` calling `argon2.verify(hash, plain + ARGON2_SECRET)`, returning `false` on any thrown error rather than propagating it.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Wire into seed script",
+      "details": "Update TASK-4's `apps/server/src/db/seed.ts` to call `hashPassword(INITIAL_ADMIN_PASSWORD)` instead of any placeholder hashing.",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Write unit tests",
+      "details": "Test: correct password verifies true; incorrect password verifies false; hashing the same password twice yields two different hash strings; hash format starts with `$argon2id$`.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-1", "TASK-4"],
+  "estimatedComplexity": "low",
+  "technicalNotes": [
+    "Never log `plain`, `hash`, or `ARGON2_SECRET` anywhere, including error messages.",
+    "Concatenating the pepper into the input string before argon2's own per-call salt is a simple, adequate pattern for a single-container deployment; a dedicated peppering scheme (e.g. HMAC pre-hash) is unnecessary added complexity for this MVP."
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "id": "TASK-20",
+  "title": "pages CRUD tRPC endpoints",
+  "category": "api-endpoint",
+  "description": "Implement `pages.listBySection`, `pages.create`, `pages.rename`, `pages.updateSlug`, `pages.reorder`, `pages.delete` tRPC procedures, following the same permission model as sections.",
+  "acceptanceCriteria": [
+    "`pages.listBySection` (protectedProcedure query) accepts `{ sectionId }` and returns pages ordered by `ordem`",
+    "`pages.create` (protectedProcedure mutation) accepts `{ sectionId, titulo, slug }`, validates slug format (lowercase, hyphenated, no spaces), and returns a `CONFLICT` error on duplicate slug within the section",
+    "`pages.rename` updates `titulo` without touching `slug`",
+    "`pages.updateSlug` validates uniqueness within the section before applying",
+    "`pages.reorder` accepts an ordered list of page ids scoped to one section and updates `ordem` atomically",
+    "`pages.delete` cascades to tabs/blocks/revisions per the decision made in TASK-18/19, or blocks with a clear error if cascade was rejected"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Create pages router with listBySection and create",
+      "details": "Create `apps/server/src/trpc/routers/pages.ts`. Implement slug validation with a zod regex (`^[a-z0-9]+(-[a-z0-9]+)*$`).",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Implement rename and updateSlug",
+      "details": "Add both mutations; `updateSlug` must catch the unique constraint violation and rethrow as `TRPCError({ code: 'CONFLICT' })`.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Implement reorder scoped to a section",
+      "details": "Add `reorder: protectedProcedure.input(z.object({ sectionId: z.string(), orderedIds: z.array(z.string()) })).mutation(...)`, updating `ordem` only for pages belonging to `sectionId`.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Implement delete",
+      "details": "Add `delete` following the same cascade/block decision as TASK-18 for consistency.",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Merge into root router and test",
+      "details": "Add `pages: pagesRouter` to the root router. Test create with duplicate slug in-section fails, in a different section succeeds; test reorder only affects the target section's pages.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-19", "TASK-18"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "Keep slug validation identical between `create` and `updateSlug` to avoid divergent rules over time — extract a shared zod schema."
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "id": "TASK-2",
+  "title": "Monorepo scaffold with pnpm workspaces",
+  "category": "setup",
+  "description": "Create the monorepo skeleton that will host all SystemBook packages, using pnpm workspaces (Turborepo optional but not required for MVP scope).",
+  "acceptanceCriteria": [
+    "Root `pnpm-workspace.yaml` lists `apps/*` and `packages/*`",
+    "`apps/server` exists as an empty TypeScript package with its own `package.json`",
+    "`apps/admin` exists as an empty TypeScript package with its own `package.json`",
+    "`packages/schema` exists as an empty TypeScript package with its own `package.json`",
+    "`packages/preview-kit` exists as an empty TypeScript package with its own `package.json`",
+    "`packages/connector` exists as an empty TypeScript package with its own `package.json`",
+    "Root `package.json` has workspace-aware scripts: `build`, `dev`, `lint`, `typecheck`, `test` that fan out to workspace packages",
+    "`pnpm install` succeeds from repo root with no errors",
+    "Root `tsconfig.base.json` exists and each package extends it"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Initialize root package.json and pnpm-workspace.yaml",
+      "details": "Run `pnpm init` at repo root. Create `pnpm-workspace.yaml` with `packages: ['apps/*', 'packages/*']`. Set root `package.json` `private: true`.",
+      "pass": true
+    },
+    {
+      "step": 2,
+      "description": "Scaffold apps/server and apps/admin",
+      "details": "Create `apps/server/package.json` (name `@systembook/server`) and `apps/admin/package.json` (name `@systembook/admin`), each with a minimal `src/index.ts` placeholder and TypeScript devDependency.",
+      "pass": true
+    },
+    {
+      "step": 3,
+      "description": "Scaffold packages/schema, packages/preview-kit, packages/connector",
+      "details": "Create each with its own `package.json` (`@systembook/schema`, `@systembook/preview-kit`, `@systembook/connector`), `src/index.ts` placeholder, and `tsconfig.json` extending the root base config.",
+      "pass": true
+    },
+    {
+      "step": 4,
+      "description": "Add root tsconfig.base.json and workspace scripts",
+      "details": "Create `tsconfig.base.json` with strict mode enabled (`strict: true`, `noUncheckedIndexedAccess: true`). Add root `package.json` scripts using `pnpm -r run <script>` for `build`, `dev`, `lint`, `typecheck`, `test`.",
+      "pass": true
+    },
+    {
+      "step": 5,
+      "description": "Verify install and cross-package resolution",
+      "details": "Run `pnpm install` from repo root. Add `@systembook/schema` as a `workspace:*` dependency of `apps/server` and `apps/admin` to confirm workspace linking resolves correctly.",
+      "pass": true
+    }
+  ],
+  "dependencies": [
+    "TASK-1"
+  ],
+  "estimatedComplexity": "low",
+  "technicalNotes": [
+    "Turborepo is optional for MVP scope — plain pnpm workspace scripts are sufficient given the small package count; add Turborepo later only if build caching becomes a pain point.",
+    "Keep package names scoped under `@systembook/*` for consistency across the monorepo."
+  ]
+}

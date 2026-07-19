@@ -1,0 +1,49 @@
+{
+  "id": "TASK-25",
+  "title": "Tiptap base integration in admin panel",
+  "category": "functional",
+  "description": "Install and mount a base Tiptap editor instance in the admin panel's content editing route, with no custom extensions yet, rendering an empty editable area bound to a tab.",
+  "acceptanceCriteria": [
+    "Navigating to a tab's content route (from TASK-23) renders an empty Tiptap editor bound to that tab",
+    "Editor is editable and accepts basic keyboard input, producing valid Tiptap JSON via `editor.getJSON()`",
+    "Editor instance is properly destroyed on route unmount (no memory leaks / duplicate instances on navigation)",
+    "Verify in browser using playwright"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Install Tiptap core and React bindings",
+      "details": "Add `@tiptap/core`, `@tiptap/react`, `@tiptap/starter-kit` to `apps/admin`.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Create ContentEditor component",
+      "details": "Create `apps/admin/src/features/editor/ContentEditor.tsx` using `useEditor` from `@tiptap/react` with an empty `extensions: []` array initially, rendering `<EditorContent editor={editor} />`.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Wire the editor into the tab content route",
+      "details": "Mount `ContentEditor` on the route created in TASK-23 (`/admin/pages/:pageId/tabs/:tabId`), passed the current `tabId`.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Handle mount/unmount lifecycle",
+      "details": "Ensure `useEditor`'s cleanup (`editor?.destroy()`) runs on component unmount, and that navigating between two different tabs creates a fresh editor instance rather than reusing stale content.",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Verify in browser",
+      "details": "Using Playwright: navigate to a tab's content route, type text into the editor, navigate away and back, and confirm the editor remounts cleanly (content behavior at this stage is not yet persisted — persistence lands in TASK-31/32).",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-23"],
+  "estimatedComplexity": "low",
+  "technicalNotes": [
+    "Do not add `StarterKit` wholesale yet — TASK-26 adds specific standard extensions deliberately, to keep the node/mark set intentional rather than accepting StarterKit's full default bundle (which includes things like horizontal rule or strike that may not be wanted)."
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "id": "TASK-34",
+  "title": "Publish flow creates a revision snapshot",
+  "category": "api-endpoint",
+  "description": "Implement `pages.publish`, the explicit publish action that snapshots all tabs/blocks of a page into a new `revisions` row and marks the content as the current published version.",
+  "acceptanceCriteria": [
+    "`pages.publish` (protectedProcedure mutation) accepts `{ pageId, mensagem? }`, reads all tabs and their current `blocks` for the page, and inserts a `revisions` row with the full `PageSnapshot`",
+    "`autor_id` on the created revision is the calling user's id (from context), not client-supplied",
+    "'Publicar' button in the admin panel calls this mutation and shows success/error feedback",
+    "Autosave (TASK-32) continues to work independently and does not call this mutation",
+    "The public-facing read path (TASK-50) reads from the latest revision, not from live/draft `blocks`, once this task and TASK-50 are both complete — document this ordering dependency clearly for whoever implements TASK-50",
+    "Verify in browser using playwright"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Implement pages.publish procedure",
+      "details": "Add `publish: protectedProcedure.input(z.object({ pageId: z.string(), mensagem: z.string().optional() })).mutation(...)` to `apps/server/src/trpc/routers/pages.ts`. Query all tabs for the page, then all blocks per tab, assemble a `PageSnapshot`, and insert into `revisions` with `autorId: ctx.user.userId`.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Add Publicar button to the content editor UI",
+      "details": "In `apps/admin/src/features/editor/ContentEditor.tsx` (or a page-level toolbar wrapping all its tabs), add a 'Publicar' button calling `pages.publish.mutate({ pageId })`, with a loading state and success/error toast.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Guard against publishing with unsaved autosave in flight",
+      "details": "Before publishing, ensure any pending debounced autosave (TASK-32) is flushed first, so the snapshot reflects the very latest edits rather than a stale draft.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Verify in browser",
+      "details": "Using Playwright: edit content across two tabs of a page, click Publicar, and confirm a new revision appears (verifiable via a direct query or the history UI once TASK-35 exists) containing both tabs' current content.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-33", "TASK-32"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "This is the only place a `revisions` row is created in the MVP — do not add revision creation anywhere else (autosave, section/tab CRUD, etc.)."
+  ]
+}

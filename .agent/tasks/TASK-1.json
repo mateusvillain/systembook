@@ -1,0 +1,60 @@
+{
+  "id": "TASK-1",
+  "title": "Verify project prerequisites and access",
+  "category": "setup",
+  "description": "Verify that all information needed to safely begin implementation is available before feature work starts. Unlike a typical SaaS project, SystemBook has no external paid services, no remote database, and no MCP dependency for the MVP — verification is scoped to local environment variables and the bootstrap admin flow.",
+  "acceptanceCriteria": [
+    "`PROJECT_ROOT/.env.local` exists with placeholder entries for `PORT`, `DATABASE_PATH`, `SESSION_SECRET`, `ARGON2_SECRET`, `INITIAL_ADMIN_EMAIL`, `INITIAL_ADMIN_PASSWORD`",
+    "Real secret values are not written to the PRD, task specs, repository, logs, or chat",
+    "The user has manually filled `SESSION_SECRET`, `ARGON2_SECRET`, `INITIAL_ADMIN_EMAIL`, `INITIAL_ADMIN_PASSWORD` in `.env.local` with real local values",
+    "No external database connectivity check is required — SQLite file at `DATABASE_PATH` is created locally by the first migration",
+    "No MCP servers/tools are required for this project; confirmed no gap exists",
+    "No third-party paid service accounts are required for the MVP; confirmed no gap exists",
+    "The bootstrap admin flow (seed script reading `INITIAL_ADMIN_EMAIL`/`INITIAL_ADMIN_PASSWORD`) is understood as the only required test user for initial access"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Read prerequisite requirements from the PRD",
+      "details": "Open `PROJECT_ROOT/.agent/prd/PRD.md`, section 8 (\"Prerequisitos e Acesso\"). Confirm there are no external database, MCP, or paid service dependencies for the MVP.",
+      "pass": true
+    },
+    {
+      "step": 2,
+      "description": "Verify `.env.local` placeholder names",
+      "details": "Confirm `PROJECT_ROOT/.env.local` exists and contains `PORT`, `DATABASE_PATH`, `SESSION_SECRET`, `ARGON2_SECRET`, `INITIAL_ADMIN_EMAIL`, `INITIAL_ADMIN_PASSWORD`. `PORT` and `DATABASE_PATH` already have sensible non-secret defaults; the remaining four are placeholders (`TODO_FILL_MANUALLY`).",
+      "pass": true
+    },
+    {
+      "step": 3,
+      "description": "Confirm local secret values are filled manually",
+      "details": "Ask the user to confirm they generated and filled `SESSION_SECRET` and `ARGON2_SECRET` (e.g. via `openssl rand -base64 32`) and chose real `INITIAL_ADMIN_EMAIL`/`INITIAL_ADMIN_PASSWORD` values. Never print, store, commit, or copy these values into generated files or chat.",
+      "pass": true
+    },
+    {
+      "step": 4,
+      "description": "Confirm no external database or service access is needed",
+      "details": "SQLite is a local file created by migrations at container boot (see TASK-4). There is no remote connectivity to verify. Record this explicitly rather than attempting a network check.",
+      "pass": true
+    },
+    {
+      "step": 5,
+      "description": "Confirm no MCPs or paid third-party docs are required",
+      "details": "This project depends only on public, free documentation (Drizzle, tRPC, Tiptap, Vite, Docker, SQLite FTS5). No MCP server integration is needed for the MVP. Record this as a confirmed non-gap.",
+      "pass": true
+    },
+    {
+      "step": 6,
+      "description": "Confirm bootstrap admin path is understood",
+      "details": "The only required 'test user' is the admin created by the seed script from `INITIAL_ADMIN_EMAIL`/`INITIAL_ADMIN_PASSWORD` on first boot (implemented in TASK-4/TASK-9 flow). Confirm this is documented and no invite/SMTP flow is expected in the MVP.",
+      "pass": true
+    }
+  ],
+  "dependencies": [],
+  "estimatedComplexity": "low",
+  "technicalNotes": [
+    "This task gates implementation. Do not start dependent feature tasks until prerequisites are verified.",
+    "Secrets must stay local in `.env.local` and must never be committed or copied into PRD/task artifacts.",
+    "Unlike typical SaaS PRDs, there is no remote DB/MCP gap to negotiate here — the MVP is intentionally zero-external-dependency by design (see PRD section 1, 'Princípios norteadores')."
+  ]
+}

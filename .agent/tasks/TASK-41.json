@@ -1,0 +1,51 @@
+{
+  "id": "TASK-41",
+  "title": "connector CLI builds entrypoints via Vite into static artifact",
+  "category": "functional",
+  "description": "Wire Vite's build API into the connector CLI to build all synthetic entrypoints (from TASK-40) into a single static artifact directory (HTML/JS/CSS) ready for upload.",
+  "acceptanceCriteria": [
+    "CLI command `systembook-connector build [--root <dir>] [--out <dir>]` runs discovery, generation, and a Vite multi-entry build in sequence",
+    "Vite build uses `build.rollupOptions.input` populated with all generated entry `index.html` files, output to `--out` (default `.systembook/dist`)",
+    "Build output is a self-contained static directory: opening any variant's built `index.html` directly renders that component variant with no missing asset references",
+    "Build fails loudly (non-zero exit code, clear error message) if any entry fails to compile, rather than silently producing a partial artifact",
+    "Running the full `build` command against the TASK-39 fixture repo produces a working static artifact for each valid variant"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Add Vite as a build dependency",
+      "details": "Add `vite` and `@vitejs/plugin-react` to `packages/connector`'s dependencies.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Chain discover → generate → build in the CLI",
+      "details": "In `packages/connector/src/cli.ts`, implement `build` command: call the TASK-39 discovery function, then TASK-40's generation function, collecting all generated `index.html` paths.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Configure and invoke Vite's build API programmatically",
+      "details": "Use Vite's JS API (`build()` from `'vite'`) with `build: { rollupOptions: { input: { ...entryNameToHtmlPath } }, outDir: options.out } `, `plugins: [react()]`.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Fail loudly on build errors",
+      "details": "Catch and rethrow Vite build errors with `process.exitCode = 1` and a message identifying which entry failed, rather than letting the process exit 0 on partial failure.",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Verify a built artifact renders standalone",
+      "details": "Run the full build against the fixture repo, then serve the output directory with a static file server and open a variant's HTML in a browser (or headless via Playwright) to confirm it renders the component with no console errors about missing assets.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-40"],
+  "estimatedComplexity": "high",
+  "technicalNotes": [
+    "This build step runs inside the *consuming team's* CI (per the PRD's architecture), not inside the SystemBook instance itself — keep the connector's dependencies self-contained so it can run in an arbitrary repo's CI environment with just `npx` or as an installed devDependency.",
+    "Relative asset paths matter: since each variant's artifact may be served from a nested path on the SystemBook instance later (TASK-46), verify the Vite build's `base` config doesn't hardcode an absolute path that breaks when re-hosted."
+  ]
+}

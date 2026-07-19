@@ -1,0 +1,49 @@
+{
+  "id": "TASK-60",
+  "title": "Setup documentation: install connector, configure CI, bootstrap instance, create first admin",
+  "category": "documentation",
+  "description": "Write the primary onboarding documentation walking a new team through the full setup: standing up an instance, installing the connector in their component repo, configuring CI, and logging in for the first time.",
+  "acceptanceCriteria": [
+    "`docs/setup.md` (or `README.md`'s main body) covers, in order: (1) pulling/running the image via TASK-59's compose file, (2) setting required env vars including bootstrap admin credentials, (3) first login, (4) installing `@systembook/connector` in the design system repo, (5) writing a first `*.preview.tsx`, (6) configuring CI per TASK-45's example, (7) generating an upload token via TASK-44's admin screen",
+    "Each step includes the exact command or UI action needed, not just prose description",
+    "Doc explicitly calls out that this is a single-instance-per-design-system deployment (no multi-tenant setup steps)",
+    "A person unfamiliar with the codebase can follow the doc top-to-bottom and end up with a working instance connected to a real component repo"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Write the instance bootstrap section",
+      "details": "Document pulling the published image, creating `.env` from the documented variable list (TASK-59), and running `docker-compose -f docker-compose.production.yml up -d`.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Write the first-login section",
+      "details": "Document navigating to the instance URL and logging in with `INITIAL_ADMIN_EMAIL`/`INITIAL_ADMIN_PASSWORD`, and recommend immediately creating a named admin/editor user and rotating the bootstrap credentials via TASK-15's reset flow.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Write the connector installation section",
+      "details": "Document `pnpm add -D @systembook/connector` (or npm/yarn equivalents) in the design system repo, and the minimal `*.preview.tsx` example referencing TASK-61's schema docs.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Write the CI configuration section",
+      "details": "Link directly to TASK-45's GitHub Actions example, walking through generating an upload token (TASK-44) and setting the two required secrets.",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Review end-to-end for completeness",
+      "details": "Read through the full document as if a new user, confirming no step assumes undocumented prior knowledge, and that every referenced command/UI element actually exists per the corresponding implementation task.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-59", "TASK-44", "TASK-45", "TASK-15"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "This is the document validated by the PRD's Fase 7 exit criterion: 'uma pessoa de fora do projeto consegue, seguindo só a documentação, subir uma instância e conectar um repo próprio' — treat gaps found during the step-5 review as blocking, not optional polish."
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "id": "TASK-32",
+  "title": "Autosave draft content with debounce (no revision created)",
+  "category": "functional",
+  "description": "Implement the confirmed autosave decision: the editor persists a draft to the `blocks` table automatically after ~2 seconds of typing inactivity, without creating a `revisions` row. Publishing (TASK-34) is the only action that creates a revision.",
+  "acceptanceCriteria": [
+    "Editor content changes trigger a debounced save (default 2s of inactivity) calling `blocks.saveDraft`",
+    "`blocks.saveDraft` (protectedProcedure mutation) replaces the tab's `blocks` rows with the current editor state, without touching `revisions`",
+    "A visible, unobtrusive save-status indicator shows 'Salvando...' during the debounce/request and 'Salvo' once persisted, without blocking typing",
+    "Rapid typing does not trigger a save request per keystroke — only after the debounce window elapses",
+    "Navigating away from the tab while an unsaved debounce is pending flushes the save immediately (or warns the user) rather than silently discarding it",
+    "Verify in browser using playwright"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Implement blocks.saveDraft mutation",
+      "details": "Add `saveDraft: protectedProcedure.input(z.object({ tabId: z.string(), doc: tiptapDocSchema })).mutation(...)` to `apps/server/src/trpc/routers/blocks.ts`. Inside a transaction, delete existing blocks for `tabId` and insert the new set from `tiptapDocToBlocks(doc, tabId)` (TASK-31).",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Add debounced save hook in the editor",
+      "details": "In `ContentEditor.tsx`, use the editor's `onUpdate` callback with a debounce utility (e.g. a custom `useDebouncedCallback` or `lodash.debounce`) set to 2000ms, calling `blocks.saveDraft.mutate({ tabId, doc: editor.getJSON() })`.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Add save-status indicator",
+      "details": "Track mutation state (`idle | pending | success | error`) and render a small status label near the toolbar reflecting it, resetting to idle after a couple seconds post-success.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Flush pending save on navigation away",
+      "details": "On route change / component unmount, if a debounced save is still pending, cancel the debounce timer and immediately fire the save mutation (fire-and-forget is acceptable for MVP; a blocking confirm dialog is not required).",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Verify in browser",
+      "details": "Using Playwright: type continuously for under 2s and confirm no save request fires yet; stop typing and confirm exactly one save request fires after ~2s; reload the tab and confirm the draft content persisted.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-31"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "This confirms the session's decision: autosave persists a working draft continuously, but only the explicit 'Publicar' action (TASK-34) creates a `revisions` snapshot — keep these two write paths clearly separated in code to avoid accidentally versioning every autosave."
+  ]
+}

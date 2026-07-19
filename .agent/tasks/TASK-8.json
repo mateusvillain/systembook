@@ -1,0 +1,53 @@
+{
+  "id": "TASK-8",
+  "title": "Project CI pipeline (lint, typecheck, tests) via GitHub Actions",
+  "category": "setup",
+  "description": "Set up a GitHub Actions workflow that runs on every push/PR to validate the monorepo: install deps, lint, typecheck, and run tests across all packages.",
+  "acceptanceCriteria": [
+    "`.github/workflows/ci.yml` exists and triggers on `push` and `pull_request`",
+    "Workflow installs dependencies with pnpm using a cached store for speed",
+    "Workflow runs `pnpm -r run lint`, `pnpm -r run typecheck`, and `pnpm -r run test` as separate steps",
+    "A failing lint, typecheck, or test step fails the workflow run",
+    "Workflow uses a pinned Node.js version matching the project's engines requirement"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Create workflow file skeleton",
+      "details": "Create `.github/workflows/ci.yml` with `on: [push, pull_request]`, a single `build` job running on `ubuntu-latest`.",
+      "pass": true
+    },
+    {
+      "step": 2,
+      "description": "Set up Node.js and pnpm with caching",
+      "details": "Use `actions/setup-node` with a pinned major version (e.g. `20`) and `pnpm/action-setup`. Enable pnpm store caching via `cache: 'pnpm'` in `setup-node`.",
+      "pass": true
+    },
+    {
+      "step": 3,
+      "description": "Install dependencies",
+      "details": "Add step running `pnpm install --frozen-lockfile`.",
+      "pass": true
+    },
+    {
+      "step": 4,
+      "description": "Add lint, typecheck, and test steps",
+      "details": "Add three separate steps: `pnpm -r run lint`, `pnpm -r run typecheck`, `pnpm -r run test`, each as its own step so failures are individually identifiable in the Actions UI.",
+      "pass": true
+    },
+    {
+      "step": 5,
+      "description": "Verify the workflow fails correctly",
+      "details": "Introduce a temporary lint error locally, push to a test branch, and confirm the workflow run fails at the lint step specifically (not a generic failure). Revert the temporary error.",
+      "pass": true
+    }
+  ],
+  "dependencies": [
+    "TASK-2"
+  ],
+  "estimatedComplexity": "low",
+  "technicalNotes": [
+    "Root `package.json` scripts for `lint`/`typecheck`/`test` (from TASK-2) must exist in every workspace package, even as no-ops, or `pnpm -r run` will fail on packages missing the script — use `pnpm -r --if-present run <script>` if some packages intentionally lack a script.",
+    "This CI validates the SystemBook project's own codebase — distinct from the example CI step documented in TASK-45, which is for teams consuming the connector in their own repos."
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "id": "TASK-17",
+  "title": "sections data model and migration",
+  "category": "data-model",
+  "description": "Add the `sections` table (`id, titulo, ordem`) to the Drizzle schema and generate the migration.",
+  "acceptanceCriteria": [
+    "`sections` table exists with `id (text/uuid pk), titulo (text not null), ordem (integer not null)`",
+    "A unique or check constraint prevents two sections from sharing the same `ordem` value if strict ordering is desired (or ordering is resolved at the application layer — document the chosen approach)",
+    "Migration applies cleanly on top of the Fase 0/1 schema",
+    "Drizzle query layer exposes typed insert/select helpers for `sections`"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Add sections table to schema.ts",
+      "details": "In `apps/server/src/db/schema.ts`, add `export const sections = sqliteTable('sections', { id: text('id').primaryKey(), titulo: text('titulo').notNull(), ordem: integer('ordem').notNull() })`.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Generate and review migration",
+      "details": "Run `drizzle-kit generate` to produce the new migration SQL file. Review it to confirm only the `sections` table is added, with no unintended changes to existing tables.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Decide and document ordering strategy",
+      "details": "Choose whether `ordem` values must be unique (enforced by a unique index) or may have gaps/ties resolved by insertion order as a tiebreaker at the application layer. Document the decision in a code comment near the schema definition.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Verify migration against a fresh database",
+      "details": "Apply the migration to a fresh `DATABASE_PATH`, insert a few sections via a Drizzle query, and confirm they read back with correct `ordem` values.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-4"],
+  "estimatedComplexity": "low",
+  "technicalNotes": [
+    "Keep `ordem` as a plain integer with application-level renumbering on reorder (simplest for MVP scale) rather than a fractional-index scheme — revisit only if reordering performance becomes a real problem."
+  ]
+}

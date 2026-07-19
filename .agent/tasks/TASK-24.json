@@ -1,0 +1,43 @@
+{
+  "id": "TASK-24",
+  "title": "Editor role can fully manage sections/pages/tabs (permission matrix)",
+  "category": "security",
+  "description": "Formalize and verify the confirmed scope decision: `editor` has the same CRUD permissions as `admin` over `sections`, `pages`, and `tabs`. Only user/role management (TASK-13/14/15) remains admin-exclusive. This task documents the matrix and adds tests that lock in the boundary so future routes don't accidentally over- or under-restrict editors.",
+  "acceptanceCriteria": [
+    "A written permission matrix exists (e.g. as a code comment or short doc) listing every mutation added in Fase 2 (sections/pages/tabs CRUD) and confirming it uses `protectedProcedure`, not `adminProcedure`",
+    "A written note confirms `users.*` procedures (TASK-14/15) remain on `adminProcedure`",
+    "Automated tests assert: an `editor` session can create/rename/reorder/delete a section, page, and tab; an `editor` session is rejected with `FORBIDDEN` on any `users.*` mutation",
+    "No section/page/tab mutation accidentally uses `adminProcedure`"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Audit sections/pages/tabs routers",
+      "details": "Review `apps/server/src/trpc/routers/sections.ts`, `pages.ts`, `tabs.ts` (from TASK-18, TASK-20, TASK-22) and confirm every procedure uses `protectedProcedure`, correcting any that were mistakenly written as `adminProcedure`.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Audit users router",
+      "details": "Review `apps/server/src/trpc/routers/users.ts` (TASK-14/15) and confirm every procedure uses `adminProcedure`.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Write the permission matrix note",
+      "details": "Add a short comment block at the top of `apps/server/src/trpc/router.ts` (or a `PERMISSIONS.md` if preferred) listing each router and its required role, so future contributors have a single reference point.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Write boundary tests",
+      "details": "Add a test suite `apps/server/src/trpc/routers/__tests__/permissions.test.ts` that, for an `editor` session, asserts success on sections/pages/tabs mutations and `FORBIDDEN` on all `users.*` mutations.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-11", "TASK-14"],
+  "estimatedComplexity": "low",
+  "technicalNotes": [
+    "This task exists specifically because the scope was ambiguous in the original plan ('decisão de escopo a confirmar') and was resolved during PRD creation as: editor has full structural CRUD. Treat any future route that touches sections/pages/tabs as `protectedProcedure` by default unless a new explicit decision changes this."
+  ]
+}

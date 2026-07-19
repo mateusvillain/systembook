@@ -1,0 +1,53 @@
+{
+  "id": "TASK-5",
+  "title": "tRPC server bootstrap with health-check route",
+  "category": "api-endpoint",
+  "description": "Set up the base tRPC router and HTTP server in `apps/server`, exposing a single unauthenticated `health.check` procedure used to verify the container is up and the database is reachable.",
+  "acceptanceCriteria": [
+    "`apps/server` exposes an HTTP server listening on `PORT` from env",
+    "tRPC router is mounted at `/trpc`",
+    "`health.check` query returns `{ status: 'ok', db: 'ok' | 'error' }`, where `db` reflects a real query against the SQLite connection",
+    "Calling `GET /trpc/health.check` returns HTTP 200 with the expected JSON shape when the database is reachable",
+    "Server fails fast with a clear error message on boot if `DATABASE_PATH` or `SESSION_SECRET` env vars are missing"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Install tRPC server dependencies",
+      "details": "Add `@trpc/server` and a small HTTP layer (`node:http` adapter or a minimal framework already chosen for the project) to `apps/server`.",
+      "pass": true
+    },
+    {
+      "step": 2,
+      "description": "Create base tRPC instance and root router",
+      "details": "Create `apps/server/src/trpc/init.ts` exporting `initTRPC.create()` output (`router`, `publicProcedure`). Create `apps/server/src/trpc/router.ts` as the app's root router, initially empty.",
+      "pass": true
+    },
+    {
+      "step": 3,
+      "description": "Implement health router",
+      "details": "Create `apps/server/src/trpc/routers/health.ts` with a `check` query procedure that runs `SELECT 1` against the Drizzle/SQLite connection from TASK-4 and returns `{ status: 'ok', db: 'ok' }`, catching errors to return `db: 'error'` instead of throwing.",
+      "pass": true
+    },
+    {
+      "step": 4,
+      "description": "Wire HTTP server and env validation",
+      "details": "In `apps/server/src/index.ts`, validate required env vars (`PORT`, `DATABASE_PATH`, `SESSION_SECRET`) at startup with a clear thrown error if missing. Mount the tRPC router at `/trpc` and start listening on `PORT`.",
+      "pass": true
+    },
+    {
+      "step": 5,
+      "description": "Verify end-to-end",
+      "details": "Start the server locally with a valid `.env.local`, then `curl http://localhost:$PORT/trpc/health.check` and confirm the JSON response matches the acceptance criteria.",
+      "pass": true
+    }
+  ],
+  "dependencies": [
+    "TASK-4"
+  ],
+  "estimatedComplexity": "low",
+  "technicalNotes": [
+    "Keep the root router file dependency-free of feature routers at this stage — later phases (auth, sections, pages, tabs, previews) each add their own router merged here.",
+    "Fail-fast env validation here prevents confusing runtime errors later when auth/session code assumes `SESSION_SECRET` exists."
+  ]
+}

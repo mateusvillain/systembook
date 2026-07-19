@@ -1,0 +1,58 @@
+{
+  "id": "TASK-44",
+  "title": "Upload token generation and management per instance",
+  "category": "security",
+  "description": "Add an admin-only screen and backing table for generating, listing, and revoking upload tokens used by TASK-43's `/api/previews` endpoint, so teams can configure their CI without using a personal admin session.",
+  "acceptanceCriteria": [
+    "New table `upload_tokens (id, token_hash, label, criado_em, revogado_em nullable)` — the raw token is shown once at creation time and never stored/retrievable in plaintext afterward",
+    "`uploadTokens.create` (adminProcedure mutation) accepts `{ label }`, generates a cryptographically random token, stores its hash, and returns the plaintext token exactly once in the mutation response",
+    "`uploadTokens.list` (adminProcedure query) returns tokens with `label`, `criado_em`, `revogado_em`, never the token value or its hash",
+    "`uploadTokens.revoke` (adminProcedure mutation) sets `revogado_em` on a token, after which TASK-43's endpoint must reject it",
+    "Admin panel screen at `/admin/settings/tokens` lets an admin generate a labeled token (shown once with a 'copy' affordance and a warning it won't be shown again), list existing tokens, and revoke them",
+    "Verify in browser using playwright"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Add upload_tokens table and migration",
+      "details": "Define `uploadTokens` in `apps/server/src/db/schema.ts` with `id, tokenHash, label, criadoEm, revogadoEm (nullable)`. Generate and apply the migration.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Implement token generation and hashing",
+      "details": "In `apps/server/src/auth/uploadTokens.ts`, implement `generateToken()` (e.g. `crypto.randomBytes(32).toString('base64url')`) and hash it with SHA-256 (a fast hash is appropriate here — this is a high-entropy random token, not a user password) before storing.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Implement uploadTokens CRUD procedures",
+      "details": "Add `create`, `list`, `revoke` to a new `apps/server/src/trpc/routers/uploadTokens.ts`, all `adminProcedure`. `create` returns `{ id, label, token }` (plaintext token only in this one response).",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Wire token validation into TASK-43's upload endpoint",
+      "details": "In the `/api/previews` handler, hash the incoming bearer token and look up an `upload_tokens` row with matching `token_hash` and `revogado_em IS NULL`; reject 401 otherwise.",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Build the token management screen",
+      "details": "Create `apps/admin/src/features/settings/UploadTokens.tsx`: a 'Gerar token' form (label input), a one-time reveal modal showing the plaintext token with a copy button and a 'won't be shown again' warning, a list of existing tokens with a 'Revogar' action per row.",
+      "pass": false
+    },
+    {
+      "step": 6,
+      "description": "Verify in browser",
+      "details": "Using Playwright: generate a token, confirm it's shown once; use it to successfully call `/api/previews` (or a mocked equivalent) via an API test; revoke it and confirm subsequent use returns 401.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-11"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "Never store or log the plaintext token after the creation response — only the hash persists.",
+    "This is intentionally admin-only (not editor) since it grants write access to the instance's public-facing preview content from an external, unauthenticated-by-session CI process."
+  ]
+}

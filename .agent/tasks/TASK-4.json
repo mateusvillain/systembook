@@ -1,0 +1,63 @@
+{
+  "id": "TASK-4",
+  "title": "Drizzle + SQLite setup with first migration (users, sessions, memberships)",
+  "category": "data-model",
+  "description": "Configure Drizzle ORM against a local SQLite file and create the first migration covering the auth-related tables: `users`, `sessions`, `memberships`. Include a seed script that creates the bootstrap admin from `INITIAL_ADMIN_EMAIL`/`INITIAL_ADMIN_PASSWORD` if no admin exists yet.",
+  "acceptanceCriteria": [
+    "`apps/server` has `drizzle.config.ts` pointing at `DATABASE_PATH` env var",
+    "Drizzle schema file defines `users (id, nome, email, senha_hash, criado_em)`, `sessions (id, user_id, expira_em)`, `memberships (user_id, role)` with `role` constrained to `admin | editor`",
+    "`email` has a unique constraint on `users`",
+    "`sessions.user_id` and `memberships.user_id` are foreign keys to `users.id`",
+    "Running the migration against a fresh `DATABASE_PATH` creates all three tables with correct columns and constraints",
+    "Seed script creates exactly one admin user from `INITIAL_ADMIN_EMAIL`/`INITIAL_ADMIN_PASSWORD` only if the `users` table is empty; running it twice does not create duplicates",
+    "Seed script never logs the plaintext password"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Install Drizzle ORM and SQLite driver",
+      "details": "In `apps/server`, add `drizzle-orm`, `drizzle-kit`, and `better-sqlite3` (or `@libsql/client` if preferring libSQL) as dependencies.",
+      "pass": true
+    },
+    {
+      "step": 2,
+      "description": "Define schema.ts",
+      "details": "Create `apps/server/src/db/schema.ts` with Drizzle table definitions for `users`, `sessions`, `memberships` matching the PRD's conceptual data model (section 9). Use `text('id').primaryKey()` with UUID default, `text('email').notNull().unique()`, foreign keys via `.references()`.",
+      "pass": true
+    },
+    {
+      "step": 3,
+      "description": "Configure drizzle.config.ts and generate migration",
+      "details": "Create `apps/server/drizzle.config.ts` reading `DATABASE_PATH` from env. Run `drizzle-kit generate` to produce the first SQL migration file under `apps/server/drizzle/`.",
+      "pass": true
+    },
+    {
+      "step": 4,
+      "description": "Add migration runner on server boot",
+      "details": "In `apps/server/src/db/migrate.ts`, run pending migrations against `DATABASE_PATH` on process start, creating the SQLite file and parent directory if missing.",
+      "pass": true
+    },
+    {
+      "step": 5,
+      "description": "Write bootstrap admin seed script",
+      "details": "Create `apps/server/src/db/seed.ts`: check if `users` table is empty; if so, hash `INITIAL_ADMIN_PASSWORD` (placeholder hashing call, finalized with argon2 in TASK-9) and insert a user + `memberships` row with `role: 'admin'` using `INITIAL_ADMIN_EMAIL`. Never `console.log` the password.",
+      "pass": true
+    },
+    {
+      "step": 6,
+      "description": "Verify against a fresh database file",
+      "details": "Delete any local `DATABASE_PATH` file, run the migration + seed, and confirm via a Drizzle query that one admin user exists with a `memberships` row of `role = 'admin'`. Run seed a second time and confirm no duplicate is created.",
+      "pass": true
+    }
+  ],
+  "dependencies": [
+    "TASK-2",
+    "TASK-1"
+  ],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "Use UUID (via `crypto.randomUUID()`) for primary keys rather than autoincrement, to keep IDs stable across future export/import or backup-restore operations.",
+    "`memberships` intentionally has no extra scope column beyond `role` — PRD explicitly states '1 instância = 1 design system, sem escopo extra'.",
+    "Real password hashing (argon2) lands in TASK-9; this task can use a temporary placeholder hash function if sequencing requires it, but should be wired to the real one before TASK-9 is considered done."
+  ]
+}
