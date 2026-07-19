@@ -1,10 +1,10 @@
 # Memória do projeto — SystemBook
 
-> Log de desenvolvimento mantido pelo agente. Última atualização: **2026-07-19** (Fase 2 fechada com TASK-24; início da Fase 3 — editor Tiptap, tasks 25–27).
+> Log de desenvolvimento mantido pelo agente. Última atualização: **2026-07-19** (Fase 3 em andamento — tasks 25–30: editor Tiptap, nós custom e modelo de blocks).
 
 ## Estado atual
 
-**Tasks 1–27 concluídas e verificadas.** Fase 0 (fundação), Fase 1 (auth + painel base) e Fase 2 (estrutura de navegação + matriz de permissões) fechadas; Fase 3 iniciada com o editor Tiptap no painel (base + extensões padrão + tabelas). Existe um `CLAUDE.md` na raiz com o guia do repositório.
+**Tasks 1–30 concluídas e verificadas.** Fase 0 (fundação), Fase 1 (auth + painel base) e Fase 2 (estrutura de navegação + matriz de permissões) fechadas; Fase 3 em andamento: editor Tiptap (base + extensões padrão + tabelas), nós custom (callout, component-embed) e tabela `blocks` com helpers tipados. Existe um `CLAUDE.md` na raiz com o guia do repositório.
 
 | Task | Status | Verificação |
 | --- | --- | --- |
@@ -28,8 +28,11 @@
 | TASK-25 | ✅ | ContentEditor (Tiptap v3) montado na rota da tab; instância nova por tab (E2E) |
 | TASK-26 | ✅ | Heading 1-3, bold/italic, listas, code block + toolbar com estado ativo (E2E) |
 | TASK-27 | ✅ | Tabela 3×3 com header, +/− linha/coluna contextuais; JSON confere com schema (E2E) |
+| TASK-28 | ✅ | Nó custom `callout` (info/warning/tip) com NodeView React e switcher in-place (E2E) |
+| TASK-29 | ✅ | Nó atômico `componentEmbed` placeholder com attrs componentName/variantId (E2E) |
+| TASK-30 | ✅ | Tabela `blocks` (migration 0004) + helpers tipados; round-trip dos 8 tipos testado |
 
-**Cobertura**: 42 testes vitest no server (40 anteriores + 2 da matriz de permissões) + 29 verificações E2E Playwright do editor (script ad-hoc no scratchpad, não commitado) além das 12 da árvore.
+**Cobertura**: 46 testes vitest no server (42 anteriores + 4 de blocks) + verificações E2E Playwright: 29 do editor base e 12 dos nós custom (scripts ad-hoc no scratchpad, não commitados), além das 12 da árvore.
 
 O tracking granular (pass por step) está em `.agent/tasks/TASK-*.json` e o índice em `.agent/tasks.json`.
 
@@ -64,6 +67,18 @@ O tracking granular (pass por step) está em `.agent/tasks/TASK-*.json` e o índ
 - A instância ativa é exposta em `window.systembookEditor` (para E2E/automação — ex.: `getJSON()`).
 - **Gotcha de E2E headless**: a sync da seleção nativa do browser → estado ProseMirror é assíncrona; dblclick/Shift+setas não refletem em `state.selection` a tempo. Para testar atalhos sobre seleção, criar a seleção com `setTextSelection` programático e então mandar o atalho de teclado.
 - JSON de tabela confirmado contra `TableBlockContent` do schema (cabe em `body: TiptapJson`); forma documentada em `packages/schema/src/block.ts`.
+
+### Nós custom (TASK-28/29)
+
+- `nodes/Callout.tsx` e `nodes/ComponentEmbed.tsx` — padrão estabelecido: extensão `Node.create` + NodeView React (`ReactNodeViewRenderer`/`NodeViewWrapper`/`NodeViewContent`) no mesmo arquivo, attrs espelhados em `data-*` no parse/renderHTML. Este é o modelo para nós futuros (preview real na TASK-47).
+- **Callout**: `content: 'block+'`, attr `variant` (info/warning/tip, arrays/meta exportados como `CALLOUT_VARIANTS`/`CALLOUT_META`); toolbar tem picker de 3 botões (info primeiro = default) e o NodeView tem switcher in-place via `updateAttributes` (preserva conteúdo). **Gotcha**: `:focus-within` não funciona para mostrar controles em NodeView — o foco fica no host `.ProseMirror`, não no nó; o switcher fica sempre visível com opacity baixa + hover.
+- **ComponentEmbed**: `atom: true`, attrs `componentName: ''`/`variantId: null`; placeholder tracejado até TASK-47/48. Clicar gera NodeSelection (em asserts E2E usar `selection.node?.type.name`, nunca `constructor.name` — o build minificado renomeia classes).
+- Nota: o schema permite `componentEmbed`/`callout` aninhados dentro de callout (`block+`) — aceito no MVP; o `focus('end')` dentro de um callout insere aninhado, cuidado em scripts.
+
+### Modelo de blocks (TASK-30)
+
+- Tabela `blocks (id, tab_id FK cascade, tipo, conteudo_json, ordem)` — migration 0004. `tipo` validado **na aplicação** (decisão TASK-30): array `BLOCK_TYPES` em `schema.ts` com `satisfies readonly BlockType[]` + assert de exaustividade nas duas direções, e zod enum `blockTypeSchema` em `src/db/blocks.ts`; sem CHECK no SQLite (crescer o set pós-MVP não exige migration). O array de runtime vive no server porque `@systembook/schema` é types-only.
+- Helpers tipados em `src/db/blocks.ts`: `insertBlock`/`listBlocksByTab` fazem stringify/parse de `conteudo_json`; `BlockRecord` é union discriminada por `tipo` com `conteudo` tipado via `Extract<Block, { type: T }>['content']`. Código chamador nunca vê JSON cru.
 
 ## O que existe hoje
 
@@ -101,7 +116,7 @@ O painel em dev acessa-se por `http://localhost:5173`; o proxy do `vite.config.t
 
 ## Pendências / próximos passos
 
-1. **Fase 3 continua (TASK-28+)**: blocos custom (callout, image, component-embed), tabela `blocks`, autosave e revisões. Quando criar `revisions`: `autor_id` nullable/`SET NULL` por causa do hard delete de usuários.
+1. **Fase 3 continua (TASK-31+)**: persistência doc↔blocks, autosave e revisões. Quando criar `revisions`: `autor_id` nullable/`SET NULL` por causa do hard delete de usuários.
 2. O conteúdo do editor ainda não persiste (esperado até TASK-31/32) — a UI não avisa; se incomodar em demo, adicionar aviso temporário.
 3. `.pnpm-store/` local (criado pelo container de dev) está no `.gitignore`; pode ser apagado à vontade.
 

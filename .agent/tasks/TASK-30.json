@@ -15,34 +15,37 @@
       "step": 1,
       "description": "Add blocks table to schema.ts",
       "details": "Define `blocks` with `id`, `tabId: text('tab_id').notNull().references(() => tabs.id, { onDelete: 'cascade' })`, `tipo: text('tipo').notNull()`, `conteudoJson: text('conteudo_json').notNull()`, `ordem: integer('ordem').notNull()`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Decide constraint enforcement for tipo",
       "details": "Either add a SQLite `CHECK` constraint listing the 8 valid values, or validate at the application layer with a zod enum shared from `packages/schema`. Document the choice in a code comment.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Generate and review migration",
       "details": "Run `drizzle-kit generate`, confirm the cascade-on-delete-tab behavior and (if used) the check constraint SQL.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Add typed read/write helpers",
       "details": "In `apps/server/src/db/blocks.ts`, add helpers that `JSON.parse`/`JSON.stringify` `conteudo_json` and type the result as `Block['content']` from `@systembook/schema`, so calling code never handles raw JSON strings directly.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 5,
       "description": "Verify against fresh database",
       "details": "Insert a block of each of the 8 types with representative `conteudo_json`, read them back via the typed helper, and confirm shapes round-trip correctly.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-21", "TASK-3"],
+  "dependencies": [
+    "TASK-21",
+    "TASK-3"
+  ],
   "estimatedComplexity": "medium",
   "technicalNotes": [
     "Prefer application-level zod validation over a SQLite CHECK constraint for `tipo` if the block type set is expected to grow post-MVP — CHECK constraints require a migration to alter, while a shared zod enum only requires a code change plus a normal deploy."

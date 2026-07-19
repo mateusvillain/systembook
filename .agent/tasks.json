@@ -193,21 +193,21 @@
     "title": "Custom callout node (info, warning, tip variants)",
     "category": "functional",
     "specFilePath": ".agent/tasks/TASK-28.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-29",
     "title": "Custom component-embed node (placeholder slot, no live preview yet)",
     "category": "functional",
     "specFilePath": ".agent/tasks/TASK-29.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-30",
     "title": "blocks data model and migration",
     "category": "data-model",
     "specFilePath": ".agent/tasks/TASK-30.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-31",
