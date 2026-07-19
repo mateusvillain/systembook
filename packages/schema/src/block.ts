@@ -50,6 +50,11 @@ export interface ImageBlockContent {
   caption: string | null;
 }
 
+/**
+ * Forma real confirmada na TASK-27: `body` é o nó Tiptap `table`, com
+ * `tableRow` > `tableHeader`/`tableCell` (attrs colspan/rowspan/colwidth) >
+ * conteúdo rich-text por célula. Cabe em `TiptapJson` sem ajuste no schema.
+ */
 export interface TableBlockContent {
   body: TiptapJson;
 }
