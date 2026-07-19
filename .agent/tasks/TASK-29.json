@@ -16,34 +16,37 @@
       "step": 1,
       "description": "Define the ComponentEmbed Tiptap Node",
       "details": "Create `apps/admin/src/features/editor/nodes/ComponentEmbed.ts` extending `Node.create({ name: 'componentEmbed', group: 'block', atom: true, ... })` with `componentName` and `variantId` attrs.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Build the placeholder NodeView",
       "details": "Implement a React NodeView rendering a dashed-border box with a placeholder label and an icon, showing `componentName` if set, or a call-to-action to select one if empty.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Add insert-component-embed toolbar action",
       "details": "Add a toolbar button inserting `{ type: 'componentEmbed', attrs: { componentName: '', variantId: null } }` at the cursor position.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Reconcile output shape with packages/schema",
       "details": "Confirm the node's JSON shape matches `ComponentEmbedBlockContent` in `packages/schema/src/block.ts`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 5,
       "description": "Verify in browser",
       "details": "Using Playwright: insert a component-embed placeholder, confirm it renders the empty-state placeholder box, and confirm `editor.getJSON()` reflects the correct node type and attrs.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-28", "TASK-3"],
+  "dependencies": [
+    "TASK-28",
+    "TASK-3"
+  ],
   "estimatedComplexity": "low",
   "technicalNotes": [
     "Deliberately no iframe or network call here — this task only reserves the slot in the editor's node schema. Real rendering is layered on top of this same node in TASK-47 without changing its JSON shape, so persisted content created in Fase 3 remains valid once Fase 5 ships."
