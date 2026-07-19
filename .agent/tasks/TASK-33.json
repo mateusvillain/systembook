@@ -14,28 +14,31 @@
       "step": 1,
       "description": "Add revisions table to schema.ts",
       "details": "Define `revisions` with `id`, `pageId: text('page_id').notNull().references(() => pages.id, { onDelete: 'cascade' })`, `snapshotJson: text('snapshot_json').notNull()`, `autorId: text('autor_id').notNull().references(() => users.id)`, `criadoEm: integer('criado_em', { mode: 'timestamp' }).notNull()`, `mensagem: text('mensagem')`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Define the snapshot_json shape",
       "details": "In `packages/schema`, define a `PageSnapshot` type: `{ tabs: { tabId: string; titulo: string; blocks: Block[] }[] }`, capturing all tabs of the page as of publish time — this is what gets serialized into `snapshot_json`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Generate and review migration",
       "details": "Run `drizzle-kit generate` and confirm the foreign keys and cascade-on-delete-page behavior.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Verify against fresh database",
       "details": "Insert a sample revision with a two-tab snapshot, read it back, and confirm `JSON.parse(snapshot_json)` matches the `PageSnapshot` type.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-19", "TASK-4"],
+  "dependencies": [
+    "TASK-19",
+    "TASK-4"
+  ],
   "estimatedComplexity": "low",
   "technicalNotes": [
     "A revision snapshots the whole page (all its tabs), not a single tab, because 'Publicar' is a page-level action per the PRD's user flow ('editor escreve uma página completa ... salva, revisão é registrada') — confirm this scope matches TASK-34's publish implementation."

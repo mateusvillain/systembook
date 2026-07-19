@@ -214,21 +214,21 @@
     "title": "Serialize editor.getJSON() into typed blocks and persist",
     "category": "functional",
     "specFilePath": ".agent/tasks/TASK-31.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-32",
     "title": "Autosave draft content with debounce (no revision created)",
     "category": "functional",
     "specFilePath": ".agent/tasks/TASK-32.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-33",
     "title": "revisions data model and migration",
     "category": "data-model",
     "specFilePath": ".agent/tasks/TASK-33.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-34",
