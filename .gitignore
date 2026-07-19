@@ -20,3 +20,6 @@ data/
 # Logs e temporários
 *.log
 .DS_Store
+
+# Store do pnpm criado pelo container de dev
+.pnpm-store/
