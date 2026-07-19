@@ -61,11 +61,21 @@ export interface TableBlockContent {
 
 export type CalloutVariant = 'info' | 'warning' | 'tip';
 
+/**
+ * Forma confirmada na TASK-28: o nó Tiptap é
+ * `{ type: 'callout', attrs: { variant }, content: [...] }` — `variant` mapeia
+ * de `attrs.variant` e `body` do `content` aninhado (block+).
+ */
 export interface CalloutBlockContent {
   variant: CalloutVariant;
   body: TiptapJson;
 }
 
+/**
+ * Forma confirmada na TASK-29: o nó Tiptap é atômico —
+ * `{ type: 'componentEmbed', attrs: { componentName, variantId } }`, sem
+ * `content`. O preview real (TASK-47/48) usa estes mesmos attrs.
+ */
 export interface ComponentEmbedBlockContent {
   componentName: string;
   /** `null` até o editor escolher uma variante do preview. */

@@ -54,6 +54,72 @@
   pointer-events: none;
 }
 
+/* Callout (TASK-28) — cor/ícone por variante vêm inline do NodeView */
+.sb-editor .sb-callout {
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  margin: 0.75rem 0;
+}
+
+.sb-editor .sb-callout-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+/* Sempre presente (o foco do contenteditable fica no host .ProseMirror, então
+   :focus-within não serve aqui); discreto por padrão, realce no hover. */
+.sb-editor .sb-callout-switcher {
+  display: inline-flex;
+  gap: 0.25rem;
+  opacity: 0.35;
+  transition: opacity 0.15s;
+}
+
+.sb-editor .sb-callout:hover .sb-callout-switcher {
+  opacity: 1;
+}
+
+.sb-editor .sb-callout-switch {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.7rem;
+  padding: 0.1rem 0.35rem;
+}
+
+.sb-editor .sb-callout-switch[data-active] {
+  border-color: #333;
+  font-weight: 600;
+}
+
+.sb-editor .sb-callout-content > :first-child {
+  margin-top: 0;
+}
+
+.sb-editor .sb-callout-content > :last-child {
+  margin-bottom: 0;
+}
+
+/* Component embed (TASK-29) — placeholder até o preview real (TASK-47) */
+.sb-editor .sb-component-embed {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 2px dashed #bbb;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  margin: 0.75rem 0;
+  color: #666;
+  background: #fafafa;
+}
+
+.sb-editor .ProseMirror-selectednode.sb-component-embed {
+  border-color: #7aa7ff;
+}
+
 .sb-editor .ProseMirror .column-resize-handle {
   position: absolute;
   right: -2px;

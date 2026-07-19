@@ -11,6 +11,8 @@ import { BulletList, ListItem, OrderedList } from '@tiptap/extension-list';
 import { CodeBlock } from '@tiptap/extension-code-block';
 import { Table, TableCell, TableHeader, TableRow } from '@tiptap/extension-table';
 import { Dropcursor, Gapcursor, UndoRedo } from '@tiptap/extensions';
+import { Callout } from './nodes/Callout.js';
+import { ComponentEmbed } from './nodes/ComponentEmbed.js';
 import { EditorToolbar } from './EditorToolbar.js';
 import './editor.css';
 
@@ -42,6 +44,8 @@ const extensions = [
   TableRow,
   TableHeader,
   TableCell,
+  Callout,
+  ComponentEmbed,
   UndoRedo,
   Dropcursor,
   Gapcursor,
