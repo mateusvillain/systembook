@@ -25,6 +25,16 @@ interface BlockBase<T extends BlockType, C> {
   ordem: number;
 }
 
+/**
+ * Mapeamento canônico node↔block confirmado na TASK-31 (implementado em
+ * apps/server/src/blocks/serialize.ts):
+ * - `heading.body` e `paragraph.body` guardam o array `content` inline do nó;
+ * - `list.body` e `table.body` guardam o **nó completo** (preserva attrs como
+ *   `start` da lista ordenada e colwidths da tabela);
+ * - `callout.body` guarda o array `content` aninhado (attrs ficam em `variant`);
+ * - `code` e `image`/`component-embed` são totalmente estruturados (sem body).
+ */
+
 export interface HeadingBlockContent {
   level: 1 | 2 | 3 | 4;
   body: TiptapJson;
@@ -36,7 +46,9 @@ export interface ParagraphBlockContent {
 
 export interface ListBlockContent {
   ordered: boolean;
-  items: TiptapJson[];
+  /** Nó Tiptap completo (`bulletList`/`orderedList`) — TASK-31 trocou o
+   * `items: TiptapJson[]` original para não perder attrs do nó de lista. */
+  body: TiptapJson;
 }
 
 export interface CodeBlockContent {
@@ -100,3 +112,16 @@ export type Block =
   | TableBlock
   | CalloutBlock
   | ComponentEmbedBlock;
+
+/**
+ * Forma do `snapshot_json` de `revisions` (TASK-33): snapshot da **página
+ * inteira** no momento do publish — todas as tabs com todos os seus blocks —
+ * porque "Publicar" é uma ação de página no fluxo do PRD, não de tab.
+ */
+export interface PageSnapshot {
+  tabs: {
+    tabId: string;
+    titulo: string;
+    blocks: Block[];
+  }[];
+}

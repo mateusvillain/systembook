@@ -1,5 +1,6 @@
 import { router } from './init.js';
 import { authRouter } from './routers/auth.js';
+import { blocksRouter } from './routers/blocks.js';
 import { healthRouter } from './routers/health.js';
 import { pagesRouter } from './routers/pages.js';
 import { sectionsRouter } from './routers/sections.js';
@@ -19,6 +20,7 @@ import { usersRouter } from './routers/users.js';
  * | pages    | listBySection, create, rename, updateSlug,        | protectedProcedure (admin + editor)  |
  * |          | reorder, delete                                   |                                      |
  * | tabs     | listByPage, create, rename, reorder, delete       | protectedProcedure (admin + editor)  |
+ * | blocks   | getByTab, saveDraft                               | protectedProcedure (admin + editor)  |
  *
  * Decisão de escopo do PRD: `editor` tem CRUD completo sobre a estrutura de
  * navegação (sections/pages/tabs) — e, nas próximas fases, sobre conteúdo
@@ -37,6 +39,7 @@ export const appRouter = router({
   sections: sectionsRouter,
   pages: pagesRouter,
   tabs: tabsRouter,
+  blocks: blocksRouter,
 });
 
 export type AppRouter = typeof appRouter;
