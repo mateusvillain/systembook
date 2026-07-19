@@ -15,34 +15,37 @@
       "step": 1,
       "description": "Implement auth.logout procedure",
       "details": "Add `logout: protectedProcedure.mutation(...)` to `apps/server/src/trpc/routers/auth.ts` that deletes the `sessions` row matching the current session id and sets a cookie-clearing header (`Max-Age=0`).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Add global UNAUTHORIZED handling in admin panel client",
       "details": "In the admin panel's tRPC client setup, add a response/error link that, on any `UNAUTHORIZED` error, clears local auth state and navigates to `/login`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Add visible logout action",
       "details": "Add a 'Sair' button in the admin panel's layout (e.g. top nav or user menu) calling `auth.logout` and then navigating to `/login`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Verify logout invalidates the session",
       "details": "Using Playwright: log in, call logout, then attempt to access a protected route directly (e.g. via a stale request) and confirm it is rejected and the app redirects to `/login`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 5,
       "description": "Verify expired-session redirect",
       "details": "Manually expire a session row in the test database (`expira_em` in the past), attempt an authenticated action in the admin panel, and confirm the client redirects to `/login` rather than showing a broken state.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-11", "TASK-12"],
+  "dependencies": [
+    "TASK-11",
+    "TASK-12"
+  ],
   "estimatedComplexity": "low",
   "technicalNotes": [
     "Session expiration cleanup already happens lazily on access per TASK-11 — this task only needs to verify the client-side redirect behavior, not add new server-side expiration logic."

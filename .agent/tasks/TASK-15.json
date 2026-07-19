@@ -15,34 +15,36 @@
       "step": 1,
       "description": "Implement users.resetPassword procedure",
       "details": "Add to `apps/server/src/trpc/routers/users.ts`: `resetPassword: adminProcedure.input(z.object({ userId: z.string(), newPassword: z.string().min(8) })).mutation(...)` that hashes and updates `senha_hash`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Invalidate existing sessions on reset",
       "details": "Within the same mutation, delete all `sessions` rows where `user_id` matches the target user, so old sessions can't continue using the previous credential context.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Add reset UI to user management screen",
       "details": "In `apps/admin/src/features/users/UsersList.tsx` (from TASK-13), add a per-row 'Redefinir senha' button opening a small modal/inline form with a single password field, calling `users.resetPassword`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Show success confirmation without echoing the password",
       "details": "On success, close the form and show a toast/banner 'Senha redefinida com sucesso' — never render the submitted password back in the UI.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 5,
       "description": "Verify in browser",
       "details": "Using Playwright: as admin, reset an editor's password; log in as that editor with the old password and confirm failure; log in with the new password and confirm success.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-14"],
+  "dependencies": [
+    "TASK-14"
+  ],
   "estimatedComplexity": "low",
   "technicalNotes": [
     "This is intentionally the only password-recovery mechanism in the MVP — 'esqueci minha senha' via SMTP is explicitly backlog V2 per the PRD."

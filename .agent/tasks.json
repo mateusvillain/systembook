@@ -60,56 +60,56 @@
     "title": "Password hashing with argon2 and pepper",
     "category": "security",
     "specFilePath": ".agent/tasks/TASK-9.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-10",
     "title": "Login endpoint issues httpOnly session cookie",
     "category": "api-endpoint",
     "specFilePath": ".agent/tasks/TASK-10.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-11",
     "title": "tRPC auth/authorization middleware distinguishes admin vs editor",
     "category": "security",
     "specFilePath": ".agent/tasks/TASK-11.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-12",
     "title": "Login screen in admin panel",
     "category": "ui-ux",
     "specFilePath": ".agent/tasks/TASK-12.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-13",
     "title": "User management screen (admin creates user, sets role)",
     "category": "ui-ux",
     "specFilePath": ".agent/tasks/TASK-13.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-14",
     "title": "Admin CRUD endpoints for users",
     "category": "api-endpoint",
     "specFilePath": ".agent/tasks/TASK-14.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-15",
     "title": "Manual password reset by admin",
     "category": "functional",
     "specFilePath": ".agent/tasks/TASK-15.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-16",
     "title": "Logout endpoint and session expiration handling",
     "category": "functional",
     "specFilePath": ".agent/tasks/TASK-16.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-17",

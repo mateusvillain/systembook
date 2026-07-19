@@ -16,40 +16,43 @@
       "step": 1,
       "description": "Create auth router with login procedure",
       "details": "Create `apps/server/src/trpc/routers/auth.ts` with a `login` mutation accepting a zod schema `{ email: z.string().email(), password: z.string().min(1) }`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Look up user and verify password",
       "details": "Query `users` by `email`. If not found, throw `TRPCError({ code: 'UNAUTHORIZED', message: 'Invalid credentials' })`. If found, call `verifyPassword(password, user.senha_hash)`; if false, throw the same generic error.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Create session row",
       "details": "On successful verification, insert into `sessions` a new row with a random session id (`crypto.randomUUID()`), `user_id`, and `expira_em` set 7 days out.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Set session cookie on response",
       "details": "Using the tRPC HTTP adapter's response object, set `Set-Cookie: session_id=<id>; HttpOnly; SameSite=Lax; Path=/; Max-Age=604800` (add `Secure` when `NODE_ENV=production`).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 5,
       "description": "Return user role, not the full user object",
       "details": "Join `memberships` to fetch `role` for the authenticated user id, and return `{ userId, role }` — never `senha_hash`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 6,
       "description": "Test the happy and unhappy paths",
       "details": "Test: correct credentials return 200 with `Set-Cookie` present and a `sessions` row created; wrong password and unknown email both return the same `UNAUTHORIZED` error message and status.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-9", "TASK-5"],
+  "dependencies": [
+    "TASK-9",
+    "TASK-5"
+  ],
   "estimatedComplexity": "medium",
   "technicalNotes": [
     "Using the same generic error message for 'user not found' and 'wrong password' prevents user enumeration.",
