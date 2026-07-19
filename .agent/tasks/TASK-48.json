@@ -1,0 +1,51 @@
+{
+  "id": "TASK-48",
+  "title": "Component/variant selector when inserting a component-embed",
+  "category": "ui-ux",
+  "description": "Replace the empty-attrs insertion from TASK-29 with a real picker UI: when inserting (or editing) a component-embed, the editor shows a searchable list of already-published components and their variants (from `component_previews`), letting the author pick one.",
+  "acceptanceCriteria": [
+    "Clicking 'insert component embed' opens a picker listing distinct `component_name` values that have at least one published preview, searchable/filterable by name",
+    "Selecting a component shows its available `variant_id` options (from published previews) for a second selection step",
+    "Confirming the picker inserts (or updates) the `component-embed` node with the chosen `componentName`/`variantId`",
+    "The picker's list reflects real data via a `componentPreviews.listComponents`/`listVariants`-style query, not hardcoded values",
+    "An already-inserted component-embed can be re-opened via the picker to change its component/variant selection",
+    "Verify in browser using playwright"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Add componentPreviews listing queries",
+      "details": "Add `componentPreviews.listComponents` (distinct `component_name` values with at least one row) and `componentPreviews.listVariants` (input `{ componentName }`, distinct `variant_id` values) to the router from TASK-47.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Build the picker modal/popover",
+      "details": "Create `apps/admin/src/features/editor/ComponentEmbedPicker.tsx`: step 1 shows a filterable list of component names, step 2 (after selecting a component) shows its variants.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Wire the picker to insertion",
+      "details": "Change the TASK-29 toolbar action to open the picker instead of inserting empty attrs directly; on confirm, insert the `component-embed` node with the selected `componentName`/`variantId`.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Add a re-select affordance on existing embeds",
+      "details": "In the `ComponentEmbed` NodeView (TASK-47), add a small 'Trocar componente' control that reopens the same picker pre-filled with the current selection, updating attrs via `updateAttributes` on confirm.",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Verify in browser",
+      "details": "Using Playwright: with at least one published component/variant seeded, open the picker, search and select it, confirm the embed renders (per TASK-47); reopen the picker on that embed and switch to a different variant, confirming the iframe updates.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-47"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "The picker's data source is `component_previews`, which only contains components a team has actually published — there is no separate 'component registry' table; a component only becomes selectable after its first successful CI upload (TASK-43)."
+  ]
+}

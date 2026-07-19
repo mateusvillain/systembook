@@ -1,0 +1,57 @@
+{
+  "id": "TASK-55",
+  "title": "Dark/light theme and typography for public documentation",
+  "category": "ui-ux",
+  "description": "Apply a visually polished theme to the public layout referencing Material Design Docs / Atlassian Design System — careful typography, spacing, and a dark/light mode toggle with persisted preference.",
+  "acceptanceCriteria": [
+    "Public layout has both a light and dark theme, each with legible contrast ratios for body text, headings, code blocks, and callouts",
+    "A visible toggle switches theme instantly without a page reload",
+    "Theme preference persists across visits (e.g. `localStorage`) and respects `prefers-color-scheme` as the initial default when no preference is stored",
+    "Typography uses a clear heading scale and comfortable line-length/line-height for prose, distinct from the admin panel's denser editing UI",
+    "Code blocks and callouts (info/warning/tip) have visually distinct, theme-aware styling in both modes",
+    "Verify in browser using playwright"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Define theme tokens",
+      "details": "Create a small design-token set (CSS custom properties or a theme object) for background, text, border, and accent colors per callout variant, defined for both light and dark, applied to the public layout root.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Implement the theme toggle",
+      "details": "Add a toggle button in the public layout header, switching a `data-theme` attribute on the root element and persisting the choice to `localStorage`.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Respect system preference as default",
+      "details": "On first visit (no stored preference), initialize theme from `window.matchMedia('(prefers-color-scheme: dark)')`.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Apply typography scale to prose content",
+      "details": "Style the `PageRenderer` (TASK-50) output with a clear heading scale (h1-h3), readable body font size/line-height, and appropriate max content width for readability.",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Style code blocks and callouts per theme",
+      "details": "Ensure code blocks have a monospace font and theme-aware background/foreground; ensure each callout variant (info/warning/tip) has distinct, accessible-contrast colors in both light and dark.",
+      "pass": false
+    },
+    {
+      "step": 6,
+      "description": "Verify in browser",
+      "details": "Using Playwright: load the public site with light system preference and confirm light theme; toggle to dark and reload, confirming the choice persisted; visually spot-check a page containing all block types in both themes via screenshot.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-52"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "This task is scoped to the public reading experience per the PRD's success criteria ('visualmente comparável às referências citadas'); the admin editing panel's visual polish is not required to match this bar."
+  ]
+}

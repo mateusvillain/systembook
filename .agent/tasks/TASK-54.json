@@ -1,0 +1,51 @@
+{
+  "id": "TASK-54",
+  "title": "Search UI in public layout",
+  "category": "ui-ux",
+  "description": "Add a search input to the public layout (TASK-52) calling `search.query` (TASK-53) with debounced-as-you-type results, showing page title, section, and a highlighted snippet, linking to the matching page.",
+  "acceptanceCriteria": [
+    "A search input is visible/reachable from anywhere in the public layout (e.g. top of sidebar or a header)",
+    "Typing a query shows matching results below/in a dropdown after a short debounce, without a full page navigation per keystroke",
+    "Each result shows the page title, its section, and a snippet with the matched term highlighted",
+    "Selecting a result navigates to that page",
+    "Empty query state and 'no results' state are both handled with clear messaging",
+    "Verify in browser using playwright"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Build the SearchBox component",
+      "details": "Create `apps/admin/src/features/public/SearchBox.tsx` with a debounced (e.g. 300ms) text input calling `search.query` and rendering results in a dropdown/panel.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Render result items",
+      "details": "Each result shows title, section breadcrumb, and the FTS5 `snippet()` output rendered with the matched term wrapped in a highlight element (e.g. `<mark>`).",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Wire result selection to navigation",
+      "details": "Clicking/selecting a result navigates to that page's public route and closes the search dropdown.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Handle empty and no-results states",
+      "details": "Show nothing (or a hint) when the query is empty; show a 'Nenhum resultado encontrado' message when `search.query` returns an empty array.",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Verify in browser",
+      "details": "Using Playwright: type a term known to exist in a published page's content, confirm the matching result appears with a highlighted snippet; click it and confirm navigation lands on the correct page; type a nonsense term and confirm the no-results state.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-53", "TASK-52"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "Keep this a lightweight in-page dropdown rather than a separate search results page for the MVP, matching the 'busca simples' scope from the PRD."
+  ]
+}

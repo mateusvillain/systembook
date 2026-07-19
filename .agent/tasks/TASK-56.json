@@ -1,0 +1,50 @@
+{
+  "id": "TASK-56",
+  "title": "Customizable landing page for documentation home",
+  "category": "functional",
+  "description": "Add an admin-editable landing page shown at the public site's root, separate from the sections/pages tree, so an instance can present a welcoming home screen instead of dropping visitors directly into a section.",
+  "acceptanceCriteria": [
+    "A dedicated `instance_settings`-style table/row stores the landing page's content (reuse the `blocks`-based content model where practical, tied to a well-known singleton id rather than a `tab_id`)",
+    "Admin can edit the landing page's content using the same Tiptap editor (TASK-25) used for regular pages",
+    "Public site root route (`/`) renders the landing page content instead of redirecting straight into the section tree",
+    "If no landing content has been set yet, a sensible default (e.g. a simple heading plus a prompt for the admin to customize it) is shown instead of a blank page",
+    "Verify in browser using playwright"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Model landing page storage",
+      "details": "Add a `landing_page` concept: either a special well-known `pages`/`tabs` row (e.g. a reserved slug) or a dedicated single-row table storing its own `blocks`-equivalent content. Prefer reusing the existing `tabs`/`blocks` tables with a reserved sentinel `page_id`/`tab_id` to avoid duplicating the block-serialization logic from TASK-31.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Add admin editing route",
+      "details": "Add `/admin/settings/landing-page` reusing `ContentEditor` (TASK-25) bound to the landing page's reserved tab id, including autosave (TASK-32) and an explicit publish action analogous to TASK-34.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Render the landing page at the public root",
+      "details": "Update the public layout's `/` route (TASK-52) to fetch and render the landing page's latest published content via the same `PageRenderer` (TASK-50) used elsewhere, instead of any section/page.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Add a sensible default for unset landing content",
+      "details": "If the landing page has never been published, render a minimal default (e.g. the instance's design system name and a link into the first section) rather than a blank screen.",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Verify in browser",
+      "details": "Using Playwright: as admin, edit and publish landing page content; visit `/` unauthenticated and confirm it renders; as a fresh instance with no landing content published, confirm the default state renders instead of blank.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-25", "TASK-34", "TASK-50", "TASK-52"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "Reusing the existing tabs/blocks/revisions machinery for the landing page (via a reserved sentinel id) avoids building a second parallel content-storage system just for one page — worth the minor conceptual awkwardness of a 'page-less tab'."
+  ]
+}

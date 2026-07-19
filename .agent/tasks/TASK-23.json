@@ -1,0 +1,65 @@
+{
+  "id": "TASK-23",
+  "title": "Tree navigation UI in admin panel sidebar",
+  "category": "ui-ux",
+  "description": "Build the sidebar tree view (sections → pages → tabs) in the admin panel, styled after Material/Atlassian docs navigation, supporting create/rename/reorder/delete actions inline.",
+  "acceptanceCriteria": [
+    "Sidebar renders sections as top-level collapsible groups, each containing pages, each page containing tabs",
+    "Each level has a contextual '+' action to create a child (new page under a section, new tab under a page)",
+    "Drag-and-drop or up/down controls allow reordering within the same parent, calling the corresponding `reorder` mutation",
+    "Rename is available inline (e.g. double-click or an edit icon) for sections, pages, and tabs",
+    "Delete requires a confirmation step before calling the destructive mutation (cascade delete, per TASK-18)",
+    "Clicking a tab navigates to its content editor route",
+    "Verify in browser using playwright"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Build the tree data hook",
+      "details": "Create a hook combining `sections.list`, and per-section `pages.listBySection`, and per-page `tabs.listByPage` (or a single denormalized query if preferred) into a nested tree structure for rendering.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Render the collapsible tree component",
+      "details": "Build `apps/admin/src/features/navigation/SidebarTree.tsx` rendering sections/pages/tabs as nested collapsible groups with appropriate indentation and icons.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Add create/rename actions",
+      "details": "Add a '+' button per level opening an inline text input for the new item's title (and slug for pages). Add an edit affordance per item for renaming.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Add reorder interaction",
+      "details": "Implement drag-and-drop (or simpler up/down buttons if drag-and-drop is out of scope for this pass) within a parent, calling the relevant `reorder` mutation with the new ordered id list on drop.",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Add delete with confirmation",
+      "details": "Add a delete icon per item opening a confirmation dialog warning that child content will also be removed (cascade), calling `delete` only on confirm.",
+      "pass": false
+    },
+    {
+      "step": 6,
+      "description": "Wire tab click to content editor route",
+      "details": "Clicking a tab navigates to `/admin/pages/:pageId/tabs/:tabId` (or equivalent), where the content editor (Fase 3) will render.",
+      "pass": false
+    },
+    {
+      "step": 7,
+      "description": "Verify in browser",
+      "details": "Using Playwright: create a section, a page inside it, a tab inside that page; rename each; reorder two sections; delete a tab and confirm the confirmation dialog blocks accidental deletion.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-18", "TASK-20", "TASK-22"],
+  "estimatedComplexity": "high",
+  "technicalNotes": [
+    "This is the highest-complexity UI task in Fase 2 — consider building create/rename/delete first without drag-and-drop, then layering reorder interaction once the tree renders correctly.",
+    "Fully expanded trees for large design systems could get long — consider persisting collapse/expand state in local storage, though this is a nice-to-have, not a hard requirement."
+  ]
+}

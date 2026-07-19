@@ -1,0 +1,50 @@
+{
+  "id": "TASK-31",
+  "title": "Serialize editor.getJSON() into typed blocks and persist",
+  "category": "functional",
+  "description": "Implement the mapping from Tiptap's `editor.getJSON()` document output to the `blocks` table rows (one row per top-level node), plus the reverse mapping (blocks → Tiptap document) used when loading a tab for editing.",
+  "acceptanceCriteria": [
+    "A pure function `tiptapDocToBlocks(doc: JSONContent, tabId: string): BlockInsert[]` maps each top-level node in the Tiptap document to a `blocks` row shape (`tipo`, `conteudo_json`, `ordem` by position)",
+    "A pure function `blocksToTiptapDoc(blocks: Block[]): JSONContent` reconstructs a valid Tiptap document from stored blocks, ordered by `ordem`",
+    "Round-tripping a document through `tiptapDocToBlocks` then `blocksToTiptapDoc` produces a document that renders identically in the editor (no data loss for any of the 8 block types)",
+    "`blocks.saveDraft` (protectedProcedure mutation, see TASK-32) uses `tiptapDocToBlocks` to persist",
+    "Loading a tab's content editor route uses `blocksToTiptapDoc` (via a `blocks.getByTab` query) to initialize the editor"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Implement tiptapDocToBlocks",
+      "details": "In `packages/schema/src/serialize.ts` (or `apps/server/src/blocks/serialize.ts` if it needs no client usage), map `doc.content` array entries to block rows, using each node's `type` as `tipo` and the full node as `conteudo_json`, with `ordem` set by array index.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Implement blocksToTiptapDoc",
+      "details": "Implement the inverse: sort blocks by `ordem`, parse each `conteudo_json`, and assemble `{ type: 'doc', content: [...] }`.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Add blocks.getByTab query",
+      "details": "Add `blocks: { getByTab: protectedProcedure.input(z.object({ tabId: z.string() })).query(...) }` to a new `apps/server/src/trpc/routers/blocks.ts`, returning blocks ordered by `ordem`.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Wire ContentEditor to load and initialize from blocks",
+      "details": "In `apps/admin/src/features/editor/ContentEditor.tsx`, call `blocks.getByTab`, convert to a Tiptap doc via `blocksToTiptapDoc`, and pass it as the editor's initial `content`.",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Write round-trip tests for every block type",
+      "details": "Write a test that constructs a sample Tiptap document containing one node of each of the 8 MVP block types, runs it through `tiptapDocToBlocks` then `blocksToTiptapDoc`, and asserts the result deep-equals the original document.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-30", "TASK-27", "TASK-28", "TASK-29"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "This task is the load-bearing bridge between the editor's runtime document model and the persisted `blocks` table — get the round-trip test passing for all 8 types before building autosave/publish on top of it."
+  ]
+}

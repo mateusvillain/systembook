@@ -1,0 +1,50 @@
+{
+  "id": "TASK-57",
+  "title": "Responsive layout for public documentation views",
+  "category": "ui-ux",
+  "description": "Ensure the public layout (navigation, content, search, landing page) is fully usable on mobile and tablet viewports, per the PRD's explicit responsiveness requirement for the public-facing site.",
+  "acceptanceCriteria": [
+    "On narrow viewports (< 768px), the sidebar navigation collapses behind a toggle (hamburger menu) rather than being permanently visible and squeezing content",
+    "Content area (prose, tables, code blocks, component-embed iframes) reflows without horizontal scrolling of the page itself; wide elements (tables, code) scroll within their own container instead",
+    "Search UI (TASK-54) remains usable on mobile (e.g. as a full-width overlay rather than a small dropdown)",
+    "Touch targets (nav items, toggle buttons) meet a reasonable minimum tap size on mobile",
+    "Verify in browser using playwright at both a desktop and a mobile viewport size"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Add responsive breakpoints to the layout shell",
+      "details": "Update `apps/admin/src/features/public/PublicLayout.tsx` (from TASK-52) with a CSS breakpoint (e.g. 768px) toggling between a permanent sidebar (desktop) and a collapsible off-canvas nav (mobile).",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Implement the mobile nav toggle",
+      "details": "Add a hamburger button visible only below the breakpoint, opening/closing the sidebar as an overlay with a backdrop.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Constrain wide content to scroll within its container",
+      "details": "Apply `overflow-x: auto` wrappers around tables and code blocks in `PageRenderer` (TASK-50) styling, and set `max-width: 100%` on iframes/images so nothing forces the page body to scroll horizontally.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Adapt search UI for mobile",
+      "details": "On narrow viewports, render the search trigger as an icon that opens a full-width/full-height search overlay instead of a small inline dropdown.",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Verify in browser at multiple viewports",
+      "details": "Using Playwright, set viewport to a common desktop size (e.g. 1440x900) and a common mobile size (e.g. 390x844); confirm nav toggle behavior, absence of page-level horizontal scroll on a page containing a wide table, and that search remains usable at both sizes.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-52", "TASK-54", "TASK-55"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "This task only covers the public-facing site per PRD scope ('Responsividade da visualização pública') — the admin editing panel is not required to be mobile-responsive for the MVP."
+  ]
+}

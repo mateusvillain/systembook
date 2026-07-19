@@ -1,0 +1,61 @@
+{
+  "id": "TASK-6",
+  "title": "Multi-stage Dockerfile building admin panel and server into one image",
+  "category": "setup",
+  "description": "Create a multi-stage Dockerfile that builds the Vite-bundled admin panel and the Node.js/tRPC server, producing a single production image that serves both from one process/container, per the 'container único' principle.",
+  "acceptanceCriteria": [
+    "Dockerfile has separate build stages for `apps/admin` (Vite build) and `apps/server` (TypeScript build)",
+    "Final stage is a slim Node.js runtime image containing only production dependencies and build output",
+    "Final image serves the admin panel's static build output from the server process (no separate nginx/static server needed)",
+    "Final image exposes `PORT` and respects `DATABASE_PATH` for the SQLite volume mount point",
+    "`docker build .` completes successfully with no errors",
+    "Running the built image with valid env vars responds `200` on `/trpc/health.check`"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Add builder stage for shared packages and server",
+      "details": "In `Dockerfile`, stage `builder`: copy monorepo, run `pnpm install --frozen-lockfile`, build `packages/schema` then `apps/server` (`tsc` output to `apps/server/dist`).",
+      "pass": true
+    },
+    {
+      "step": 2,
+      "description": "Add builder stage for admin panel",
+      "details": "Stage `admin-builder`: build `apps/admin` via Vite (`vite build`), producing static assets in `apps/admin/dist`.",
+      "pass": true
+    },
+    {
+      "step": 3,
+      "description": "Add production runtime stage",
+      "details": "Stage `runner`: use a slim Node.js base image, copy `apps/server/dist`, `apps/server/node_modules` (production-only, via `pnpm install --prod`), and `apps/admin/dist` (mounted as static assets served by the server).",
+      "pass": true
+    },
+    {
+      "step": 4,
+      "description": "Wire server to serve admin static assets",
+      "details": "Ensure `apps/server`'s HTTP layer (from TASK-5) serves `apps/admin/dist` as static files for all non-`/trpc` and non-`/api` routes, so a single process serves both API and panel.",
+      "pass": true
+    },
+    {
+      "step": 5,
+      "description": "Declare volume and expose port",
+      "details": "In the runner stage, declare a `VOLUME` for the directory containing `DATABASE_PATH` (e.g. `/app/data`) and `EXPOSE $PORT`. Set `CMD` to start `apps/server/dist/index.js`.",
+      "pass": true
+    },
+    {
+      "step": 6,
+      "description": "Build and smoke-test the image",
+      "details": "Run `docker build -t systembook:dev .`, then `docker run --env-file .env.local -p 3000:3000 systembook:dev`, and confirm `curl http://localhost:3000/trpc/health.check` returns 200.",
+      "pass": true
+    }
+  ],
+  "dependencies": [
+    "TASK-2",
+    "TASK-5"
+  ],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "Keep the final image minimal — do not include devDependencies, source TypeScript files, or the monorepo's other unbuilt packages (`connector`, `preview-kit`) unless the server needs them at runtime.",
+    "The SQLite file must live on a mounted volume, not baked into the image, so data survives container recreation."
+  ]
+}

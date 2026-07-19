@@ -1,0 +1,51 @@
+{
+  "id": "TASK-52",
+  "title": "Public reading layout with section/page/tab navigation",
+  "category": "ui-ux",
+  "description": "Build the dedicated public-facing layout (visually and structurally separate from the admin panel) with a persistent sidebar/nav for sections/pages/tabs and a main content area rendering the current page (via TASK-50's renderer).",
+  "acceptanceCriteria": [
+    "Public layout is a separate app shell/route tree from the admin panel — no admin chrome (toolbar, edit controls) leaks into the public view",
+    "Sidebar navigation lists all sections and their pages (tabs shown within a page's own header once a page is open), reflecting the current published structure",
+    "Navigating between pages updates the main content area via client-side routing (no full reload) where feasible",
+    "Current page/section is visually highlighted in the navigation",
+    "URL scheme is human-readable and stable (e.g. `/docs/:sectionSlug/:pageSlug/:tabTitle-or-id`), usable for direct linking/bookmarking",
+    "Verify in browser using playwright"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Decide and set up the public app's routing structure",
+      "details": "Add a public route tree (could be a separate build target or a route prefix within the existing admin panel app, served at a different base path — choose based on TASK-6's Dockerfile serving setup) with routes for the doc home, a section/page/tab path, and a 404.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Add a public sections/pages listing query",
+      "details": "Add `sections.listPublic`/`pages.listPublicBySection` (publicProcedure, no auth) returning the structure needed for navigation — reuse TASK-18/20's data but expose via unauthenticated procedures, excluding any admin-only fields.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Build the sidebar navigation component",
+      "details": "Create `apps/admin/src/features/public/PublicSidebar.tsx` rendering the section/page tree with active-route highlighting.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Wire the page route to TASK-50's renderer",
+      "details": "The page route resolves `sectionSlug`/`pageSlug` to a `pageId`, fetches its published tabs, and renders the selected tab's content via `PageRenderer` (TASK-50).",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Verify in browser",
+      "details": "Using Playwright, unauthenticated: land on the public doc home, navigate via sidebar into a section → page → tab, confirm the URL updates and the correct content renders, and confirm no admin-only UI (edit buttons, publish button) is present anywhere on the page.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-50"],
+  "estimatedComplexity": "high",
+  "technicalNotes": [
+    "Only sections/pages/tabs that have at least one published revision should arguably appear in public navigation — decide whether to hide never-published pages from the public sidebar entirely or show them with the 'not published yet' state from TASK-50; the former is the cleaner default for a professional-feeling doc site."
+  ]
+}

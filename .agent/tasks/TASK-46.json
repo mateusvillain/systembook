@@ -1,0 +1,50 @@
+{
+  "id": "TASK-46",
+  "title": "Serve static preview artifacts via backend route for iframe use",
+  "category": "api-endpoint",
+  "description": "Add a route that serves the static preview artifacts stored by TASK-43 (`path_estatico`) over HTTP, suitable for use as an `<iframe src>` target from both the editor (TASK-47) and the public documentation site.",
+  "acceptanceCriteria": [
+    "`GET /previews/:componentName/:variantId/:commitSha/*` (or equivalent path scheme matching TASK-43's storage layout) serves the corresponding static file from the volume with correct `Content-Type` per file extension",
+    "Requesting a path that resolves outside the static previews root (path traversal attempt) returns 400/404, never serves an out-of-bounds file",
+    "Requesting a non-existent artifact path returns 404 with a clear response, not a server error",
+    "Response includes cache headers appropriate for immutable, commit-addressed content (e.g. `Cache-Control: public, max-age=31536000, immutable`), since each `commitSha` path is unique per build",
+    "Endpoint requires no authentication — preview artifacts are public content, consistent with the public documentation being publicly readable"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Add the static-serving route",
+      "details": "In `apps/server/src/index.ts` (alongside the `/api/previews` upload route from TASK-43), add a `GET /previews/*` handler that maps the URL path to a file under the static previews root.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Sanitize the resolved path",
+      "details": "Resolve the requested path against the static root using `path.resolve` and verify the result still starts with the static root's absolute path before reading; reject otherwise with 400.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Set Content-Type and cache headers",
+      "details": "Infer `Content-Type` from file extension (html, js, css, common image/font types) and set the immutable long-lived `Cache-Control` header, since paths are content-addressed by `commitSha`.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Handle missing files",
+      "details": "If the resolved file doesn't exist, respond 404 with a small JSON or plain-text body, not an unhandled exception.",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Test serving and security boundaries",
+      "details": "Test: a valid uploaded artifact's `index.html` is served with 200 and correct content-type; a path traversal attempt (`../../etc/passwd`-style) is rejected; a non-existent commit sha path returns 404.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-43"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "This route and TASK-43's upload route both touch the same static previews volume — keep the path-construction logic (sanitization, directory layout) in one shared helper used by both, rather than duplicating traversal-protection logic in two places."
+  ]
+}

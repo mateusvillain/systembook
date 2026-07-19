@@ -1,0 +1,51 @@
+{
+  "id": "TASK-12",
+  "title": "Login screen in admin panel",
+  "category": "ui-ux",
+  "description": "Build the login screen in `apps/admin`: email/password form calling `auth.login`, redirecting to the admin dashboard on success and showing inline errors on failure.",
+  "acceptanceCriteria": [
+    "`/login` route renders an email and password field and a submit button",
+    "Submitting valid credentials calls `auth.login` and redirects to the admin home route on success",
+    "Submitting invalid credentials shows an inline error message without page reload",
+    "Submit button is disabled while the request is in flight, showing a loading state",
+    "Already-authenticated users visiting `/login` are redirected to the admin home route",
+    "Verify in browser using playwright"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Set up admin panel routing shell",
+      "details": "In `apps/admin`, add a router (e.g. React Router or TanStack Router) with a public `/login` route and a protected layout for all other routes.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Build LoginForm component",
+      "details": "Create `apps/admin/src/features/auth/LoginForm.tsx` with controlled email/password inputs, client-side required-field validation, and a submit handler calling the tRPC `auth.login` mutation.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Handle loading and error states",
+      "details": "Disable the submit button and show a spinner while the mutation is pending. On `UNAUTHORIZED` error, display 'Email ou senha inválidos' below the form without clearing the email field.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Redirect on success and guard the route",
+      "details": "On successful login, navigate to the admin home route. Add a route guard that redirects authenticated users away from `/login` and unauthenticated users away from protected routes (checking a lightweight `auth.me`-style query or cached login state).",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Verify in browser",
+      "details": "Using Playwright, script: navigate to `/login`, submit wrong credentials and assert the error message renders, submit correct bootstrap admin credentials and assert redirect to the admin home route.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-10"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "This task depends on `auth.login` (TASK-10) existing on the server; the admin panel's tRPC client setup itself may need a minimal bootstrap if not already scaffolded in TASK-2."
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "id": "TASK-36",
+  "title": "Restore revision endpoint",
+  "category": "api-endpoint",
+  "description": "Implement `pages.restoreRevision`, which overwrites the current `blocks` for every tab of a page with the content from a chosen past `revisions` snapshot, and creates a new revision recording the restore as a publish event.",
+  "acceptanceCriteria": [
+    "`pages.restoreRevision` (protectedProcedure mutation) accepts `{ pageId, revisionId }`",
+    "For each tab captured in the target revision's snapshot, existing `blocks` rows for that tab are replaced with the snapshot's blocks",
+    "A new `revisions` row is created immediately after restore, capturing the now-current (restored) state as of the restore action, with a default message like 'Restaurado da revisão de {data}'",
+    "Restoring a revision from a page whose tab structure has since changed (e.g. a tab was deleted) is handled gracefully — document and implement the chosen behavior (e.g. skip missing tabs, or reject with a clear error)",
+    "Only the calling user's id is used for `autor_id` on the new restore-revision row"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Implement pages.restoreRevision procedure",
+      "details": "Add `restoreRevision: protectedProcedure.input(z.object({ pageId: z.string(), revisionId: z.string() })).mutation(...)` to `apps/server/src/trpc/routers/pages.ts` (or `revisions.ts`).",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Load and validate the target snapshot",
+      "details": "Fetch the `revisions` row by `revisionId`, confirm it belongs to `pageId`, and parse its `snapshot_json` into a `PageSnapshot`.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Handle tab structure drift",
+      "details": "For each `tabId` in the snapshot, check it still exists under the page. If missing, skip that tab's blocks and collect a warning list to return in the mutation's response (rather than failing the whole restore) — decide and implement this as the MVP's chosen behavior.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Replace blocks and create the follow-up revision",
+      "details": "In a transaction: for each still-existing tab, delete its current blocks and insert the snapshot's blocks; then create a new `revisions` row capturing the (now current) full page state, with `mensagem: 'Restaurado da revisão de {criado_em original}'`.",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Test restore scenarios",
+      "details": "Test: restoring a valid past revision correctly replaces blocks and creates a new revision; restoring a revision that references a since-deleted tab skips that tab without crashing and reports it in the response.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-34"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "Creating a follow-up revision on restore (rather than silently rewinding state with no trace) keeps the revision history an honest, append-only log of what was published and when — consistent with the MVP's 'snapshot completo por revisão, sem diff/CRDT' approach."
+  ]
+}

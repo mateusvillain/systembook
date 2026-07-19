@@ -1,0 +1,44 @@
+{
+  "id": "TASK-59",
+  "title": "Production docker-compose.yml reference",
+  "category": "documentation",
+  "description": "Provide a production-reference `docker-compose.production.yml` (distinct from TASK-7's dev compose file) that runs the published image (TASK-58) with a persistent volume and documented env vars, ready for a third party to copy and adapt.",
+  "acceptanceCriteria": [
+    "`docker-compose.production.yml` at repo root references the published image (`ghcr.io/<org>/systembook:latest` or a pinned version tag), not a local build context",
+    "Defines a named volume for the SQLite data directory, ensuring data survives container recreation/updates",
+    "Documents required env vars via `env_file` pointing at a `.env` the operator creates themselves (not committed), matching the variable names from `.env.local`'s placeholders",
+    "Includes a healthcheck block using the `/trpc/health.check` endpoint (TASK-5) so orchestrators can detect readiness",
+    "Running `docker-compose -f docker-compose.production.yml up -d` against a real pulled image starts a working instance"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Write docker-compose.production.yml",
+      "details": "Define a single `app` service using `image: ghcr.io/<org>/systembook:latest`, `env_file: .env`, a named volume for `DATABASE_PATH`'s directory, and a `restart: unless-stopped` policy.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Add a healthcheck block",
+      "details": "Add `healthcheck: { test: [\"CMD\", \"wget\", \"-qO-\", \"http://localhost:$PORT/trpc/health.check\"], interval: 30s, timeout: 5s, retries: 3 }` (or equivalent using whatever HTTP client is available in the runtime image).",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Document the required .env file",
+      "details": "Add a comment block at the top of the file (or a companion `docs/production-setup.md` section) listing every required env var name, mirroring `.env.local`'s placeholders, without values.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Verify against a real pulled image",
+      "details": "After TASK-58 publishes an image, pull it, create a local `.env` with test values, run `docker-compose -f docker-compose.production.yml up -d`, and confirm the health-check passes and data persists across a `down`/`up` cycle.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-58", "TASK-7"],
+  "estimatedComplexity": "low",
+  "technicalNotes": [
+    "Keep this file clearly named and distinct from the dev compose file (TASK-7) so users don't accidentally run the dev hot-reload setup in production or vice versa."
+  ]
+}

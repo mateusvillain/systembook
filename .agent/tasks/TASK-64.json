@@ -1,0 +1,44 @@
+{
+  "id": "TASK-64",
+  "title": "SQLite backup documented as operator responsibility (Litestream)",
+  "category": "documentation",
+  "description": "Document that database backup/durability is the operating team's responsibility (not built into SystemBook itself), with a concrete recommended setup using Litestream for continuous SQLite replication.",
+  "acceptanceCriteria": [
+    "`docs/backup.md` (or a section in TASK-60's setup docs) explicitly states SystemBook does not include built-in backup automation, and this is an intentional MVP scope boundary",
+    "Doc explains the risk in plain terms: data loss on volume loss without a backup strategy in place",
+    "Doc provides a concrete Litestream configuration example replicating `DATABASE_PATH` to an S3-compatible bucket (or local secondary path as a minimal alternative), including how to add it as a sidecar in the production compose file (TASK-59)",
+    "Doc includes a basic restore procedure (how to recover a Litestream-replicated database into a fresh instance)",
+    "Cross-linked from TASK-60's setup docs and TASK-62's README"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Write the scope/responsibility statement",
+      "details": "Add an explicit statement at the top of `docs/backup.md`: SystemBook stores all state in a single SQLite file; backup and disaster recovery are the operator's responsibility, not automated by the platform.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Write the Litestream setup example",
+      "details": "Document adding a `litestream` sidecar container to `docker-compose.production.yml` (TASK-59), configured with a `litestream.yml` replicating `DATABASE_PATH` to an example S3-compatible destination, with placeholder credentials clearly marked as such.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Write the restore procedure",
+      "details": "Document the `litestream restore` command sequence to recover a database file from the replicated destination into a fresh volume before starting the SystemBook container.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Cross-link from setup docs and README",
+      "details": "Add links to `docs/backup.md` from TASK-60's setup guide (as a 'before going to production' step) and from TASK-62's README.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-59"],
+  "estimatedComplexity": "low",
+  "technicalNotes": [
+    "Litestream is a documentation-only recommendation in the MVP — no code integration is required from SystemBook itself; it works purely by watching the SQLite file on disk."
+  ]
+}

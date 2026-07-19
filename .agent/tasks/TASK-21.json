@@ -1,0 +1,37 @@
+{
+  "id": "TASK-21",
+  "title": "tabs data model",
+  "category": "data-model",
+  "description": "Add the `tabs` table (`id, page_id, titulo, ordem`) to the Drizzle schema, supporting both standard tabs (Usage, Code, Accessibility) and custom-named tabs.",
+  "acceptanceCriteria": [
+    "`tabs` table exists with `id, page_id (fk -> pages.id), titulo, ordem`",
+    "No uniqueness constraint is required on `titulo` within a page — a page may have two tabs with the same custom name if the user chooses (document this as an accepted MVP simplification)",
+    "Migration applies cleanly on top of prior migrations",
+    "Deleting a page cascades to its tabs consistent with the cascade decision made for sections/pages"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Add tabs table to schema.ts",
+      "details": "Define `tabs` with `id`, `pageId: text('page_id').notNull().references(() => pages.id, { onDelete: 'cascade' })`, `titulo`, `ordem`.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Generate and review migration",
+      "details": "Run `drizzle-kit generate` and confirm the foreign key cascade behavior matches pages/sections.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Verify against fresh database",
+      "details": "Insert a page with two tabs ('Usage', 'Code'), confirm both read back correctly ordered by `ordem`, and confirm deleting the parent page removes both tabs.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-19"],
+  "estimatedComplexity": "low",
+  "technicalNotes": [
+    "Tab titles are free text, not a fixed enum, per the PRD's 'Usage, Code, Accessibility, custom' language — do not constrain to a hardcoded set."
+  ]
+}

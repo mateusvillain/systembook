@@ -1,0 +1,51 @@
+{
+  "id": "TASK-38",
+  "title": "preview-kit mount() renders variants and listens to postMessage",
+  "category": "functional",
+  "description": "Implement `packages/preview-kit`'s runtime: a `mount()` function that reads a `PreviewConfig` + the target React component, renders the requested variant, and listens for `postMessage` events to live-update props from an embedding parent (the admin panel's controls panel, TASK-49).",
+  "acceptanceCriteria": [
+    "`mount(rootElement: HTMLElement, config: PreviewConfig, Component: React.ComponentType, options: { variantId: string })` renders the matching variant's initial `props` into `rootElement`",
+    "If `variantId` doesn't match any entry in `config.variants`, `mount()` renders a clear error state instead of throwing uncaught",
+    "The mounted preview listens for `window.addEventListener('message', ...)` events of a defined shape (e.g. `{ type: 'systembook:update-props', props: Record<string, unknown> }`) and re-renders the component with merged props on receipt",
+    "Messages from unexpected origins are ignored (basic `event.origin` allow-list or a shared token check) to avoid arbitrary postMessage injection",
+    "A minimal unit test renders a sample component through `mount()` and confirms both initial props and a subsequent postMessage prop update are reflected in the DOM"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Implement the core mount function",
+      "details": "In `packages/preview-kit/src/mount.ts`, use `ReactDOM.createRoot(rootElement).render(<Component {...variant.props} />)` after resolving `variant` from `config.variants.find(v => v.id === options.variantId)`.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Handle unknown variant gracefully",
+      "details": "If no matching variant is found, render a fallback element with a descriptive error message instead of calling `Component` with undefined props.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Add postMessage listener for prop updates",
+      "details": "Register a `message` event listener that validates `event.data.type === 'systembook:update-props'`, merges `event.data.props` into current props state, and re-renders via the same React root.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Add basic origin validation",
+      "details": "Accept an `options.allowedOrigin` (or validate against `document.referrer`) and ignore messages from any other origin, logging a warning (not throwing) on rejection.",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Write unit tests",
+      "details": "Using a test renderer, mount a sample component with an initial variant, assert initial props render, dispatch a synthetic `message` event with updated props, and assert the DOM reflects the update.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-37"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "This package is built and shipped as part of the artifact the connector bundles (TASK-41) — it must have no dependency on `apps/server` or `apps/admin`, only React and the shared `packages/schema` types.",
+    "The `postMessage` contract defined here (`systembook:update-props`) must exactly match what TASK-49's controls panel sends — keep both in sync via the shared type in `packages/schema` if practical."
+  ]
+}

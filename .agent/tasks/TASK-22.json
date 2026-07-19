@@ -1,0 +1,44 @@
+{
+  "id": "TASK-22",
+  "title": "tabs CRUD tRPC endpoints",
+  "category": "api-endpoint",
+  "description": "Implement `tabs.listByPage`, `tabs.create`, `tabs.rename`, `tabs.reorder`, `tabs.delete` tRPC procedures, mirroring the sections/pages permission model.",
+  "acceptanceCriteria": [
+    "`tabs.listByPage` (protectedProcedure query) accepts `{ pageId }` and returns tabs ordered by `ordem`",
+    "`tabs.create` (protectedProcedure mutation) accepts `{ pageId, titulo }` and assigns the next `ordem`",
+    "`tabs.rename` and `tabs.reorder` follow the same pattern as pages.reorder, scoped to one page",
+    "`tabs.delete` cascades to `blocks` belonging to the tab",
+    "All procedures accessible to both `admin` and `editor` roles"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Create tabs router",
+      "details": "Create `apps/server/src/trpc/routers/tabs.ts` with `listByPage` and `create`.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Implement rename and reorder",
+      "details": "Mirror `pages.rename`/`pages.reorder` logic, scoped by `pageId` instead of `sectionId`.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Implement delete",
+      "details": "Cascade-delete blocks belonging to the tab (consistent with the deletion strategy chosen in TASK-18).",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Merge into root router and test",
+      "details": "Add `tabs: tabsRouter` to the root router. Test full CRUD as `editor`; test that deleting a tab removes its blocks.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-21", "TASK-18"],
+  "estimatedComplexity": "low",
+  "technicalNotes": [
+    "This router is structurally identical to `pages.ts` minus slug handling — consider extracting a small shared helper for the reorder-by-parent pattern to avoid triplicated logic across sections/pages/tabs."
+  ]
+}

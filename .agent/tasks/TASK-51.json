@@ -1,0 +1,50 @@
+{
+  "id": "TASK-51",
+  "title": "\"No preview available yet\" empty state handling",
+  "category": "ui-ux",
+  "description": "Polish and unify the empty-state UX across editor and public views for a component-embed whose referenced component/variant has no published preview (never published, or the reference is stale/renamed), ensuring it never renders a broken iframe.",
+  "acceptanceCriteria": [
+    "In the editor, a component-embed with no resolvable preview shows a distinct, clearly-labeled state (e.g. 'Nenhum preview publicado para \"Button / destructive\" ainda') different from the initial 'not yet selected' placeholder from TASK-29",
+    "The same empty state (adapted for read-only context, no 'select component' action) appears on the public page (TASK-50) if a published page references a component/variant with no available preview",
+    "The empty state never attempts to render an `<iframe>` with an invalid/empty `src`",
+    "A 'refresh'/'tentar novamente' action is available in the editor's empty state, re-querying `componentPreviews.getLatest` in case the CI upload landed after the page was opened",
+    "Verify in browser using playwright"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Distinguish the two empty states in the NodeView",
+      "details": "In `ComponentEmbed`'s NodeView (TASK-47), differentiate between `componentName === ''` (never selected — TASK-29's original placeholder, prompts to open the picker) and `componentName set but getLatest returned null` (referenced but unpublished — this task's new state).",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Design and implement the unpublished-reference empty state",
+      "details": "Render a distinct box (e.g. different icon/color from the 'not selected' placeholder) with the component/variant name and a message indicating no preview has been published yet.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Add a retry action",
+      "details": "Add a 'Tentar novamente' button that re-triggers the `componentPreviews.getLatest` query for that node, useful right after a team's CI finishes publishing.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Reuse the same empty state on the public page",
+      "details": "In `PageRenderer.tsx` (TASK-50), reuse the same unpublished-reference empty-state component in read-only mode (no picker/retry action needed there, just the informative message).",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Verify in browser",
+      "details": "Using Playwright: insert a component-embed referencing a component/variant with no published preview, confirm the distinct empty state renders (not the 'not selected' one and not a broken iframe); publish a matching artifact, click 'Tentar novamente', and confirm it now resolves to the real preview.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-47", "TASK-50"],
+  "estimatedComplexity": "low",
+  "technicalNotes": [
+    "This task is primarily UX polish over behavior already partially covered in TASK-47/TASK-29 — its job is making the three distinct states (not selected / selected-but-unpublished / resolved) visually and behaviorally unambiguous, not introducing new data flows."
+  ]
+}

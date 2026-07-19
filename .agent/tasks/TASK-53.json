@@ -1,0 +1,51 @@
+{
+  "id": "TASK-53",
+  "title": "Full-text search over blocks using SQLite FTS5",
+  "category": "functional",
+  "description": "Add a SQLite FTS5 virtual table indexing published content (text extracted from blocks in the latest revision of each page) and a search query procedure, so the public site can offer full-text search.",
+  "acceptanceCriteria": [
+    "An FTS5 virtual table indexes searchable text per page (title + extracted plain text from heading/paragraph/list/callout/table block content of its latest published revision)",
+    "Index is kept in sync on publish: `pages.publish` (TASK-34) and `pages.restoreRevision` (TASK-36) trigger a reindex of the affected page",
+    "`search.query` (publicProcedure) accepts `{ q: string }` and returns ranked results with page title, section, and a highlighted snippet",
+    "Search excludes unpublished pages (pages with no revisions) from results",
+    "Query response time is reasonable for a typical design-system-sized corpus (a few hundred pages) — no need for external search infra"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Create the FTS5 virtual table",
+      "details": "Add a raw SQL migration creating `CREATE VIRTUAL TABLE pages_fts USING fts5(page_id UNINDEXED, titulo, section_titulo, conteudo)`.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Implement plain-text extraction from a PageSnapshot",
+      "details": "Write `extractSearchableText(snapshot: PageSnapshot): string` that walks all tabs' blocks and concatenates text content from `heading`, `paragraph`, `list`, `callout`, and `table` blocks (skipping `code` and `image`/`component-embed` which have no meaningful prose text), stripping Tiptap JSON marks down to plain text.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Reindex on publish and restore",
+      "details": "In `pages.publish` (TASK-34) and `pages.restoreRevision` (TASK-36), after creating the new revision, upsert the `pages_fts` row for that `page_id` using `extractSearchableText` on the new snapshot (delete+insert, since FTS5 doesn't support UPDATE well for all drivers).",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Implement search.query",
+      "details": "Add `search: { query: publicProcedure.input(z.object({ q: z.string().min(1) })).query(...) }` running `SELECT ... FROM pages_fts WHERE pages_fts MATCH ? ORDER BY rank`, joining back to `pages`/`sections` for slugs and titles, using FTS5's `snippet()` function for a highlighted excerpt.",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Test indexing and search",
+      "details": "Publish a page with distinctive text, confirm it's findable via `search.query`; restore an older revision with different text and confirm the index reflects the restored content, not the previous one.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-34", "TASK-36"],
+  "estimatedComplexity": "high",
+  "technicalNotes": [
+    "FTS5 must be compiled into the SQLite build used by the chosen driver (`better-sqlite3` includes FTS5 by default) — verify this explicitly rather than assuming, since a missing FTS5 compile flag fails silently as a generic SQL error otherwise.",
+    "Never-published pages are correctly excluded automatically since they never get an FTS row (indexing only happens on publish)."
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "id": "TASK-40",
+  "title": "connector CLI generates synthetic entrypoints per variant",
+  "category": "functional",
+  "description": "For each discovered `*.preview.tsx` file and each of its `PreviewConfig.variants`, generate a synthetic Vite entrypoint file that imports the component, imports `preview-kit`'s `mount()`, and calls it with the specific variant id — one buildable HTML/JS entry per component variant.",
+  "acceptanceCriteria": [
+    "For a `button.preview.tsx` with variants `['default', 'destructive']`, the CLI generates two synthetic entry modules (e.g. in a temp `.systembook/entries/` directory), one per variant",
+    "Each synthetic entry imports the real component from its original file location, imports `mount` from `@systembook/preview-kit`, and calls `mount(rootEl, config, Component, { variantId })` with the variant baked in",
+    "Each synthetic entry has a matching minimal HTML shell (a `<div id=\"root\">` and a script tag referencing the entry) suitable as a Vite entrypoint",
+    "Generated entries are written to a git-ignorable temp directory, not committed into the target repo",
+    "Running generation twice in a row (idempotent) produces the same set of entries without leftover stale files from a previous component set"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Design the synthetic entry naming scheme",
+      "details": "Use a deterministic naming pattern like `.systembook/entries/{componentName}--{variantId}/index.tsx` and a sibling `index.html`.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Generate the entry TSX file per variant",
+      "details": "Template out a file that does: `import Component from '<relative path to original file's component export>'; import config from '<relative path to *.preview.tsx>'; import { mount } from '@systembook/preview-kit'; mount(document.getElementById('root')!, config, Component, { variantId: '<variantId>' });`.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Generate the matching HTML shell",
+      "details": "Template a minimal `index.html` with `<div id=\"root\"></div>` and `<script type=\"module\" src=\"./index.tsx\"></script>`.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Clean stale entries before regenerating",
+      "details": "Before writing new entries, remove any pre-existing `.systembook/entries/` directory content so components/variants removed from source don't leave orphaned build entries.",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Test entry generation against the fixture repo",
+      "details": "Using the TASK-39 fixture, run generation and confirm the expected entry directories exist with correct TSX/HTML content for each variant of each valid `*.preview.tsx` file.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-39", "TASK-38"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "This assumes each `*.preview.tsx` file's directory also exports (or sits next to) the actual React component being previewed — document this convention clearly since it affects how the generated entry resolves the component import path.",
+    "Keep generated entries out of the target repo's own git history via a `.gitignore` recommendation in the connector's setup docs (TASK-60/61)."
+  ]
+}

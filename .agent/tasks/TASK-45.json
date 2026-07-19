@@ -1,0 +1,44 @@
+{
+  "id": "TASK-45",
+  "title": "Example GitHub Actions CI step documented for connector",
+  "category": "documentation",
+  "description": "Write a ready-to-copy GitHub Actions workflow snippet demonstrating how a consuming team wires the connector's `build` command and uploads the artifact to their SystemBook instance via `/api/previews`.",
+  "acceptanceCriteria": [
+    "Documentation file (e.g. `docs/ci-example.md` or embedded in TASK-61's connector docs) contains a complete, copy-pasteable GitHub Actions job",
+    "Example installs Node.js and the connector package, runs the build command, and does an authenticated `curl`/`fetch` POST to `/api/previews` per built variant with `component_name`, `variant_id`, `commit_sha` (using `github.sha`)",
+    "Example references the upload token as a GitHub Actions secret (e.g. `${{ secrets.SYSTEMBOOK_UPLOAD_TOKEN }}`), never a hardcoded value",
+    "Example triggers on push to the default branch (documented as the recommended trigger, adjustable by the consuming team)",
+    "A short prose explanation precedes the YAML explaining what each step does and how to obtain the upload token (pointing to TASK-44's admin screen)"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Draft the workflow YAML",
+      "details": "Write a `.github/workflows/systembook-preview.yml` example: checkout, setup-node, `npm install`/`pnpm install`, run `npx systembook-connector build --root . --out .systembook/dist`.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Add the upload step",
+      "details": "Add a step that iterates built variant directories and performs an authenticated multipart POST to `https://<instance-url>/api/previews` with the required fields, using `curl -F` or a small inline script.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Document secret setup",
+      "details": "Add prose explaining how to generate a token via TASK-44's admin screen and add it as a repository secret named `SYSTEMBOOK_UPLOAD_TOKEN`, plus how to set `SYSTEMBOOK_INSTANCE_URL`.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Cross-link from setup documentation",
+      "details": "Reference this example from TASK-60's setup docs and TASK-61's `*.preview.tsx` docs, so a new team following the main setup guide is pointed here at the right step.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-41", "TASK-43", "TASK-44"],
+  "estimatedComplexity": "low",
+  "technicalNotes": [
+    "This is a documentation artifact, not code executed by SystemBook itself — no automated verification beyond a human/CI review of the YAML for correctness against the actual `connector build` CLI flags implemented in TASK-41."
+  ]
+}

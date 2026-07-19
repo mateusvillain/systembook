@@ -1,0 +1,54 @@
+{
+  "id": "TASK-3",
+  "title": "packages/schema skeleton with shared Block and PreviewConfig types",
+  "category": "data-model",
+  "description": "Define the shared TypeScript types consumed by server, admin, and connector: the `Block` union (matching the data model's block `tipo` field) and a placeholder export for `PreviewConfig` (fully defined later in TASK-37). This package is the single source of truth for cross-package content typing.",
+  "acceptanceCriteria": [
+    "`packages/schema/src/block.ts` exports a discriminated union `Block` covering `heading | paragraph | list | code | image | table | callout | component-embed`",
+    "Each `Block` variant has a `type` discriminant field and a `content` field typed to its shape (e.g. `heading` has `level` and Tiptap JSON content; `list` has `ordered: boolean` and items)",
+    "`packages/schema/src/preview-config.ts` exports a placeholder `PreviewConfig` type (to be finalized in TASK-37) so imports don't break",
+    "`packages/schema/src/index.ts` re-exports all public types",
+    "Package builds with `tsc --noEmit` with zero type errors",
+    "`apps/server` and `apps/admin` can import `Block` from `@systembook/schema` without module resolution errors"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Define the Block discriminated union",
+      "details": "In `packages/schema/src/block.ts`, define `type BlockType = 'heading' | 'paragraph' | 'list' | 'code' | 'image' | 'table' | 'callout' | 'component-embed'` and a discriminated union `Block` with `{ id: string; tabId: string; type: BlockType; content: unknown; ordem: number }` as base, refined per-type where useful.",
+      "pass": true
+    },
+    {
+      "step": 2,
+      "description": "Type the callout and component-embed block content shapes",
+      "details": "`CalloutBlockContent` has `variant: 'info' | 'warning' | 'tip'` plus Tiptap JSON body. `ComponentEmbedBlockContent` has `componentName: string`, `variantId: string | null` (null until a variant is picked).",
+      "pass": true
+    },
+    {
+      "step": 3,
+      "description": "Add placeholder PreviewConfig export",
+      "details": "In `packages/schema/src/preview-config.ts`, export a minimal `interface PreviewConfig { component: string; variants: unknown[]; controls: unknown[] }` with a comment noting it will be finalized in TASK-37.",
+      "pass": true
+    },
+    {
+      "step": 4,
+      "description": "Create barrel export",
+      "details": "In `packages/schema/src/index.ts`, `export * from './block'` and `export * from './preview-config'`.",
+      "pass": true
+    },
+    {
+      "step": 5,
+      "description": "Verify cross-package import",
+      "details": "In `apps/server/src/index.ts`, add `import type { Block } from '@systembook/schema'` and confirm `tsc --noEmit` passes at the workspace root.",
+      "pass": true
+    }
+  ],
+  "dependencies": [
+    "TASK-2"
+  ],
+  "estimatedComplexity": "low",
+  "technicalNotes": [
+    "Keep `Block.content` loosely typed (`unknown` narrowed per-variant) rather than fully modeling Tiptap's JSON schema — Tiptap's node JSON shape is verified at the editor layer (TASK-25+), not re-validated here.",
+    "This package must have zero runtime dependencies — types only — to stay lightweight for the connector, which is a separate npm-publishable package."
+  ]
+}

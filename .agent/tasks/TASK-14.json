@@ -1,0 +1,51 @@
+{
+  "id": "TASK-14",
+  "title": "Admin CRUD endpoints for users",
+  "category": "api-endpoint",
+  "description": "Implement `users.list`, `users.create`, `users.update` (role/email), and `users.deactivate` (or delete) tRPC mutations, all gated by `adminProcedure`.",
+  "acceptanceCriteria": [
+    "`users.list` (adminProcedure query) returns all users with `id, email, role` — never `senha_hash`",
+    "`users.create` (adminProcedure mutation) accepts `{ email, password, role }`, hashes the password via TASK-9's `hashPassword`, creates the `users` and `memberships` rows",
+    "`users.create` with a duplicate email returns a `CONFLICT`/`BAD_REQUEST` error, not a raw database error",
+    "`users.update` (adminProcedure mutation) can change a user's `role`",
+    "`users.deactivate` (adminProcedure mutation) prevents the acting admin from deactivating their own account",
+    "All mutations reject non-admin callers with `FORBIDDEN` (enforced by `adminProcedure`)"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Create users router with list query",
+      "details": "Create `apps/server/src/trpc/routers/users.ts`. Add `list: adminProcedure.query(...)` selecting `id, email` from `users` joined with `memberships.role`, excluding `senha_hash`.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Implement users.create",
+      "details": "Add `create: adminProcedure.input(zod schema).mutation(...)` that calls `hashPassword`, inserts into `users`, then inserts a `memberships` row with the given role. Wrap the unique-email insert in a try/catch and rethrow as `TRPCError({ code: 'CONFLICT' })` on constraint violation.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Implement users.update",
+      "details": "Add `update: adminProcedure.input(z.object({ userId: z.string(), role: z.enum(['admin','editor']) })).mutation(...)` updating the `memberships.role` row for the target user.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Implement users.deactivate with self-protection",
+      "details": "Add `deactivate: adminProcedure.input(z.object({ userId: z.string() })).mutation(...)`. If `input.userId === ctx.user.userId`, throw `TRPCError({ code: 'BAD_REQUEST', message: 'Cannot deactivate your own account' })`. Otherwise remove/disable the user (e.g. delete the row or add an `ativo` flag if soft-delete is preferred).",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Test all four procedures",
+      "details": "Test as admin: list returns users without password hash; create succeeds and rejects duplicate email; update changes role; deactivate blocks self-deactivation and succeeds for other users. Test as editor: every procedure returns FORBIDDEN.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-9", "TASK-11"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "Decide and document whether `deactivate` is a hard delete or soft-delete flag before implementing — a hard delete simplifies the MVP but orphans `revisions.autor_id` references; consider keeping the user row and clearing credentials/active flag instead."
+  ]
+}

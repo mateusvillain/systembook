@@ -1,0 +1,52 @@
+{
+  "id": "TASK-49",
+  "title": "Interactive controls panel driven by PreviewConfig.controls via postMessage",
+  "category": "functional",
+  "description": "Add a controls panel alongside a rendered component-embed iframe, reading the `PreviewConfig.controls` for the referenced component and sending `postMessage` updates to the iframe (consumed by `preview-kit`'s `mount()` listener from TASK-38) as the user adjusts them.",
+  "acceptanceCriteria": [
+    "When a component-embed with a resolved preview is shown, a controls panel renders one input per entry in that component's `PreviewConfig.controls` (text, boolean, select per TASK-37's types)",
+    "Changing a control's value sends a `{ type: 'systembook:update-props', props: { [propName]: value } }` message to the iframe via `iframe.contentWindow.postMessage`, scoped to the iframe's origin",
+    "The iframe visually updates in response (verified against `preview-kit`'s listener from TASK-38) without a full reload",
+    "Controls panel is collapsible/toggleable so it doesn't dominate the layout when not needed",
+    "`PreviewConfig.controls` is fetched from the same artifact metadata source as the preview itself, so controls always match the currently displayed variant",
+    "Verify in browser using playwright"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Expose PreviewConfig alongside the artifact URL",
+      "details": "Extend TASK-47's `componentPreviews.getLatest` response (or add a sibling query) to also return the `PreviewConfig` (component, variants, controls) associated with the resolved artifact, so the admin panel doesn't need a second round-trip to the static artifact itself to read control definitions.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Build the ControlsPanel component",
+      "details": "Create `apps/admin/src/features/editor/ControlsPanel.tsx` rendering one input per `PreviewControl`: text input, checkbox, or select, based on `control.kind`.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Wire control changes to postMessage",
+      "details": "On any control's `onChange`, call `iframeRef.current?.contentWindow?.postMessage({ type: 'systembook:update-props', props: { [control.propName]: value } }, targetOrigin)`, matching the message contract from TASK-38.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Add collapse/expand toggle",
+      "details": "Wrap the panel in a collapsible container defaulting to collapsed (or expanded — pick one sensible default) with a toggle button next to the component-embed.",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Verify in browser",
+      "details": "Using Playwright: with a published component whose `PreviewConfig.controls` includes at least one boolean and one select control, toggle/change each and assert (via a visible DOM change inside the iframe, if accessible in the test context, or via a preview-kit-exposed test hook) that the update was received.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-38", "TASK-47"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "Cross-origin iframe content is not directly inspectable from Playwright unless preview-kit exposes some observable side effect (e.g. an `data-*` attribute update) — coordinate the fixture component used for verification to make control changes visibly assertable.",
+    "Always pass an explicit `targetOrigin` to `postMessage` (not `'*'`) once the artifact's serving origin is known, to avoid leaking prop data to unintended listeners."
+  ]
+}

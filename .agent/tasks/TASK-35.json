@@ -1,0 +1,50 @@
+{
+  "id": "TASK-35",
+  "title": "Revision history UI (view and restore previous snapshot)",
+  "category": "ui-ux",
+  "description": "Build a per-page revision history screen listing past revisions (author, timestamp, message), allowing an editor to preview a past snapshot's content and restore it.",
+  "acceptanceCriteria": [
+    "`/admin/pages/:pageId/history` route lists revisions newest-first, showing author email, timestamp, and message (if any)",
+    "Selecting a revision shows a read-only preview of that snapshot's content (all tabs)",
+    "A 'Restaurar' action on a past revision calls the restore endpoint (TASK-36) and confirms via a dialog before applying, since restoring overwrites current draft/live blocks",
+    "After restoring, the admin panel navigates back to the page's content editor showing the restored content",
+    "Verify in browser using playwright"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Add revisions.listByPage query",
+      "details": "Add `revisions: { listByPage: protectedProcedure.input(z.object({ pageId: z.string() })).query(...) }` to a new `apps/server/src/trpc/routers/revisions.ts`, joining `users` for author email, ordered by `criado_em` descending.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Build RevisionHistoryList component",
+      "details": "Create `apps/admin/src/features/revisions/RevisionHistoryList.tsx` rendering the list with author, relative timestamp, and message.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Build read-only snapshot preview",
+      "details": "On selecting a revision, fetch its full `snapshot_json` (add `revisions.getById` query) and render it read-only using `blocksToTiptapDoc` (TASK-31) per tab, in a non-editable Tiptap instance or a simple renderer.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Add restore action with confirmation",
+      "details": "Add a 'Restaurar' button per revision opening a confirmation dialog warning that current draft content will be overwritten, calling `pages.restoreRevision` (TASK-36) on confirm.",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Verify in browser",
+      "details": "Using Playwright: publish two different versions of a page's content, open history, confirm both revisions are listed with correct order, preview the older one, restore it, and confirm the content editor now shows the restored content.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-34"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "The read-only preview should reuse `blocksToTiptapDoc` and a non-editable Tiptap render rather than building a second content renderer from scratch — the public page renderer (TASK-50) will need similar read-only rendering, so keep this reusable."
+  ]
+}
