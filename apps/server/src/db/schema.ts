@@ -124,3 +124,28 @@ export const blocks = sqliteTable('blocks', {
   conteudoJson: text('conteudo_json').notNull(),
   ordem: integer('ordem').notNull(),
 });
+
+/**
+ * Snapshot imutável criado apenas no "Publicar" (TASK-34) — o autosave nunca
+ * escreve aqui. `snapshot_json` guarda a página **inteira** no momento do
+ * publish (todas as tabs com todos os blocks), forma `PageSnapshot` de
+ * @systembook/schema — Publicar é ação de página no fluxo do PRD.
+ *
+ * `autor_id` é nullable com ON DELETE SET NULL (não notNull como o esboço da
+ * TASK-33 sugeria): usuários sofrem hard delete (decisão TASK-14) e as
+ * revisões precisam sobreviver como "autor removido".
+ */
+export const revisions = sqliteTable('revisions', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  pageId: text('page_id')
+    .notNull()
+    .references(() => pages.id, { onDelete: 'cascade' }),
+  snapshotJson: text('snapshot_json').notNull(),
+  autorId: text('autor_id').references(() => users.id, { onDelete: 'set null' }),
+  criadoEm: integer('criado_em', { mode: 'timestamp' })
+    .notNull()
+    .default(sql`(unixepoch())`),
+  mensagem: text('mensagem'),
+});
