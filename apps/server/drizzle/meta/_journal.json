@@ -8,6 +8,27 @@
       "when": 1784470226098,
       "tag": "0000_shocking_speedball",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1784480388941,
+      "tag": "0001_wonderful_tyger_tiger",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1784480409452,
+      "tag": "0002_nappy_luke_cage",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1784480421535,
+      "tag": "0003_calm_wildside",
+      "breakpoints": true
     }
   ]
 }
