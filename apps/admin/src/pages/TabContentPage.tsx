@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
 import { useTRPC } from '../lib/trpc.js';
+import { ContentEditor } from '../features/editor/ContentEditor.js';
 
-/** Destino do clique em uma tab na árvore; o editor Tiptap chega na Fase 3. */
+/** Conteúdo de uma tab: editor Tiptap (Fase 3, TASK-25+). */
 export function TabContentPage() {
   const { pageId, tabId } = useParams<{ pageId: string; tabId: string }>();
   const trpc = useTRPC();
@@ -15,7 +16,8 @@ export function TabContentPage() {
   return (
     <section>
       <h1 style={{ marginTop: 0 }}>{tab.titulo}</h1>
-      <p style={{ color: '#666' }}>O editor de conteúdo desta tab chega na Fase 3 (Tiptap).</p>
+      {/* key força instância nova do editor ao trocar de tab (TASK-25) */}
+      <ContentEditor key={tab.id} tabId={tab.id} />
     </section>
   );
 }
