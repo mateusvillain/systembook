@@ -12,9 +12,9 @@ import { blocks, pages, sections, tabs } from './schema.js';
 // Um conteúdo representativo por tipo do MVP — as formas vêm de
 // packages/schema (TASK-3) e foram confirmadas no editor nas TASK-27/28/29.
 const SAMPLES: { [T in BlockType]: BlockContentFor<T> } = {
-  heading: { level: 2, body: { type: 'heading', content: [{ type: 'text', text: 'Uso' }] } },
-  paragraph: { body: { type: 'paragraph', content: [{ type: 'text', text: 'Olá' }] } },
-  list: { ordered: true, items: [{ type: 'listItem', content: [] }] },
+  heading: { level: 2, body: [{ type: 'text', text: 'Uso' }] },
+  paragraph: { body: [{ type: 'text', text: 'Olá' }] },
+  list: { ordered: true, body: { type: 'orderedList', attrs: { start: 3 }, content: [] } },
   code: { language: 'typescript', code: 'const x = 1;' },
   image: { src: '/uploads/button.png', alt: 'Botão primário', caption: null },
   table: {

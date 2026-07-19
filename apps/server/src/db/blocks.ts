@@ -26,6 +26,11 @@ export type BlockRecord = {
   };
 }[BlockType];
 
+/** Entrada de escrita (sem id) — o que a serialização da TASK-31 produz. */
+export type NewBlock = {
+  [T in BlockType]: { tabId: string; tipo: T; conteudo: BlockContentFor<T>; ordem: number };
+}[BlockType];
+
 function toRecord(row: typeof blocks.$inferSelect): BlockRecord {
   return {
     id: row.id,
@@ -34,6 +39,27 @@ function toRecord(row: typeof blocks.$inferSelect): BlockRecord {
     conteudo: JSON.parse(row.conteudoJson),
     ordem: row.ordem,
   } as BlockRecord;
+}
+
+/**
+ * Substitui atomicamente todos os blocks de uma tab — caminho de escrita do
+ * autosave (TASK-32). Não toca `revisions`: snapshot só no publish (TASK-34).
+ */
+export function replaceBlocksForTab(db: Db, tabId: string, inserts: readonly NewBlock[]): void {
+  for (const block of inserts) blockTypeSchema.parse(block.tipo);
+  db.transaction((tx) => {
+    tx.delete(blocks).where(eq(blocks.tabId, tabId)).run();
+    for (const block of inserts) {
+      tx.insert(blocks)
+        .values({
+          tabId: block.tabId,
+          tipo: block.tipo,
+          conteudoJson: JSON.stringify(block.conteudo),
+          ordem: block.ordem,
+        })
+        .run();
+    }
+  });
 }
 
 export function insertBlock<T extends BlockType>(
