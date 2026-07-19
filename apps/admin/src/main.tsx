@@ -6,6 +6,7 @@ import { queryClient, trpcClient, TRPCProvider } from './lib/trpc.js';
 import { LoginPage } from './pages/LoginPage.js';
 import { DashboardPage } from './pages/DashboardPage.js';
 import { UsersPage } from './pages/UsersPage.js';
+import { TabContentPage } from './pages/TabContentPage.js';
 import { AdminLayout } from './components/AdminLayout.js';
 
 const router = createBrowserRouter([
@@ -16,6 +17,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <DashboardPage /> },
       { path: 'admin/users', element: <UsersPage /> },
+      { path: 'pages/:pageId/tabs/:tabId', element: <TabContentPage /> },
     ],
   },
 ]);
