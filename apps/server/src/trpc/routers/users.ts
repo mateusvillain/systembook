@@ -2,14 +2,11 @@ import { TRPCError } from '@trpc/server';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { hashPassword } from '../../auth/password.js';
+import { isUniqueViolation } from '../../db/errors.js';
 import { memberships, sessions, users } from '../../db/schema.js';
 import { adminProcedure, router } from '../init.js';
 
 const roleSchema = z.enum(['admin', 'editor']);
-
-function isUniqueViolation(error: unknown): boolean {
-  return error instanceof Error && error.message.includes('UNIQUE constraint failed');
-}
 
 export const usersRouter = router({
   // Nunca inclui senha_hash na seleção
