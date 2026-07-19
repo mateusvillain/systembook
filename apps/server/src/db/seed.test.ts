@@ -28,13 +28,13 @@ describe('migração + seed de bootstrap', () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
-  it('cria exatamente um admin em banco vazio', () => {
-    const { created } = seedBootstrapAdmin(db);
+  it('cria exatamente um admin em banco vazio, com hash argon2id', async () => {
+    const { created } = await seedBootstrapAdmin(db);
     expect(created).toBe(true);
 
     const user = db.select().from(users).where(eq(users.email, TEST_EMAIL)).get();
     expect(user).toBeDefined();
-    expect(user?.senhaHash).toMatch(/^scrypt\$/);
+    expect(user?.senhaHash).toMatch(/^\$argon2id\$/);
     expect(user?.senhaHash).not.toContain('senha-de-teste-nao-real');
 
     const membership = db
@@ -45,9 +45,9 @@ describe('migração + seed de bootstrap', () => {
     expect(membership?.role).toBe('admin');
   });
 
-  it('é idempotente — segunda execução não duplica', () => {
-    seedBootstrapAdmin(db);
-    const second = seedBootstrapAdmin(db);
+  it('é idempotente — segunda execução não duplica', async () => {
+    await seedBootstrapAdmin(db);
+    const second = await seedBootstrapAdmin(db);
     expect(second.created).toBe(false);
 
     const row = db.select({ total: count() }).from(users).get();
@@ -55,7 +55,7 @@ describe('migração + seed de bootstrap', () => {
   });
 
   it('health.check responde ok com o banco acessível', async () => {
-    const caller = appRouter.createCaller({ db });
+    const caller = appRouter.createCaller({ db, res: null, user: null });
     await expect(caller.health.check()).resolves.toEqual({ status: 'ok', db: 'ok' });
   });
 });

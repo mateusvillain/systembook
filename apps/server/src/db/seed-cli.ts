@@ -6,5 +6,5 @@ import { seedBootstrapAdmin } from './seed.js';
 const env = loadEnv();
 const db = createDb(env.DATABASE_PATH);
 runMigrations(db);
-const { created } = seedBootstrapAdmin(db);
+const { created } = await seedBootstrapAdmin(db);
 console.log(created ? '[seed] concluído.' : '[seed] tabela users não está vazia — nada a fazer.');

@@ -1,25 +1,14 @@
-import { randomBytes, scryptSync } from 'node:crypto';
 import { count } from 'drizzle-orm';
+import { hashPassword } from '../auth/password.js';
 import type { Db } from './client.js';
 import { memberships, users } from './schema.js';
 
 /**
- * Hash provisório com scrypt (node:crypto) + pepper de ARGON2_SECRET.
- * Será substituído por argon2id na TASK-9 — o formato prefixado permite
- * distinguir e re-hashear no primeiro login após a troca.
- * NUNCA logar a senha em texto plano.
- */
-function placeholderHash(password: string, pepper: string): string {
-  const salt = randomBytes(16);
-  const hash = scryptSync(password + pepper, salt, 64);
-  return `scrypt$${salt.toString('base64')}$${hash.toString('base64')}`;
-}
-
-/**
  * Cria o admin de bootstrap a partir de INITIAL_ADMIN_EMAIL/INITIAL_ADMIN_PASSWORD,
  * apenas se a tabela `users` estiver vazia. Idempotente: rodar duas vezes não duplica.
+ * NUNCA logar a senha em texto plano.
  */
-export function seedBootstrapAdmin(db: Db): { created: boolean } {
+export async function seedBootstrapAdmin(db: Db): Promise<{ created: boolean }> {
   const row = db.select({ total: count() }).from(users).get();
   if (row && row.total > 0) {
     return { created: false };
@@ -39,13 +28,17 @@ export function seedBootstrapAdmin(db: Db): { created: boolean } {
     );
   }
 
+  // O hash é assíncrono e precisa acontecer fora da transação — as transações
+  // do better-sqlite3 são estritamente síncronas.
+  const senhaHash = await hashPassword(password as string);
+
   const result = db.transaction((tx) => {
     const user = tx
       .insert(users)
       .values({
         nome: 'Admin',
         email: email as string,
-        senhaHash: placeholderHash(password as string, pepper as string),
+        senhaHash,
       })
       .returning({ id: users.id })
       .get();
