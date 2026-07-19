@@ -15,28 +15,31 @@
       "step": 1,
       "description": "Create tabs router",
       "details": "Create `apps/server/src/trpc/routers/tabs.ts` with `listByPage` and `create`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Implement rename and reorder",
       "details": "Mirror `pages.rename`/`pages.reorder` logic, scoped by `pageId` instead of `sectionId`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Implement delete",
       "details": "Cascade-delete blocks belonging to the tab (consistent with the deletion strategy chosen in TASK-18).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Merge into root router and test",
       "details": "Add `tabs: tabsRouter` to the root router. Test full CRUD as `editor`; test that deleting a tab removes its blocks.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-21", "TASK-18"],
+  "dependencies": [
+    "TASK-21",
+    "TASK-18"
+  ],
   "estimatedComplexity": "low",
   "technicalNotes": [
     "This router is structurally identical to `pages.ts` minus slug handling — consider extracting a small shared helper for the reorder-by-parent pattern to avoid triplicated logic across sections/pages/tabs."

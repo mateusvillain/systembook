@@ -14,28 +14,30 @@
       "step": 1,
       "description": "Add sections table to schema.ts",
       "details": "In `apps/server/src/db/schema.ts`, add `export const sections = sqliteTable('sections', { id: text('id').primaryKey(), titulo: text('titulo').notNull(), ordem: integer('ordem').notNull() })`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Generate and review migration",
       "details": "Run `drizzle-kit generate` to produce the new migration SQL file. Review it to confirm only the `sections` table is added, with no unintended changes to existing tables.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Decide and document ordering strategy",
       "details": "Choose whether `ordem` values must be unique (enforced by a unique index) or may have gaps/ties resolved by insertion order as a tiebreaker at the application layer. Document the decision in a code comment near the schema definition.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Verify migration against a fresh database",
       "details": "Apply the migration to a fresh `DATABASE_PATH`, insert a few sections via a Drizzle query, and confirm they read back with correct `ordem` values.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-4"],
+  "dependencies": [
+    "TASK-4"
+  ],
   "estimatedComplexity": "low",
   "technicalNotes": [
     "Keep `ordem` as a plain integer with application-level renumbering on reorder (simplest for MVP scale) rather than a fractional-index scheme — revisit only if reordering performance becomes a real problem."

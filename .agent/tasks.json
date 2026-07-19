@@ -116,49 +116,49 @@
     "title": "sections data model and migration",
     "category": "data-model",
     "specFilePath": ".agent/tasks/TASK-17.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-18",
     "title": "sections CRUD tRPC endpoints (create, reorder, rename, delete)",
     "category": "api-endpoint",
     "specFilePath": ".agent/tasks/TASK-18.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-19",
     "title": "pages data model with unique slug per section",
     "category": "data-model",
     "specFilePath": ".agent/tasks/TASK-19.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-20",
     "title": "pages CRUD tRPC endpoints",
     "category": "api-endpoint",
     "specFilePath": ".agent/tasks/TASK-20.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-21",
     "title": "tabs data model",
     "category": "data-model",
     "specFilePath": ".agent/tasks/TASK-21.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-22",
     "title": "tabs CRUD tRPC endpoints",
     "category": "api-endpoint",
     "specFilePath": ".agent/tasks/TASK-22.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-23",
     "title": "Tree navigation UI in admin panel sidebar",
     "category": "ui-ux",
     "specFilePath": ".agent/tasks/TASK-23.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-24",
