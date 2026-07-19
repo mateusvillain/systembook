@@ -16,34 +16,36 @@
       "step": 1,
       "description": "Implement blocks.saveDraft mutation",
       "details": "Add `saveDraft: protectedProcedure.input(z.object({ tabId: z.string(), doc: tiptapDocSchema })).mutation(...)` to `apps/server/src/trpc/routers/blocks.ts`. Inside a transaction, delete existing blocks for `tabId` and insert the new set from `tiptapDocToBlocks(doc, tabId)` (TASK-31).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Add debounced save hook in the editor",
       "details": "In `ContentEditor.tsx`, use the editor's `onUpdate` callback with a debounce utility (e.g. a custom `useDebouncedCallback` or `lodash.debounce`) set to 2000ms, calling `blocks.saveDraft.mutate({ tabId, doc: editor.getJSON() })`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Add save-status indicator",
       "details": "Track mutation state (`idle | pending | success | error`) and render a small status label near the toolbar reflecting it, resetting to idle after a couple seconds post-success.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Flush pending save on navigation away",
       "details": "On route change / component unmount, if a debounced save is still pending, cancel the debounce timer and immediately fire the save mutation (fire-and-forget is acceptable for MVP; a blocking confirm dialog is not required).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 5,
       "description": "Verify in browser",
       "details": "Using Playwright: type continuously for under 2s and confirm no save request fires yet; stop typing and confirm exactly one save request fires after ~2s; reload the tab and confirm the draft content persisted.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-31"],
+  "dependencies": [
+    "TASK-31"
+  ],
   "estimatedComplexity": "medium",
   "technicalNotes": [
     "This confirms the session's decision: autosave persists a working draft continuously, but only the explicit 'Publicar' action (TASK-34) creates a `revisions` snapshot — keep these two write paths clearly separated in code to avoid accidentally versioning every autosave."

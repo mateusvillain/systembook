@@ -1,10 +1,10 @@
 # Memória do projeto — SystemBook
 
-> Log de desenvolvimento mantido pelo agente. Última atualização: **2026-07-19** (Fase 3 em andamento — tasks 25–30: editor Tiptap, nós custom e modelo de blocks).
+> Log de desenvolvimento mantido pelo agente. Última atualização: **2026-07-19** (Fase 3 em andamento — tasks 25–33: editor Tiptap, nós custom, blocks, autosave e revisions).
 
 ## Estado atual
 
-**Tasks 1–30 concluídas e verificadas.** Fase 0 (fundação), Fase 1 (auth + painel base) e Fase 2 (estrutura de navegação + matriz de permissões) fechadas; Fase 3 em andamento: editor Tiptap (base + extensões padrão + tabelas), nós custom (callout, component-embed) e tabela `blocks` com helpers tipados. Existe um `CLAUDE.md` na raiz com o guia do repositório.
+**Tasks 1–33 concluídas e verificadas.** Fase 0 (fundação), Fase 1 (auth + painel base) e Fase 2 (estrutura de navegação + matriz de permissões) fechadas; Fase 3 em andamento: editor Tiptap completo com persistência (serialização doc↔blocks, autosave com debounce) e modelo `revisions` pronto para o publish (TASK-34). Existe um `CLAUDE.md` na raiz com o guia do repositório.
 
 | Task | Status | Verificação |
 | --- | --- | --- |
@@ -31,8 +31,11 @@
 | TASK-28 | ✅ | Nó custom `callout` (info/warning/tip) com NodeView React e switcher in-place (E2E) |
 | TASK-29 | ✅ | Nó atômico `componentEmbed` placeholder com attrs componentName/variantId (E2E) |
 | TASK-30 | ✅ | Tabela `blocks` (migration 0004) + helpers tipados; round-trip dos 8 tipos testado |
+| TASK-31 | ✅ | `serialize.ts` doc↔blocks + router `blocks.getByTab`; round-trip dos 8 tipos com marks/attrs |
+| TASK-32 | ✅ | Autosave com debounce 2s, indicador Salvando…/Salvo, flush no unmount (16 checks E2E) |
+| TASK-33 | ✅ | Tabela `revisions` (migration 0005) com `autor_id` SET NULL; tipo `PageSnapshot` no schema |
 
-**Cobertura**: 46 testes vitest no server (42 anteriores + 4 de blocks) + verificações E2E Playwright: 29 do editor base e 12 dos nós custom (scripts ad-hoc no scratchpad, não commitados), além das 12 da árvore.
+**Cobertura**: 61 testes vitest no server (46 anteriores + 5 serialize + 6 router blocks + 4 revisions) + verificações E2E Playwright: 29 do editor base, 12 dos nós custom e 16 do autosave (scripts ad-hoc no scratchpad, não commitados), além das 12 da árvore.
 
 O tracking granular (pass por step) está em `.agent/tasks/TASK-*.json` e o índice em `.agent/tasks.json`.
 
@@ -75,6 +78,14 @@ O tracking granular (pass por step) está em `.agent/tasks/TASK-*.json` e o índ
 - **ComponentEmbed**: `atom: true`, attrs `componentName: ''`/`variantId: null`; placeholder tracejado até TASK-47/48. Clicar gera NodeSelection (em asserts E2E usar `selection.node?.type.name`, nunca `constructor.name` — o build minificado renomeia classes).
 - Nota: o schema permite `componentEmbed`/`callout` aninhados dentro de callout (`block+`) — aceito no MVP; o `focus('end')` dentro de um callout insere aninhado, cuidado em scripts.
 
+### Persistência e autosave (TASK-31/32/33)
+
+- **Serialização** em `apps/server/src/blocks/serialize.ts` (funções puras, server não depende de @tiptap/*): `tiptapDocToBlocks` mapeia cada nó top-level para uma linha (`bulletList`/`orderedList` → tipo `list`; `codeBlock` → `code` estruturado `{language, code}`; `componentEmbed` → attrs estruturados; heading/paragraph/callout guardam `content` em `body`; list/table guardam o **nó completo** em `body` para preservar attrs como `start`/`colwidth`). `blocksToTiptapDoc` inverte ordenando por `ordem`. Nó desconhecido → `UnknownNodeTypeError` → BAD_REQUEST no router. **Gotcha TS**: `TiptapNode`/`TiptapDoc` são type aliases, não interfaces — interfaces não são atribuíveis ao shape com index signature inferido pelo zod (`z.looseObject`).
+- **Router `blocks`**: `getByTab` (retorna `{doc, blocks}`; `doc: null` se a tab nunca foi salva) e `saveDraft` (delete+insert transacional via `replaceBlocksForTab`; **nunca** toca revisions — separação autosave × publish testada). Ambos protectedProcedure, matriz em router.ts atualizada.
+- **Autosave no admin** (`ContentEditor.tsx`): outer component carrega `getByTab` com `gcTime: 0` (sem cache entre montagens — o flush do unmount anterior pode ter mudado o rascunho) e monta `EditorInner` com o doc inicial; `onUpdate` → debounce 2s → `saveDraft`; indicador `data-save-status` (saving/saved/idle/error, aria-live); flush fire-and-forget no unmount quando há debounce pendente. Refs (`pendingDocRef`/`flushRef`) evitam closures velhas dentro do `useEditor` (deps `[tabId]`).
+- **Gotcha de NodeView + caret**: ao inserir callout com o cursor num parágrafo não-vazio, o `setTextSelection` muda o estado PM mas o **caret do DOM não entra** no NodeView React (monta assíncrono; o selectionToDOM não reposiciona depois) — a digitação segue o caret e cai fora do nó. Solução na toolbar: após inserir, posicionar `Range` do DOM manualmente via `view.domAtPos` com retry em rAF até o contentDOM existir (`insertCallout` em `EditorToolbar.tsx`).
+- **revisions** (migration 0005): `id, page_id FK cascade, snapshot_json, autor_id FK SET NULL (nullable!), criado_em, mensagem?`. Desvio deliberado do esboço da task (que dizia notNull): usuários sofrem hard delete e a revisão sobrevive com autor null — decisão antiga da TASK-14 aplicada. `snapshot_json` = `PageSnapshot` de @systembook/schema (página inteira: todas as tabs + blocks), pois Publicar é ação de página. Escrita de revisions só na TASK-34.
+
 ### Modelo de blocks (TASK-30)
 
 - Tabela `blocks (id, tab_id FK cascade, tipo, conteudo_json, ordem)` — migration 0004. `tipo` validado **na aplicação** (decisão TASK-30): array `BLOCK_TYPES` em `schema.ts` com `satisfies readonly BlockType[]` + assert de exaustividade nas duas direções, e zod enum `blockTypeSchema` em `src/db/blocks.ts`; sem CHECK no SQLite (crescer o set pós-MVP não exige migration). O array de runtime vive no server porque `@systembook/schema` é types-only.
@@ -116,8 +127,8 @@ O painel em dev acessa-se por `http://localhost:5173`; o proxy do `vite.config.t
 
 ## Pendências / próximos passos
 
-1. **Fase 3 continua (TASK-31+)**: persistência doc↔blocks, autosave e revisões. Quando criar `revisions`: `autor_id` nullable/`SET NULL` por causa do hard delete de usuários.
-2. O conteúdo do editor ainda não persiste (esperado até TASK-31/32) — a UI não avisa; se incomodar em demo, adicionar aviso temporário.
+1. **Fase 3 continua (TASK-34+)**: ação "Publicar" criando snapshot em `revisions` (tipo `PageSnapshot` e tabela prontos), histórico/restauração de revisões.
+2. Race conhecido (aceito no MVP): flush de autosave no unmount × fetch do `getByTab` na remontagem — em navegação muito rápida ida-e-volta o editor pode abrir sem o último flush (o dado não se perde no banco; basta recarregar).
 3. `.pnpm-store/` local (criado pelo container de dev) está no `.gitignore`; pode ser apagado à vontade.
 
 ## Avisos de segurança registrados
