@@ -3,6 +3,11 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/trpc/router.ts"
+    }
+  },
   "scripts": {
     "dev": "tsx watch --env-file-if-exists=../../.env.local src/index.ts",
     "build": "tsc -p tsconfig.build.json",
@@ -15,8 +20,10 @@
   "dependencies": {
     "@systembook/schema": "workspace:*",
     "@trpc/server": "^11.0.0",
+    "argon2": "^0.45.0",
     "better-sqlite3": "^12.2.0",
-    "drizzle-orm": "^0.44.0"
+    "drizzle-orm": "^0.44.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.12",
