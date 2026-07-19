@@ -16,40 +16,44 @@
       "step": 1,
       "description": "Create sections router with list and create",
       "details": "Create `apps/server/src/trpc/routers/sections.ts`. Add `list` and `create` (computing `ordem` as `max(ordem) + 1` or `count(*)`).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Implement rename",
       "details": "Add `rename: protectedProcedure.input(z.object({ id: z.string(), titulo: z.string().min(1) })).mutation(...)`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Implement reorder",
       "details": "Add `reorder: protectedProcedure.input(z.object({ orderedIds: z.array(z.string()) })).mutation(...)` that, in a single transaction, sets `ordem` for each id to its index in the array.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Implement delete with dependent-pages check",
       "details": "Add `delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(...)`. If the section has child `pages`, either cascade-delete (and their tabs/blocks) or throw a `BAD_REQUEST` requiring the pages be removed first — pick cascade delete for MVP simplicity and document it.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 5,
       "description": "Merge sections router into root router",
       "details": "Add `sections: sectionsRouter` to `apps/server/src/trpc/router.ts`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 6,
       "description": "Test all procedures as both roles",
       "details": "Test create/rename/reorder/delete as `editor` and confirm success (per confirmed decision); test as unauthenticated caller and confirm `UNAUTHORIZED`; test reorder with a partial/invalid id list and confirm a clear validation error.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-17", "TASK-11", "TASK-24"],
+  "dependencies": [
+    "TASK-17",
+    "TASK-11",
+    "TASK-24"
+  ],
   "estimatedComplexity": "medium",
   "technicalNotes": [
     "Cascade-deleting a section removes all nested pages/tabs/blocks/revisions — surface a confirmation step in the UI (TASK-23) before calling delete, since this is destructive and irreversible in the MVP (no soft-delete/trash)."

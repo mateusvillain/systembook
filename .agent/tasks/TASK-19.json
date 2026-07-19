@@ -14,28 +14,30 @@
       "step": 1,
       "description": "Add pages table to schema.ts",
       "details": "Define `pages` with `id`, `sectionId: text('section_id').notNull().references(() => sections.id, { onDelete: 'cascade' })`, `titulo`, `slug`, `ordem`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Add composite unique index",
       "details": "Add a Drizzle `uniqueIndex` on `(sectionId, slug)` so slugs are unique per section, not globally.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Generate and review migration",
       "details": "Run `drizzle-kit generate`, review the resulting SQL for the foreign key and unique index, and confirm it matches the cascade decision made in TASK-18.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Verify constraint behavior",
       "details": "Insert two pages with the same slug in the same section and confirm the second insert fails; insert two pages with the same slug in different sections and confirm both succeed.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-17"],
+  "dependencies": [
+    "TASK-17"
+  ],
   "estimatedComplexity": "low",
   "technicalNotes": [
     "Slug uniqueness is scoped per-section (not global) because two different sections may reasonably want a page called e.g. 'overview'."

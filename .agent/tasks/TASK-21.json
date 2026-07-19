@@ -14,22 +14,24 @@
       "step": 1,
       "description": "Add tabs table to schema.ts",
       "details": "Define `tabs` with `id`, `pageId: text('page_id').notNull().references(() => pages.id, { onDelete: 'cascade' })`, `titulo`, `ordem`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Generate and review migration",
       "details": "Run `drizzle-kit generate` and confirm the foreign key cascade behavior matches pages/sections.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Verify against fresh database",
       "details": "Insert a page with two tabs ('Usage', 'Code'), confirm both read back correctly ordered by `ordem`, and confirm deleting the parent page removes both tabs.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-19"],
+  "dependencies": [
+    "TASK-19"
+  ],
   "estimatedComplexity": "low",
   "technicalNotes": [
     "Tab titles are free text, not a fixed enum, per the PRD's 'Usage, Code, Accessibility, custom' language — do not constrain to a hardcoded set."
