@@ -6,6 +6,7 @@ import { createDb } from './db/client.js';
 import { runMigrations } from './db/migrate.js';
 import { seedBootstrapAdmin } from './db/seed.js';
 import { appRouter } from './trpc/router.js';
+import { createContext } from './trpc/context.js';
 import { resolveAdminDist, serveStatic } from './static.js';
 
 // Verificação de resolução cross-package (TASK-3): o import de tipo abaixo
@@ -16,7 +17,7 @@ const env = loadEnv();
 
 const db = createDb(env.DATABASE_PATH);
 runMigrations(db);
-seedBootstrapAdmin(db);
+await seedBootstrapAdmin(db);
 
 const adminDist = resolveAdminDist();
 
@@ -29,7 +30,7 @@ const server = createServer((req, res) => {
       req,
       res,
       path: url.pathname.slice('/trpc/'.length),
-      createContext: () => ({ db }),
+      createContext: () => createContext(db, req, res),
     });
     return;
   }
