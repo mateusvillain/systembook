@@ -14,28 +14,31 @@
       "step": 1,
       "description": "Audit sections/pages/tabs routers",
       "details": "Review `apps/server/src/trpc/routers/sections.ts`, `pages.ts`, `tabs.ts` (from TASK-18, TASK-20, TASK-22) and confirm every procedure uses `protectedProcedure`, correcting any that were mistakenly written as `adminProcedure`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Audit users router",
       "details": "Review `apps/server/src/trpc/routers/users.ts` (TASK-14/15) and confirm every procedure uses `adminProcedure`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Write the permission matrix note",
       "details": "Add a short comment block at the top of `apps/server/src/trpc/router.ts` (or a `PERMISSIONS.md` if preferred) listing each router and its required role, so future contributors have a single reference point.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Write boundary tests",
       "details": "Add a test suite `apps/server/src/trpc/routers/__tests__/permissions.test.ts` that, for an `editor` session, asserts success on sections/pages/tabs mutations and `FORBIDDEN` on all `users.*` mutations.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-11", "TASK-14"],
+  "dependencies": [
+    "TASK-11",
+    "TASK-14"
+  ],
   "estimatedComplexity": "low",
   "technicalNotes": [
     "This task exists specifically because the scope was ambiguous in the original plan ('decisão de escopo a confirmar') and was resolved during PRD creation as: editor has full structural CRUD. Treat any future route that touches sections/pages/tabs as `protectedProcedure` by default unless a new explicit decision changes this."

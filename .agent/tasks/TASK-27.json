@@ -15,34 +15,37 @@
       "step": 1,
       "description": "Install table extensions",
       "details": "Add `@tiptap/extension-table`, `@tiptap/extension-table-row`, `@tiptap/extension-table-cell`, `@tiptap/extension-table-header` to the editor's `extensions` array.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Add insert-table toolbar action",
       "details": "Add a toolbar button calling `editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Add row/column manipulation controls",
       "details": "Add contextual buttons (visible when the cursor is inside a table) for add/delete row, add/delete column, using Tiptap's built-in table commands (`addRowAfter`, `deleteRow`, `addColumnAfter`, `deleteColumn`).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Confirm block content shape matches schema",
       "details": "Compare a sample `editor.getJSON()` table output against the `table` variant defined in `packages/schema`'s `Block` union (TASK-3); adjust the schema's `content` typing if the real Tiptap shape differs from the initial assumption.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 5,
       "description": "Verify in browser",
       "details": "Using Playwright: insert a table, type into two cells, add a row, delete a column, and confirm the editor state remains consistent (no crash, cell content preserved for unaffected cells).",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-26", "TASK-3"],
+  "dependencies": [
+    "TASK-26",
+    "TASK-3"
+  ],
   "estimatedComplexity": "medium",
   "technicalNotes": [
     "Tiptap's table extension has known interaction quirks with copy/paste and nested tables — nested tables are out of scope for the MVP; do not attempt to support them."
