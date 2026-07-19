@@ -165,28 +165,28 @@
     "title": "Editor role can fully manage sections/pages/tabs (permission matrix)",
     "category": "security",
     "specFilePath": ".agent/tasks/TASK-24.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-25",
     "title": "Tiptap base integration in admin panel",
     "category": "functional",
     "specFilePath": ".agent/tasks/TASK-25.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-26",
     "title": "Standard Tiptap extensions (heading, paragraph, bold/italic, lists, code block)",
     "category": "functional",
     "specFilePath": ".agent/tasks/TASK-26.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-27",
     "title": "Table extension in Tiptap editor",
     "category": "functional",
     "specFilePath": ".agent/tasks/TASK-27.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-28",

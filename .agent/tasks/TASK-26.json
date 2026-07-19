@@ -16,34 +16,36 @@
       "step": 1,
       "description": "Add heading, bold, italic extensions",
       "details": "Add `@tiptap/extension-heading` (levels 1-3), `@tiptap/extension-bold`, `@tiptap/extension-italic` to the `extensions` array in `ContentEditor.tsx`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Add list extensions",
       "details": "Add `@tiptap/extension-bullet-list`, `@tiptap/extension-ordered-list`, `@tiptap/extension-list-item`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Add code block extension",
       "details": "Add `@tiptap/extension-code-block` (or `code-block-lowlight` if syntax highlighting is desired; plain `code-block` is sufficient for MVP).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Build the toolbar component",
       "details": "Create `apps/admin/src/features/editor/EditorToolbar.tsx` with buttons for heading levels, bold, italic, lists, code block, each calling the corresponding `editor.chain().focus().toggleX().run()` and reflecting `editor.isActive('x')` for active state.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 5,
       "description": "Verify in browser",
       "details": "Using Playwright: type `# Heading` and confirm it becomes an H1; select text and click Bold, confirm it renders bold; use the toolbar for a code block and confirm the resulting JSON has `type: 'codeBlock'` via `editor.getJSON()`.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-25"],
+  "dependencies": [
+    "TASK-25"
+  ],
   "estimatedComplexity": "medium",
   "technicalNotes": [
     "This extension set intentionally excludes strike-through, underline, blockquote, and horizontal rule since they are not in the MVP's block type list from the PRD — add them later only if the block schema (TASK-3) is extended to match."

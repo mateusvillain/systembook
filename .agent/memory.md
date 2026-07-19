@@ -1,10 +1,10 @@
 # Memória do projeto — SystemBook
 
-> Log de desenvolvimento mantido pelo agente. Última atualização: **2026-07-19** (Fase 2 estrutural concluída — tasks 17–23).
+> Log de desenvolvimento mantido pelo agente. Última atualização: **2026-07-19** (Fase 2 fechada com TASK-24; início da Fase 3 — editor Tiptap, tasks 25–27).
 
 ## Estado atual
 
-**Tasks 1–23 concluídas e verificadas.** Fase 0 (fundação), Fase 1 (auth + painel base) e o núcleo da Fase 2 (estrutura de navegação) fechados; falta da Fase 2 apenas a TASK-24 (matriz de permissões — na prática só verificação, ver abaixo). Existe agora um `CLAUDE.md` na raiz com o guia do repositório.
+**Tasks 1–27 concluídas e verificadas.** Fase 0 (fundação), Fase 1 (auth + painel base) e Fase 2 (estrutura de navegação + matriz de permissões) fechadas; Fase 3 iniciada com o editor Tiptap no painel (base + extensões padrão + tabelas). Existe um `CLAUDE.md` na raiz com o guia do repositório.
 
 | Task | Status | Verificação |
 | --- | --- | --- |
@@ -24,8 +24,12 @@
 | TASK-21 | ✅ | Tabela `tabs` (migration 0003); título livre, duplicata permitida (MVP) |
 | TASK-22 | ✅ | `tabs.*` espelhando pages sem slug; helper compartilhado de reorder |
 | TASK-23 | ✅ | SidebarTree no painel verificada via Playwright (12 cenários E2E) |
+| TASK-24 | ✅ | Matriz documentada em `router.ts`; `permissions.test.ts` trava editor=CRUD estrutura, users.* FORBIDDEN |
+| TASK-25 | ✅ | ContentEditor (Tiptap v3) montado na rota da tab; instância nova por tab (E2E) |
+| TASK-26 | ✅ | Heading 1-3, bold/italic, listas, code block + toolbar com estado ativo (E2E) |
+| TASK-27 | ✅ | Tabela 3×3 com header, +/− linha/coluna contextuais; JSON confere com schema (E2E) |
 
-**Cobertura**: 40 testes vitest no server (24 anteriores + 16 de estrutura) + 12 verificações E2E Playwright da árvore (script ad-hoc, não commitado).
+**Cobertura**: 42 testes vitest no server (40 anteriores + 2 da matriz de permissões) + 29 verificações E2E Playwright do editor (script ad-hoc no scratchpad, não commitado) além das 12 da árvore.
 
 O tracking granular (pass por step) está em `.agent/tasks/TASK-*.json` e o índice em `.agent/tasks.json`.
 
@@ -51,6 +55,15 @@ O tracking granular (pass por step) está em `.agent/tasks/TASK-*.json` e o índ
 - **Permissões**: sections/pages/tabs usam `protectedProcedure` (admin E editor, decisão TASK-24 do PRD); users continua `adminProcedure`. `isUniqueViolation` foi extraído para `src/db/errors.ts`.
 - **Slug**: `slugSchema` (`^[a-z0-9]+(-[a-z0-9]+)*$`) exportado de `pages.ts`, compartilhado entre `create` e `updateSlug`; violação de unique vira CONFLICT.
 - **Admin**: `SidebarTree` (`apps/admin/src/features/navigation/`) na lateral do `AdminLayout` — colapsável por nível, criar/renomear inline, reorder por botões ↑/↓ (drag-and-drop adiado), exclusão via `window.confirm` avisando do cascade. Tab clicada navega para `/pages/:pageId/tabs/:tabId` (`TabContentPage`, placeholder até a Fase 3). Pages/tabs são buscadas lazy ao expandir o pai (`listBySection`/`listByPage` por nó).
+
+## Editor Tiptap (Fase 3, TASK-25/26/27)
+
+- **Tiptap v3 (3.28)** em `apps/admin/src/features/editor/` — `ContentEditor.tsx` + `EditorToolbar.tsx` + `editor.css`. Montado em `TabContentPage` com `key={tabId}` (instância nova por tab; conteúdo ainda **não persiste** — autosave/blocks nas TASK-31/32).
+- **Sem StarterKit de propósito** (nota da TASK-26): set intencional de extensões espelhando os block types do PRD — Document/Paragraph/Text, Heading (níveis 1–3), Bold, Italic, BulletList/OrderedList/ListItem (pacote consolidado `@tiptap/extension-list` no v3), CodeBlock, Table/TableRow/TableHeader/TableCell (`@tiptap/extension-table`, `resizable`), UndoRedo/Dropcursor/Gapcursor (`@tiptap/extensions`). Strike, blockquote, HR etc. ficam fora até o schema de blocks mudar.
+- **Toolbar**: estados ativos via `useEditorState` — no Tiptap v3 `useEditor` **não** re-renderiza a cada transação por padrão. Botões usam `onMouseDown={preventDefault}` para não roubar a seleção. Controles de tabela (±linha/±coluna) só aparecem com o cursor dentro de uma tabela.
+- A instância ativa é exposta em `window.systembookEditor` (para E2E/automação — ex.: `getJSON()`).
+- **Gotcha de E2E headless**: a sync da seleção nativa do browser → estado ProseMirror é assíncrona; dblclick/Shift+setas não refletem em `state.selection` a tempo. Para testar atalhos sobre seleção, criar a seleção com `setTextSelection` programático e então mandar o atalho de teclado.
+- JSON de tabela confirmado contra `TableBlockContent` do schema (cabe em `body: TiptapJson`); forma documentada em `packages/schema/src/block.ts`.
 
 ## O que existe hoje
 
@@ -88,8 +101,8 @@ O painel em dev acessa-se por `http://localhost:5173`; o proxy do `vite.config.t
 
 ## Pendências / próximos passos
 
-1. **TASK-24** (fecha a Fase 2): matriz de permissões — os routers de estrutura já usam `protectedProcedure` e os testes de estrutura já cobrem editor com sucesso + não autenticado com UNAUTHORIZED; a task deve ser primariamente verificação/consolidação (ex.: teste explícito da matriz completa por role).
-2. **Fase 3 (TASK-25+)**: Tiptap no painel, blocks, autosave e revisões. Quando criar `revisions`: `autor_id` nullable/`SET NULL` por causa do hard delete de usuários.
+1. **Fase 3 continua (TASK-28+)**: blocos custom (callout, image, component-embed), tabela `blocks`, autosave e revisões. Quando criar `revisions`: `autor_id` nullable/`SET NULL` por causa do hard delete de usuários.
+2. O conteúdo do editor ainda não persiste (esperado até TASK-31/32) — a UI não avisa; se incomodar em demo, adicionar aviso temporário.
 3. `.pnpm-store/` local (criado pelo container de dev) está no `.gitignore`; pode ser apagado à vontade.
 
 ## Avisos de segurança registrados
