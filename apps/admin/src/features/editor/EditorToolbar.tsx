@@ -1,5 +1,7 @@
 import type { Editor } from '@tiptap/react';
 import { useEditorState } from '@tiptap/react';
+import type { CalloutVariant } from '@systembook/schema';
+import { CALLOUT_META, CALLOUT_VARIANTS } from './nodes/Callout.js';
 
 const buttonStyle = (active: boolean): React.CSSProperties => ({
   padding: '0.25rem 0.5rem',
@@ -61,6 +63,11 @@ export function EditorToolbar({ editor }: { editor: Editor | null }) {
   if (!editor || !state) return null;
 
   const chain = () => editor.chain().focus();
+  // Insere já com um parágrafo dentro — o cursor cai direto no conteúdo
+  const insertCallout = (variant: CalloutVariant) =>
+    chain()
+      .insertContent({ type: 'callout', attrs: { variant }, content: [{ type: 'paragraph' }] })
+      .run();
 
   return (
     <div
@@ -120,6 +127,26 @@ export function EditorToolbar({ editor }: { editor: Editor | null }) {
         label="⊞ Tabela"
         title="Inserir tabela 3×3"
         onClick={() => chain().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
+      />
+      {/* Picker de variante do callout: o primeiro (info) é o padrão */}
+      <span role="group" aria-label="Inserir callout" style={{ display: 'flex', gap: '0.35rem' }}>
+        {CALLOUT_VARIANTS.map((variant) => (
+          <ToolbarButton
+            key={variant}
+            label={`${CALLOUT_META[variant].icon} ${CALLOUT_META[variant].label}`}
+            title={`Inserir callout ${CALLOUT_META[variant].label.toLowerCase()}`}
+            onClick={() => insertCallout(variant)}
+          />
+        ))}
+      </span>
+      <ToolbarButton
+        label="🧩 Embed"
+        title="Inserir embed de componente"
+        onClick={() =>
+          chain()
+            .insertContent({ type: 'componentEmbed', attrs: { componentName: '', variantId: null } })
+            .run()
+        }
       />
       {state.inTable && (
         <span
