@@ -1,0 +1,22 @@
+# Compose de DESENVOLVIMENTO — roda o server em modo watch contra o fonte,
+# com bind-mount do repo. O compose de produção (imagem buildada) é a TASK-59.
+services:
+  app:
+    image: node:24-slim
+    working_dir: /workspace
+    command: sh -c "npm install -g pnpm@10 && pnpm install && pnpm --filter @systembook/server dev"
+    env_file: .env.local
+    environment:
+      # Dentro do container o SQLite vai para o volume nomeado, não para o bind-mount
+      DATABASE_PATH: /data/systembook.db
+    ports:
+      - '${PORT:-3000}:${PORT:-3000}'
+    volumes:
+      - .:/workspace
+      - sqlite-data:/data
+      # node_modules do container ficam isolados dos do host (binários nativos diferem)
+      - node-modules:/workspace/node_modules
+
+volumes:
+  sqlite-data:
+  node-modules:
