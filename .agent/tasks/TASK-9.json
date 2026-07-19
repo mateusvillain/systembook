@@ -16,34 +16,37 @@
       "step": 1,
       "description": "Install argon2 library",
       "details": "Add `argon2` (node-argon2, which wraps a native argon2id implementation) as a dependency of `apps/server`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Implement hashPassword",
       "details": "Create `apps/server/src/auth/password.ts` exporting `hashPassword(plain: string)` that calls `argon2.hash(plain + ARGON2_SECRET, { type: argon2.argon2id })`. Read `ARGON2_SECRET` from `process.env` at module load and throw at startup if missing.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Implement verifyPassword",
       "details": "Add `verifyPassword(plain: string, hash: string)` calling `argon2.verify(hash, plain + ARGON2_SECRET)`, returning `false` on any thrown error rather than propagating it.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Wire into seed script",
       "details": "Update TASK-4's `apps/server/src/db/seed.ts` to call `hashPassword(INITIAL_ADMIN_PASSWORD)` instead of any placeholder hashing.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 5,
       "description": "Write unit tests",
       "details": "Test: correct password verifies true; incorrect password verifies false; hashing the same password twice yields two different hash strings; hash format starts with `$argon2id$`.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-1", "TASK-4"],
+  "dependencies": [
+    "TASK-1",
+    "TASK-4"
+  ],
   "estimatedComplexity": "low",
   "technicalNotes": [
     "Never log `plain`, `hash`, or `ARGON2_SECRET` anywhere, including error messages.",

@@ -16,34 +16,37 @@
       "step": 1,
       "description": "Create users router with list query",
       "details": "Create `apps/server/src/trpc/routers/users.ts`. Add `list: adminProcedure.query(...)` selecting `id, email` from `users` joined with `memberships.role`, excluding `senha_hash`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Implement users.create",
       "details": "Add `create: adminProcedure.input(zod schema).mutation(...)` that calls `hashPassword`, inserts into `users`, then inserts a `memberships` row with the given role. Wrap the unique-email insert in a try/catch and rethrow as `TRPCError({ code: 'CONFLICT' })` on constraint violation.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Implement users.update",
       "details": "Add `update: adminProcedure.input(z.object({ userId: z.string(), role: z.enum(['admin','editor']) })).mutation(...)` updating the `memberships.role` row for the target user.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Implement users.deactivate with self-protection",
       "details": "Add `deactivate: adminProcedure.input(z.object({ userId: z.string() })).mutation(...)`. If `input.userId === ctx.user.userId`, throw `TRPCError({ code: 'BAD_REQUEST', message: 'Cannot deactivate your own account' })`. Otherwise remove/disable the user (e.g. delete the row or add an `ativo` flag if soft-delete is preferred).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 5,
       "description": "Test all four procedures",
       "details": "Test as admin: list returns users without password hash; create succeeds and rejects duplicate email; update changes role; deactivate blocks self-deactivation and succeeds for other users. Test as editor: every procedure returns FORBIDDEN.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-9", "TASK-11"],
+  "dependencies": [
+    "TASK-9",
+    "TASK-11"
+  ],
   "estimatedComplexity": "medium",
   "technicalNotes": [
     "Decide and document whether `deactivate` is a hard delete or soft-delete flag before implementing — a hard delete simplifies the MVP but orphans `revisions.autor_id` references; consider keeping the user row and clearing credentials/active flag instead."

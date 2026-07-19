@@ -16,40 +16,43 @@
       "step": 1,
       "description": "Build UsersList component",
       "details": "Create `apps/admin/src/features/users/UsersList.tsx` querying `users.list` and rendering a table with email and role columns.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Build CreateUserForm component",
       "details": "Create a form with email (validated), password (min length), and a role select (`admin`/`editor`). On submit, call `users.create` mutation.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Handle duplicate email error",
       "details": "Catch the `CONFLICT`/`BAD_REQUEST` error returned by `users.create` on duplicate email and display it inline on the email field.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Refresh list after creation",
       "details": "On successful creation, invalidate/refetch the `users.list` query (or optimistically prepend the new user) so the table updates without reload.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 5,
       "description": "Guard the route for admin-only access",
       "details": "Wrap `/admin/users` in a route guard checking the current user's role is `admin`; render an access-denied message for editors.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 6,
       "description": "Verify in browser",
       "details": "Using Playwright: log in as admin, navigate to `/admin/users`, create a new editor user, assert it appears in the list; log in as that editor and confirm navigating to `/admin/users` is blocked.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-14", "TASK-11"],
+  "dependencies": [
+    "TASK-14",
+    "TASK-11"
+  ],
   "estimatedComplexity": "medium",
   "technicalNotes": [
     "This is admin-only regardless of the confirmed 'editor has full CRUD on content structure' decision — user/role management remains admin-exclusive per PRD Fase 1."

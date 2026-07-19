@@ -15,34 +15,36 @@
       "step": 1,
       "description": "Implement context resolution from cookie",
       "details": "In `apps/server/src/trpc/context.ts`, parse the `session_id` cookie from the incoming request, query `sessions` joined with `memberships`/`users`, and return `{ userId, role } | null` as part of the tRPC context.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Handle session expiration",
       "details": "If the session row's `expira_em` is in the past, treat as unauthenticated, and delete the expired row from `sessions` as a side effect of the lookup.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Define protectedProcedure",
       "details": "In `apps/server/src/trpc/init.ts`, create `protectedProcedure = publicProcedure.use(({ ctx, next }) => { if (!ctx.user) throw new TRPCError({ code: 'UNAUTHORIZED' }); return next({ ctx: { ...ctx, user: ctx.user } }); })`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Define adminProcedure",
       "details": "Create `adminProcedure = protectedProcedure.use(({ ctx, next }) => { if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' }); return next(); })`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 5,
       "description": "Test authorization boundaries",
       "details": "Test: request with no cookie on a `protectedProcedure` route returns 401; request with an editor session on an `adminProcedure` route returns 403; request with a valid admin session succeeds; request with an expired session returns 401 and the session row is removed.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-10"],
+  "dependencies": [
+    "TASK-10"
+  ],
   "estimatedComplexity": "medium",
   "technicalNotes": [
     "This middleware is the single enforcement point reused by every protected route added in later phases (users, sections, pages, tabs, blocks, previews) — get its shape right before building on top of it.",
