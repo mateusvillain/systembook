@@ -46,10 +46,19 @@ O tracking granular (pass por step) está em `.agent/tasks/TASK-*.json` e o índ
 - **Testes**: vitest em `apps/server` — `seed.test.ts`, `auth/password.test.ts`, `trpc/auth.test.ts` (24 testes). E2E: Playwright (root devDep) com script ad-hoc contra server em porta 3210 + banco temporário e credenciais de teste.
 - **Infra**: `Dockerfile` multi-stage (imagem `systembook:dev` buildada e smoke-testada), `docker-compose.yml` de dev (verificado com ciclo up/down), CI verde.
 
+## Fluxo de desenvolvimento local
+
+Dois processos em dev:
+
+- `pnpm dev` (raiz) → server (`tsx watch`, porta 3000): API tRPC, banco, sessões.
+- `pnpm --filter @systembook/admin dev` → frontend com Vite na porta 5173, hot-reload dos componentes React.
+
+O painel em dev acessa-se por `http://localhost:5173`; o proxy do `vite.config.ts` repassa `/trpc` para o server na 3000, mantendo tudo same-origin (cookies de sessão funcionam sem CORS). Sem o Vite rodando, `http://localhost:3000` também serve o painel, mas é o build estático de `apps/admin/dist` (último `pnpm build`, sem hot-reload) — exatamente o modo de produção do container único.
+
 ## Decisões técnicas tomadas
 
 - **better-sqlite3** (não libsql) como driver — exigiu `pnpm.onlyBuiltDependencies` no `package.json` raiz (pnpm 10 bloqueia build scripts nativos por padrão).
-- **Hash provisório com scrypt** (`node:crypto`) + pepper de `ARGON2_SECRET`, formato `scrypt$<salt>$<hash>` — **deve ser trocado por argon2id na TASK-9**; o prefixo permite detectar e re-hashear no primeiro login.
+- O seed pré-TASK-9 usava hash provisório scrypt (`scrypt$<salt>$<hash>`); desde a TASK-9 o hashing é argon2id e hashes legados são re-hasheados no primeiro login (ver "Arquitetura de auth").
 - **`@systembook/schema` é types-only**: `exports` aponta direto para `src/index.ts` (sem build/dist) — zero dependência de runtime, exigência para o connector publicável.
 - **`pnpm deploy` precisa de `--legacy`** no pnpm 10 (sem workspace injection) — ok porque a única dep de workspace do server é types-only.
 - **ESLint 9 flat config** único na raiz (`eslint.config.mjs`); cada pacote roda `eslint src`. Regra `no-unused-vars` ignora prefixo `_`.
@@ -71,5 +80,5 @@ O tracking granular (pass por step) está em `.agent/tasks/TASK-*.json` e o índ
 ## Avisos de segurança registrados
 
 - `.gitignore` criado em 2026-07-19 cobrindo `.env.local`, `data/`, `*.db`, `.pnpm-store/` — o primeiro commit do repo é ele, garantindo que nenhum segredo entrou no histórico.
-- A `INITIAL_ADMIN_PASSWORD` do usuário ficou exposta no chat de uma sessão (arquivo anexado). Recomendado ao usuário: trocar a senha no `.env.local` por uma mais forte e recriar os bancos de dev (`rm -rf apps/server/data` + `docker volume rm systembook_sqlite-data`) antes de uso real; a senha do admin também deve ser trocada assim que a tela de login existir.
+- A `INITIAL_ADMIN_PASSWORD` do usuário ficou exposta no chat de uma sessão (arquivo anexado). Recomendado ao usuário: trocar a senha no `.env.local` por uma mais forte e recriar os bancos de dev (`rm -rf apps/server/data` + `docker volume rm systembook_sqlite-data`) antes de uso real; a tela de login já existe, então a troca pode (e deve) ser feita a qualquer momento — ainda **pendente de confirmação do usuário**.
 - Os valores de `SESSION_SECRET`/`ARGON2_SECRET` foram gerados via `openssl rand -base64 32` direto no arquivo, sem passar pelo chat/logs.
