@@ -63,11 +63,48 @@ export function EditorToolbar({ editor }: { editor: Editor | null }) {
   if (!editor || !state) return null;
 
   const chain = () => editor.chain().focus();
-  // Insere já com um parágrafo dentro — o cursor cai direto no conteúdo
-  const insertCallout = (variant: CalloutVariant) =>
+  // Insere com um parágrafo dentro e posiciona o cursor nele — o insertContent
+  // sozinho deixa o cursor fora do callout quando o parágrafo atual não é vazio.
+  const insertCallout = (variant: CalloutVariant) => {
+    const from = editor.state.selection.from;
     chain()
       .insertContent({ type: 'callout', attrs: { variant }, content: [{ type: 'paragraph' }] })
       .run();
+    let calloutPos: number | null = null;
+    editor.state.doc.nodesBetween(
+      Math.max(0, from - 1),
+      editor.state.doc.content.size,
+      (node, pos) => {
+        if (calloutPos === null && node.type.name === 'callout') calloutPos = pos;
+      },
+    );
+    if (calloutPos !== null) {
+      // +2: entra no callout (+1) e no parágrafo inicial (+1)
+      const pos = calloutPos + 2;
+      chain().setTextSelection(pos).run();
+      // O NodeView React monta assíncrono e o selectionToDOM do ProseMirror
+      // não reposiciona o caret do DOM dentro dele depois — sem isto a
+      // digitação seguiria o caret antigo, fora do callout. Posiciona o Range
+      // manualmente assim que o contentDOM existir.
+      const placeCaret = (attempt: number) => {
+        if (editor.isDestroyed) return;
+        const { node, offset } = editor.view.domAtPos(pos);
+        const element = node instanceof Element ? node : node.parentElement;
+        if (!element?.closest('.sb-callout-content')) {
+          if (attempt < 10) requestAnimationFrame(() => placeCaret(attempt + 1));
+          return;
+        }
+        const range = document.createRange();
+        range.setStart(node, offset);
+        range.collapse(true);
+        const selection = window.getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+        editor.view.focus();
+      };
+      requestAnimationFrame(() => placeCaret(0));
+    }
+  };
 
   return (
     <div
