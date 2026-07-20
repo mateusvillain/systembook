@@ -15,28 +15,30 @@
       "step": 1,
       "description": "Define PreviewVariant and PreviewControl types",
       "details": "In `packages/schema/src/preview-config.ts`, replace the placeholder with `interface PreviewVariant { id: string; label: string; props: Record<string, unknown> }` and a discriminated union `PreviewControl` for `text | boolean | select` kinds, each with `propName` and kind-specific fields (e.g. `select` has `options: string[]`).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Define the final PreviewConfig interface",
       "details": "`interface PreviewConfig { component: string; variants: PreviewVariant[]; controls: PreviewControl[] }`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Document the *.preview.tsx contract",
       "details": "Add a JSDoc block above `PreviewConfig` showing an example: `export default { component: 'Button', variants: [...], controls: [...] } satisfies PreviewConfig` alongside the actual React component export expected by the harness.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Verify no consumers break",
       "details": "Run `tsc --noEmit` across the workspace to confirm the finalized type doesn't break the TASK-29 placeholder usage or any other existing import of `PreviewConfig`.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-3"],
+  "dependencies": [
+    "TASK-3"
+  ],
   "estimatedComplexity": "low",
   "technicalNotes": [
     "This type is the contract between three independently-built pieces: the connector (TASK-39/40/41, reads `*.preview.tsx`), preview-kit (TASK-38, renders it), and the admin panel's controls UI (TASK-49, drives it via postMessage) — keep it stable once teams start writing real `*.preview.tsx` files against it."

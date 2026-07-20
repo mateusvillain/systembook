@@ -256,7 +256,7 @@
     "title": "PreviewConfig schema definition in packages/schema",
     "category": "data-model",
     "specFilePath": ".agent/tasks/TASK-37.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-38",
