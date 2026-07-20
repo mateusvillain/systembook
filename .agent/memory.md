@@ -42,6 +42,7 @@
 | TASK-39 | ✅ | connector CLI `discover --root` (fast-glob + esbuild bundle + import de temp + zod); fixture com 2 válidos/1 malformado/1 em node_modules; 2 testes |
 | TASK-40 | ✅ | connector `generate`: entry tsx+html por variante em `.systembook/entries/{comp}--{variant}/`, limpeza de órfãos, colisão de slug = erro; 3 testes + smoke de bundle |
 | TASK-41 | ✅ | connector `build`: Vite multi-entry (base ./, configFile false, alias preview-kit/react); artefato verificado em Chromium headless sob path aninhado, postMessage ok |
+| TASK-42 | ✅ | Tabela `component_previews` (migration 0006, índice composto p/ latest) + `insertComponentPreview`/`getLatestPreview` com desempate por rowid; 4 testes |
 
 **Cobertura**: 73 testes vitest no server (`pnpm --filter @systembook/server test`, todos verdes) + verificações E2E Playwright: 29 do editor base, 12 dos nós custom, 16 do autosave e o fluxo completo de publish/histórico/restore (scripts ad-hoc no scratchpad, não commitados), além das 12 da árvore.
 
@@ -55,7 +56,7 @@ O tracking granular (pass por step) está em `.agent/tasks/TASK-*.json` e o índ
 | 1 — Auth e painel base | TASK-9..16 | ✅ | argon2, login/cookie, middleware admin/editor, tela de login, gestão de usuários, reset de senha, logout |
 | 2 — Estrutura de navegação | TASK-17..24 | ✅ | data models e CRUD de sections/pages/tabs, árvore na sidebar, permissões editor=admin |
 | 3 — Editor de conteúdo | TASK-25..36 | ✅ | Tiptap + extensões + tabela + callout + component-embed placeholder, blocks, serialização, autosave, revisions, publish, histórico/restore |
-| 4 — Conector e preview | TASK-37..46 | 🔄 (37–41 ✅) | PreviewConfig schema, preview-kit, connector CLI (discovery/entrypoints/build via Vite), component_previews, upload endpoint autenticado, tokens, exemplo CI, rota de artefatos estáticos |
+| 4 — Conector e preview | TASK-37..46 | 🔄 (37–42 ✅) | PreviewConfig schema, preview-kit, connector CLI (discovery/entrypoints/build via Vite), component_previews, upload endpoint autenticado, tokens, exemplo CI, rota de artefatos estáticos |
 | 5 — Integração do preview | TASK-47..51 | ⬜ | component-embed com iframe real, seletor componente/variante, painel de controles, doc pública com embeds, estado "sem preview disponível" |
 | 6 — Publicação e polimento | TASK-52..57 | ⬜ | layout público, busca full-text FTS5 + UI, tema dark/light, landing customizável, responsividade |
 | 7 — Empacotamento e lançamento | TASK-58..64 | ⬜ | imagem Docker publicada, compose de produção, docs de setup/CI/schema, README, CONTRIBUTING+licença, docs de backup |
@@ -181,10 +182,11 @@ O painel em dev acessa-se por `http://localhost:5173`; o proxy do `vite.config.t
 - **Gotcha dedupe do plugin-react**: `@vitejs/plugin-react` injeta `resolve.dedupe: ['react','react-dom']` automaticamente, e dedupe re-resolve a partir do **root do Vite** (o dir de entries), onde a cadeia node_modules não alcança → "Rollup failed to resolve react-dom/client". Fix: alias explícito de `react`/`react-dom` para os diretórios resolvidos **a partir do root do repo alvo** (`createRequire(root+'/x.js').resolve('react/package.json')`) — semanticamente correto (preview usa o React do time; dois Reacts quebram hooks) e a chave 'react' não engole 'react-dom' (prefixo de alias só casa seguido de '/'). `@systembook/preview-kit` também é alias, resolvido a partir do próprio connector (pnpm estrito não expõe dep transitiva).
 - **Gotcha realpath no macOS**: `mkdtemp(tmpdir())` retorna path com symlink (`/var` → `/private/var`) e o rollup realpatha importers — o `../` relativo das entries erra por um nível. Testes fazem `realpath()` no workdir.
 - **Verificação browser (script ad-hoc `verify-artifact.mjs` no scratchpad)**: artefato servido por http server node sob prefixo aninhado; Chromium headless confirma as 3 variantes renderizando (texto/disabled corretos), postMessage `systembook:update-props` re-renderizando no bundle real, zero console errors e zero 404.
+- **TASK-42 (component_previews)**: migration 0006 — `component_previews (id, component_name, variant_id, commit_sha, path_estatico, publicado_em default unixepoch)`, índice composto `(component_name, variant_id, publicado_em)` para o lookup de latest. **Sem unique** no par (componente, variante): append-only deliberado, cada upload de CI é linha nova e o `getLatestPreview` resolve "latest wins" com desempate por rowid (unixepoch tem resolução de segundo — mesma lição do listByPage da TASK-35). Helpers em `src/db/componentPreviews.ts`: `insertComponentPreview` (ponto de escrita da TASK-43) e `getLatestPreview` (lookup da TASK-47/46).
 
 ## Pendências / próximos passos
 
-1. **Fase 3 concluída (TASK-30 a 36)**: modelo de blocks, autosave, publish/snapshot e histórico/restauração de revisões todos prontos. Fase 4 em andamento na branch `feature/fase-4-conector-preview` — TASK-37 a 41 feitas; próxima é a TASK-42 (data model component_previews).
+1. **Fase 3 concluída (TASK-30 a 36)**: modelo de blocks, autosave, publish/snapshot e histórico/restauração de revisões todos prontos. Fase 4 em andamento na branch `feature/fase-4-conector-preview` — TASK-37 a 42 feitas; próxima é a TASK-44 (tokens de upload) ou TASK-43 (endpoint POST /api/previews — depende do modelo de token).
 2. Race conhecido (aceito no MVP): flush de autosave no unmount × fetch do `getByTab` na remontagem — em navegação muito rápida ida-e-volta o editor pode abrir sem o último flush (o dado não se perde no banco; basta recarregar).
 3. `.pnpm-store/` local (criado pelo container de dev) está no `.gitignore`; pode ser apagado à vontade.
 

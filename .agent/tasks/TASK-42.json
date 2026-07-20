@@ -14,28 +14,30 @@
       "step": 1,
       "description": "Add component_previews table to schema.ts",
       "details": "Define `componentPreviews` with `id`, `componentName: text('component_name').notNull()`, `variantId: text('variant_id').notNull()`, `commitSha: text('commit_sha').notNull()`, `pathEstatico: text('path_estatico').notNull()`, `publicadoEm: integer('publicado_em', { mode: 'timestamp' }).notNull()`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Add an index for latest-lookup performance",
       "details": "Add a Drizzle index on `(component_name, variant_id, publicado_em)` to make the 'latest per component+variant' query efficient.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Implement getLatestPreview helper",
       "details": "In `apps/server/src/db/componentPreviews.ts`, add `getLatestPreview(componentName: string, variantId: string)` returning the most recent row for that pair, or `null` if none exists.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Generate and verify migration",
       "details": "Run `drizzle-kit generate`, then insert two rows for the same `(component_name, variant_id)` with different `publicado_em`, and confirm `getLatestPreview` returns the more recent one.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-4"],
+  "dependencies": [
+    "TASK-4"
+  ],
   "estimatedComplexity": "low",
   "technicalNotes": [
     "Keeping this table append-only (rather than upserting) preserves a full history of preview publishes per component/variant, which is useful for debugging 'why did my preview change' even though the MVP UI only surfaces the latest."
