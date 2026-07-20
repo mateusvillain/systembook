@@ -1,5 +1,7 @@
 # Dependências
 node_modules/
+# Exceção: fixture de teste do connector que prova a exclusão de node_modules
+!packages/connector/fixtures/**/node_modules/
 
 # Builds
 dist/
