@@ -16,34 +16,37 @@
       "step": 1,
       "description": "Build the SearchBox component",
       "details": "Create `apps/admin/src/features/public/SearchBox.tsx` with a debounced (e.g. 300ms) text input calling `search.query` and rendering results in a dropdown/panel.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Render result items",
       "details": "Each result shows title, section breadcrumb, and the FTS5 `snippet()` output rendered with the matched term wrapped in a highlight element (e.g. `<mark>`).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Wire result selection to navigation",
       "details": "Clicking/selecting a result navigates to that page's public route and closes the search dropdown.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Handle empty and no-results states",
       "details": "Show nothing (or a hint) when the query is empty; show a 'Nenhum resultado encontrado' message when `search.query` returns an empty array.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 5,
       "description": "Verify in browser",
       "details": "Using Playwright: type a term known to exist in a published page's content, confirm the matching result appears with a highlighted snippet; click it and confirm navigation lands on the correct page; type a nonsense term and confirm the no-results state.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-53", "TASK-52"],
+  "dependencies": [
+    "TASK-53",
+    "TASK-52"
+  ],
   "estimatedComplexity": "medium",
   "technicalNotes": [
     "Keep this a lightweight in-page dropdown rather than a separate search results page for the MVP, matching the 'busca simples' scope from the PRD."
