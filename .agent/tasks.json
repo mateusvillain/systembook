@@ -263,7 +263,7 @@
     "title": "preview-kit mount() renders variants and listens to postMessage",
     "category": "functional",
     "specFilePath": ".agent/tasks/TASK-38.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-39",

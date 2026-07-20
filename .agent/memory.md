@@ -38,6 +38,7 @@
 | TASK-35 | ✅ | `/pages/:id/history` lista revisões (autor + timestamp), preview read-only por revisão (Playwright) |
 | TASK-36 | ✅ | `pages.restoreRevision` transacional (skip de tabs removidas), cria revisão de acompanhamento; restore verificado via Playwright |
 | TASK-37 | ✅ | `PreviewConfig` final em `packages/schema` (variants + união discriminada de controls text/boolean/select); JSDoc com contrato do `*.preview.tsx` |
+| TASK-38 | ✅ | `preview-kit` `mount()` com variantes, erro para variantId desconhecida, postMessage com allow-list de origin; 7 testes vitest+jsdom |
 
 **Cobertura**: 73 testes vitest no server (`pnpm --filter @systembook/server test`, todos verdes) + verificações E2E Playwright: 29 do editor base, 12 dos nós custom, 16 do autosave e o fluxo completo de publish/histórico/restore (scripts ad-hoc no scratchpad, não commitados), além das 12 da árvore.
 
@@ -51,7 +52,7 @@ O tracking granular (pass por step) está em `.agent/tasks/TASK-*.json` e o índ
 | 1 — Auth e painel base | TASK-9..16 | ✅ | argon2, login/cookie, middleware admin/editor, tela de login, gestão de usuários, reset de senha, logout |
 | 2 — Estrutura de navegação | TASK-17..24 | ✅ | data models e CRUD de sections/pages/tabs, árvore na sidebar, permissões editor=admin |
 | 3 — Editor de conteúdo | TASK-25..36 | ✅ | Tiptap + extensões + tabela + callout + component-embed placeholder, blocks, serialização, autosave, revisions, publish, histórico/restore |
-| 4 — Conector e preview | TASK-37..46 | 🔄 (37 ✅) | PreviewConfig schema, preview-kit, connector CLI (discovery/entrypoints/build via Vite), component_previews, upload endpoint autenticado, tokens, exemplo CI, rota de artefatos estáticos |
+| 4 — Conector e preview | TASK-37..46 | 🔄 (37–38 ✅) | PreviewConfig schema, preview-kit, connector CLI (discovery/entrypoints/build via Vite), component_previews, upload endpoint autenticado, tokens, exemplo CI, rota de artefatos estáticos |
 | 5 — Integração do preview | TASK-47..51 | ⬜ | component-embed com iframe real, seletor componente/variante, painel de controles, doc pública com embeds, estado "sem preview disponível" |
 | 6 — Publicação e polimento | TASK-52..57 | ⬜ | layout público, busca full-text FTS5 + UI, tema dark/light, landing customizável, responsividade |
 | 7 — Empacotamento e lançamento | TASK-58..64 | ⬜ | imagem Docker publicada, compose de produção, docs de setup/CI/schema, README, CONTRIBUTING+licença, docs de backup |
@@ -163,10 +164,13 @@ O painel em dev acessa-se por `http://localhost:5173`; o proxy do `vite.config.t
 ## Fase 4 — Conector e preview (em andamento, branch `feature/fase-4-conector-preview`)
 
 - **TASK-37 (PreviewConfig)**: tipo final em `packages/schema/src/preview-config.ts` substituiu o placeholder da TASK-3. `PreviewVariant {id, label, props}`, `PreviewControl` = união discriminada por `kind` (`text`/`boolean`/`select`, cada um com `propName`, `label?` e `defaultValue?` tipado; `select` tem `options: string[]`). Contrato do `*.preview.tsx` documentado em JSDoc: default export `satisfies PreviewConfig` + export nomeado `Preview(props)` que o harness monta. Nenhum outro código importava o placeholder ainda (o `componentEmbed` da TASK-29 não usa o tipo).
+- **TASK-38 (preview-kit mount)**: `packages/preview-kit/src/mount.tsx` — `mount(rootElement, config, Component, {variantId, allowedOrigin?})` retorna `PreviewHandle {unmount}`. React/react-dom são **peerDependencies** (^19) — o pacote é bundlado pelo connector no artefato do time (TASK-41), que traz o próprio React; devDeps duplicam para os testes. `@systembook/schema` deixou de ser types-only *no consumo*: o contrato postMessage vive em `packages/schema/src/preview-messages.ts` (`PreviewUpdatePropsMessage {type: 'systembook:update-props', props}`, união `PreviewMessage`) — só tipos, o literal de runtime `UPDATE_PROPS_MESSAGE_TYPE` é exportado pelo preview-kit (mesma razão do `BLOCK_TYPES` viver no server). O painel de controles da TASK-49 deve importar o tipo do schema e o literal… de onde fizer sentido (admin não depende de preview-kit; repetir o literal com o tipo anotado é aceitável).
+- **Validação de origin no mount**: `allowedOrigin` explícita > origin do `document.referrer` > `window.location.origin`. Mensagem de origin errada → `console.warn` e ignora; shape estranho → ignora em silêncio (sem warn — pode ser message de outra lib no iframe).
+- **Gotchas de teste (vitest+jsdom+React 19)**: `// @vitest-environment jsdom` no docblock dispensa vitest.config; `(globalThis).IS_REACT_ACT_ENVIRONMENT = true` + `act` importado de `react` (não react-dom/test-utils); `MessageEvent('message', {origin})` aceita origin sintética no jsdom. O `exports` do preview-kit ganhou `"default": "./src/index.ts"` (fonte TS direto — o consumidor bundla; ok para Vite do connector e vitest, **não** ok para Node puro).
 
 ## Pendências / próximos passos
 
-1. **Fase 3 concluída (TASK-30 a 36)**: modelo de blocks, autosave, publish/snapshot e histórico/restauração de revisões todos prontos. Fase 4 em andamento na branch `feature/fase-4-conector-preview` — TASK-37 feita; próxima é a TASK-38 (`preview-kit` mount + postMessage).
+1. **Fase 3 concluída (TASK-30 a 36)**: modelo de blocks, autosave, publish/snapshot e histórico/restauração de revisões todos prontos. Fase 4 em andamento na branch `feature/fase-4-conector-preview` — TASK-37 e 38 feitas; próxima é a TASK-39 (connector CLI: descoberta de `*.preview.tsx`).
 2. Race conhecido (aceito no MVP): flush de autosave no unmount × fetch do `getByTab` na remontagem — em navegação muito rápida ida-e-volta o editor pode abrir sem o último flush (o dado não se perde no banco; basta recarregar).
 3. `.pnpm-store/` local (criado pelo container de dev) está no `.gitignore`; pode ser apagado à vontade.
 
