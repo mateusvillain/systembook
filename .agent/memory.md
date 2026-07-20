@@ -37,6 +37,7 @@
 | TASK-34 | ✅ | `pages.publish` cria snapshot via `buildPageSnapshot`/`createRevision`; flush de tab ativa antes do publish (Playwright) |
 | TASK-35 | ✅ | `/pages/:id/history` lista revisões (autor + timestamp), preview read-only por revisão (Playwright) |
 | TASK-36 | ✅ | `pages.restoreRevision` transacional (skip de tabs removidas), cria revisão de acompanhamento; restore verificado via Playwright |
+| TASK-37 | ✅ | `PreviewConfig` final em `packages/schema` (variants + união discriminada de controls text/boolean/select); JSDoc com contrato do `*.preview.tsx` |
 
 **Cobertura**: 73 testes vitest no server (`pnpm --filter @systembook/server test`, todos verdes) + verificações E2E Playwright: 29 do editor base, 12 dos nós custom, 16 do autosave e o fluxo completo de publish/histórico/restore (scripts ad-hoc no scratchpad, não commitados), além das 12 da árvore.
 
@@ -50,7 +51,7 @@ O tracking granular (pass por step) está em `.agent/tasks/TASK-*.json` e o índ
 | 1 — Auth e painel base | TASK-9..16 | ✅ | argon2, login/cookie, middleware admin/editor, tela de login, gestão de usuários, reset de senha, logout |
 | 2 — Estrutura de navegação | TASK-17..24 | ✅ | data models e CRUD de sections/pages/tabs, árvore na sidebar, permissões editor=admin |
 | 3 — Editor de conteúdo | TASK-25..36 | ✅ | Tiptap + extensões + tabela + callout + component-embed placeholder, blocks, serialização, autosave, revisions, publish, histórico/restore |
-| 4 — Conector e preview | TASK-37..46 | ⬜ | PreviewConfig schema, preview-kit, connector CLI (discovery/entrypoints/build via Vite), component_previews, upload endpoint autenticado, tokens, exemplo CI, rota de artefatos estáticos |
+| 4 — Conector e preview | TASK-37..46 | 🔄 (37 ✅) | PreviewConfig schema, preview-kit, connector CLI (discovery/entrypoints/build via Vite), component_previews, upload endpoint autenticado, tokens, exemplo CI, rota de artefatos estáticos |
 | 5 — Integração do preview | TASK-47..51 | ⬜ | component-embed com iframe real, seletor componente/variante, painel de controles, doc pública com embeds, estado "sem preview disponível" |
 | 6 — Publicação e polimento | TASK-52..57 | ⬜ | layout público, busca full-text FTS5 + UI, tema dark/light, landing customizável, responsividade |
 | 7 — Empacotamento e lançamento | TASK-58..64 | ⬜ | imagem Docker publicada, compose de produção, docs de setup/CI/schema, README, CONTRIBUTING+licença, docs de backup |
@@ -159,9 +160,13 @@ O painel em dev acessa-se por `http://localhost:5173`; o proxy do `vite.config.t
 - O pepper em `password.ts` é lido lazy (cache no primeiro uso), não no module load — necessário para os testes que setam `ARGON2_SECRET` em `beforeEach`; `_resetPepperCacheForTests()` isola casos.
 - E2E: playwright instalado como devDep da raiz + `playwright install chromium`; scripts ad-hoc no scratchpad importam playwright por caminho absoluto do node_modules.
 
+## Fase 4 — Conector e preview (em andamento, branch `feature/fase-4-conector-preview`)
+
+- **TASK-37 (PreviewConfig)**: tipo final em `packages/schema/src/preview-config.ts` substituiu o placeholder da TASK-3. `PreviewVariant {id, label, props}`, `PreviewControl` = união discriminada por `kind` (`text`/`boolean`/`select`, cada um com `propName`, `label?` e `defaultValue?` tipado; `select` tem `options: string[]`). Contrato do `*.preview.tsx` documentado em JSDoc: default export `satisfies PreviewConfig` + export nomeado `Preview(props)` que o harness monta. Nenhum outro código importava o placeholder ainda (o `componentEmbed` da TASK-29 não usa o tipo).
+
 ## Pendências / próximos passos
 
-1. **Fase 3 concluída (TASK-30 a 36)**: modelo de blocks, autosave, publish/snapshot e histórico/restauração de revisões todos prontos. Próxima fase é a de preview (TASK-37+, `packages/preview-kit`/`connector`).
+1. **Fase 3 concluída (TASK-30 a 36)**: modelo de blocks, autosave, publish/snapshot e histórico/restauração de revisões todos prontos. Fase 4 em andamento na branch `feature/fase-4-conector-preview` — TASK-37 feita; próxima é a TASK-38 (`preview-kit` mount + postMessage).
 2. Race conhecido (aceito no MVP): flush de autosave no unmount × fetch do `getByTab` na remontagem — em navegação muito rápida ida-e-volta o editor pode abrir sem o último flush (o dado não se perde no banco; basta recarregar).
 3. `.pnpm-store/` local (criado pelo container de dev) está no `.gitignore`; pode ser apagado à vontade.
 
