@@ -235,21 +235,21 @@
     "title": "Publish flow creates a revision snapshot",
     "category": "api-endpoint",
     "specFilePath": ".agent/tasks/TASK-34.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-35",
     "title": "Revision history UI (view and restore previous snapshot)",
     "category": "ui-ux",
     "specFilePath": ".agent/tasks/TASK-35.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-36",
     "title": "Restore revision endpoint",
     "category": "api-endpoint",
     "specFilePath": ".agent/tasks/TASK-36.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-37",

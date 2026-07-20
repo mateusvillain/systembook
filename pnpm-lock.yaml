@@ -84,6 +84,9 @@ importers:
       '@systembook/server':
         specifier: workspace:*
         version: link:../server
+      '@trpc/server':
+        specifier: ^11.18.0
+        version: 11.18.0(typescript@5.9.3)
       '@types/node':
         specifier: ^22.20.1
         version: 22.20.1

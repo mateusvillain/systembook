@@ -16,28 +16,31 @@
       "step": 1,
       "description": "Implement pages.publish procedure",
       "details": "Add `publish: protectedProcedure.input(z.object({ pageId: z.string(), mensagem: z.string().optional() })).mutation(...)` to `apps/server/src/trpc/routers/pages.ts`. Query all tabs for the page, then all blocks per tab, assemble a `PageSnapshot`, and insert into `revisions` with `autorId: ctx.user.userId`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Add Publicar button to the content editor UI",
       "details": "In `apps/admin/src/features/editor/ContentEditor.tsx` (or a page-level toolbar wrapping all its tabs), add a 'Publicar' button calling `pages.publish.mutate({ pageId })`, with a loading state and success/error toast.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Guard against publishing with unsaved autosave in flight",
       "details": "Before publishing, ensure any pending debounced autosave (TASK-32) is flushed first, so the snapshot reflects the very latest edits rather than a stale draft.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Verify in browser",
       "details": "Using Playwright: edit content across two tabs of a page, click Publicar, and confirm a new revision appears (verifiable via a direct query or the history UI once TASK-35 exists) containing both tabs' current content.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-33", "TASK-32"],
+  "dependencies": [
+    "TASK-33",
+    "TASK-32"
+  ],
   "estimatedComplexity": "medium",
   "technicalNotes": [
     "This is the only place a `revisions` row is created in the MVP — do not add revision creation anywhere else (autosave, section/tab CRUD, etc.)."

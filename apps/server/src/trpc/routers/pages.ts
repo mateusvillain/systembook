@@ -2,7 +2,8 @@ import { TRPCError } from '@trpc/server';
 import { and, asc, eq, max } from 'drizzle-orm';
 import { z } from 'zod';
 import { isUniqueViolation } from '../../db/errors.js';
-import { pages, sections } from '../../db/schema.js';
+import { createRevision, restoreRevision } from '../../db/revisions.js';
+import { pages, revisions, sections } from '../../db/schema.js';
 import { protectedProcedure, router } from '../init.js';
 import { assertCompleteReorder } from './reorder.js';
 
@@ -118,7 +119,7 @@ export const pagesRouter = router({
       return { ok: true };
     }),
 
-  // Mesmo cascade das sections: tabs (e blocks/revisions futuros) caem via FK.
+  // Mesmo cascade das sections: tabs (e blocks/revisions) caem via FK.
   delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(({ ctx, input }) => {
     const deleted = ctx.db
       .delete(pages)
@@ -128,4 +129,47 @@ export const pagesRouter = router({
     if (!deleted) throw pageNotFound();
     return { ok: true };
   }),
+
+  // Único lugar do MVP que cria uma revisão (nota da TASK-34) — snapshota
+  // todas as tabs/blocks atuais da página. `autorId` vem do contexto, nunca
+  // do client. O read path público (TASK-50) deve ler daqui, não de `blocks`
+  // — ver ordering dependency documentada no spec da TASK-34.
+  publish: protectedProcedure
+    .input(z.object({ pageId: z.string(), mensagem: z.string().optional() }))
+    .mutation(({ ctx, input }) => {
+      const page = ctx.db.select({ id: pages.id }).from(pages).where(eq(pages.id, input.pageId)).get();
+      if (!page) throw pageNotFound();
+
+      return createRevision(ctx.db, {
+        pageId: input.pageId,
+        autorId: ctx.user.userId,
+        mensagem: input.mensagem,
+      });
+    }),
+
+  // Restaura o snapshot de uma revisão passada como conteúdo atual da página
+  // (TASK-36) e encadeia uma nova revisão registrando o restore — histórico
+  // append-only, nunca reescreve o passado. Tabs do snapshot que não existem
+  // mais são puladas (não é erro) e reportadas em `skippedTabIds`.
+  restoreRevision: protectedProcedure
+    .input(z.object({ pageId: z.string(), revisionId: z.string() }))
+    .mutation(({ ctx, input }) => {
+      const page = ctx.db.select({ id: pages.id }).from(pages).where(eq(pages.id, input.pageId)).get();
+      if (!page) throw pageNotFound();
+
+      const targetRevision = ctx.db
+        .select()
+        .from(revisions)
+        .where(and(eq(revisions.id, input.revisionId), eq(revisions.pageId, input.pageId)))
+        .get();
+      if (!targetRevision) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Revisão não encontrada nesta página' });
+      }
+
+      return restoreRevision(ctx.db, {
+        pageId: input.pageId,
+        targetRevision,
+        autorId: ctx.user.userId,
+      });
+    }),
 });
