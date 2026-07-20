@@ -129,5 +129,17 @@ export async function buildEntries(
   }));
   await writeFile(path.join(outDir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
 
+  // preview-config.json por variante (TASK-49): fica DENTRO do entryDir para
+  // viajar no mesmo tar da variante (docs/ci-example.md tara `<entryDir> assets`)
+  // e ser extraído ao lado do index.html na instância. O Vite não copia
+  // arquivos arbitrários do root para o dist, então gravamos após o build.
+  for (const entry of entries) {
+    const dir = path.join(outDir, path.basename(entry.entryDir));
+    await writeFile(
+      path.join(dir, 'preview-config.json'),
+      `${JSON.stringify(entry.config, null, 2)}\n`,
+    );
+  }
+
   return { outDir };
 }
