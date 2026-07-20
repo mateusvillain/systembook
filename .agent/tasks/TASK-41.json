@@ -15,34 +15,36 @@
       "step": 1,
       "description": "Add Vite as a build dependency",
       "details": "Add `vite` and `@vitejs/plugin-react` to `packages/connector`'s dependencies.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Chain discover → generate → build in the CLI",
       "details": "In `packages/connector/src/cli.ts`, implement `build` command: call the TASK-39 discovery function, then TASK-40's generation function, collecting all generated `index.html` paths.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Configure and invoke Vite's build API programmatically",
       "details": "Use Vite's JS API (`build()` from `'vite'`) with `build: { rollupOptions: { input: { ...entryNameToHtmlPath } }, outDir: options.out } `, `plugins: [react()]`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Fail loudly on build errors",
       "details": "Catch and rethrow Vite build errors with `process.exitCode = 1` and a message identifying which entry failed, rather than letting the process exit 0 on partial failure.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 5,
       "description": "Verify a built artifact renders standalone",
       "details": "Run the full build against the fixture repo, then serve the output directory with a static file server and open a variant's HTML in a browser (or headless via Playwright) to confirm it renders the component with no console errors about missing assets.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-40"],
+  "dependencies": [
+    "TASK-40"
+  ],
   "estimatedComplexity": "high",
   "technicalNotes": [
     "This build step runs inside the *consuming team's* CI (per the PRD's architecture), not inside the SystemBook instance itself — keep the connector's dependencies self-contained so it can run in an arbitrary repo's CI environment with just `npx` or as an installed devDependency.",
