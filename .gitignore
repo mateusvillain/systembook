@@ -25,3 +25,6 @@ data/
 
 # Store do pnpm criado pelo container de dev
 .pnpm-store/
+
+# Entradas sintéticas geradas pelo connector (systembook-connector generate)
+.systembook/

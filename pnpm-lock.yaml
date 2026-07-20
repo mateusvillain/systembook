@@ -148,6 +148,9 @@ importers:
 
   packages/connector:
     dependencies:
+      '@systembook/preview-kit':
+        specifier: workspace:*
+        version: link:../preview-kit
       '@systembook/schema':
         specifier: workspace:*
         version: link:../schema

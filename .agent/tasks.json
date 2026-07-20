@@ -277,7 +277,7 @@
     "title": "connector CLI generates synthetic entrypoints per variant",
     "category": "functional",
     "specFilePath": ".agent/tasks/TASK-40.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-41",

@@ -40,6 +40,7 @@
 | TASK-37 | ✅ | `PreviewConfig` final em `packages/schema` (variants + união discriminada de controls text/boolean/select); JSDoc com contrato do `*.preview.tsx` |
 | TASK-38 | ✅ | `preview-kit` `mount()` com variantes, erro para variantId desconhecida, postMessage com allow-list de origin; 7 testes vitest+jsdom |
 | TASK-39 | ✅ | connector CLI `discover --root` (fast-glob + esbuild bundle + import de temp + zod); fixture com 2 válidos/1 malformado/1 em node_modules; 2 testes |
+| TASK-40 | ✅ | connector `generate`: entry tsx+html por variante em `.systembook/entries/{comp}--{variant}/`, limpeza de órfãos, colisão de slug = erro; 3 testes + smoke de bundle |
 
 **Cobertura**: 73 testes vitest no server (`pnpm --filter @systembook/server test`, todos verdes) + verificações E2E Playwright: 29 do editor base, 12 dos nós custom, 16 do autosave e o fluxo completo de publish/histórico/restore (scripts ad-hoc no scratchpad, não commitados), além das 12 da árvore.
 
@@ -53,7 +54,7 @@ O tracking granular (pass por step) está em `.agent/tasks/TASK-*.json` e o índ
 | 1 — Auth e painel base | TASK-9..16 | ✅ | argon2, login/cookie, middleware admin/editor, tela de login, gestão de usuários, reset de senha, logout |
 | 2 — Estrutura de navegação | TASK-17..24 | ✅ | data models e CRUD de sections/pages/tabs, árvore na sidebar, permissões editor=admin |
 | 3 — Editor de conteúdo | TASK-25..36 | ✅ | Tiptap + extensões + tabela + callout + component-embed placeholder, blocks, serialização, autosave, revisions, publish, histórico/restore |
-| 4 — Conector e preview | TASK-37..46 | 🔄 (37–39 ✅) | PreviewConfig schema, preview-kit, connector CLI (discovery/entrypoints/build via Vite), component_previews, upload endpoint autenticado, tokens, exemplo CI, rota de artefatos estáticos |
+| 4 — Conector e preview | TASK-37..46 | 🔄 (37–40 ✅) | PreviewConfig schema, preview-kit, connector CLI (discovery/entrypoints/build via Vite), component_previews, upload endpoint autenticado, tokens, exemplo CI, rota de artefatos estáticos |
 | 5 — Integração do preview | TASK-47..51 | ⬜ | component-embed com iframe real, seletor componente/variante, painel de controles, doc pública com embeds, estado "sem preview disponível" |
 | 6 — Publicação e polimento | TASK-52..57 | ⬜ | layout público, busca full-text FTS5 + UI, tema dark/light, landing customizável, responsividade |
 | 7 — Empacotamento e lançamento | TASK-58..64 | ⬜ | imagem Docker publicada, compose de produção, docs de setup/CI/schema, README, CONTRIBUTING+licença, docs de backup |
@@ -173,10 +174,12 @@ O painel em dev acessa-se por `http://localhost:5173`; o proxy do `vite.config.t
 - **Gotcha vitest × import dinâmico**: vite-node reescreve `import()` e o resolver dele não acha arquivos temporários fora da raiz do projeto (`Cannot find module .../T/...`). Solução: `nativeImport = new Function('specifier', 'return import(specifier)')` — opaco ao transform, usa o import real do Node (funciona igual sob tsx e vitest).
 - **Fixtures do connector** em `packages/connector/fixtures/sample-repo/` (fora de `src` — não entram em tsc/eslint): `button`/`card` válidos (com JSX; react é devDep do connector para o jsx-runtime resolver), `broken` sem `variants`, e `node_modules/fake-lib/ignored.preview.tsx` provando a exclusão — exigiu exceção no `.gitignore` raiz (`!packages/connector/fixtures/**/node_modules/`).
 - Módulos dos times são executados **no processo do connector** (não sandbox) — decisão documentada no código: o connector roda no CI do próprio time, sobre o código dele mesmo; `node:vm` não seria fronteira de segurança real.
+- **TASK-40 (generate)**: `connector/src/generate.ts` — `generateEntries(previews, {root, outDir?})` escreve `{outDir}/{slug(component)}--{slug(variantId)}/index.tsx + index.html` (default `<root>/.systembook/entries`, adicionado ao .gitignore raiz). **Convenção fixada**: a entry importa `config` (default) e `{ Preview }` (nomeado) do próprio `*.preview.tsx` — o contrato da TASK-37 já exigia o export `Preview`, então não há import separado do componente. `rm -rf` do outDir antes de gerar (idempotência/órfãos); colisão de slug entre previews → Error com os dois filePaths. CLI `generate --root --out-dir` roda discover+generate, exit 1 se houver preview inválido (mas gera os válidos).
+- **Smoke de build validado manualmente**: entry gerada em `fixtures/sample-repo/.systembook/entries` bundla com `esbuild --bundle --jsx=automatic` (resolução: entry → preview.tsx relativo; `@systembook/preview-kit` e react resolvem subindo até `packages/connector/node_modules` — por isso preview-kit é **dependency** do connector). Base pronta para o build Vite da TASK-41.
 
 ## Pendências / próximos passos
 
-1. **Fase 3 concluída (TASK-30 a 36)**: modelo de blocks, autosave, publish/snapshot e histórico/restauração de revisões todos prontos. Fase 4 em andamento na branch `feature/fase-4-conector-preview` — TASK-37 a 39 feitas; próxima é a TASK-40 (connector: entrypoints sintéticos por variante).
+1. **Fase 3 concluída (TASK-30 a 36)**: modelo de blocks, autosave, publish/snapshot e histórico/restauração de revisões todos prontos. Fase 4 em andamento na branch `feature/fase-4-conector-preview` — TASK-37 a 40 feitas; próxima é a TASK-41 (connector: build Vite das entradas em artefato estático).
 2. Race conhecido (aceito no MVP): flush de autosave no unmount × fetch do `getByTab` na remontagem — em navegação muito rápida ida-e-volta o editor pode abrir sem o último flush (o dado não se perde no banco; basta recarregar).
 3. `.pnpm-store/` local (criado pelo container de dev) está no `.gitignore`; pode ser apagado à vontade.
 
