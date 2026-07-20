@@ -1,6 +1,10 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
-import { getLatestPreview } from '../../db/componentPreviews.js';
+import {
+  getLatestPreview,
+  listComponentNames,
+  listVariantIds,
+} from '../../db/componentPreviews.js';
 import { resolvePreviewEntry } from '../../previews/entry.js';
 import { PREVIEWS_URL_PREFIX } from '../../previews/serve.js';
 import { protectedProcedure, router } from '../init.js';
@@ -14,6 +18,14 @@ import { protectedProcedure, router } from '../init.js';
  * decisão de escopo de blocks/revisions).
  */
 export const componentPreviewsRouter = router({
+  /** Componentes selecionáveis no picker (TASK-48) — só os já publicados. */
+  listComponents: protectedProcedure.query(({ ctx }) => listComponentNames(ctx.db)),
+
+  /** Variantes publicadas de um componente (segundo passo do picker). */
+  listVariants: protectedProcedure
+    .input(z.object({ componentName: z.string().min(1) }))
+    .query(({ ctx, input }) => listVariantIds(ctx.db, input.componentName)),
+
   getLatest: protectedProcedure
     .input(z.object({ componentName: z.string().min(1), variantId: z.string().min(1) }))
     .query(async ({ ctx, input }) => {

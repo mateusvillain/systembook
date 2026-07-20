@@ -132,4 +132,46 @@ describe('componentPreviews.getLatest (TASK-47)', () => {
       caller.componentPreviews.getLatest({ componentName: 'Button', variantId: 'primary' }),
     ).rejects.toThrow(/UNAUTHORIZED/);
   });
+
+  describe('listagem para o picker (TASK-48)', () => {
+    beforeEach(() => {
+      // Button tem 2 variantes (primary duas vezes → distinct), Card só default.
+      for (const [c, v, sha] of [
+        ['Button', 'primary', 's1'],
+        ['Button', 'primary', 's2'],
+        ['Button', 'disabled', 's3'],
+        ['Card', 'default', 's4'],
+      ] as const) {
+        insertComponentPreview(db, {
+          componentName: c,
+          variantId: v,
+          commitSha: sha,
+          pathEstatico: `${c}/${v}/${sha}`,
+        });
+      }
+    });
+
+    it('listComponents retorna nomes distintos ordenados', async () => {
+      const caller = callerFor(db, editor, previewsRoot);
+      const names = await caller.componentPreviews.listComponents();
+      expect(names).toEqual(['Button', 'Card']);
+    });
+
+    it('listVariants retorna variantes distintas do componente', async () => {
+      const caller = callerFor(db, editor, previewsRoot);
+      const variants = await caller.componentPreviews.listVariants({ componentName: 'Button' });
+      expect(variants).toEqual(['disabled', 'primary']);
+    });
+
+    it('listVariants de componente inexistente é vazio', async () => {
+      const caller = callerFor(db, editor, previewsRoot);
+      const variants = await caller.componentPreviews.listVariants({ componentName: 'Nope' });
+      expect(variants).toEqual([]);
+    });
+
+    it('listComponents exige autenticação', async () => {
+      const caller = callerFor(db, null, previewsRoot);
+      await expect(caller.componentPreviews.listComponents()).rejects.toThrow(/UNAUTHORIZED/);
+    });
+  });
 });

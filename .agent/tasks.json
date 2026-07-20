@@ -333,7 +333,7 @@
     "title": "Component/variant selector when inserting a component-embed",
     "category": "ui-ux",
     "specFilePath": ".agent/tasks/TASK-48.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-49",

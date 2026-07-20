@@ -136,6 +136,15 @@
   border-radius: 6px;
 }
 
+/* Barra de metadados + controle "Trocar componente" acima do iframe */
+.sb-editor .sb-component-embed-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
 /* Altura padrão 240px, redimensionável verticalmente pelo autor
    (resize exige overflow != visible). */
 .sb-editor .sb-component-embed-frame {

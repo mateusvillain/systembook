@@ -1,7 +1,12 @@
+import { useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import { useEditorState } from '@tiptap/react';
 import type { CalloutVariant } from '@systembook/schema';
 import { CALLOUT_META, CALLOUT_VARIANTS } from './nodes/Callout.js';
+import {
+  ComponentEmbedPicker,
+  type ComponentEmbedSelection,
+} from './ComponentEmbedPicker.js';
 
 const buttonStyle = (active: boolean): React.CSSProperties => ({
   padding: '0.25rem 0.5rem',
@@ -59,10 +64,19 @@ export function EditorToolbar({ editor }: { editor: Editor | null }) {
         inTable: e.isActive('table'),
       },
   });
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   if (!editor || !state) return null;
 
   const chain = () => editor.chain().focus();
+  const insertEmbed = (selection: ComponentEmbedSelection) => {
+    chain()
+      .insertContent({
+        type: 'componentEmbed',
+        attrs: { componentName: selection.componentName, variantId: selection.variantId },
+      })
+      .run();
+  };
   // Insere com um parágrafo dentro e posiciona o cursor nele — o insertContent
   // sozinho deixa o cursor fora do callout quando o parágrafo atual não é vazio.
   const insertCallout = (variant: CalloutVariant) => {
@@ -179,12 +193,17 @@ export function EditorToolbar({ editor }: { editor: Editor | null }) {
       <ToolbarButton
         label="🧩 Embed"
         title="Inserir embed de componente"
-        onClick={() =>
-          chain()
-            .insertContent({ type: 'componentEmbed', attrs: { componentName: '', variantId: null } })
-            .run()
-        }
+        onClick={() => setPickerOpen(true)}
       />
+      {pickerOpen && (
+        <ComponentEmbedPicker
+          onConfirm={(selection) => {
+            setPickerOpen(false);
+            insertEmbed(selection);
+          }}
+          onCancel={() => setPickerOpen(false)}
+        />
+      )}
       {state.inTable && (
         <span
           role="group"
