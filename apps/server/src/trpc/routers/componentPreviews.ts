@@ -7,7 +7,7 @@ import {
 } from '../../db/componentPreviews.js';
 import { readPreviewConfig, resolvePreviewEntry } from '../../previews/entry.js';
 import { PREVIEWS_URL_PREFIX } from '../../previews/serve.js';
-import { protectedProcedure, router } from '../init.js';
+import { protectedProcedure, publicProcedure, router } from '../init.js';
 
 /**
  * Resolução de previews de componente para o editor (TASK-47). `getLatest`
@@ -26,7 +26,10 @@ export const componentPreviewsRouter = router({
     .input(z.object({ componentName: z.string().min(1) }))
     .query(({ ctx, input }) => listVariantIds(ctx.db, input.componentName)),
 
-  getLatest: protectedProcedure
+  // publicProcedure: o preview resolvido (URL + config) é conteúdo público —
+  // o mesmo artefato já é servido sem auth pela rota /previews/* (TASK-46) e o
+  // component-embed precisa dele na doc pública deslogada (TASK-50).
+  getLatest: publicProcedure
     .input(z.object({ componentName: z.string().min(1), variantId: z.string().min(1) }))
     .query(async ({ ctx, input }) => {
       const row = getLatestPreview(ctx.db, input.componentName, input.variantId);

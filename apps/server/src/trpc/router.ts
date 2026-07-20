@@ -25,7 +25,9 @@ import { usersRouter } from './routers/users.js';
  * | tabs      | listByPage, create, rename, reorder, delete      | protectedProcedure (admin + editor)  |
  * | blocks    | getByTab, saveDraft                              | protectedProcedure (admin + editor)  |
  * | revisions | listByPage, getById                              | protectedProcedure (admin + editor)  |
- * | componentPreviews | getLatest, listComponents, listVariants   | protectedProcedure (admin + editor)  |
+ * | revisions | getLatestPublished                               | publicProcedure (doc pública)        |
+ * | componentPreviews | listComponents, listVariants             | protectedProcedure (admin + editor)  |
+ * | componentPreviews | getLatest                                | publicProcedure (embed público)      |
  * | uploadTokens | list, create, revoke                          | adminProcedure (só admin)            |
  *
  * Decisão de escopo do PRD: `editor` tem CRUD completo sobre a estrutura de

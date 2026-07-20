@@ -9,10 +9,13 @@ import { UsersPage } from './pages/UsersPage.js';
 import { UploadTokensPage } from './pages/UploadTokensPage.js';
 import { TabContentPage } from './pages/TabContentPage.js';
 import { PageHistoryPage } from './pages/PageHistoryPage.js';
+import { PublicPage } from './pages/PublicPage.js';
 import { AdminLayout } from './components/AdminLayout.js';
 
 const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
+  // Doc pública (TASK-50) — fora do AdminLayout: sem auth, sem chrome de admin.
+  { path: '/p/:pageId', element: <PublicPage /> },
   {
     path: '/',
     element: <AdminLayout />,
