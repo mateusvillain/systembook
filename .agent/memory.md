@@ -1,10 +1,10 @@
 # Memória do projeto — SystemBook
 
-> Log de desenvolvimento mantido pelo agente. Última atualização: **2026-07-20** (Fase 5 **iniciada** na branch `feature/fase-5-integracao-preview` — TASK-47 concluída: `component-embed` renderiza iframe real do artefato publicado mais recente. Próxima: TASK-48, seletor de componente/variante).
+> Log de desenvolvimento mantido pelo agente. Última atualização: **2026-07-20** (Fase 5 em andamento na branch `feature/fase-5-integracao-preview` — TASK-47 (iframe real) e TASK-48 (picker de componente/variante) concluídas. Próxima: TASK-49, painel de controles).
 
 ## Estado atual
 
-**Tasks 1–47 concluídas e verificadas.** Fases 0–4 fechadas; Fase 5 em andamento. Próximo passo: TASK-48 (UI de seleção componente/variante no editor). Existe um `CLAUDE.md` na raiz com o guia do repositório.
+**Tasks 1–48 concluídas e verificadas.** Fases 0–4 fechadas; Fase 5 em andamento (47–48 ✅). Próximo passo: TASK-49 (painel de controles do preview via postMessage). Existe um `CLAUDE.md` na raiz com o guia do repositório.
 
 | Task | Status | Verificação |
 | --- | --- | --- |
@@ -48,8 +48,9 @@
 | TASK-45 | ✅ | `docs/ci-example.md` (workflow GitHub Actions completo) + `manifest.json` no build do connector; loop de upload validado literalmente contra server real |
 | TASK-46 | ✅ | `GET /previews/*` público com cache imutável + traversal barrado; 10 testes + smoke contra server buildado |
 | TASK-47 | ✅ | `component-embed` renderiza iframe real do artefato mais recente via `componentPreviews.getLatest`; 5 testes + 7 checks Playwright (fluxo TASK-41→43→47 real) |
+| TASK-48 | ✅ | Picker de componente/variante (`componentPreviews.listComponents`/`listVariants`) na toolbar + re-seleção sobre embed existente; 4 testes + 10 checks Playwright |
 
-**Cobertura**: 123 testes vitest (108 server + 7 preview-kit + 8 connector), todos verdes via `pnpm test`. E2E Playwright/curl ad-hoc (scratchpad, não commitados): editor base (29), nós custom (12), autosave (16), árvore (12), publish/histórico/restore, tokens (12 checks), artefato de preview em Chromium headless, o loop de CI documentado contra server real e o iframe de preview do component-embed (7 checks).
+**Cobertura**: 127 testes vitest (112 server + 7 preview-kit + 8 connector), todos verdes via `pnpm test`. E2E Playwright/curl ad-hoc (scratchpad, não commitados): editor base (29), nós custom (12), autosave (16), árvore (12), publish/histórico/restore, tokens (12 checks), artefato de preview em Chromium headless, o loop de CI documentado contra server real, o iframe de preview do component-embed (7 checks) e o picker de inserção/re-seleção (10 checks).
 
 O tracking granular (pass por step) está em `.agent/tasks/TASK-*.json` e o índice em `.agent/tasks.json`.
 
@@ -62,7 +63,7 @@ O tracking granular (pass por step) está em `.agent/tasks/TASK-*.json` e o índ
 | 2 — Estrutura de navegação | TASK-17..24 | ✅ | data models e CRUD de sections/pages/tabs, árvore na sidebar, permissões editor=admin |
 | 3 — Editor de conteúdo | TASK-25..36 | ✅ | Tiptap + extensões + tabela + callout + component-embed placeholder, blocks, serialização, autosave, revisions, publish, histórico/restore |
 | 4 — Conector e preview | TASK-37..46 | ✅ | PreviewConfig schema, preview-kit, connector CLI (discovery/entrypoints/build via Vite), component_previews, upload endpoint autenticado, tokens, exemplo CI, rota de artefatos estáticos |
-| 5 — Integração do preview | TASK-47..51 | 🔄 | component-embed com iframe real (✅ TASK-47), seletor componente/variante, painel de controles, doc pública com embeds, estado "sem preview disponível" |
+| 5 — Integração do preview | TASK-47..51 | 🔄 | component-embed com iframe real (✅ TASK-47), seletor componente/variante (✅ TASK-48), painel de controles, doc pública com embeds, estado "sem preview disponível" |
 | 6 — Publicação e polimento | TASK-52..57 | ⬜ | layout público, busca full-text FTS5 + UI, tema dark/light, landing customizável, responsividade |
 | 7 — Empacotamento e lançamento | TASK-58..64 | ⬜ | imagem Docker publicada, compose de produção, docs de setup/CI/schema, README, CONTRIBUTING+licença, docs de backup |
 
@@ -211,10 +212,13 @@ O painel em dev acessa-se por `http://localhost:5173`; o proxy do `vite.config.t
 - **⚠️ Gotcha crítico de CORS + iframe sandbox** (descoberto e corrigido na verificação Playwright): o iframe usa `sandbox="allow-scripts"` **sem** `allow-same-origin` (política documentada no código: allow-scripts é obrigatório p/ rodar o bundle React de terceiros; same-origin omitido p/ negar acesso a cookies/DOM do painel). Isso dá ao iframe **origem opaca**, e scripts `type="module"` são **sempre** buscados em modo CORS → de origem opaca (`Origin: null`) o browser exige `Access-Control-Allow-Origin` no asset, senão **bloqueia o bundle e o iframe fica em branco**. Fix: `access-control-allow-origin: *` na rota `GET /previews/*` (`serve.ts`) — seguro porque preview é público sem segredos. Sem esse header o preview simplesmente não renderiza dentro do sandbox. Teste da serve.test.ts asserta o header.
 - **Sizing do iframe**: altura padrão 240px, `resize: vertical` + `overflow: auto` no `.sb-component-embed-frame` (resize exige overflow != visible). Auto-resize via postMessage ficou como enhancement futuro.
 - **Verificação E2E (scratchpad, `e2e/verify.mjs`)**: fluxo TASK-41→43→47 **real** — build do connector na fixture `sample-repo` (Button/primary + Card/default), upload via `POST /api/previews` com token real, inserção do embed no editor via `window.systembookEditor.chain().insertContent({type:'componentEmbed', attrs})`, e checagem no Chromium: iframe de Button/primary renderiza o botão "Salvar", Card/default (sem artefato) cai no placeholder `empty` sem iframe, sandbox correto, altura ~240px, zero erros de console. **Playwright acessa o frame de origem opaca normalmente** (CDP, não same-origin) — dá pra ler o texto renderizado dentro do iframe.
+- **TASK-48 (picker de componente/variante)**: `componentPreviews.listComponents` (distinct `component_name`) e `listVariants({componentName})` (distinct `variant_id`) — helpers `listComponentNames`/`listVariantIds` em `db/componentPreviews.ts` via `selectDistinct`. **Fonte de dados é só `component_previews`**: não há registro separado de componentes, um componente só aparece no picker após o primeiro upload de CI (nota do spec). `ComponentEmbedPicker.tsx` é um modal controlado (estilos inline, padrão do codebase) em 2 passos: lista filtrável de nomes → variantes do componente escolhido; confirma com `onConfirm({componentName, variantId})`. Fecha no Esc e no clique no overlay (`onMouseDown` no backdrop, `stopPropagation` no painel). Seletores E2E: `[data-testid=component-embed-picker]`, `[data-component-option=<nome>]`, `[data-variant-option=<id>]`, `[data-testid=component-embed-reselect]`.
+- **Toolbar (step 3)**: o botão "🧩 Embed" agora abre o picker (`pickerOpen` state) em vez de inserir attrs vazias; `onConfirm` insere o nó com a seleção. **Re-seleção (step 4)**: o NodeView do ComponentEmbed ganhou um controle "Trocar componente"/"Selecionar componente" (presente em todos os estados: unset/loading/empty/live) que reabre o mesmo picker **pré-preenchido** (`initial`) e atualiza via `updateAttributes` no confirm — a variante atual aparece marcada "(atual)". O picker é usado nos dois lugares (toolbar e NodeView), ambos dentro do TRPCProvider.
+- **Verificação E2E (scratchpad, `e2e/verify48.mjs`)**: 3 artefatos publicados (Button/primary, Button/disabled, Card/default). 10 checks no Chromium: picker abre pela toolbar, lista os 2 componentes, filtro "card" reduz a 1, variantes de Button listadas, seleção Button/primary insere o embed e renderiza "Salvar", reabrir o picker sobre o embed mostra "primary (atual)", trocar para "disabled" atualiza os attrs e re-renderiza o iframe (botão `disabled`), zero erros de console. **Gotcha de teste**: a lista de componentes carrega via query async — esperar `[data-component-option]` aparecer antes de contar (o primeiro count dava 0).
 
 ## Pendências / próximos passos
 
-1. Fase 5 em andamento na branch `feature/fase-5-integracao-preview`. Próxima é a **TASK-48** (UI de seleção de componente/variante para o component-embed — hoje só dá pra setar `componentName`/`variantId` programaticamente). Fase 4 já mergeada na `main` (PR #1).
+1. Fase 5 em andamento na branch `feature/fase-5-integracao-preview`. Próxima é a **TASK-49** (painel de controles: usar os `controls` do PreviewConfig para renderizar inputs no editor e enviar `systembook:update-props` via postMessage ao iframe — o preview-kit já escuta esse contrato, TASK-38). Fase 4 já mergeada na `main` (PR #1).
 2. Race conhecido (aceito no MVP): flush de autosave no unmount × fetch do `getByTab` na remontagem — em navegação muito rápida ida-e-volta o editor pode abrir sem o último flush (o dado não se perde no banco; basta recarregar).
 3. `.pnpm-store/` local (criado pelo container de dev) está no `.gitignore`; pode ser apagado à vontade.
 

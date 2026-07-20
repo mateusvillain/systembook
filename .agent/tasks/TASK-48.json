@@ -16,34 +16,36 @@
       "step": 1,
       "description": "Add componentPreviews listing queries",
       "details": "Add `componentPreviews.listComponents` (distinct `component_name` values with at least one row) and `componentPreviews.listVariants` (input `{ componentName }`, distinct `variant_id` values) to the router from TASK-47.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Build the picker modal/popover",
       "details": "Create `apps/admin/src/features/editor/ComponentEmbedPicker.tsx`: step 1 shows a filterable list of component names, step 2 (after selecting a component) shows its variants.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Wire the picker to insertion",
       "details": "Change the TASK-29 toolbar action to open the picker instead of inserting empty attrs directly; on confirm, insert the `component-embed` node with the selected `componentName`/`variantId`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Add a re-select affordance on existing embeds",
       "details": "In the `ComponentEmbed` NodeView (TASK-47), add a small 'Trocar componente' control that reopens the same picker pre-filled with the current selection, updating attrs via `updateAttributes` on confirm.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 5,
       "description": "Verify in browser",
       "details": "Using Playwright: with at least one published component/variant seeded, open the picker, search and select it, confirm the embed renders (per TASK-47); reopen the picker on that embed and switch to a different variant, confirming the iframe updates.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-47"],
+  "dependencies": [
+    "TASK-47"
+  ],
   "estimatedComplexity": "medium",
   "technicalNotes": [
     "The picker's data source is `component_previews`, which only contains components a team has actually published — there is no separate 'component registry' table; a component only becomes selectable after its first successful CI upload (TASK-43)."

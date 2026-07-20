@@ -54,3 +54,29 @@ export function getLatestPreview(
     .get();
   return row ?? null;
 }
+
+/**
+ * Nomes de componente distintos com ao menos uma publicação — fonte do picker
+ * de inserção (TASK-48). Não há tabela de "registro de componentes": um
+ * componente só é selecionável depois do primeiro upload de CI (TASK-43).
+ * Ordenado por nome para uma lista estável.
+ */
+export function listComponentNames(db: Db): string[] {
+  return db
+    .selectDistinct({ componentName: componentPreviews.componentName })
+    .from(componentPreviews)
+    .orderBy(componentPreviews.componentName)
+    .all()
+    .map((r) => r.componentName);
+}
+
+/** Variantes distintas publicadas de um componente (segundo passo do picker). */
+export function listVariantIds(db: Db, componentName: string): string[] {
+  return db
+    .selectDistinct({ variantId: componentPreviews.variantId })
+    .from(componentPreviews)
+    .where(eq(componentPreviews.componentName, componentName))
+    .orderBy(componentPreviews.variantId)
+    .all()
+    .map((r) => r.variantId);
+}
