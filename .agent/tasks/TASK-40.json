@@ -15,34 +15,37 @@
       "step": 1,
       "description": "Design the synthetic entry naming scheme",
       "details": "Use a deterministic naming pattern like `.systembook/entries/{componentName}--{variantId}/index.tsx` and a sibling `index.html`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Generate the entry TSX file per variant",
       "details": "Template out a file that does: `import Component from '<relative path to original file's component export>'; import config from '<relative path to *.preview.tsx>'; import { mount } from '@systembook/preview-kit'; mount(document.getElementById('root')!, config, Component, { variantId: '<variantId>' });`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Generate the matching HTML shell",
       "details": "Template a minimal `index.html` with `<div id=\"root\"></div>` and `<script type=\"module\" src=\"./index.tsx\"></script>`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Clean stale entries before regenerating",
       "details": "Before writing new entries, remove any pre-existing `.systembook/entries/` directory content so components/variants removed from source don't leave orphaned build entries.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 5,
       "description": "Test entry generation against the fixture repo",
       "details": "Using the TASK-39 fixture, run generation and confirm the expected entry directories exist with correct TSX/HTML content for each variant of each valid `*.preview.tsx` file.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-39", "TASK-38"],
+  "dependencies": [
+    "TASK-39",
+    "TASK-38"
+  ],
   "estimatedComplexity": "medium",
   "technicalNotes": [
     "This assumes each `*.preview.tsx` file's directory also exports (or sits next to) the actual React component being previewed — document this convention clearly since it affects how the generated entry resolves the component import path.",

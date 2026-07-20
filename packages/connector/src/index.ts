@@ -6,3 +6,8 @@ export {
   type DiscoverOptions,
 } from './discover.js';
 export { previewConfigSchema } from './preview-config-schema.js';
+export {
+  generateEntries,
+  type GeneratedEntry,
+  type GenerateOptions,
+} from './generate.js';
