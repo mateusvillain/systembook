@@ -1,0 +1,91 @@
+/* Layout da documentação pública (TASK-52) — chrome próprio, separado do
+   painel admin. */
+
+.sb-public {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  color: #1a1a1a;
+  background: #fff;
+}
+
+.sb-public-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.9rem 1.5rem;
+  border-bottom: 1px solid #eaeaea;
+  font-weight: 600;
+}
+
+.sb-public-body {
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+}
+
+.sb-public-sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  border-right: 1px solid #eaeaea;
+  padding: 1.25rem 1rem;
+  overflow-y: auto;
+}
+
+.sb-public-content {
+  flex: 1;
+  min-width: 0;
+  padding: 2rem clamp(1.5rem, 5vw, 3.5rem);
+  max-width: 900px;
+}
+
+.sb-public-content h1.sb-public-title {
+  margin: 0 0 1.25rem;
+  font-size: 1.9rem;
+}
+
+/* Navegação */
+.sb-public-section {
+  margin-bottom: 1.25rem;
+}
+
+.sb-public-section-title {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #888;
+  margin: 0 0 0.4rem;
+  padding: 0 0.5rem;
+}
+
+.sb-public-pagelist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.sb-public-pagelink {
+  display: block;
+  padding: 0.35rem 0.5rem;
+  border-radius: 5px;
+  color: #333;
+  text-decoration: none;
+  font-size: 0.92rem;
+}
+
+.sb-public-pagelink:hover {
+  background: #f3f4f6;
+}
+
+.sb-public-pagelink.active {
+  background: #eef4ff;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.sb-public-empty {
+  color: #666;
+  padding: 1rem;
+}
