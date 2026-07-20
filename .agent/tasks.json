@@ -326,7 +326,7 @@
     "title": "component-embed renders real iframe pointing to latest artifact",
     "category": "functional",
     "specFilePath": ".agent/tasks/TASK-47.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-48",

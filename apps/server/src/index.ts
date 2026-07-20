@@ -32,7 +32,7 @@ const server = createServer((req, res) => {
       req,
       res,
       path: url.pathname.slice('/trpc/'.length),
-      createContext: () => createContext(db, req, res),
+      createContext: () => createContext(db, req, res, env.PREVIEWS_PATH),
     });
     return;
   }

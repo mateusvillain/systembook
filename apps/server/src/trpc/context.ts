@@ -15,6 +15,13 @@ export interface TrpcContext {
   /** null em chamadas fora do HTTP (testes via createCaller sem resposta). */
   res: ServerResponse | null;
   user: AuthUser | null;
+  /**
+   * Raiz dos artefatos de preview no volume (`env.PREVIEWS_PATH`) — usada por
+   * `componentPreviews.getLatest` (TASK-47) para localizar o `index.html` da
+   * variante em disco. Opcional: a maioria dos testes forja o contexto sem ela
+   * (só os testes de preview a fornecem).
+   */
+  previewsRoot?: string;
 }
 
 type ReqLike = Pick<IncomingMessage, 'headers'>;
@@ -50,6 +57,11 @@ export function resolveUser(db: Db, req: ReqLike): AuthUser | null {
   return { userId: row.userId, role: row.role, sessionId: row.sessionId };
 }
 
-export function createContext(db: Db, req: ReqLike, res: ServerResponse | null): TrpcContext {
-  return { db, res, user: resolveUser(db, req) };
+export function createContext(
+  db: Db,
+  req: ReqLike,
+  res: ServerResponse | null,
+  previewsRoot?: string,
+): TrpcContext {
+  return { db, res, user: resolveUser(db, req), previewsRoot };
 }
