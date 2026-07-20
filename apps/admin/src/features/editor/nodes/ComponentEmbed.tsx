@@ -47,6 +47,17 @@ function Placeholder({
   );
 }
 
+/** Botão de ação inline nos estados do embed (re-seleção, retry). */
+const emptyActionStyle: React.CSSProperties = {
+  border: '1px solid #ccc',
+  borderRadius: 4,
+  background: '#fff',
+  padding: '0.2rem 0.5rem',
+  fontSize: '0.8rem',
+  cursor: 'pointer',
+  whiteSpace: 'nowrap',
+};
+
 function ComponentEmbedView({ node, updateAttributes, editor }: NodeViewProps) {
   const componentName = node.attrs.componentName as string;
   const variantId = node.attrs.variantId as string | null;
@@ -74,15 +85,7 @@ function ComponentEmbedView({ node, updateAttributes, editor }: NodeViewProps) {
         data-testid="component-embed-reselect"
         onMouseDown={(e) => e.preventDefault()}
         onClick={() => setPickerOpen(true)}
-        style={{
-          border: '1px solid #ccc',
-          borderRadius: 4,
-          background: '#fff',
-          padding: '0.2rem 0.5rem',
-          fontSize: '0.8rem',
-          cursor: 'pointer',
-          whiteSpace: 'nowrap',
-        }}
+        style={emptyActionStyle}
       >
         {hasSelection ? 'Trocar componente' : 'Selecionar componente'}
       </button>
@@ -138,22 +141,42 @@ function ComponentEmbedView({ node, updateAttributes, editor }: NodeViewProps) {
     );
   }
 
-  // Erro de rede ou nenhum artefato publicado para este par → placeholder,
-  // nunca um iframe quebrado (TASK-51 detalha o empty-state completo).
+  // Selecionado mas sem artefato publicável (nunca publicado, ou referência
+  // defasada/renomeada) — estado visualmente distinto do "não selecionado"
+  // (TASK-51). Nunca renderiza um iframe com src inválido.
   if (previewQuery.isError || !previewQuery.data) {
     return (
-      <Placeholder
-        componentName={componentName}
-        variantId={variantId}
-        state="empty"
-        control={control}
-        message={
-          <>
-            <strong>{componentName}</strong> / <strong>{variantId}</strong> ainda não tem preview
-            publicado — rode o conector no repositório do componente.
-          </>
-        }
-      />
+      <NodeViewWrapper
+        className="sb-component-embed sb-component-embed--empty"
+        data-component-name={componentName}
+        data-variant-id={variantId ?? ''}
+        data-preview-state="empty"
+      >
+        <span aria-hidden style={{ fontSize: '1.2rem' }}>
+          ⚠️
+        </span>
+        <span style={{ flex: 1 }}>
+          Nenhum preview publicado para{' '}
+          <strong>
+            {componentName} / {variantId}
+          </strong>{' '}
+          ainda.
+          {editor.isEditable && ' Publique-o pelo conector no repositório do componente.'}
+        </span>
+        {editor.isEditable && (
+          <button
+            type="button"
+            data-testid="component-embed-retry"
+            disabled={previewQuery.isFetching}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => void previewQuery.refetch()}
+            style={emptyActionStyle}
+          >
+            {previewQuery.isFetching ? 'Verificando…' : 'Tentar novamente'}
+          </button>
+        )}
+        {control}
+      </NodeViewWrapper>
     );
   }
 

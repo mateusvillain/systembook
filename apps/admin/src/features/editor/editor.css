@@ -120,6 +120,19 @@
   border-color: #7aa7ff;
 }
 
+/* Estado "referenciado mas sem preview publicado" (TASK-51) — âmbar, distinto
+   do placeholder cinza de "não selecionado". */
+.sb-editor .sb-component-embed--empty {
+  border-color: #e0b34d;
+  border-style: solid;
+  background: #fffaf0;
+  color: #7a5a12;
+}
+
+.sb-editor .ProseMirror-selectednode.sb-component-embed--empty {
+  border-color: #c98a1a;
+}
+
 /* Component embed com preview real via iframe (TASK-47) — desfaz a caixa
    tracejada do placeholder e dá lugar ao iframe. */
 .sb-editor .sb-component-embed--live {

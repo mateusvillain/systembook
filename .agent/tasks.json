@@ -354,7 +354,7 @@
     "title": "\"No preview available yet\" empty state handling",
     "category": "ui-ux",
     "specFilePath": ".agent/tasks/TASK-51.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-52",

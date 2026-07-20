@@ -1,10 +1,10 @@
 # Memória do projeto — SystemBook
 
-> Log de desenvolvimento mantido pelo agente. Última atualização: **2026-07-20** (Fase 5 em andamento na branch `feature/fase-5-integracao-preview` — TASK-47..50 concluídas (iframe real, picker, painel de controles, doc pública). Próxima e última da fase: TASK-51, estado "sem preview disponível").
+> Log de desenvolvimento mantido pelo agente. Última atualização: **2026-07-20** (Fase 5 **completa** na branch `feature/fase-5-integracao-preview` — TASK-47..51: iframe real, picker, painel de controles, doc pública, empty-state polido. Próximo: mergear na `main` e iniciar a Fase 6, TASK-52).
 
 ## Estado atual
 
-**Tasks 1–50 concluídas e verificadas.** Fases 0–4 fechadas; Fase 5 quase completa (47–50 ✅). Próximo passo: TASK-51 (polimento do empty-state do component-embed). Existe um `CLAUDE.md` na raiz com o guia do repositório.
+**Tasks 1–51 concluídas e verificadas.** Fases 0–5 fechadas (Fase 5 pendente de merge na `main`). **Marco do PRD atingido: fim da Fase 5 = live preview funcional (proposta de valor central).** Próximo passo: Fase 6 (TASK-52..57 — layout público, busca FTS5, tema, landing, responsividade). Existe um `CLAUDE.md` na raiz com o guia do repositório.
 
 | Task | Status | Verificação |
 | --- | --- | --- |
@@ -51,8 +51,9 @@
 | TASK-48 | ✅ | Picker de componente/variante (`componentPreviews.listComponents`/`listVariants`) na toolbar + re-seleção sobre embed existente; 4 testes + 10 checks Playwright |
 | TASK-49 | ✅ | Painel de controles (`PreviewConfig.controls`) → `postMessage systembook:update-props` ao iframe; connector grava `preview-config.json` no artefato, `getLatest` retorna a config; 3 testes + 9 checks Playwright |
 | TASK-50 | ✅ | Doc pública read-only (rota `/p/:pageId`, sem auth) da última revisão publicada via `revisions.getLatestPublished`; `PageRenderer` compartilhado; `getLatest`/`getLatestPublished` viraram públicos; 2 testes + 14 checks Playwright deslogado |
+| TASK-51 | ✅ | Empty-state do embed polido: estado `empty` (referenciado sem preview) âmbar/⚠️ distinto do `unset` cinza/🧩, botão "Tentar novamente" (`refetch`), reuso automático no público read-only; UI-only + 13 checks Playwright |
 
-**Cobertura**: 130 testes vitest (115 server + 7 preview-kit + 8 connector), todos verdes via `pnpm test`. E2E Playwright/curl ad-hoc (scratchpad, não commitados): editor base (29), nós custom (12), autosave (16), árvore (12), publish/histórico/restore, tokens (12 checks), artefato de preview em Chromium headless, o loop de CI documentado contra server real, o iframe de preview do component-embed (7 checks), o picker de inserção/re-seleção (10 checks), o painel de controles interativos (9 checks) e a doc pública deslogada com os 7 tipos de bloco + embed (14 checks).
+**Cobertura**: 130 testes vitest (115 server + 7 preview-kit + 8 connector), todos verdes via `pnpm test`. E2E Playwright/curl ad-hoc (scratchpad, não commitados): editor base (29), nós custom (12), autosave (16), árvore (12), publish/histórico/restore, tokens (12 checks), artefato de preview em Chromium headless, o loop de CI documentado contra server real, o iframe de preview do component-embed (7 checks), o picker de inserção/re-seleção (10 checks), o painel de controles interativos (9 checks), a doc pública deslogada com os 7 tipos de bloco + embed (14 checks) e os empty-states do embed (13 checks).
 
 O tracking granular (pass por step) está em `.agent/tasks/TASK-*.json` e o índice em `.agent/tasks.json`.
 
@@ -65,7 +66,7 @@ O tracking granular (pass por step) está em `.agent/tasks/TASK-*.json` e o índ
 | 2 — Estrutura de navegação | TASK-17..24 | ✅ | data models e CRUD de sections/pages/tabs, árvore na sidebar, permissões editor=admin |
 | 3 — Editor de conteúdo | TASK-25..36 | ✅ | Tiptap + extensões + tabela + callout + component-embed placeholder, blocks, serialização, autosave, revisions, publish, histórico/restore |
 | 4 — Conector e preview | TASK-37..46 | ✅ | PreviewConfig schema, preview-kit, connector CLI (discovery/entrypoints/build via Vite), component_previews, upload endpoint autenticado, tokens, exemplo CI, rota de artefatos estáticos |
-| 5 — Integração do preview | TASK-47..51 | 🔄 | component-embed com iframe real (✅ TASK-47), seletor componente/variante (✅ TASK-48), painel de controles (✅ TASK-49), doc pública com embeds (✅ TASK-50), estado "sem preview disponível" (TASK-51) |
+| 5 — Integração do preview | TASK-47..51 | ✅ | component-embed com iframe real, seletor componente/variante, painel de controles, doc pública com embeds, empty-state "sem preview disponível" — **live preview funcional (marco central do PRD)** |
 | 6 — Publicação e polimento | TASK-52..57 | ⬜ | layout público, busca full-text FTS5 + UI, tema dark/light, landing customizável, responsividade |
 | 7 — Empacotamento e lançamento | TASK-58..64 | ⬜ | imagem Docker publicada, compose de produção, docs de setup/CI/schema, README, CONTRIBUTING+licença, docs de backup |
 
@@ -225,10 +226,12 @@ O painel em dev acessa-se por `http://localhost:5173`; o proxy do `vite.config.t
 - **`PageRenderer.tsx`** (`features/public/`): renderer read-only compartilhado — monta `editorExtensions` com `editable:false` + `blocksToTiptapDoc`, com seletor de tab (só aparece se >1 tab). `RevisionSnapshotPreview` (TASK-35) foi **refatorado para delegar** a ele (DRY — a mesma renderização nos dois lugares). Os NodeViews React renderizam igual em read-only; o `ComponentEmbed` passou a ler `editor.isEditable` (de `NodeViewProps`) para **esconder a (re)seleção** ("Trocar componente"/picker) mantendo o iframe **e o painel de controles interativo** — decisão: controles ficam no público (demo interativa é feature), só a edição some.
 - **Rota `/p/:pageId`** (`pages/PublicPage.tsx`): registrada em `main.tsx` **fora do `AdminLayout`** (sem auth, sem chrome de admin). Provisória — a hierarquia por slug (`/:section/:page`) e o layout público vêm na TASK-52 (Fase 6). Estado "não publicada" (`data-testid=not-published`) quando `getLatestPublished` é null. O SPA fallback do server (static.ts) serve o index.html para `/p/*`, e o React Router assume.
 - **Verificação E2E (scratchpad, `e2e/verify50.mjs` + `seed50.mjs`)**: doc com os 7 tipos de bloco (heading/paragraph+bold/list/code/table/callout/component-embed) via `saveDraft`+`publish`, depois **contexto de browser novo e limpo (deslogado)**. 14 checks: `/p/:id` não redireciona a /login, os 7 tipos renderizam, o iframe do embed mostra o botão, **sem** "Trocar componente" mas **com** painel de controles, e `/p/:idNuncaPublicada` mostra o estado "não publicada" sem redirect. Zero erros de console.
+- **TASK-51 (empty-states do embed, UI-only)**: os três estados do component-embed agora são inequívocos. `unset` (nunca selecionado): caixa cinza tracejada + 🧩 + "Nenhum componente selecionado". `empty` (selecionado mas sem preview publicável — nunca publicado ou referência renomeada/defasada): caixa **âmbar** (`.sb-component-embed--empty`) + **⚠️** + nomeia `component / variant` + **"Tentar novamente"** que faz `previewQuery.refetch()` (útil logo após o CI publicar). `live`: iframe. Nunca renderiza `<iframe>` com src vazio. O botão retry mostra "Verificando…" e fica `disabled` enquanto `isFetching`. **Reuso no público é automático** (mesmo NodeView): retry e re-seleção ficam atrás de `editor.isEditable`, então na doc read-only o empty-state aparece só com a mensagem. Estilo dos botões inline extraído para `emptyActionStyle`.
+- **Gotchas do E2E da TASK-51** (`e2e/verify51.mjs`): (1) inserir um segundo `componentEmbed` (atom) com `focus('end')` quando a NodeSelection do primeiro atom está ativa **substitui** o primeiro — usar tabs separadas para comparar `empty` × `unset`; (2) navegar para outra tab e **voltar** dispara o race conhecido do autosave (flush no unmount × getByTab na remontagem, pendência #2) e o embed pode não reaparecer — fazer o fluxo empty+retry **na mesma visita**, sem navegar de volta; (3) o upload de artefato no meio do teste (via `execSync` de curl) **não** faz o embed auto-resolver (a query cacheou null) — confirmado que só o clique em "Tentar novamente" re-busca.
 
 ## Pendências / próximos passos
 
-1. Fase 5 quase completa na branch `feature/fase-5-integracao-preview`. Última é a **TASK-51** (polir o empty-state do component-embed quando não há preview publicado — hoje já cai num placeholder `data-preview-state=empty`, ver TASK-47; a TASK-51 é o polimento visual/mensagem desse estado). Depois: mergear a Fase 5 na `main` e seguir para a Fase 6 (TASK-52+, layout público/busca/tema). Fase 4 já mergeada na `main` (PR #1).
+1. **Fase 5 completa** na branch `feature/fase-5-integracao-preview` (5 commits: TASK-47..51). **Próximo: abrir PR e mergear na `main`** (como foi feito com a Fase 4/PR #1), depois iniciar a **Fase 6** (TASK-52: layout público com nav/hierarquia por slug — a rota atual `/p/:pageId` é provisória; TASK-53 busca FTS5; TASK-54 tema; TASK-55 landing; TASK-56/57 responsividade). Fase 4 já mergeada na `main` (PR #1).
 2. Race conhecido (aceito no MVP): flush de autosave no unmount × fetch do `getByTab` na remontagem — em navegação muito rápida ida-e-volta o editor pode abrir sem o último flush (o dado não se perde no banco; basta recarregar).
 3. `.pnpm-store/` local (criado pelo container de dev) está no `.gitignore`; pode ser apagado à vontade.
 
