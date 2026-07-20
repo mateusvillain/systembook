@@ -3,7 +3,7 @@ import { desc, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import type { PageSnapshot } from '@systembook/schema';
 import { revisions, users } from '../../db/schema.js';
-import { protectedProcedure, router } from '../init.js';
+import { protectedProcedure, publicProcedure, router } from '../init.js';
 
 function revisionNotFound(): TRPCError {
   return new TRPCError({ code: 'NOT_FOUND', message: 'Revisão não encontrada' });
@@ -52,4 +52,26 @@ export const revisionsRouter = router({
     const { snapshotJson, ...meta } = row;
     return { ...meta, snapshot: JSON.parse(snapshotJson) as PageSnapshot };
   }),
+
+  /**
+   * Superfície pública de documentação (TASK-50): o snapshot da **última
+   * revisão publicada** da página — nunca o rascunho ao vivo de `blocks`
+   * (concretiza a dependência de ordenação registrada na TASK-34).
+   * `publicProcedure`: a doc publicada não exige autenticação. `null` quando a
+   * página nunca foi publicada (sem revisões).
+   */
+  getLatestPublished: publicProcedure
+    .input(z.object({ pageId: z.string() }))
+    .query(({ ctx, input }) => {
+      const row = ctx.db
+        .select({ snapshotJson: revisions.snapshotJson })
+        .from(revisions)
+        .where(eq(revisions.pageId, input.pageId))
+        // mesma ordenação/desempate do listByPage: última publicação primeiro
+        .orderBy(desc(revisions.criadoEm), desc(sql`${revisions}.rowid`))
+        .limit(1)
+        .get();
+      if (!row) return null;
+      return JSON.parse(row.snapshotJson) as PageSnapshot;
+    }),
 });

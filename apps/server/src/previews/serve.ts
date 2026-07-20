@@ -13,6 +13,14 @@ import { resolvePreviewPath } from './paths.js';
  * documentação publicada.
  *
  * Cada path carrega o `commitSha`, então o conteúdo é imutável — cache longo.
+ *
+ * **CORS aberto (`Access-Control-Allow-Origin: *`)**: o editor embute o preview
+ * num `<iframe sandbox="allow-scripts">` (TASK-47), sem `allow-same-origin`, o
+ * que dá ao iframe uma **origem opaca**. Scripts `type="module"` são sempre
+ * buscados em modo CORS; de uma origem opaca (`Origin: null`) o browser exige
+ * `Access-Control-Allow-Origin` no asset, senão bloqueia o bundle e o iframe
+ * fica em branco. O artefato já é público e sem segredos, então liberar CORS é
+ * seguro e necessário para o preview funcionar dentro do sandbox.
  */
 
 export const PREVIEWS_URL_PREFIX = '/previews/';
@@ -97,6 +105,8 @@ export async function handlePreviewRequest(
     'content-type': MIME[path.extname(target).toLowerCase()] ?? 'application/octet-stream',
     'content-length': String(stats.size),
     'cache-control': IMMUTABLE_CACHE,
+    // ver docblock: o iframe sandbox de origem opaca busca os módulos via CORS
+    'access-control-allow-origin': '*',
   });
 
   if (method === 'HEAD') {

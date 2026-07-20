@@ -103,7 +103,7 @@
   margin-bottom: 0;
 }
 
-/* Component embed (TASK-29) — placeholder até o preview real (TASK-47) */
+/* Component embed — placeholder (sem seleção / carregando / sem artefato) */
 .sb-editor .sb-component-embed {
   display: flex;
   align-items: center;
@@ -118,6 +118,102 @@
 
 .sb-editor .ProseMirror-selectednode.sb-component-embed {
   border-color: #7aa7ff;
+}
+
+/* Estado "referenciado mas sem preview publicado" (TASK-51) — âmbar, distinto
+   do placeholder cinza de "não selecionado". */
+.sb-editor .sb-component-embed--empty {
+  border-color: #e0b34d;
+  border-style: solid;
+  background: #fffaf0;
+  color: #7a5a12;
+}
+
+.sb-editor .ProseMirror-selectednode.sb-component-embed--empty {
+  border-color: #c98a1a;
+}
+
+/* Component embed com preview real via iframe (TASK-47) — desfaz a caixa
+   tracejada do placeholder e dá lugar ao iframe. */
+.sb-editor .sb-component-embed--live {
+  display: block;
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0.75rem 0;
+}
+
+.sb-editor .ProseMirror-selectednode.sb-component-embed--live {
+  outline: 2px solid #7aa7ff;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Barra de metadados + controle "Trocar componente" acima do iframe */
+.sb-editor .sb-component-embed-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+/* Altura padrão 240px, redimensionável verticalmente pelo autor
+   (resize exige overflow != visible). */
+.sb-editor .sb-component-embed-frame {
+  display: block;
+  width: 100%;
+  height: 240px;
+  min-height: 120px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fff;
+  resize: vertical;
+  overflow: auto;
+}
+
+/* Painel de controles interativos do preview (TASK-49) */
+.sb-editor .sb-controls-panel {
+  margin-top: 0.35rem;
+}
+
+.sb-editor .sb-controls-toggle {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fff;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.sb-editor .sb-controls-fields {
+  display: grid;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+  padding: 0.6rem;
+  border: 1px solid #eee;
+  border-radius: 6px;
+  background: #fafafa;
+}
+
+.sb-editor .sb-control-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sb-editor .sb-control-label {
+  min-width: 120px;
+  font-size: 0.85rem;
+  color: #444;
+}
+
+.sb-editor .sb-control-row input[type='text'],
+.sb-editor .sb-control-row select {
+  flex: 1;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
 }
 
 .sb-editor .ProseMirror .column-resize-handle {

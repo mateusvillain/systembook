@@ -15,34 +15,37 @@
       "step": 1,
       "description": "Distinguish the two empty states in the NodeView",
       "details": "In `ComponentEmbed`'s NodeView (TASK-47), differentiate between `componentName === ''` (never selected — TASK-29's original placeholder, prompts to open the picker) and `componentName set but getLatest returned null` (referenced but unpublished — this task's new state).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Design and implement the unpublished-reference empty state",
       "details": "Render a distinct box (e.g. different icon/color from the 'not selected' placeholder) with the component/variant name and a message indicating no preview has been published yet.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Add a retry action",
       "details": "Add a 'Tentar novamente' button that re-triggers the `componentPreviews.getLatest` query for that node, useful right after a team's CI finishes publishing.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Reuse the same empty state on the public page",
       "details": "In `PageRenderer.tsx` (TASK-50), reuse the same unpublished-reference empty-state component in read-only mode (no picker/retry action needed there, just the informative message).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 5,
       "description": "Verify in browser",
       "details": "Using Playwright: insert a component-embed referencing a component/variant with no published preview, confirm the distinct empty state renders (not the 'not selected' one and not a broken iframe); publish a matching artifact, click 'Tentar novamente', and confirm it now resolves to the real preview.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-47", "TASK-50"],
+  "dependencies": [
+    "TASK-47",
+    "TASK-50"
+  ],
   "estimatedComplexity": "low",
   "technicalNotes": [
     "This task is primarily UX polish over behavior already partially covered in TASK-47/TASK-29 — its job is making the three distinct states (not selected / selected-but-unpublished / resolved) visually and behaviorally unambiguous, not introducing new data flows."

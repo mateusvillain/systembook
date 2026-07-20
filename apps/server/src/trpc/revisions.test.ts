@@ -90,6 +90,27 @@ describe('revisions router (TASK-35) + pages.restoreRevision (TASK-36)', () => {
     await expect(anon.revisions.getById({ id: r1.id })).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
   });
 
+  describe('getLatestPublished (TASK-50, público)', () => {
+    it('anônimo lê o snapshot da última revisão publicada', async () => {
+      const caller = callerFor(db, editor);
+      await caller.blocks.saveDraft({ tabId, doc: USAGE_V1 });
+      await caller.pages.publish({ pageId, mensagem: 'Primeira' });
+      await caller.blocks.saveDraft({ tabId, doc: USAGE_V2 });
+      await caller.pages.publish({ pageId, mensagem: 'Segunda' });
+
+      const anon = callerFor(db, null);
+      const snapshot = await anon.revisions.getLatestPublished({ pageId });
+      expect(snapshot?.tabs[0]?.blocks[0]).toMatchObject({
+        content: { body: [{ type: 'text', text: 'Versão 2' }] },
+      });
+    });
+
+    it('retorna null quando a página nunca foi publicada', async () => {
+      const anon = callerFor(db, null);
+      expect(await anon.revisions.getLatestPublished({ pageId })).toBeNull();
+    });
+  });
+
   it('restoreRevision substitui os blocks atuais pelo snapshot e encadeia uma nova revisão', async () => {
     const caller = callerFor(db, editor);
     await caller.blocks.saveDraft({ tabId, doc: USAGE_V1 });

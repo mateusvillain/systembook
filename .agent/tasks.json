@@ -326,35 +326,35 @@
     "title": "component-embed renders real iframe pointing to latest artifact",
     "category": "functional",
     "specFilePath": ".agent/tasks/TASK-47.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-48",
     "title": "Component/variant selector when inserting a component-embed",
     "category": "ui-ux",
     "specFilePath": ".agent/tasks/TASK-48.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-49",
     "title": "Interactive controls panel driven by PreviewConfig.controls via postMessage",
     "category": "functional",
     "specFilePath": ".agent/tasks/TASK-49.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-50",
     "title": "Public page renders the same component-embeds outside edit mode",
     "category": "functional",
     "specFilePath": ".agent/tasks/TASK-50.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-51",
     "title": "\"No preview available yet\" empty state handling",
     "category": "ui-ux",
     "specFilePath": ".agent/tasks/TASK-51.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-52",
