@@ -9,6 +9,7 @@ import * as tar from 'tar';
 import { findActiveUploadToken } from '../auth/uploadTokens.js';
 import type { Db } from '../db/client.js';
 import { insertComponentPreview } from '../db/componentPreviews.js';
+import { isSafeSegment, resolvePreviewPath } from './paths.js';
 
 /**
  * POST /api/previews — upload de artefato de preview pelo CI do time (PRD
@@ -35,17 +36,6 @@ const DEFAULT_MAX_ARTIFACT_BYTES = 50 * 1024 * 1024;
 
 const REQUIRED_FIELDS = ['component_name', 'variant_id', 'commit_sha'] as const;
 type FieldName = (typeof REQUIRED_FIELDS)[number];
-
-/**
- * Segmento de path seguro (nota de segurança da TASK-43): tudo que vem do
- * request e vira caminho passa por aqui. Sem separadores, sem começar com
- * ponto (elimina '..' e ocultos), charset restrito, tamanho limitado.
- */
-const SAFE_SEGMENT_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/;
-
-function isSafeSegment(value: string): boolean {
-  return SAFE_SEGMENT_RE.test(value) && !value.includes('..');
-}
 
 function sendJson(res: ServerResponse, status: number, body: unknown): void {
   res.writeHead(status, { 'content-type': 'application/json' });
@@ -102,10 +92,10 @@ export async function handlePreviewUpload(
     const commitSha = fields.commit_sha!;
 
     // Defesa em profundidade: mesmo com segmentos validados, o path final
-    // precisa continuar dentro do previewsRoot.
-    const previewsRoot = path.resolve(deps.previewsRoot);
-    const targetDir = path.resolve(previewsRoot, componentName, variantId, commitSha);
-    if (!targetDir.startsWith(previewsRoot + path.sep)) {
+    // precisa continuar dentro do previewsRoot (helper compartilhado com a
+    // rota de leitura da TASK-46).
+    const targetDir = resolvePreviewPath(deps.previewsRoot, [componentName, variantId, commitSha]);
+    if (!targetDir) {
       sendJson(res, 400, { error: 'caminho de destino inválido' });
       return;
     }
