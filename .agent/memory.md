@@ -203,7 +203,7 @@ O painel em dev acessa-se por `http://localhost:5173`; o proxy do `vite.config.t
 
 ## Pendências / próximos passos
 
-1. Fase 4 completa na branch `feature/fase-4-conector-preview` (TASK-37..46) — falta abrir PR/merge na `main`. Próxima é a **Fase 5** (TASK-47: `componentEmbed` com iframe real apontando para `/previews/...`, usando `getLatestPreview` para resolver o sha mais recente).
+1. Fase 4 completa e **mergeada na `main`** (PR #1, CI verde; branch remota deletada). Próxima é a **Fase 5** (TASK-47: `componentEmbed` com iframe real apontando para `/previews/...`, usando `getLatestPreview` para resolver o sha mais recente).
 2. Race conhecido (aceito no MVP): flush de autosave no unmount × fetch do `getByTab` na remontagem — em navegação muito rápida ida-e-volta o editor pode abrir sem o último flush (o dado não se perde no banco; basta recarregar).
 3. `.pnpm-store/` local (criado pelo container de dev) está no `.gitignore`; pode ser apagado à vontade.
 
