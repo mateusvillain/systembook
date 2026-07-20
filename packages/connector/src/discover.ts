@@ -1,7 +1,7 @@
+import { createRequire } from 'node:module';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
 import fg from 'fast-glob';
 import { z } from 'zod';
@@ -61,15 +61,16 @@ export async function discoverPreviews(options: DiscoverOptions = {}): Promise<D
   return { previews, failures };
 }
 
-// import() dinâmico opaco a bundlers/test runners: vitest (vite-node) reescreve
-// `import()` e seu resolver não enxerga arquivos temporários fora da raiz do
-// projeto — via new Function o import nativo do Node é usado sempre.
-const nativeImport = new Function('specifier', 'return import(specifier)') as (
-  specifier: string,
-) => Promise<unknown>;
+// Carregamento do bundle temporário via require() de CJS, não import()
+// dinâmico: bundlers/test runners reescrevem `import()` (o resolver do
+// vite-node não enxerga arquivos fora da raiz do projeto) e o truque de
+// `new Function('return import(...)')` quebra sob vitest no Node 24 com
+// "A dynamic import callback was not specified". O require nativo é opaco a
+// esses transforms e se comporta igual sob tsx, vitest e Node puro.
+const nodeRequire = createRequire(import.meta.url);
 
 /**
- * Bundla o arquivo com esbuild (JSX/TS não rodam nativos no Node) e importa o
+ * Bundla o arquivo com esbuild (JSX/TS não rodam nativos no Node) e carrega o
  * resultado de um arquivo temporário para ler o default export. O módulo do
  * time é executado neste processo — aceitável porque o connector roda no CI
  * do próprio time, sobre o código dele mesmo.
@@ -78,7 +79,7 @@ async function loadPreviewConfig(filePath: string): Promise<PreviewConfig> {
   const bundled = await build({
     entryPoints: [filePath],
     bundle: true,
-    format: 'esm',
+    format: 'cjs',
     platform: 'node',
     jsx: 'automatic',
     write: false,
@@ -89,9 +90,9 @@ async function loadPreviewConfig(filePath: string): Promise<PreviewConfig> {
 
   const tempDir = await mkdtemp(path.join(tmpdir(), 'systembook-connector-'));
   try {
-    const modulePath = path.join(tempDir, 'preview.mjs');
+    const modulePath = path.join(tempDir, 'preview.cjs');
     await writeFile(modulePath, code);
-    const mod = (await nativeImport(pathToFileURL(modulePath).href)) as { default?: unknown };
+    const mod = nodeRequire(modulePath) as { default?: unknown };
 
     if (!('default' in mod) || mod.default === undefined) {
       throw new Error('o arquivo não tem default export — esperado um objeto PreviewConfig');
