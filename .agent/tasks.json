@@ -270,7 +270,7 @@
     "title": "connector CLI discovers *.preview.tsx files in target repo",
     "category": "functional",
     "specFilePath": ".agent/tasks/TASK-39.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-40",
