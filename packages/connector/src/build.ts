@@ -1,3 +1,4 @@
+import { writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import react from '@vitejs/plugin-react';
@@ -40,6 +41,19 @@ export interface BuildOptions {
 
 export interface BuildResult {
   outDir: string;
+}
+
+/**
+ * Linha do `manifest.json` escrito na raiz do artefato: mapeia cada
+ * diretório de variante (slug) de volta ao par canônico (component,
+ * variantId) do `*.preview.tsx`. O step de upload do CI (docs/ci-example.md)
+ * itera este manifest para enviar cada variante ao /api/previews com os
+ * valores originais — o nome do diretório é slug e não serve para isso.
+ */
+export interface ManifestEntry {
+  component: string;
+  variantId: string;
+  entryDir: string;
 }
 
 /**
@@ -107,6 +121,13 @@ export async function buildEntries(
       { cause: error },
     );
   }
+
+  const manifest: ManifestEntry[] = entries.map((entry) => ({
+    component: entry.componentName,
+    variantId: entry.variantId,
+    entryDir: path.basename(entry.entryDir),
+  }));
+  await writeFile(path.join(outDir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
 
   return { outDir };
 }

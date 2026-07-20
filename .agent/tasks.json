@@ -312,7 +312,7 @@
     "title": "Example GitHub Actions CI step documented for connector",
     "category": "documentation",
     "specFilePath": ".agent/tasks/TASK-45.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-46",
