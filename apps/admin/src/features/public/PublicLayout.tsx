@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTRPC } from '../../lib/trpc.js';
 import { PublicSidebar, type PublicNavTree } from './PublicSidebar.js';
+import { PublicSearchBox } from './PublicSearchBox.js';
 import './public.css';
 
 /** Passado aos filhos via Outlet context (evita re-buscar a árvore). */
@@ -28,6 +29,7 @@ export function PublicLayout() {
       <header className="sb-public-header">
         <span aria-hidden>📘</span>
         <span>Documentação</span>
+        <PublicSearchBox />
       </header>
       <div className="sb-public-body">
         <PublicSidebar tree={tree} />

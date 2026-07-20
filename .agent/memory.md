@@ -1,10 +1,10 @@
 # Memória do projeto — SystemBook
 
-> Log de desenvolvimento mantido pelo agente. Última atualização: **2026-07-20** (Fase 6 **iniciada** na branch `feature/fase-6-layout-publico` — TASK-52 concluída: layout público navegável `/docs/:sectionSlug/:pageSlug`. Também mergeado: fix do proxy do Vite p/ o embed em dev, PR #3. Próximo: TASK-53, busca FTS5).
+> Log de desenvolvimento mantido pelo agente. Última atualização: **2026-07-20** (Fase 6 em andamento na branch `feature/fase-6-layout-publico` — TASK-53 concluída: busca full-text FTS5 (`search.query`) + UI pública `/docs/search`. Próximo: TASK-54, tema dark/light).
 
 ## Estado atual
 
-**Tasks 1–52 concluídas e verificadas** (1–51 mergeadas na `main`; TASK-52 na branch da Fase 6). Fases 0–5 fechadas. Próximo passo: TASK-53 (busca full-text FTS5 + UI). Existe um `CLAUDE.md` na raiz com o guia do repositório.
+**Tasks 1–53 concluídas e verificadas** (1–51 mergeadas na `main`; TASK-52/53 na branch da Fase 6). Fases 0–5 fechadas. Próximo passo: TASK-54 (tema dark/light). Existe um `CLAUDE.md` na raiz com o guia do repositório.
 
 | Task | Status | Verificação |
 | --- | --- | --- |
@@ -53,8 +53,9 @@
 | TASK-50 | ✅ | Doc pública read-only (rota `/p/:pageId`, sem auth) da última revisão publicada via `revisions.getLatestPublished`; `PageRenderer` compartilhado; `getLatest`/`getLatestPublished` viraram públicos; 2 testes + 14 checks Playwright deslogado |
 | TASK-51 | ✅ | Empty-state do embed polido: estado `empty` (referenciado sem preview) âmbar/⚠️ distinto do `unset` cinza/🧩, botão "Tentar novamente" (`refetch`), reuso automático no público read-only; UI-only + 13 checks Playwright |
 | TASK-52 | ✅ | Layout público navegável `/docs/:sectionSlug/:pageSlug` (fora do AdminLayout, sem auth): sidebar de seções/páginas publicadas, `sections.listPublic`/`pages.getPublishedBySlug` (públicos), slug de section (migration 0008 + backfill); 6 testes + 17 checks Playwright deslogado |
+| TASK-53 | ✅ | Busca full-text FTS5: virtual table `pages_fts` (migration 0009 raw), reindex por publicação (publish/restore), `search.query` (publicProcedure) com snippet destacado; UI `/docs/search` + caixa no header; 5 testes + 11 checks Playwright deslogado |
 
-**Cobertura**: 136 testes vitest (121 server + 7 preview-kit + 8 connector), todos verdes via `pnpm test`. E2E Playwright/curl ad-hoc (scratchpad, não commitados): editor base (29), nós custom (12), autosave (16), árvore (12), publish/histórico/restore, tokens (12 checks), artefato de preview em Chromium headless, o loop de CI documentado contra server real, o iframe de preview do component-embed (7 checks), o picker de inserção/re-seleção (10 checks), o painel de controles interativos (9 checks), a doc pública deslogada com os 7 tipos de bloco + embed (14 checks) e os empty-states do embed (13 checks).
+**Cobertura**: 141 testes vitest (126 server + 7 preview-kit + 8 connector), todos verdes via `pnpm test`. E2E Playwright/curl ad-hoc (scratchpad, não commitados): editor base (29), nós custom (12), autosave (16), árvore (12), publish/histórico/restore, tokens (12 checks), artefato de preview em Chromium headless, o loop de CI documentado contra server real, o iframe de preview do component-embed (7 checks), o picker de inserção/re-seleção (10 checks), o painel de controles interativos (9 checks), a doc pública deslogada com os 7 tipos de bloco + embed (14 checks) e os empty-states do embed (13 checks).
 
 O tracking granular (pass por step) está em `.agent/tasks/TASK-*.json` e o índice em `.agent/tasks.json`.
 
@@ -68,7 +69,7 @@ O tracking granular (pass por step) está em `.agent/tasks/TASK-*.json` e o índ
 | 3 — Editor de conteúdo | TASK-25..36 | ✅ | Tiptap + extensões + tabela + callout + component-embed placeholder, blocks, serialização, autosave, revisions, publish, histórico/restore |
 | 4 — Conector e preview | TASK-37..46 | ✅ | PreviewConfig schema, preview-kit, connector CLI (discovery/entrypoints/build via Vite), component_previews, upload endpoint autenticado, tokens, exemplo CI, rota de artefatos estáticos |
 | 5 — Integração do preview | TASK-47..51 | ✅ | component-embed com iframe real, seletor componente/variante, painel de controles, doc pública com embeds, empty-state "sem preview disponível" — **live preview funcional (marco central do PRD)** |
-| 6 — Publicação e polimento | TASK-52..57 | 🔄 | layout público (✅ TASK-52), busca full-text FTS5 + UI, tema dark/light, landing customizável, responsividade |
+| 6 — Publicação e polimento | TASK-52..57 | 🔄 | layout público (✅ TASK-52), busca FTS5 + UI (✅ TASK-53), tema dark/light, landing customizável, responsividade |
 | 7 — Empacotamento e lançamento | TASK-58..64 | ⬜ | imagem Docker publicada, compose de produção, docs de setup/CI/schema, README, CONTRIBUTING+licença, docs de backup |
 
 Critérios de sucesso do PRD (§1): fim da Fase 3 = CMS de texto utilizável sem dev (✅ atingido); fim da Fase 5 = live preview funcional (proposta de valor central); fim da Fase 7 = pronto para divulgação open source.
@@ -239,9 +240,17 @@ O painel em dev acessa-se por `http://localhost:5173`; o proxy do `vite.config.t
 - **`PageRenderer` ganhou modo controlado** (`activeTabId`/`onSelectTab` opcionais): a doc pública reflete a tab na URL (`/:tabId`) e trocar de tab faz `navigate` client-side; sem esses props ele gerencia a tab internamente (o `RevisionSnapshotPreview` continua igual).
 - **Verificação E2E (scratchpad, `e2e/verify52.mjs`)**: seed com 2 seções publicadas + 1 rascunho + 1 seção vazia. **Deslogado**, 17 checks: `/docs` redireciona à 1ª página, sidebar lista só o publicado (rascunho/seção-vazia ocultos), destaque da ativa, navegação client-side sem full reload (marker `window` preservado), tabs no header com URL sincronizada, link direto, 404, **nenhum chrome de admin** (sem Publicar/Sair/toolbar), zero erros de console. **Gotchas de teste**: (1) `text-transform: uppercase` no CSS faz `innerText` vir MAIÚSCULO — comparar em lowercase; (2) navegação client-side dispara query async — esperar o novo conteúdo (`locator hasText`) antes de asseverar, senão lê o conteúdo antigo.
 
+- **TASK-53 (busca full-text FTS5)**: virtual table `pages_fts USING fts5(page_id UNINDEXED, titulo, section_titulo, conteudo)` via **migration raw 0009** (`0009_faithful_fts5_search.sql` + entrada no `_journal.json` idx 9). FTS5 **não é declarável no schema Drizzle** — foi o caso legítimo de escrever migration à mão (o `db:generate` não geraria virtual table); toda interação é SQL cru via `db.run`/`db.all(sql\`…\`)`. FTS5 vem compilado no better-sqlite3 por padrão (verificado com `char()`/`snippet()`).
+  - **`src/db/search.ts`** (novo): `extractSearchableText(snapshot)` anda todas as tabs/blocks e concatena o texto plano só de `heading/paragraph/list/callout/table` (pula `code/image/component-embed`), coletando recursivamente `node.text` do JSON Tiptap (`.body`). `reindexPageFts(db|tx, pageId, snapshot)` busca titulo da página+seção (innerJoin) e faz **delete+insert** na `pages_fts` (FTS5 não faz UPDATE bem). `searchPublishedPages(db, q, limit=20)` roda `... WHERE pages_fts MATCH ? ORDER BY rank`, com JOIN de volta a `pages`/`sections` (que também **descarta órfãos** de páginas deletadas — virtual table não tem FK cascade).
+  - **Reindex nos pontos de escrita únicos**: `createRevision` (publish, TASK-34) reindexa após inserir a revisão; `restoreRevision` (TASK-36) reindexa **dentro da transação** com o `restoredSnapshot` (a busca reflete o conteúdo restaurado, não o anterior). Nunca-publicadas nunca ganham linha → excluídas automaticamente.
+  - **Query MATCH segura**: `buildMatchExpression` tokeniza em `\p{L}\p{N}_`, **cita cada termo** (`"term"*`) neutralizando sintaxe FTS5 (`"`, `(`, `AND`, `*`) e adiciona prefixo. `q` só com símbolos → `[]` (sem erro de sintaxe). `search.query` é **publicProcedure** (busca da doc pública), matriz em router.ts atualizada.
+  - **Snippet sem injeção de HTML**: o `snippet()` **não** escapa o texto do conteúdo (untrusted), então NÃO usei `<mark>` no server — os delimitadores são os caracteres de controle **STX (char(2)) / ETX (char(3))**; o cliente (`highlight()` em `PublicSearch.tsx`) escapa via React e envolve só os trechos casados em `<mark>` (zero `dangerouslySetInnerHTML`). Exports `SNIPPET_MATCH_OPEN/CLOSE` documentam os delimitadores.
+  - **UI pública (além do spec — não havia task separada de UI de busca na Fase 6)**: rota `/docs/search?q=…` (`PublicSearch.tsx`) lista resultados rankeados com snippet destacado + link para `/docs/:sectionSlug/:pageSlug`; caixa de busca no header do `PublicLayout` (`PublicSearchBox.tsx`) navega no submit e sincroniza com `?q`. Estilos em `public.css`.
+  - **Verificação**: 5 testes vitest (`src/trpc/search.test.ts`: acha por texto/título/seção, exclui rascunho, restore reindexa, `q` simbólico não quebra) + **E2E Playwright deslogado** (scratchpad `verify53.mjs` + `seed53.mjs`, server buildado na porta 3253): 11 checks — 1 resultado p/ termo distinto (draft não publicado excluído), snippet com `<mark>`, link correto, no-results, caixa do header submete e navega, clique abre a doc, zero erros de console.
+
 ## Pendências / próximos passos
 
-1. **Fase 6 em andamento** na branch `feature/fase-6-layout-publico` (TASK-52 ✅). Próximo: **TASK-53** (busca full-text FTS5 + UI). Depois TASK-54 tema dark/light; TASK-55 landing customizável; TASK-56/57 responsividade. Ao fim da fase: PR + merge na `main`.
+1. **Fase 6 em andamento** na branch `feature/fase-6-layout-publico` (TASK-52 ✅, TASK-53 ✅). Próximo: **TASK-54** (tema dark/light). Depois TASK-55 landing customizável; TASK-56/57 responsividade. Ao fim da fase: PR + merge na `main`.
 2. Fixes de dev já na `main`: proxy do Vite encaminha `/previews` e `/api/previews` (PR #3) — o embed funciona em `pnpm dev`. Fases 4 e 5 mergeadas (PR #1, #2).
 3. Race conhecido (aceito no MVP): flush de autosave no unmount × fetch do `getByTab` na remontagem — em navegação muito rápida ida-e-volta o editor pode abrir sem o último flush (o dado não se perde no banco; basta recarregar).
 4. `.pnpm-store/` local (criado pelo container de dev) está no `.gitignore`; pode ser apagado à vontade.

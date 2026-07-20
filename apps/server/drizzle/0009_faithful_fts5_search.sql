@@ -1,0 +1,1 @@
+CREATE VIRTUAL TABLE `pages_fts` USING fts5(page_id UNINDEXED, titulo, section_titulo, conteudo);
