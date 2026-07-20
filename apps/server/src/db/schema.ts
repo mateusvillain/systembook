@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import type { BlockType } from '@systembook/schema';
 
 /**
@@ -135,6 +135,37 @@ export const blocks = sqliteTable('blocks', {
  * TASK-33 sugeria): usuários sofrem hard delete (decisão TASK-14) e as
  * revisões precisam sobreviver como "autor removido".
  */
+/**
+ * Artefatos de preview publicados pelo connector via CI (Fase 4, PRD 6.5).
+ * Append-only de propósito (nota da TASK-42): cada upload é uma linha nova —
+ * sem unique em (component_name, variant_id) — preservando o histórico
+ * completo de publishes para debugar "por que meu preview mudou". A resolução
+ * é "latest wins" via getLatestPreview; `path_estatico` aponta o diretório do
+ * artefato no volume (servido pela rota da TASK-46).
+ */
+export const componentPreviews = sqliteTable(
+  'component_previews',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    componentName: text('component_name').notNull(),
+    variantId: text('variant_id').notNull(),
+    commitSha: text('commit_sha').notNull(),
+    pathEstatico: text('path_estatico').notNull(),
+    publicadoEm: integer('publicado_em', { mode: 'timestamp' })
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (table) => [
+    index('component_previews_latest_idx').on(
+      table.componentName,
+      table.variantId,
+      table.publicadoEm,
+    ),
+  ],
+);
+
 export const revisions = sqliteTable('revisions', {
   id: text('id')
     .primaryKey()

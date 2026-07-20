@@ -291,7 +291,7 @@
     "title": "component_previews data model and migration",
     "category": "data-model",
     "specFilePath": ".agent/tasks/TASK-42.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-43",
