@@ -26,6 +26,19 @@ describe('buildEntries', () => {
 
     expect(result.outDir).toBe(outDir);
 
+    // manifest.json mapeia slug do diretório → par canônico (para o CI)
+    const manifest = JSON.parse(await readFile(path.join(outDir, 'manifest.json'), 'utf8')) as {
+      component: string;
+      variantId: string;
+      entryDir: string;
+    }[];
+    expect(manifest.map((m) => m.entryDir).sort()).toEqual([...ENTRY_NAMES].sort());
+    expect(manifest.find((m) => m.entryDir === 'button--primary')).toEqual({
+      component: 'Button',
+      variantId: 'primary',
+      entryDir: 'button--primary',
+    });
+
     for (const name of ENTRY_NAMES) {
       const htmlPath = path.join(outDir, name, 'index.html');
       const html = await readFile(htmlPath, 'utf8');
