@@ -347,7 +347,7 @@
     "title": "Public page renders the same component-embeds outside edit mode",
     "category": "functional",
     "specFilePath": ".agent/tasks/TASK-50.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-51",

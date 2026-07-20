@@ -158,11 +158,22 @@ describe('componentPreviews.getLatest (TASK-47)', () => {
     expect(result).toBeNull();
   });
 
-  it('exige autenticação', async () => {
-    const caller = callerFor(db, null, previewsRoot);
-    await expect(
-      caller.componentPreviews.getLatest({ componentName: 'Button', variantId: 'primary' }),
-    ).rejects.toThrow(/UNAUTHORIZED/);
+  it('getLatest é público (embed na doc pública deslogada, TASK-50)', async () => {
+    const pathEstatico = 'Button/primary/pub';
+    insertComponentPreview(db, {
+      componentName: 'Button',
+      variantId: 'primary',
+      commitSha: 'pub',
+      pathEstatico,
+    });
+    writeArtifact(previewsRoot, pathEstatico, 'button--primary');
+
+    const caller = callerFor(db, null, previewsRoot); // sem usuário
+    const result = await caller.componentPreviews.getLatest({
+      componentName: 'Button',
+      variantId: 'primary',
+    });
+    expect(result?.commitSha).toBe('pub');
   });
 
   describe('listagem para o picker (TASK-48)', () => {

@@ -47,7 +47,7 @@ function Placeholder({
   );
 }
 
-function ComponentEmbedView({ node, updateAttributes }: NodeViewProps) {
+function ComponentEmbedView({ node, updateAttributes, editor }: NodeViewProps) {
   const componentName = node.attrs.componentName as string;
   const variantId = node.attrs.variantId as string | null;
   const trpc = useTRPC();
@@ -64,9 +64,10 @@ function ComponentEmbedView({ node, updateAttributes }: NodeViewProps) {
     enabled: hasSelection,
   });
 
-  // Controle de (re)seleção via picker (TASK-48, step 4) — disponível em todos
-  // os estados, pré-preenchido com a seleção atual ao reabrir.
-  const control = (
+  // Read-only (doc pública, TASK-50): o mesmo NodeView renderiza fora do editor
+  // — o iframe e o painel de controles ficam, mas a (re)seleção de componente
+  // não faz sentido, então o controle e o picker só aparecem quando editável.
+  const control = !editor.isEditable ? null : (
     <>
       <button
         type="button"

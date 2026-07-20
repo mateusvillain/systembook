@@ -16,34 +16,38 @@
       "step": 1,
       "description": "Add a public revisions.getLatestPublished query",
       "details": "Add `revisions: { getLatestPublished: publicProcedure.input(z.object({ pageId: z.string() })).query(...) }` returning the most recent `revisions` row's parsed `PageSnapshot` for the page, or `null` if none exists.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Build the read-only page renderer",
       "details": "Create `apps/admin/src/features/public/PageRenderer.tsx` (or a shared component reused from TASK-35's read-only preview) that takes a `PageSnapshot` and renders each tab's blocks via `blocksToTiptapDoc` + a non-editable Tiptap render.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Render component-embeds read-only",
       "details": "Reuse the `ComponentEmbed` NodeView's iframe rendering (TASK-47) in read-only mode; decide whether the interactive controls panel (TASK-49) is shown on the public site or only in the editor, and implement accordingly.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Handle the unpublished-page state",
       "details": "If `getLatestPublished` returns null, render a clear message (e.g. 'Esta página ainda não foi publicada') instead of an empty or broken layout.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 5,
       "description": "Verify in browser",
       "details": "Using Playwright, unauthenticated: visit a published page's public URL and confirm all block types render correctly including a working component-embed iframe; visit a page that was never published and confirm the not-published state renders.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-34", "TASK-47", "TASK-31"],
+  "dependencies": [
+    "TASK-34",
+    "TASK-47",
+    "TASK-31"
+  ],
   "estimatedComplexity": "medium",
   "technicalNotes": [
     "The public page always reflects the latest *published* revision, never live draft/autosave state (TASK-32) — this is the concrete implementation of the ordering dependency flagged in TASK-34.",
