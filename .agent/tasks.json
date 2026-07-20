@@ -256,70 +256,70 @@
     "title": "PreviewConfig schema definition in packages/schema",
     "category": "data-model",
     "specFilePath": ".agent/tasks/TASK-37.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-38",
     "title": "preview-kit mount() renders variants and listens to postMessage",
     "category": "functional",
     "specFilePath": ".agent/tasks/TASK-38.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-39",
     "title": "connector CLI discovers *.preview.tsx files in target repo",
     "category": "functional",
     "specFilePath": ".agent/tasks/TASK-39.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-40",
     "title": "connector CLI generates synthetic entrypoints per variant",
     "category": "functional",
     "specFilePath": ".agent/tasks/TASK-40.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-41",
     "title": "connector CLI builds entrypoints via Vite into static artifact",
     "category": "functional",
     "specFilePath": ".agent/tasks/TASK-41.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-42",
     "title": "component_previews data model and migration",
     "category": "data-model",
     "specFilePath": ".agent/tasks/TASK-42.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-43",
     "title": "POST /api/previews authenticated artifact upload endpoint",
     "category": "api-endpoint",
     "specFilePath": ".agent/tasks/TASK-43.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-44",
     "title": "Upload token generation and management per instance",
     "category": "security",
     "specFilePath": ".agent/tasks/TASK-44.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-45",
     "title": "Example GitHub Actions CI step documented for connector",
     "category": "documentation",
     "specFilePath": ".agent/tasks/TASK-45.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-46",
     "title": "Serve static preview artifacts via backend route for iframe use",
     "category": "api-endpoint",
     "specFilePath": ".agent/tasks/TASK-46.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-47",

@@ -7,6 +7,8 @@ import { runMigrations } from './db/migrate.js';
 import { seedBootstrapAdmin } from './db/seed.js';
 import { appRouter } from './trpc/router.js';
 import { createContext } from './trpc/context.js';
+import { handlePreviewUpload } from './previews/upload.js';
+import { handlePreviewRequest, PREVIEWS_URL_PREFIX } from './previews/serve.js';
 import { resolveAdminDist, serveStatic } from './static.js';
 
 // Verificação de resolução cross-package (TASK-3): o import de tipo abaixo
@@ -32,6 +34,20 @@ const server = createServer((req, res) => {
       path: url.pathname.slice('/trpc/'.length),
       createContext: () => createContext(db, req, res),
     });
+    return;
+  }
+
+  // Upload de artefato de preview pelo CI (TASK-43) — fora do tRPC de
+  // propósito: multipart + auth por token de upload, não sessão.
+  if (url.pathname === '/api/previews' && req.method === 'POST') {
+    void handlePreviewUpload(req, res, { db, previewsRoot: env.PREVIEWS_PATH });
+    return;
+  }
+
+  // Artefatos estáticos de preview (TASK-46) — públicos, sem auth, servidos
+  // antes do fallback do admin para não cair no SPA fallback.
+  if (url.pathname.startsWith(PREVIEWS_URL_PREFIX)) {
+    void handlePreviewRequest(req.method, url.pathname, res, { previewsRoot: env.PREVIEWS_PATH });
     return;
   }
 
