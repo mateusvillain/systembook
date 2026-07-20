@@ -1,3 +1,5 @@
+import path from 'node:path';
+
 /**
  * Validação fail-fast das variáveis de ambiente obrigatórias.
  * Falhar aqui, com mensagem clara, evita erros confusos depois
@@ -10,6 +12,8 @@ export interface Env {
   PORT: number;
   DATABASE_PATH: string;
   SESSION_SECRET: string;
+  /** Raiz dos artefatos de preview no volume; default: `<dir do DATABASE_PATH>/previews`. */
+  PREVIEWS_PATH: string;
 }
 
 export function loadEnv(): Env {
@@ -30,9 +34,16 @@ export function loadEnv(): Env {
     throw new Error(`PORT deve ser um inteiro positivo, recebido: "${process.env.PORT}"`);
   }
 
+  const databasePath = process.env.DATABASE_PATH as string;
+  const previewsPath =
+    process.env.PREVIEWS_PATH && process.env.PREVIEWS_PATH.trim() !== ''
+      ? process.env.PREVIEWS_PATH
+      : path.join(path.dirname(databasePath), 'previews');
+
   return {
     PORT: port,
-    DATABASE_PATH: process.env.DATABASE_PATH as string,
+    DATABASE_PATH: databasePath,
     SESSION_SECRET: process.env.SESSION_SECRET as string,
+    PREVIEWS_PATH: previewsPath,
   };
 }

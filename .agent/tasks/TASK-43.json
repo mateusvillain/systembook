@@ -16,40 +16,43 @@
       "step": 1,
       "description": "Add a plain HTTP route alongside the tRPC handler",
       "details": "In `apps/server/src/index.ts` (or a dedicated router file), add a route handler for `POST /api/previews` outside the tRPC adapter, since this needs raw multipart/binary body handling not naturally suited to tRPC's JSON-first design.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Authenticate via bearer upload token",
       "details": "Read the `Authorization: Bearer <token>` header, validate it against the token store from TASK-44, and reject with 401 if missing/invalid/revoked.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Parse and validate the multipart payload",
       "details": "Use a multipart parser (e.g. `busboy` or `formidable`) to extract `component_name`, `variant_id`, `commit_sha` fields and the artifact archive stream. Validate required fields are present and enforce a reasonable max upload size, returning 400 on violation.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Extract artifact to the static volume",
       "details": "Write/extract the artifact to `<STATIC_PREVIEWS_ROOT>/<component_name>/<variant_id>/<commit_sha>/`, sanitizing `component_name`/`variant_id`/`commit_sha` to prevent path traversal (reject any value containing `..` or path separators).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 5,
       "description": "Record the upload in component_previews",
       "details": "Insert a row via TASK-42's schema with `path_estatico` pointing at the extracted directory and `publicado_em: now()`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 6,
       "description": "Test the full upload flow",
       "details": "Test: valid token + valid artifact succeeds and creates the expected file layout and DB row; invalid token returns 401; missing `component_name` returns 400; a `component_name` value like `../../etc` is rejected rather than written outside the static root.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-42", "TASK-44"],
+  "dependencies": [
+    "TASK-42",
+    "TASK-44"
+  ],
   "estimatedComplexity": "high",
   "technicalNotes": [
     "Path traversal protection here is a hard security requirement, not optional — sanitize every path segment derived from user-controlled input (`component_name`, `variant_id`, `commit_sha`) before touching the filesystem.",
