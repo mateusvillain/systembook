@@ -298,7 +298,7 @@
     "title": "POST /api/previews authenticated artifact upload endpoint",
     "category": "api-endpoint",
     "specFilePath": ".agent/tasks/TASK-43.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-44",
