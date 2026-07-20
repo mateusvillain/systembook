@@ -44,6 +44,7 @@ export function AdminLayout() {
         <nav style={{ display: 'flex', gap: '1rem', flex: 1 }}>
           <Link to="/">Início</Link>
           {me.data.role === 'admin' && <Link to="/admin/users">Usuários</Link>}
+          {me.data.role === 'admin' && <Link to="/admin/settings/tokens">Tokens</Link>}
         </nav>
         <span style={{ color: '#666', fontSize: '0.9rem' }}>{me.data.role}</span>
         <button onClick={() => logout.mutate()} disabled={logout.isPending}>

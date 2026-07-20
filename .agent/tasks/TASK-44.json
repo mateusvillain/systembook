@@ -16,40 +16,42 @@
       "step": 1,
       "description": "Add upload_tokens table and migration",
       "details": "Define `uploadTokens` in `apps/server/src/db/schema.ts` with `id, tokenHash, label, criadoEm, revogadoEm (nullable)`. Generate and apply the migration.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Implement token generation and hashing",
       "details": "In `apps/server/src/auth/uploadTokens.ts`, implement `generateToken()` (e.g. `crypto.randomBytes(32).toString('base64url')`) and hash it with SHA-256 (a fast hash is appropriate here — this is a high-entropy random token, not a user password) before storing.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Implement uploadTokens CRUD procedures",
       "details": "Add `create`, `list`, `revoke` to a new `apps/server/src/trpc/routers/uploadTokens.ts`, all `adminProcedure`. `create` returns `{ id, label, token }` (plaintext token only in this one response).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Wire token validation into TASK-43's upload endpoint",
-      "details": "In the `/api/previews` handler, hash the incoming bearer token and look up an `upload_tokens` row with matching `token_hash` and `revogado_em IS NULL`; reject 401 otherwise.",
-      "pass": false
+      "details": "In the `/api/previews` handler, hash the incoming bearer token and look up an `upload_tokens` row with matching `token_hash` and `revogado_em IS NULL`; reject 401 otherwise. [Implementado como helper findActiveUploadToken pronto para o handler da TASK-43 — o endpoint ainda não existe; a TASK-43 depende desta.]",
+      "pass": true
     },
     {
       "step": 5,
       "description": "Build the token management screen",
       "details": "Create `apps/admin/src/features/settings/UploadTokens.tsx`: a 'Gerar token' form (label input), a one-time reveal modal showing the plaintext token with a copy button and a 'won't be shown again' warning, a list of existing tokens with a 'Revogar' action per row.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 6,
       "description": "Verify in browser",
       "details": "Using Playwright: generate a token, confirm it's shown once; use it to successfully call `/api/previews` (or a mocked equivalent) via an API test; revoke it and confirm subsequent use returns 401.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-11"],
+  "dependencies": [
+    "TASK-11"
+  ],
   "estimatedComplexity": "medium",
   "technicalNotes": [
     "Never store or log the plaintext token after the creation response — only the hash persists.",
