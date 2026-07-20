@@ -375,7 +375,7 @@
     "title": "Search UI in public layout",
     "category": "ui-ux",
     "specFilePath": ".agent/tasks/TASK-54.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-55",
