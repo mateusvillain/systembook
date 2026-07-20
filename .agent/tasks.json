@@ -305,7 +305,7 @@
     "title": "Upload token generation and management per instance",
     "category": "security",
     "specFilePath": ".agent/tasks/TASK-44.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-45",

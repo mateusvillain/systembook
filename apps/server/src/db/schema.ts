@@ -136,6 +136,24 @@ export const blocks = sqliteTable('blocks', {
  * revisões precisam sobreviver como "autor removido".
  */
 /**
+ * Tokens de upload de CI (TASK-44) — autenticam o POST /api/previews
+ * (TASK-43) sem sessão de usuário. Só o hash SHA-256 persiste (o valor em
+ * claro aparece uma única vez, na resposta do create); revogação é soft via
+ * `revogado_em` para o painel continuar listando o histórico de tokens.
+ */
+export const uploadTokens = sqliteTable('upload_tokens', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  tokenHash: text('token_hash').notNull().unique(),
+  label: text('label').notNull(),
+  criadoEm: integer('criado_em', { mode: 'timestamp' })
+    .notNull()
+    .default(sql`(unixepoch())`),
+  revogadoEm: integer('revogado_em', { mode: 'timestamp' }),
+});
+
+/**
  * Artefatos de preview publicados pelo connector via CI (Fase 4, PRD 6.5).
  * Append-only de propósito (nota da TASK-42): cada upload é uma linha nova —
  * sem unique em (component_name, variant_id) — preservando o histórico
