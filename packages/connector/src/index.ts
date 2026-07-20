@@ -11,3 +11,4 @@ export {
   type GeneratedEntry,
   type GenerateOptions,
 } from './generate.js';
+export { buildEntries, type BuildOptions, type BuildResult } from './build.js';

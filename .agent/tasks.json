@@ -284,7 +284,7 @@
     "title": "connector CLI builds entrypoints via Vite into static artifact",
     "category": "functional",
     "specFilePath": ".agent/tasks/TASK-41.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-42",
