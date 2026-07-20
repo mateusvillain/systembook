@@ -1,2 +1,6 @@
-// Placeholder — o harness de preview (preview-kit) é implementado a partir da TASK-37.
-export {};
+export {
+  mount,
+  UPDATE_PROPS_MESSAGE_TYPE,
+  type MountOptions,
+  type PreviewHandle,
+} from './mount.js';

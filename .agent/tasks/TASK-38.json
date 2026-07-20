@@ -15,34 +15,36 @@
       "step": 1,
       "description": "Implement the core mount function",
       "details": "In `packages/preview-kit/src/mount.ts`, use `ReactDOM.createRoot(rootElement).render(<Component {...variant.props} />)` after resolving `variant` from `config.variants.find(v => v.id === options.variantId)`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Handle unknown variant gracefully",
       "details": "If no matching variant is found, render a fallback element with a descriptive error message instead of calling `Component` with undefined props.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Add postMessage listener for prop updates",
       "details": "Register a `message` event listener that validates `event.data.type === 'systembook:update-props'`, merges `event.data.props` into current props state, and re-renders via the same React root.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Add basic origin validation",
       "details": "Accept an `options.allowedOrigin` (or validate against `document.referrer`) and ignore messages from any other origin, logging a warning (not throwing) on rejection.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 5,
       "description": "Write unit tests",
       "details": "Using a test renderer, mount a sample component with an initial variant, assert initial props render, dispatch a synthetic `message` event with updated props, and assert the DOM reflects the update.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-37"],
+  "dependencies": [
+    "TASK-37"
+  ],
   "estimatedComplexity": "medium",
   "technicalNotes": [
     "This package is built and shipped as part of the artifact the connector bundles (TASK-41) — it must have no dependency on `apps/server` or `apps/admin`, only React and the shared `packages/schema` types.",
