@@ -319,7 +319,7 @@
     "title": "Serve static preview artifacts via backend route for iframe use",
     "category": "api-endpoint",
     "specFilePath": ".agent/tasks/TASK-46.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-47",
