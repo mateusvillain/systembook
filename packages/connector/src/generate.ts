@@ -1,5 +1,6 @@
 import { mkdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import type { PreviewConfig } from '@systembook/schema';
 import type { DiscoveredPreview } from './discover.js';
 
 export interface GeneratedEntry {
@@ -7,6 +8,12 @@ export interface GeneratedEntry {
   variantId: string;
   /** Diretório da entrada, contendo `index.tsx` e `index.html`. */
   entryDir: string;
+  /**
+   * PreviewConfig completo do componente — o build (TASK-49) o grava como
+   * `preview-config.json` ao lado do artefato para o painel de controles do
+   * admin ler os `controls` sem um segundo round-trip ao arquivo estático.
+   */
+  config: PreviewConfig;
 }
 
 export interface GenerateOptions {
@@ -66,6 +73,7 @@ export async function generateEntries(
         componentName: preview.config.component,
         variantId: variant.id,
         entryDir,
+        config: preview.config,
       });
     }
   }

@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { mergeAttributes, Node } from '@tiptap/core';
 import { NodeViewWrapper, ReactNodeViewRenderer, type NodeViewProps } from '@tiptap/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTRPC } from '../../../lib/trpc.js';
 import { ComponentEmbedPicker } from '../ComponentEmbedPicker.js';
+import { ControlsPanel } from '../ControlsPanel.js';
 
 /**
  * Slot de preview de componente. O nó atômico (TASK-29) reserva
@@ -51,6 +52,7 @@ function ComponentEmbedView({ node, updateAttributes }: NodeViewProps) {
   const variantId = node.attrs.variantId as string | null;
   const trpc = useTRPC();
   const [pickerOpen, setPickerOpen] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const hasSelection = componentName.length > 0 && !!variantId && variantId.length > 0;
 
@@ -155,6 +157,9 @@ function ComponentEmbedView({ node, updateAttributes }: NodeViewProps) {
   }
 
   const preview = previewQuery.data;
+  const controls = preview.config?.controls ?? [];
+  const variantProps =
+    preview.config?.variants.find((v) => v.id === variantId)?.props ?? {};
 
   return (
     <NodeViewWrapper
@@ -170,6 +175,7 @@ function ComponentEmbedView({ node, updateAttributes }: NodeViewProps) {
         {control}
       </div>
       <iframe
+        ref={iframeRef}
         className="sb-component-embed-frame"
         src={preview.url}
         title={`Preview de ${componentName} (${variantId})`}
@@ -189,6 +195,14 @@ function ComponentEmbedView({ node, updateAttributes }: NodeViewProps) {
          *   o postMessage do preview-kit não depende de same-origin.
          */
         sandbox="allow-scripts"
+      />
+      {/* key por variante: trocar de variante recarrega o iframe com novas
+          props iniciais, então o painel precisa re-semear seus valores. */}
+      <ControlsPanel
+        key={variantId ?? ''}
+        controls={controls}
+        variantProps={variantProps}
+        iframeRef={iframeRef}
       />
     </NodeViewWrapper>
   );
