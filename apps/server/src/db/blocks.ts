@@ -1,7 +1,7 @@
 import type { Block, BlockType } from '@systembook/schema';
 import { asc, eq } from 'drizzle-orm';
 import { z } from 'zod';
-import type { Db } from './client.js';
+import type { Db, DbTx } from './client.js';
 import { BLOCK_TYPES, blocks } from './schema.js';
 
 /**
@@ -42,24 +42,32 @@ function toRecord(row: typeof blocks.$inferSelect): BlockRecord {
 }
 
 /**
+ * Núcleo de `replaceBlocksForTab` que roda dentro de um `tx` já aberto — usado
+ * diretamente pelo restore (TASK-36), que precisa envolver várias tabs mais a
+ * revisão de acompanhamento numa única transação (transações do
+ * better-sqlite3 não aninham).
+ */
+export function replaceBlocksForTabInTx(tx: DbTx, tabId: string, inserts: readonly NewBlock[]): void {
+  for (const block of inserts) blockTypeSchema.parse(block.tipo);
+  tx.delete(blocks).where(eq(blocks.tabId, tabId)).run();
+  for (const block of inserts) {
+    tx.insert(blocks)
+      .values({
+        tabId: block.tabId,
+        tipo: block.tipo,
+        conteudoJson: JSON.stringify(block.conteudo),
+        ordem: block.ordem,
+      })
+      .run();
+  }
+}
+
+/**
  * Substitui atomicamente todos os blocks de uma tab — caminho de escrita do
  * autosave (TASK-32). Não toca `revisions`: snapshot só no publish (TASK-34).
  */
 export function replaceBlocksForTab(db: Db, tabId: string, inserts: readonly NewBlock[]): void {
-  for (const block of inserts) blockTypeSchema.parse(block.tipo);
-  db.transaction((tx) => {
-    tx.delete(blocks).where(eq(blocks.tabId, tabId)).run();
-    for (const block of inserts) {
-      tx.insert(blocks)
-        .values({
-          tabId: block.tabId,
-          tipo: block.tipo,
-          conteudoJson: JSON.stringify(block.conteudo),
-          ordem: block.ordem,
-        })
-        .run();
-    }
-  });
+  db.transaction((tx) => replaceBlocksForTabInTx(tx, tabId, inserts));
 }
 
 export function insertBlock<T extends BlockType>(
@@ -82,7 +90,7 @@ export function insertBlock<T extends BlockType>(
   return toRecord(row);
 }
 
-export function listBlocksByTab(db: Db, tabId: string): BlockRecord[] {
+export function listBlocksByTab(db: Db | DbTx, tabId: string): BlockRecord[] {
   return db
     .select()
     .from(blocks)

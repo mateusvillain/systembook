@@ -1,10 +1,10 @@
 # Memória do projeto — SystemBook
 
-> Log de desenvolvimento mantido pelo agente. Última atualização: **2026-07-19** (Fase 3 em andamento — tasks 25–33: editor Tiptap, nós custom, blocks, autosave e revisions).
+> Log de desenvolvimento mantido pelo agente. Última atualização: **2026-07-19** (Fase 3 concluída — tasks 25–36: editor Tiptap, nós custom, blocks, autosave, revisions, publish e histórico/restore. Próxima: Fase 4, preview).
 
 ## Estado atual
 
-**Tasks 1–33 concluídas e verificadas.** Fase 0 (fundação), Fase 1 (auth + painel base) e Fase 2 (estrutura de navegação + matriz de permissões) fechadas; Fase 3 em andamento: editor Tiptap completo com persistência (serialização doc↔blocks, autosave com debounce) e modelo `revisions` pronto para o publish (TASK-34). Existe um `CLAUDE.md` na raiz com o guia do repositório.
+**Tasks 1–36 concluídas e verificadas.** Fase 0 (fundação), Fase 1 (auth + painel base), Fase 2 (estrutura de navegação + matriz de permissões) e Fase 3 (editor Tiptap completo com persistência, autosave, publish e histórico/restore de revisões) fechadas. Existe um `CLAUDE.md` na raiz com o guia do repositório. Próxima fase: Fase 4 (conector e harness de preview, TASK-37+).
 
 | Task | Status | Verificação |
 | --- | --- | --- |
@@ -34,10 +34,28 @@
 | TASK-31 | ✅ | `serialize.ts` doc↔blocks + router `blocks.getByTab`; round-trip dos 8 tipos com marks/attrs |
 | TASK-32 | ✅ | Autosave com debounce 2s, indicador Salvando…/Salvo, flush no unmount (16 checks E2E) |
 | TASK-33 | ✅ | Tabela `revisions` (migration 0005) com `autor_id` SET NULL; tipo `PageSnapshot` no schema |
+| TASK-34 | ✅ | `pages.publish` cria snapshot via `buildPageSnapshot`/`createRevision`; flush de tab ativa antes do publish (Playwright) |
+| TASK-35 | ✅ | `/pages/:id/history` lista revisões (autor + timestamp), preview read-only por revisão (Playwright) |
+| TASK-36 | ✅ | `pages.restoreRevision` transacional (skip de tabs removidas), cria revisão de acompanhamento; restore verificado via Playwright |
 
-**Cobertura**: 61 testes vitest no server (46 anteriores + 5 serialize + 6 router blocks + 4 revisions) + verificações E2E Playwright: 29 do editor base, 12 dos nós custom e 16 do autosave (scripts ad-hoc no scratchpad, não commitados), além das 12 da árvore.
+**Cobertura**: 73 testes vitest no server (`pnpm --filter @systembook/server test`, todos verdes) + verificações E2E Playwright: 29 do editor base, 12 dos nós custom, 16 do autosave e o fluxo completo de publish/histórico/restore (scripts ad-hoc no scratchpad, não commitados), além das 12 da árvore.
 
 O tracking granular (pass por step) está em `.agent/tasks/TASK-*.json` e o índice em `.agent/tasks.json`.
+
+### Fases da PRD × Tasks (`.agent/prd/PRD.md` §12)
+
+| Fase | Tasks | Status | Conteúdo |
+| --- | --- | --- | --- |
+| 0 — Fundamentos | TASK-1..8 | ✅ | monorepo, schema, Drizzle+SQLite, tRPC health-check, Dockerfile, compose, CI |
+| 1 — Auth e painel base | TASK-9..16 | ✅ | argon2, login/cookie, middleware admin/editor, tela de login, gestão de usuários, reset de senha, logout |
+| 2 — Estrutura de navegação | TASK-17..24 | ✅ | data models e CRUD de sections/pages/tabs, árvore na sidebar, permissões editor=admin |
+| 3 — Editor de conteúdo | TASK-25..36 | ✅ | Tiptap + extensões + tabela + callout + component-embed placeholder, blocks, serialização, autosave, revisions, publish, histórico/restore |
+| 4 — Conector e preview | TASK-37..46 | ⬜ | PreviewConfig schema, preview-kit, connector CLI (discovery/entrypoints/build via Vite), component_previews, upload endpoint autenticado, tokens, exemplo CI, rota de artefatos estáticos |
+| 5 — Integração do preview | TASK-47..51 | ⬜ | component-embed com iframe real, seletor componente/variante, painel de controles, doc pública com embeds, estado "sem preview disponível" |
+| 6 — Publicação e polimento | TASK-52..57 | ⬜ | layout público, busca full-text FTS5 + UI, tema dark/light, landing customizável, responsividade |
+| 7 — Empacotamento e lançamento | TASK-58..64 | ⬜ | imagem Docker publicada, compose de produção, docs de setup/CI/schema, README, CONTRIBUTING+licença, docs de backup |
+
+Critérios de sucesso do PRD (§1): fim da Fase 3 = CMS de texto utilizável sem dev (✅ atingido); fim da Fase 5 = live preview funcional (proposta de valor central); fim da Fase 7 = pronto para divulgação open source.
 
 ## Git / CI
 
@@ -84,7 +102,23 @@ O tracking granular (pass por step) está em `.agent/tasks/TASK-*.json` e o índ
 - **Router `blocks`**: `getByTab` (retorna `{doc, blocks}`; `doc: null` se a tab nunca foi salva) e `saveDraft` (delete+insert transacional via `replaceBlocksForTab`; **nunca** toca revisions — separação autosave × publish testada). Ambos protectedProcedure, matriz em router.ts atualizada.
 - **Autosave no admin** (`ContentEditor.tsx`): outer component carrega `getByTab` com `gcTime: 0` (sem cache entre montagens — o flush do unmount anterior pode ter mudado o rascunho) e monta `EditorInner` com o doc inicial; `onUpdate` → debounce 2s → `saveDraft`; indicador `data-save-status` (saving/saved/idle/error, aria-live); flush fire-and-forget no unmount quando há debounce pendente. Refs (`pendingDocRef`/`flushRef`) evitam closures velhas dentro do `useEditor` (deps `[tabId]`).
 - **Gotcha de NodeView + caret**: ao inserir callout com o cursor num parágrafo não-vazio, o `setTextSelection` muda o estado PM mas o **caret do DOM não entra** no NodeView React (monta assíncrono; o selectionToDOM não reposiciona depois) — a digitação segue o caret e cai fora do nó. Solução na toolbar: após inserir, posicionar `Range` do DOM manualmente via `view.domAtPos` com retry em rAF até o contentDOM existir (`insertCallout` em `EditorToolbar.tsx`).
-- **revisions** (migration 0005): `id, page_id FK cascade, snapshot_json, autor_id FK SET NULL (nullable!), criado_em, mensagem?`. Desvio deliberado do esboço da task (que dizia notNull): usuários sofrem hard delete e a revisão sobrevive com autor null — decisão antiga da TASK-14 aplicada. `snapshot_json` = `PageSnapshot` de @systembook/schema (página inteira: todas as tabs + blocks), pois Publicar é ação de página. Escrita de revisions só na TASK-34.
+- **revisions** (migration 0005): `id, page_id FK cascade, snapshot_json, autor_id FK SET NULL (nullable!), criado_em, mensagem?`. Desvio deliberado do esboço da task (que dizia notNull): usuários sofrem hard delete e a revisão sobrevive com autor null — decisão antiga da TASK-14 aplicada. `snapshot_json` = `PageSnapshot` de @systembook/schema (página inteira: todas as tabs + blocks), pois Publicar é ação de página.
+- **`pages.publish` (TASK-34)**: único ponto de escrita em `revisions` (helpers `buildPageSnapshot`/`createRevision` em `src/db/revisions.ts`). Monta o snapshot lendo `tabs` + `listBlocksByTab` por tab; `BlockRecord` (`tipo`/`conteudo`) é remapeado para `Block` (`type`/`content`) com um cast — os literais batem 1:1, só o nome dos campos muda. `autorId` vem de `ctx.user.userId`, nunca do input. Página inexistente → NOT_FOUND.
+- **Admin**: botão "Publicar" vive em `TabContentPage.tsx` (nível de página, não de tab) — `ContentEditor` virou `forwardRef<ContentEditorHandle>` expondo `flush(): Promise<void>` (a antiga função fire-and-forget do autosave virou `mutateAsync` aguardável); `handlePublish` faz `await editorRef.current?.flush()` antes de `pages.publish.mutate` para não snapshotar um rascunho desatualizado da tab ativa (as outras tabs já persistiram via autosave ao trocar de rota). Feedback via banner `role="status"`/`role="alert"` (mesmo padrão do `UsersPage`).
+- **Verificado via Playwright** (script ad-hoc no scratchpad, server buildado servindo `apps/admin/dist` na porta 3210): editar 2 tabs, digitar mais uma vez sem esperar o debounce de 2s e clicar Publicar imediatamente — a revisão criada contém a edição de última hora (confirma o guard de flush do step 3). Só 1 revisão por publish, `autor_id` correto.
+- Pendência real para a TASK-50 (documentada no spec da TASK-34): o read path público deve ler da última revisão, não de `blocks` ao vivo — ordering dependency entre as duas tasks.
+
+### Histórico de revisões + restore (TASK-35/36)
+
+- **TASK-36 (restore) foi implementada junto com a TASK-35**: a UI de histórico não dava para verificar em browser sem um endpoint de restore funcional, então adiantei o `pages.restoreRevision` mesmo a TASK-35 listando só TASK-34 como dependência formal.
+- **`db/revisions.ts`**: `restoreRevision(db, { pageId, targetRevision, autorId })` roda tudo numa única transação — substitui os blocks de cada tab ainda existente (via `replaceBlocksForTabInTx`, nova função extraída de `replaceBlocksForTab` para não aninhar `db.transaction()`, que o better-sqlite3/drizzle não suporta) e, ao final, cria uma revisão de acompanhamento lendo o estado já restaurado (`buildPageSnapshot(tx, pageId)` dentro da mesma tx) com `mensagem: "Restaurado da revisão de {ISO date}"`. Histórico continua append-only — restore nunca reescreve revisões antigas.
+- **Tab drift**: tabs do snapshot alvo que não existem mais na página são puladas (não é erro) e retornadas em `skippedTabIds` — decisão MVP documentada no próprio código.
+- **`Db`/`DbTx`** (novo tipo em `db/client.ts`): `DbTx = Parameters<Parameters<Db['transaction']>[0]>[0]` — usado sempre que uma função precisa rodar dentro de uma transação já aberta por quem chama (ex.: `listBlocksByTab`, `buildPageSnapshot`, `replaceBlocksForTabInTx` aceitam `Db | DbTx`).
+- **Router `revisions`** (novo, `src/trpc/routers/revisions.ts`): `listByPage` (leftJoin com `users` para o email do autor — `autor_id` pode ser null; **desempate de ordenação por `sql`${revisions}.rowid`` além de `criadoEm` desc**, porque `criadoEm` só tem resolução de segundo e publishes rápidos em sequência empatavam) e `getById` (snapshot completo parseado). `pages.restoreRevision` ficou em `pages.ts` (mesmo router do `publish`), não em `revisions.ts`, seguindo o texto literal do spec da TASK-36.
+- **Admin**: `editorExtensions` foi extraído de `ContentEditor.tsx` para `features/editor/extensions.ts` (single source of truth do conjunto de nodes/marks), reaproveitado pelo preview read-only de revisões. `features/revisions/blocksToTiptapDoc.ts` **duplica** deliberadamente o mapeamento block→nó de `apps/server/src/blocks/serialize.ts` — não dá pra importar direto do server (fronteira de pacote/runtime, mesma razão do `@systembook/schema` ser types-only); qualquer mudança no mapeamento canônico (`packages/schema/src/block.ts`) precisa espelhar nos dois lugares.
+- **Gotcha de tipos tRPC v11 sem transformer**: o output inferido pelo client não é o tipo de domínio puro (`PageSnapshot`, `Block`) — o tRPC aplica um `Serialize<T>` interno que marca campos `unknown`/possivelmente-undefined como opcionais e (provavelmente) `Date` como string. Componentes que recebem dados de query devem tipar a partir de `RouterOutput` (novo export em `apps/admin/src/lib/trpc.ts`, via `inferRouterOutputs<AppRouter>` — precisou adicionar `@trpc/server` como devDependency do admin só para o tipo), não do tipo de domínio importado de `@systembook/schema`; um cast (`as Block[]`) é necessário na borda onde o valor "solto" do wire é passado para uma função que espera o tipo de domínio exato.
+- **Rota**: `/pages/:pageId/history` (não `/admin/pages/:pageId/history` como o texto do spec sugeria) — decisão deliberada para consistência com a rota irmã `/pages/:pageId/tabs/:tabId` (o prefixo `/admin/` no código existente é reservado à área de gestão de usuários, `admin/users`). Link "Histórico" adicionado ao lado do botão Publicar em `TabContentPage`.
+- **Verificado via Playwright**: publicar v1, editar e publicar v2, abrir `/pages/:id/history`, ver as 2 revisões (mais recente primeiro, com email do autor e timestamp), selecionar a mais antiga → preview read-only mostra só o conteúdo da v1, clicar Restaurar → `window.confirm` → navega de volta para `/pages/:id/tabs/:tabId` → editor mostra o conteúdo restaurado da v1.
 
 ### Modelo de blocks (TASK-30)
 
@@ -127,7 +161,7 @@ O painel em dev acessa-se por `http://localhost:5173`; o proxy do `vite.config.t
 
 ## Pendências / próximos passos
 
-1. **Fase 3 continua (TASK-34+)**: ação "Publicar" criando snapshot em `revisions` (tipo `PageSnapshot` e tabela prontos), histórico/restauração de revisões.
+1. **Fase 3 concluída (TASK-30 a 36)**: modelo de blocks, autosave, publish/snapshot e histórico/restauração de revisões todos prontos. Próxima fase é a de preview (TASK-37+, `packages/preview-kit`/`connector`).
 2. Race conhecido (aceito no MVP): flush de autosave no unmount × fetch do `getByTab` na remontagem — em navegação muito rápida ida-e-volta o editor pode abrir sem o último flush (o dado não se perde no banco; basta recarregar).
 3. `.pnpm-store/` local (criado pelo container de dev) está no `.gitignore`; pode ser apagado à vontade.
 
