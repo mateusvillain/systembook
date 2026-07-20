@@ -20,8 +20,10 @@ import { usersRouter } from './routers/users.js';
  * | auth     | logout                                            | protectedProcedure (admin + editor)  |
  * | users    | list, create, update, deactivate, resetPassword   | adminProcedure (só admin)            |
  * | sections | list, create, rename, reorder, delete             | protectedProcedure (admin + editor)  |
+ * | sections | listPublic                                        | publicProcedure (doc pública)        |
  * | pages     | listBySection, create, rename, updateSlug,       | protectedProcedure (admin + editor)  |
  * |           | reorder, delete, publish, restoreRevision        |                                       |
+ * | pages     | getPublishedBySlug                                | publicProcedure (doc pública)        |
  * | tabs      | listByPage, create, rename, reorder, delete      | protectedProcedure (admin + editor)  |
  * | blocks    | getByTab, saveDraft                              | protectedProcedure (admin + editor)  |
  * | revisions | listByPage, getById                              | protectedProcedure (admin + editor)  |

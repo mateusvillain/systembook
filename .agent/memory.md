@@ -1,10 +1,10 @@
 # Memória do projeto — SystemBook
 
-> Log de desenvolvimento mantido pelo agente. Última atualização: **2026-07-20** (Fase 5 **fechada e mergeada na `main`** — PR #2, CI verde, branch remota deletada. TASK-47..51: iframe real, picker, painel de controles, doc pública, empty-state polido. Próximo: Fase 6, TASK-52).
+> Log de desenvolvimento mantido pelo agente. Última atualização: **2026-07-20** (Fase 6 **iniciada** na branch `feature/fase-6-layout-publico` — TASK-52 concluída: layout público navegável `/docs/:sectionSlug/:pageSlug`. Também mergeado: fix do proxy do Vite p/ o embed em dev, PR #3. Próximo: TASK-53, busca FTS5).
 
 ## Estado atual
 
-**Tasks 1–51 concluídas, verificadas e mergeadas.** Fases 0–5 fechadas na `main`. **Marco do PRD atingido: fim da Fase 5 = live preview funcional (proposta de valor central).** Próximo passo: Fase 6 (TASK-52..57 — layout público, busca FTS5, tema, landing, responsividade). Existe um `CLAUDE.md` na raiz com o guia do repositório.
+**Tasks 1–52 concluídas e verificadas** (1–51 mergeadas na `main`; TASK-52 na branch da Fase 6). Fases 0–5 fechadas. Próximo passo: TASK-53 (busca full-text FTS5 + UI). Existe um `CLAUDE.md` na raiz com o guia do repositório.
 
 | Task | Status | Verificação |
 | --- | --- | --- |
@@ -52,8 +52,9 @@
 | TASK-49 | ✅ | Painel de controles (`PreviewConfig.controls`) → `postMessage systembook:update-props` ao iframe; connector grava `preview-config.json` no artefato, `getLatest` retorna a config; 3 testes + 9 checks Playwright |
 | TASK-50 | ✅ | Doc pública read-only (rota `/p/:pageId`, sem auth) da última revisão publicada via `revisions.getLatestPublished`; `PageRenderer` compartilhado; `getLatest`/`getLatestPublished` viraram públicos; 2 testes + 14 checks Playwright deslogado |
 | TASK-51 | ✅ | Empty-state do embed polido: estado `empty` (referenciado sem preview) âmbar/⚠️ distinto do `unset` cinza/🧩, botão "Tentar novamente" (`refetch`), reuso automático no público read-only; UI-only + 13 checks Playwright |
+| TASK-52 | ✅ | Layout público navegável `/docs/:sectionSlug/:pageSlug` (fora do AdminLayout, sem auth): sidebar de seções/páginas publicadas, `sections.listPublic`/`pages.getPublishedBySlug` (públicos), slug de section (migration 0008 + backfill); 6 testes + 17 checks Playwright deslogado |
 
-**Cobertura**: 130 testes vitest (115 server + 7 preview-kit + 8 connector), todos verdes via `pnpm test`. E2E Playwright/curl ad-hoc (scratchpad, não commitados): editor base (29), nós custom (12), autosave (16), árvore (12), publish/histórico/restore, tokens (12 checks), artefato de preview em Chromium headless, o loop de CI documentado contra server real, o iframe de preview do component-embed (7 checks), o picker de inserção/re-seleção (10 checks), o painel de controles interativos (9 checks), a doc pública deslogada com os 7 tipos de bloco + embed (14 checks) e os empty-states do embed (13 checks).
+**Cobertura**: 136 testes vitest (121 server + 7 preview-kit + 8 connector), todos verdes via `pnpm test`. E2E Playwright/curl ad-hoc (scratchpad, não commitados): editor base (29), nós custom (12), autosave (16), árvore (12), publish/histórico/restore, tokens (12 checks), artefato de preview em Chromium headless, o loop de CI documentado contra server real, o iframe de preview do component-embed (7 checks), o picker de inserção/re-seleção (10 checks), o painel de controles interativos (9 checks), a doc pública deslogada com os 7 tipos de bloco + embed (14 checks) e os empty-states do embed (13 checks).
 
 O tracking granular (pass por step) está em `.agent/tasks/TASK-*.json` e o índice em `.agent/tasks.json`.
 
@@ -67,7 +68,7 @@ O tracking granular (pass por step) está em `.agent/tasks/TASK-*.json` e o índ
 | 3 — Editor de conteúdo | TASK-25..36 | ✅ | Tiptap + extensões + tabela + callout + component-embed placeholder, blocks, serialização, autosave, revisions, publish, histórico/restore |
 | 4 — Conector e preview | TASK-37..46 | ✅ | PreviewConfig schema, preview-kit, connector CLI (discovery/entrypoints/build via Vite), component_previews, upload endpoint autenticado, tokens, exemplo CI, rota de artefatos estáticos |
 | 5 — Integração do preview | TASK-47..51 | ✅ | component-embed com iframe real, seletor componente/variante, painel de controles, doc pública com embeds, empty-state "sem preview disponível" — **live preview funcional (marco central do PRD)** |
-| 6 — Publicação e polimento | TASK-52..57 | ⬜ | layout público, busca full-text FTS5 + UI, tema dark/light, landing customizável, responsividade |
+| 6 — Publicação e polimento | TASK-52..57 | 🔄 | layout público (✅ TASK-52), busca full-text FTS5 + UI, tema dark/light, landing customizável, responsividade |
 | 7 — Empacotamento e lançamento | TASK-58..64 | ⬜ | imagem Docker publicada, compose de produção, docs de setup/CI/schema, README, CONTRIBUTING+licença, docs de backup |
 
 Critérios de sucesso do PRD (§1): fim da Fase 3 = CMS de texto utilizável sem dev (✅ atingido); fim da Fase 5 = live preview funcional (proposta de valor central); fim da Fase 7 = pronto para divulgação open source.
@@ -229,11 +230,21 @@ O painel em dev acessa-se por `http://localhost:5173`; o proxy do `vite.config.t
 - **TASK-51 (empty-states do embed, UI-only)**: os três estados do component-embed agora são inequívocos. `unset` (nunca selecionado): caixa cinza tracejada + 🧩 + "Nenhum componente selecionado". `empty` (selecionado mas sem preview publicável — nunca publicado ou referência renomeada/defasada): caixa **âmbar** (`.sb-component-embed--empty`) + **⚠️** + nomeia `component / variant` + **"Tentar novamente"** que faz `previewQuery.refetch()` (útil logo após o CI publicar). `live`: iframe. Nunca renderiza `<iframe>` com src vazio. O botão retry mostra "Verificando…" e fica `disabled` enquanto `isFetching`. **Reuso no público é automático** (mesmo NodeView): retry e re-seleção ficam atrás de `editor.isEditable`, então na doc read-only o empty-state aparece só com a mensagem. Estilo dos botões inline extraído para `emptyActionStyle`.
 - **Gotchas do E2E da TASK-51** (`e2e/verify51.mjs`): (1) inserir um segundo `componentEmbed` (atom) com `focus('end')` quando a NodeSelection do primeiro atom está ativa **substitui** o primeiro — usar tabs separadas para comparar `empty` × `unset`; (2) navegar para outra tab e **voltar** dispara o race conhecido do autosave (flush no unmount × getByTab na remontagem, pendência #2) e o embed pode não reaparecer — fazer o fluxo empty+retry **na mesma visita**, sem navegar de volta; (3) o upload de artefato no meio do teste (via `execSync` de curl) **não** faz o embed auto-resolver (a query cacheou null) — confirmado que só o clique em "Tentar novamente" re-busca.
 
+## Fase 6 — Publicação e polimento (em andamento, branch `feature/fase-6-layout-publico`)
+
+- **TASK-52 (layout público navegável)**: árvore de rotas `/docs` **separada do `AdminLayout`** em `main.tsx` (sem auth, sem chrome de admin) — `PublicLayout` (shell: header + sidebar + `<Outlet>`), `PublicHome` (index → redirect à 1ª página publicada, ou estado vazio), `PublicPageView` (`:sectionSlug/:pageSlug/:tabId?`). Tudo em `apps/admin/src/features/public/`. A rota antiga `/p/:pageId` (`PublicPage`, TASK-50) **foi mantida** como link direto por id (bookmark/preview sem slug).
+- **Slug de section (decisão de modelagem)**: sections não tinham slug; a URL `/docs/:sectionSlug/...` exige um. Adicionado `slug` a `sections` (**migration 0008**: `ALTER TABLE ADD COLUMN` nullable + `CREATE UNIQUE INDEX` — sem rebuild, respeita "nunca editar migration à mão"). Populado pela aplicação: `sections.create` gera via `generateUniqueSectionSlug` (slugify do título + desambiguação `-2/-3`), e `backfillSectionSlugs(db)` no boot (`index.ts`, idempotente, só toca `slug IS NULL`) cobre linhas legadas. `slugify`/geradores em `apps/server/src/db/sections.ts`. **Rename NÃO altera o slug** (estabilidade da URL — critério do spec); slug editável manualmente fica como enhancement futuro.
+- **Queries públicas** (`publicProcedure`, matriz em router.ts atualizada): `sections.listPublic` retorna a **árvore aninhada** (seções com ≥1 página publicada, cada uma com suas páginas publicadas) — um round-trip, sem N+1; "publicada" = página com ≥1 revisão (`EXISTS` em revisions). Desvio deliberado do `listPublic`/`listPublicBySection` separados do spec. `pages.getPublishedBySlug({sectionSlug, pageSlug})` resolve via join sections↔pages e retorna `{pageId, titulo, snapshot}` (snapshot = última revisão, mesmo desempate do `getLatestPublished`; `null` se seção/página não existe → 404; snapshot `null` se nunca publicada → estado "não publicada").
+- **Sidebar** (`PublicSidebar.tsx`): seções (headers) + páginas (`NavLink` para `/docs/:sec/:page`), destaque da ativa via classe `.active` do NavLink (ativo também nos descendentes `/:tabId`, pois NavLink não é `end`). Tabs **não** vão na sidebar — aparecem no header da página (o seletor do `PageRenderer`).
+- **`PageRenderer` ganhou modo controlado** (`activeTabId`/`onSelectTab` opcionais): a doc pública reflete a tab na URL (`/:tabId`) e trocar de tab faz `navigate` client-side; sem esses props ele gerencia a tab internamente (o `RevisionSnapshotPreview` continua igual).
+- **Verificação E2E (scratchpad, `e2e/verify52.mjs`)**: seed com 2 seções publicadas + 1 rascunho + 1 seção vazia. **Deslogado**, 17 checks: `/docs` redireciona à 1ª página, sidebar lista só o publicado (rascunho/seção-vazia ocultos), destaque da ativa, navegação client-side sem full reload (marker `window` preservado), tabs no header com URL sincronizada, link direto, 404, **nenhum chrome de admin** (sem Publicar/Sair/toolbar), zero erros de console. **Gotchas de teste**: (1) `text-transform: uppercase` no CSS faz `innerText` vir MAIÚSCULO — comparar em lowercase; (2) navegação client-side dispara query async — esperar o novo conteúdo (`locator hasText`) antes de asseverar, senão lê o conteúdo antigo.
+
 ## Pendências / próximos passos
 
-1. **Fase 5 mergeada na `main`** (PR #2, CI verde, branch remota deletada; validação consolidada de 15 checks contra o server buildado de produção passou 100%). **Próximo: Fase 6** — TASK-52 (layout público com nav/hierarquia por slug — a rota atual `/p/:pageId` é provisória, substituir por `/:section/:page`); TASK-53 busca FTS5; TASK-54 tema dark/light; TASK-55 landing customizável; TASK-56/57 responsividade. Fase 4 mergeada na `main` (PR #1).
-2. Race conhecido (aceito no MVP): flush de autosave no unmount × fetch do `getByTab` na remontagem — em navegação muito rápida ida-e-volta o editor pode abrir sem o último flush (o dado não se perde no banco; basta recarregar).
-3. `.pnpm-store/` local (criado pelo container de dev) está no `.gitignore`; pode ser apagado à vontade.
+1. **Fase 6 em andamento** na branch `feature/fase-6-layout-publico` (TASK-52 ✅). Próximo: **TASK-53** (busca full-text FTS5 + UI). Depois TASK-54 tema dark/light; TASK-55 landing customizável; TASK-56/57 responsividade. Ao fim da fase: PR + merge na `main`.
+2. Fixes de dev já na `main`: proxy do Vite encaminha `/previews` e `/api/previews` (PR #3) — o embed funciona em `pnpm dev`. Fases 4 e 5 mergeadas (PR #1, #2).
+3. Race conhecido (aceito no MVP): flush de autosave no unmount × fetch do `getByTab` na remontagem — em navegação muito rápida ida-e-volta o editor pode abrir sem o último flush (o dado não se perde no banco; basta recarregar).
+4. `.pnpm-store/` local (criado pelo container de dev) está no `.gitignore`; pode ser apagado à vontade.
 
 ## Avisos de segurança registrados
 
