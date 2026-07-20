@@ -13,6 +13,7 @@ import { PublicPage } from './pages/PublicPage.js';
 import { PublicLayout } from './features/public/PublicLayout.js';
 import { PublicHome } from './features/public/PublicHome.js';
 import { PublicPageView } from './features/public/PublicPageView.js';
+import { PublicSearch } from './features/public/PublicSearch.js';
 import { AdminLayout } from './components/AdminLayout.js';
 
 const router = createBrowserRouter([
@@ -24,6 +25,7 @@ const router = createBrowserRouter([
     element: <PublicLayout />,
     children: [
       { index: true, element: <PublicHome /> },
+      { path: 'search', element: <PublicSearch /> },
       { path: ':sectionSlug/:pageSlug', element: <PublicPageView /> },
       { path: ':sectionSlug/:pageSlug/:tabId', element: <PublicPageView /> },
     ],

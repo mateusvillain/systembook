@@ -368,7 +368,7 @@
     "title": "Full-text search over blocks using SQLite FTS5",
     "category": "functional",
     "specFilePath": ".agent/tasks/TASK-53.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-54",

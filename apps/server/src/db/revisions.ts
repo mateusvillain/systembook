@@ -2,6 +2,7 @@ import type { Block, PageSnapshot } from '@systembook/schema';
 import { asc, eq } from 'drizzle-orm';
 import type { Db, DbTx } from './client.js';
 import { listBlocksByTab, replaceBlocksForTabInTx, type BlockRecord, type NewBlock } from './blocks.js';
+import { reindexPageFts } from './search.js';
 import { revisions, tabs } from './schema.js';
 
 export type RevisionRow = typeof revisions.$inferSelect;
@@ -49,7 +50,7 @@ export function createRevision(
   params: { pageId: string; autorId: string; mensagem?: string },
 ): RevisionRow {
   const snapshot = buildPageSnapshot(db, params.pageId);
-  return db
+  const revision = db
     .insert(revisions)
     .values({
       pageId: params.pageId,
@@ -59,6 +60,9 @@ export function createRevision(
     })
     .returning()
     .get();
+  // Mantém o índice FTS5 em sincronia com o conteúdo publicado (TASK-53).
+  reindexPageFts(db, params.pageId, snapshot);
+  return revision;
 }
 
 export interface RestoreResult {
@@ -119,6 +123,10 @@ export function restoreRevision(
       })
       .returning()
       .get();
+
+    // Reindexa dentro da mesma transação, a partir do estado já restaurado
+    // (TASK-53) — a busca reflete o conteúdo restaurado, não o anterior.
+    reindexPageFts(tx, params.pageId, restoredSnapshot);
 
     return { revision, skippedTabIds };
   });
