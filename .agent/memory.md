@@ -1,10 +1,10 @@
 # Memória do projeto — SystemBook
 
-> Log de desenvolvimento mantido pelo agente. Última atualização: **2026-07-20** (Fase 5 **completa** na branch `feature/fase-5-integracao-preview` — TASK-47..51: iframe real, picker, painel de controles, doc pública, empty-state polido. Próximo: mergear na `main` e iniciar a Fase 6, TASK-52).
+> Log de desenvolvimento mantido pelo agente. Última atualização: **2026-07-20** (Fase 5 **fechada e mergeada na `main`** — PR #2, CI verde, branch remota deletada. TASK-47..51: iframe real, picker, painel de controles, doc pública, empty-state polido. Próximo: Fase 6, TASK-52).
 
 ## Estado atual
 
-**Tasks 1–51 concluídas e verificadas.** Fases 0–5 fechadas (Fase 5 pendente de merge na `main`). **Marco do PRD atingido: fim da Fase 5 = live preview funcional (proposta de valor central).** Próximo passo: Fase 6 (TASK-52..57 — layout público, busca FTS5, tema, landing, responsividade). Existe um `CLAUDE.md` na raiz com o guia do repositório.
+**Tasks 1–51 concluídas, verificadas e mergeadas.** Fases 0–5 fechadas na `main`. **Marco do PRD atingido: fim da Fase 5 = live preview funcional (proposta de valor central).** Próximo passo: Fase 6 (TASK-52..57 — layout público, busca FTS5, tema, landing, responsividade). Existe um `CLAUDE.md` na raiz com o guia do repositório.
 
 | Task | Status | Verificação |
 | --- | --- | --- |
@@ -231,7 +231,7 @@ O painel em dev acessa-se por `http://localhost:5173`; o proxy do `vite.config.t
 
 ## Pendências / próximos passos
 
-1. **Fase 5 completa** na branch `feature/fase-5-integracao-preview` (5 commits: TASK-47..51). **Próximo: abrir PR e mergear na `main`** (como foi feito com a Fase 4/PR #1), depois iniciar a **Fase 6** (TASK-52: layout público com nav/hierarquia por slug — a rota atual `/p/:pageId` é provisória; TASK-53 busca FTS5; TASK-54 tema; TASK-55 landing; TASK-56/57 responsividade). Fase 4 já mergeada na `main` (PR #1).
+1. **Fase 5 mergeada na `main`** (PR #2, CI verde, branch remota deletada; validação consolidada de 15 checks contra o server buildado de produção passou 100%). **Próximo: Fase 6** — TASK-52 (layout público com nav/hierarquia por slug — a rota atual `/p/:pageId` é provisória, substituir por `/:section/:page`); TASK-53 busca FTS5; TASK-54 tema dark/light; TASK-55 landing customizável; TASK-56/57 responsividade. Fase 4 mergeada na `main` (PR #1).
 2. Race conhecido (aceito no MVP): flush de autosave no unmount × fetch do `getByTab` na remontagem — em navegação muito rápida ida-e-volta o editor pode abrir sem o último flush (o dado não se perde no banco; basta recarregar).
 3. `.pnpm-store/` local (criado pelo container de dev) está no `.gitignore`; pode ser apagado à vontade.
 
