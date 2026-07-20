@@ -24,10 +24,14 @@ function writeArtifact(
   previewsRoot: string,
   pathEstatico: string,
   entryDir: string,
+  config?: unknown,
 ): void {
   const base = path.join(previewsRoot, ...pathEstatico.split('/'));
   mkdirSync(path.join(base, entryDir), { recursive: true });
   writeFileSync(path.join(base, entryDir, 'index.html'), '<!doctype html><title>preview</title>');
+  if (config !== undefined) {
+    writeFileSync(path.join(base, entryDir, 'preview-config.json'), JSON.stringify(config));
+  }
   mkdirSync(path.join(base, 'assets'), { recursive: true });
   writeFileSync(path.join(base, 'assets', 'app.js'), '// bundle');
 }
@@ -58,7 +62,7 @@ describe('componentPreviews.getLatest (TASK-47)', () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
-  it('resolve a URL do entryDir/index.html do artefato mais recente', async () => {
+  it('resolve a URL e a config do entryDir/index.html do artefato mais recente', async () => {
     const pathEstatico = 'Button/primary/abc123';
     insertComponentPreview(db, {
       componentName: 'Button',
@@ -66,7 +70,15 @@ describe('componentPreviews.getLatest (TASK-47)', () => {
       commitSha: 'abc123',
       pathEstatico,
     });
-    writeArtifact(previewsRoot, pathEstatico, 'button--primary');
+    const config = {
+      component: 'Button',
+      variants: [{ id: 'primary', label: 'Primary', props: { children: 'Salvar' } }],
+      controls: [
+        { kind: 'boolean', propName: 'disabled' },
+        { kind: 'select', propName: 'variant', options: ['primary', 'secondary'] },
+      ],
+    };
+    writeArtifact(previewsRoot, pathEstatico, 'button--primary', config);
 
     const caller = callerFor(db, editor, previewsRoot);
     const result = await caller.componentPreviews.getLatest({
@@ -77,6 +89,26 @@ describe('componentPreviews.getLatest (TASK-47)', () => {
     expect(result).not.toBeNull();
     expect(result!.url).toBe('/previews/Button/primary/abc123/button--primary/index.html');
     expect(result!.commitSha).toBe('abc123');
+    expect(result!.config?.controls).toHaveLength(2);
+    expect(result!.config?.component).toBe('Button');
+  });
+
+  it('config é null quando o artefato não tem preview-config.json (pré-TASK-49)', async () => {
+    const pathEstatico = 'Button/primary/old';
+    insertComponentPreview(db, {
+      componentName: 'Button',
+      variantId: 'primary',
+      commitSha: 'old',
+      pathEstatico,
+    });
+    writeArtifact(previewsRoot, pathEstatico, 'button--primary'); // sem config
+
+    const caller = callerFor(db, editor, previewsRoot);
+    const result = await caller.componentPreviews.getLatest({
+      componentName: 'Button',
+      variantId: 'primary',
+    });
+    expect(result!.config).toBeNull();
   });
 
   it('retorna a publicação mais recente quando há várias do mesmo par', async () => {

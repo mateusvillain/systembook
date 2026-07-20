@@ -57,6 +57,14 @@ describe('buildEntries', () => {
         ).resolves.toBeUndefined();
       }
     }
+
+    // preview-config.json por variante (TASK-49), ao lado do index.html
+    const cfg = JSON.parse(
+      await readFile(path.join(outDir, 'button--primary', 'preview-config.json'), 'utf8'),
+    ) as { component: string; controls: { kind: string; propName: string }[] };
+    expect(cfg.component).toBe('Button');
+    expect(cfg.controls.some((c) => c.kind === 'boolean')).toBe(true);
+    expect(cfg.controls.some((c) => c.kind === 'select')).toBe(true);
   });
 
   it('erro de compilação em uma entrada rejeita o build inteiro', { timeout: 120_000 }, async () => {
@@ -72,7 +80,12 @@ describe('buildEntries', () => {
       "import { naoExiste } from './modulo-inexistente.js';\nnaoExiste();\n",
     );
     const entries: GeneratedEntry[] = [
-      { componentName: 'Broken', variantId: 'default', entryDir },
+      {
+        componentName: 'Broken',
+        variantId: 'default',
+        entryDir,
+        config: { component: 'Broken', variants: [], controls: [] },
+      },
     ];
 
     await expect(

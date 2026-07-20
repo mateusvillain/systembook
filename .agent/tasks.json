@@ -340,7 +340,7 @@
     "title": "Interactive controls panel driven by PreviewConfig.controls via postMessage",
     "category": "functional",
     "specFilePath": ".agent/tasks/TASK-49.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-50",

@@ -5,7 +5,7 @@ import {
   listComponentNames,
   listVariantIds,
 } from '../../db/componentPreviews.js';
-import { resolvePreviewEntry } from '../../previews/entry.js';
+import { readPreviewConfig, resolvePreviewEntry } from '../../previews/entry.js';
 import { PREVIEWS_URL_PREFIX } from '../../previews/serve.js';
 import { protectedProcedure, router } from '../init.js';
 
@@ -46,12 +46,18 @@ export const componentPreviewsRouter = router({
       const entry = await resolvePreviewEntry(ctx.previewsRoot, row.pathEstatico);
       if (!entry) return null;
 
+      // PreviewConfig co-localizado (TASK-49) — dá os `controls` ao painel do
+      // admin sem um segundo round-trip ao artefato estático. `null` em
+      // artefatos antigos (pré-TASK-49): o painel de controles some.
+      const config = await readPreviewConfig(ctx.previewsRoot, row.pathEstatico, entry);
+
       return {
         url: `${PREVIEWS_URL_PREFIX}${row.pathEstatico}/${entry}`,
         componentName: row.componentName,
         variantId: row.variantId,
         commitSha: row.commitSha,
         publicadoEm: row.publicadoEm.toISOString(),
+        config,
       };
     }),
 });
