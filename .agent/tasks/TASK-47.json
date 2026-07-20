@@ -15,40 +15,44 @@
       "step": 1,
       "description": "Add componentPreviews.getLatest query",
       "details": "Add `componentPreviews: { getLatest: protectedProcedure.input(z.object({ componentName: z.string(), variantId: z.string() })).query(...) }` to a new `apps/server/src/trpc/routers/componentPreviews.ts`, using TASK-42's `getLatestPreview` helper and resolving it to a servable URL via TASK-46's route scheme.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Update the ComponentEmbed NodeView",
       "details": "In `apps/admin/src/features/editor/nodes/ComponentEmbed.ts`'s React NodeView, when `componentName`/`variantId` are set, call `componentPreviews.getLatest` and render an `<iframe src={result.url} sandbox=\"allow-scripts\" />` on success.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Handle the no-preview-yet case",
       "details": "If `getLatest` returns null (no artifact published for this component/variant), fall back to the TASK-29 placeholder box with an updated message indicating the component is referenced but not yet published (full empty-state polish in TASK-51).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Set iframe sizing behavior",
       "details": "Give the iframe a reasonable default height (e.g. 240px) with a manual resize handle, or use a `postMessage`-based auto-resize if `preview-kit` is extended to report its content height (optional enhancement, minimum requirement is a usable fixed/resizable default).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 5,
       "description": "Document the sandbox policy",
       "details": "Add a code comment explaining exactly which `sandbox` tokens are enabled and why (e.g. `allow-scripts` needed to run the component; `allow-same-origin` deliberately omitted unless required by a specific feature, to limit the iframe's ability to read/write the parent's cookies).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 6,
       "description": "Verify in browser",
       "details": "Using Playwright: with a real published preview artifact (from an end-to-end TASK-41→TASK-43 flow), insert a component-embed referencing it and confirm the iframe renders the component visually; reference a component with no published artifact and confirm the empty-state placeholder shows instead.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-29", "TASK-46", "TASK-42"],
+  "dependencies": [
+    "TASK-29",
+    "TASK-46",
+    "TASK-42"
+  ],
   "estimatedComplexity": "medium",
   "technicalNotes": [
     "This task deliberately reuses TASK-29's node/NodeView structure and only changes the rendering logic — the persisted JSON shape (`componentName`, `variantId`) is unchanged, so content authored in Fase 3 remains valid."

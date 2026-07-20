@@ -1,28 +1,143 @@
 import { mergeAttributes, Node } from '@tiptap/core';
 import { NodeViewWrapper, ReactNodeViewRenderer, type NodeViewProps } from '@tiptap/react';
+import { useQuery } from '@tanstack/react-query';
+import { useTRPC } from '../../../lib/trpc.js';
 
 /**
- * Slot de preview de componente (TASK-29) — nesta fase é só um placeholder
- * atômico que reserva `componentName`/`variantId` no JSON. O preview real via
- * iframe chega na TASK-47 e a UI de seleção na TASK-48, ambos por cima deste
- * mesmo nó, sem mudar a forma persistida.
+ * Slot de preview de componente. O nó atômico (TASK-29) reserva
+ * `componentName`/`variantId` no JSON; a forma persistida não mudou.
+ *
+ * TASK-47: quando ambos estão preenchidos, o NodeView resolve o artefato
+ * publicado mais recente via `componentPreviews.getLatest` e renderiza um
+ * `<iframe>` apontando para a rota estática (`/previews/...`, TASK-46). Sem
+ * artefato publicado (ou enquanto carrega), cai no placeholder da TASK-29
+ * (o polimento do empty-state fica na TASK-51). A UI de seleção de
+ * componente/variante vem na TASK-48.
  */
 
-function ComponentEmbedView({ node }: NodeViewProps) {
-  const componentName = node.attrs.componentName as string;
-
+function Placeholder({
+  componentName,
+  variantId,
+  state,
+  message,
+}: {
+  componentName: string;
+  variantId: string | null;
+  state: string;
+  message: React.ReactNode;
+}) {
   return (
-    <NodeViewWrapper className="sb-component-embed" data-component-name={componentName}>
+    <NodeViewWrapper
+      className="sb-component-embed"
+      data-component-name={componentName}
+      data-variant-id={variantId ?? ''}
+      data-preview-state={state}
+    >
       <span aria-hidden style={{ fontSize: '1.2rem' }}>
         🧩
       </span>
-      {componentName ? (
-        <span>
-          Preview de <strong>{componentName}</strong> (disponível na Fase 5)
-        </span>
-      ) : (
-        <span>Placeholder do preview de componente — selecione um componente (Fase 5)</span>
-      )}
+      <span>{message}</span>
+    </NodeViewWrapper>
+  );
+}
+
+function ComponentEmbedView({ node }: NodeViewProps) {
+  const componentName = node.attrs.componentName as string;
+  const variantId = node.attrs.variantId as string | null;
+  const trpc = useTRPC();
+
+  const hasSelection = componentName.length > 0 && !!variantId && variantId.length > 0;
+
+  const previewQuery = useQuery({
+    ...trpc.componentPreviews.getLatest.queryOptions({
+      componentName,
+      variantId: variantId ?? '',
+    }),
+    enabled: hasSelection,
+  });
+
+  if (!hasSelection) {
+    return (
+      <Placeholder
+        componentName={componentName}
+        variantId={variantId}
+        state="unset"
+        message={
+          componentName ? (
+            <>
+              Preview de <strong>{componentName}</strong> — selecione uma variante (Fase 5)
+            </>
+          ) : (
+            'Placeholder do preview de componente — selecione um componente (Fase 5)'
+          )
+        }
+      />
+    );
+  }
+
+  if (previewQuery.isLoading) {
+    return (
+      <Placeholder
+        componentName={componentName}
+        variantId={variantId}
+        state="loading"
+        message={
+          <>
+            Carregando preview de <strong>{componentName}</strong>…
+          </>
+        }
+      />
+    );
+  }
+
+  // Erro de rede ou nenhum artefato publicado para este par → placeholder,
+  // nunca um iframe quebrado (TASK-51 detalha o empty-state completo).
+  if (previewQuery.isError || !previewQuery.data) {
+    return (
+      <Placeholder
+        componentName={componentName}
+        variantId={variantId}
+        state="empty"
+        message={
+          <>
+            <strong>{componentName}</strong> / <strong>{variantId}</strong> ainda não tem preview
+            publicado — rode o conector no repositório do componente.
+          </>
+        }
+      />
+    );
+  }
+
+  const preview = previewQuery.data;
+
+  return (
+    <NodeViewWrapper
+      className="sb-component-embed sb-component-embed--live"
+      data-component-name={componentName}
+      data-variant-id={variantId ?? ''}
+      data-preview-state="live"
+    >
+      <iframe
+        className="sb-component-embed-frame"
+        src={preview.url}
+        title={`Preview de ${componentName} (${variantId})`}
+        loading="lazy"
+        /*
+         * Política de sandbox (acceptance criteria da TASK-47):
+         * - `allow-scripts` é OBRIGATÓRIO — o artefato é o bundle React do
+         *   componente de terceiros (buildado pelo CI do time); sem scripts o
+         *   iframe renderiza em branco.
+         * - `allow-same-origin` é DELIBERADAMENTE omitido. No container único o
+         *   preview é servido da mesma origem do painel admin; combinar
+         *   allow-scripts + allow-same-origin deixaria o código de terceiros
+         *   ler/escrever cookies de sessão e o DOM do parent. Sem
+         *   allow-same-origin o browser trata o iframe como origem opaca:
+         *   sem acesso a cookies/storage/DOM do parent. Os assets relativos
+         *   (`../assets/*.js`) continuam carregando (subresource same-origin) e
+         *   o postMessage do preview-kit não depende de same-origin.
+         */
+        sandbox="allow-scripts"
+      />
     </NodeViewWrapper>
   );
 }

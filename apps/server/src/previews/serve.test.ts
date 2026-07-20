@@ -59,6 +59,8 @@ describe('GET /previews/* (TASK-46)', () => {
     expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toBe('text/html; charset=utf-8');
     expect(res.headers.get('cache-control')).toBe('public, max-age=31536000, immutable');
+    // CORS aberto: o iframe sandbox de origem opaca busca os módulos via CORS (TASK-47)
+    expect(res.headers.get('access-control-allow-origin')).toBe('*');
     await expect(res.text()).resolves.toContain('<p>preview</p>');
   });
 

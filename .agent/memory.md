@@ -1,10 +1,10 @@
 # Memória do projeto — SystemBook
 
-> Log de desenvolvimento mantido pelo agente. Última atualização: **2026-07-20** (Fase 4 **fechada** na branch `feature/fase-4-conector-preview` — tasks 37–46: PreviewConfig, preview-kit, connector CLI completo, component_previews, upload endpoint, tokens, doc de CI e rota estática de artefatos. Próxima: Fase 5, TASK-47).
+> Log de desenvolvimento mantido pelo agente. Última atualização: **2026-07-20** (Fase 5 **iniciada** na branch `feature/fase-5-integracao-preview` — TASK-47 concluída: `component-embed` renderiza iframe real do artefato publicado mais recente. Próxima: TASK-48, seletor de componente/variante).
 
 ## Estado atual
 
-**Tasks 1–46 concluídas e verificadas.** Fases 0–4 fechadas (fundação, auth, estrutura de navegação, editor completo com revisões, conector e preview). Próximo passo: Fase 5 (integração do preview no editor, TASK-47..51). Existe um `CLAUDE.md` na raiz com o guia do repositório.
+**Tasks 1–47 concluídas e verificadas.** Fases 0–4 fechadas; Fase 5 em andamento. Próximo passo: TASK-48 (UI de seleção componente/variante no editor). Existe um `CLAUDE.md` na raiz com o guia do repositório.
 
 | Task | Status | Verificação |
 | --- | --- | --- |
@@ -47,8 +47,9 @@
 | TASK-43 | ✅ | `POST /api/previews` fora do tRPC: bearer token + multipart (busboy) + extração tar filtrada; 10 testes + upload E2E real via curl |
 | TASK-45 | ✅ | `docs/ci-example.md` (workflow GitHub Actions completo) + `manifest.json` no build do connector; loop de upload validado literalmente contra server real |
 | TASK-46 | ✅ | `GET /previews/*` público com cache imutável + traversal barrado; 10 testes + smoke contra server buildado |
+| TASK-47 | ✅ | `component-embed` renderiza iframe real do artefato mais recente via `componentPreviews.getLatest`; 5 testes + 7 checks Playwright (fluxo TASK-41→43→47 real) |
 
-**Cobertura**: 118 testes vitest (103 server + 7 preview-kit + 8 connector), todos verdes via `pnpm test`. E2E Playwright/curl ad-hoc (scratchpad, não commitados): editor base (29), nós custom (12), autosave (16), árvore (12), publish/histórico/restore, tokens (12 checks), artefato de preview em Chromium headless e o loop de CI documentado contra server real.
+**Cobertura**: 123 testes vitest (108 server + 7 preview-kit + 8 connector), todos verdes via `pnpm test`. E2E Playwright/curl ad-hoc (scratchpad, não commitados): editor base (29), nós custom (12), autosave (16), árvore (12), publish/histórico/restore, tokens (12 checks), artefato de preview em Chromium headless, o loop de CI documentado contra server real e o iframe de preview do component-embed (7 checks).
 
 O tracking granular (pass por step) está em `.agent/tasks/TASK-*.json` e o índice em `.agent/tasks.json`.
 
@@ -61,7 +62,7 @@ O tracking granular (pass por step) está em `.agent/tasks/TASK-*.json` e o índ
 | 2 — Estrutura de navegação | TASK-17..24 | ✅ | data models e CRUD de sections/pages/tabs, árvore na sidebar, permissões editor=admin |
 | 3 — Editor de conteúdo | TASK-25..36 | ✅ | Tiptap + extensões + tabela + callout + component-embed placeholder, blocks, serialização, autosave, revisions, publish, histórico/restore |
 | 4 — Conector e preview | TASK-37..46 | ✅ | PreviewConfig schema, preview-kit, connector CLI (discovery/entrypoints/build via Vite), component_previews, upload endpoint autenticado, tokens, exemplo CI, rota de artefatos estáticos |
-| 5 — Integração do preview | TASK-47..51 | ⬜ | component-embed com iframe real, seletor componente/variante, painel de controles, doc pública com embeds, estado "sem preview disponível" |
+| 5 — Integração do preview | TASK-47..51 | 🔄 | component-embed com iframe real (✅ TASK-47), seletor componente/variante, painel de controles, doc pública com embeds, estado "sem preview disponível" |
 | 6 — Publicação e polimento | TASK-52..57 | ⬜ | layout público, busca full-text FTS5 + UI, tema dark/light, landing customizável, responsividade |
 | 7 — Empacotamento e lançamento | TASK-58..64 | ⬜ | imagem Docker publicada, compose de produção, docs de setup/CI/schema, README, CONTRIBUTING+licença, docs de backup |
 
@@ -201,9 +202,19 @@ O painel em dev acessa-se por `http://localhost:5173`; o proxy do `vite.config.t
 - **Gotcha de teste com http server + fetch**: `server.close()` no `afterEach` fica ~3s esperando o socket keep-alive do `fetch` anterior expirar — chamar `server.closeAllConnections()` antes derruba a suíte de 6s para 0,5s.
 - **TASK-42 (component_previews)**: migration 0006 — `component_previews (id, component_name, variant_id, commit_sha, path_estatico, publicado_em default unixepoch)`, índice composto `(component_name, variant_id, publicado_em)` para o lookup de latest. **Sem unique** no par (componente, variante): append-only deliberado, cada upload de CI é linha nova e o `getLatestPreview` resolve "latest wins" com desempate por rowid (unixepoch tem resolução de segundo — mesma lição do listByPage da TASK-35). Helpers em `src/db/componentPreviews.ts`: `insertComponentPreview` (ponto de escrita da TASK-43) e `getLatestPreview` (lookup da TASK-47/46).
 
+## Fase 5 — Integração do preview (em andamento, branch `feature/fase-5-integracao-preview`)
+
+- **TASK-47 (component-embed com iframe real)**: o NodeView (`apps/admin/src/features/editor/nodes/ComponentEmbed.tsx`, ainda `.tsx`) passou a resolver o artefato via `componentPreviews.getLatest` e renderizar `<iframe>` quando `componentName` **e** `variantId` estão setados. Forma persistida do nó inalterada (atoms TASK-29). Estados expostos em `data-preview-state` para E2E: `unset` (falta seleção) / `loading` / `empty` (sem artefato ou erro) / `live` (iframe). Empty-state e loading reusam a caixa tracejada da TASK-29 (polimento fica na TASK-51).
+- **Router novo `componentPreviews.getLatest`** (`apps/server/src/trpc/routers/componentPreviews.ts`, protectedProcedure — conteúdo do editor, admin+editor): usa `getLatestPreview` (TASK-42) e resolve a URL servível. Registrado no `router.ts` + matriz de permissões atualizada.
+- **Resolução do entryDir em disco** (`apps/server/src/previews/entry.ts`, `resolvePreviewEntry`): o par (componente, variante) **não conhece** o slug do `entryDir` (ex.: `button--primary`), então o DB só guarda `path_estatico = comp/variant/sha`. O helper lê o artefato extraído e acha o `index.html`: primeiro na raiz (layout plano), senão o único subdiretório que o contém. URL final: `/previews/<comp>/<variant>/<sha>/<entryDir>/index.html`. Se o registro existe mas os arquivos sumiram (volume recriado) → retorna null → placeholder, nunca iframe quebrado.
+- **`previewsRoot` no contexto tRPC** (`context.ts`, **opcional**): `createContext` ganhou 4º parâmetro `previewsRoot`, injetado com `env.PREVIEWS_PATH` no `index.ts`. Opcional para não quebrar os ~8 testes que forjam contexto inline (`{ db, res, user }`); só o teste de componentPreviews o fornece. `getLatest` lança INTERNAL_SERVER_ERROR se ausente (não ocorre em prod).
+- **⚠️ Gotcha crítico de CORS + iframe sandbox** (descoberto e corrigido na verificação Playwright): o iframe usa `sandbox="allow-scripts"` **sem** `allow-same-origin` (política documentada no código: allow-scripts é obrigatório p/ rodar o bundle React de terceiros; same-origin omitido p/ negar acesso a cookies/DOM do painel). Isso dá ao iframe **origem opaca**, e scripts `type="module"` são **sempre** buscados em modo CORS → de origem opaca (`Origin: null`) o browser exige `Access-Control-Allow-Origin` no asset, senão **bloqueia o bundle e o iframe fica em branco**. Fix: `access-control-allow-origin: *` na rota `GET /previews/*` (`serve.ts`) — seguro porque preview é público sem segredos. Sem esse header o preview simplesmente não renderiza dentro do sandbox. Teste da serve.test.ts asserta o header.
+- **Sizing do iframe**: altura padrão 240px, `resize: vertical` + `overflow: auto` no `.sb-component-embed-frame` (resize exige overflow != visible). Auto-resize via postMessage ficou como enhancement futuro.
+- **Verificação E2E (scratchpad, `e2e/verify.mjs`)**: fluxo TASK-41→43→47 **real** — build do connector na fixture `sample-repo` (Button/primary + Card/default), upload via `POST /api/previews` com token real, inserção do embed no editor via `window.systembookEditor.chain().insertContent({type:'componentEmbed', attrs})`, e checagem no Chromium: iframe de Button/primary renderiza o botão "Salvar", Card/default (sem artefato) cai no placeholder `empty` sem iframe, sandbox correto, altura ~240px, zero erros de console. **Playwright acessa o frame de origem opaca normalmente** (CDP, não same-origin) — dá pra ler o texto renderizado dentro do iframe.
+
 ## Pendências / próximos passos
 
-1. Fase 4 completa e **mergeada na `main`** (PR #1, CI verde; branch remota deletada). Próxima é a **Fase 5** (TASK-47: `componentEmbed` com iframe real apontando para `/previews/...`, usando `getLatestPreview` para resolver o sha mais recente).
+1. Fase 5 em andamento na branch `feature/fase-5-integracao-preview`. Próxima é a **TASK-48** (UI de seleção de componente/variante para o component-embed — hoje só dá pra setar `componentName`/`variantId` programaticamente). Fase 4 já mergeada na `main` (PR #1).
 2. Race conhecido (aceito no MVP): flush de autosave no unmount × fetch do `getByTab` na remontagem — em navegação muito rápida ida-e-volta o editor pode abrir sem o último flush (o dado não se perde no banco; basta recarregar).
 3. `.pnpm-store/` local (criado pelo container de dev) está no `.gitignore`; pode ser apagado à vontade.
 
