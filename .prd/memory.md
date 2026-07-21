@@ -87,7 +87,7 @@ O tracking granular (pass por step) está em `.prd/tasks/TASK-*.json` e o índic
 | Pós-fases — Histórico geral | TASK-69 | ✅ | `/admin/history` agregando revisões de todas as páginas — **mergeada (PR #7)** |
 | Pós-fases — Auto-slug | TASK-70 | ✅ | slug derivado do título quando em branco — **mergeada (PR #8)** |
 | 8 — Bloco Dos and Don'ts | TASK-71..74 | ✅ | schema+serialize (71), NodeView+toolbar (72), cover opcional imagem/component-embed (73), render público+verificação (74) — **mergeada (PR #9)** |
-| 9 — Modernização visual (Shadcn) | TASK-75..81 | ⬜ | setup Tailwind+shadcn (75), lucide-react+sonner (76), migração auth/shell (77), sidebar (78), editor (79), telas de gestão (80), QA final (81) — escopo admin-only, doc pública mantém o tema CSS-vars da TASK-55 |
+| 9 — Modernização visual (Shadcn) | TASK-75..81 | ✅ | setup Tailwind+shadcn (75), lucide-react+sonner (76), auth/shell (77), sidebar (78), editor (79), telas de gestão (80), QA final (81) — escopo admin-only, doc pública mantém o tema CSS-vars da TASK-55; **completa, branch `feature/fase-9-shadcn`, pendente de PR/merge** |
 | Backlog aberto (fora das fases) | TASK-82 | ⬜ | publicar `@systembook/connector` no npm (era TASK-71, renumerada) |
 
 Critérios de sucesso do PRD (§1): fim da Fase 3 = CMS de texto utilizável sem dev (✅ atingido); fim da Fase 5 = live preview funcional (proposta de valor central); fim da Fase 7 = pronto para divulgação open source.
@@ -309,6 +309,20 @@ O painel em dev acessa-se por `http://localhost:5173`; o proxy do `vite.config.t
 - **TASK-74 (render público+verificação)**: renderização read-only já funcionava sem código extra (o NodeView já checa `editor.isEditable`) — mas a **verificação achou um gap real**: faltavam os overrides de tema escuro (`--sb-dos-donts-border`/`--sb-dos-donts-bg` sob `.sb-public[data-theme='dark']`) que o `callout` já tinha da TASK-55; sem eles o bloco ficaria sempre com cores de tema claro na doc pública. Corrigido em `public.css`, espelhando exatamente o padrão do callout. E2E completo (Playwright, 10 checks): 3 blocos (do sem cover, do com cover de imagem, dont com cover de component-embed real) → publish → `/docs/...` deslogado → renderização correta + toggle de tema escuro + busca full-text acha texto do título e da descrição de ambos os blocos (incl. o "dont").
 - **Flake não-relacionado observado durante a fase**: `pnpm test`/`pnpm -r run test` falha o preview-kit de forma não-determinística com `(0, act) is not a function` — comportamento do runner `pnpm -r`, independe de `--workspace-concurrency`; sempre passa isolado (`pnpm --filter @systembook/preview-kit test`) e o CI (mesmo comando, Linux) vem verde consistentemente. Reexecutar `pnpm test` resolve localmente.
 - **Fan-out final**: lint ✓, typecheck ✓, 165 testes (150 server + 7 preview-kit + 8 connector). **MERGEADA na `main`** (PR #9, merge `6b61734`).
+
+## Fase 9 — Modernização visual do painel com Shadcn (COMPLETA, branch `feature/fase-9-shadcn`)
+
+Escopo **admin-only** (a doc pública `.sb-public` mantém o tema CSS-vars da TASK-55, intocada).
+
+- **TASK-75 (setup Tailwind v4 + shadcn/ui)**: `@tailwindcss/vite`, alias `@`→src (vite+tsconfig). **Ponto crítico resolvido**: preflight global do Tailwind quebraria a prosa de `.sb-public` e `.sb-editor` (mesmo bundle). Solução em `src/index.css`: importa **só** `tailwindcss/theme.css` + `tailwindcss/utilities.css` (opt-in, não vazam) — **não** o preflight; reset mínimo (box-sizing + borda) **escopado em `.sb-admin`** dentro de `@layer base` (fica **abaixo** do CSS não-layerizado editor.css/public.css, que sempre vencem, e abaixo das utilities). shadcn manual (sem CLI): `components.json`, `lib/utils.ts` (cn), `Button`. `.sb-admin` aplicado em `AdminLayout` + `LoginPage`. Tokens base `neutral` light/dark. Verificado: h1 público mantém 27px (zero vazamento).
+- **TASK-76 (lucide + sonner)**: `<Toaster/>` no root; **convenção documentada no main.tsx** (toast = evento transiente: publicar/token/restore/criar usuário; inline `role=alert/status` = estado persistente/de campo — autosave `data-save-status` NUNCA vira toast). Publish do `PageContentPage` convertido p/ toast.
+- **TASK-77 (auth+shell)**: `LoginPage` (Card/Input/Label/Button, erro genérico inline), `AdminLayout` (nav NavLink + role-gating intocado, Sair com ícone LogOut).
+- **TASK-78 (sidebar)**: `SidebarTree` — constantes inline→classes Tailwind, glifos→ícones lucide (Chevron/Pencil/Arrow/Trash2/Check/X/Plus), ações no hover. Lógica de query/reorder/lazy-load e regras TASK-67/70 intocadas.
+- **TASK-79 (chrome do editor)**: `EditorToolbar` (Button + ícones lucide, `insertBlockWithCaret` preservado), `PageContentPage` header/tab-bar, `ComponentEmbedPicker` (modal Tailwind+shadcn), `ControlsPanel` (Input/Switch, postMessage preservado), `DosDontsCover` (Button/Input). **`editor.css`/prosa Tiptap NÃO tocados** (verificado: h1 grande mantido).
+- **TASK-80 (telas de gestão)**: componentes `table`/`badge`; `UsersPage`, `UploadTokens` (**reveal-once preservado** — valor só no estado `revealed`, some após reload, verificado), `GlobalHistoryPage`, `PageHistoryPage`/`RevisionHistoryList`, `LandingPageSettingsPage` — todos com toasts na convenção. Smoke-test da TASK-75 removido do Dashboard.
+- **TASK-81 (QA final)**: walk por todas as telas (zero erros de página/console), a11y (foco visível/labels/logout), doc pública intocada (sem `.sb-admin`, tipografia própria, tema escuro). Fan-out verde.
+- **Componentes shadcn adicionados**: button, card, input, label, sonner, switch, table, badge (+radix slot/label/switch). Base color neutral.
+- **Flake conhecido reconfirmado**: `pnpm test`/`pnpm -r run test` falha o preview-kit (`(0, act) is not a function`) de forma **não-determinística mesmo serializado** (`--workspace-concurrency=1`); passa isolado e o CI vem verde. Reexecutar resolve.
 
 ## Pendências / próximos passos
 
