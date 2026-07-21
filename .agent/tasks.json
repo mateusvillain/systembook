@@ -424,7 +424,7 @@
     "title": "Documentation of *.preview.tsx schema with examples",
     "category": "documentation",
     "specFilePath": ".agent/tasks/TASK-61.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-62",
