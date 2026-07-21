@@ -16,7 +16,7 @@ componentes na sua instância SystemBook a cada push. O fluxo tem três partes:
 > Como escrever os arquivos `*.preview.tsx` (o `PreviewConfig`, o export
 > `Preview`) está documentado à parte — veja
 > [o contrato do `*.preview.tsx`](./preview-tsx-schema.md). O setup geral da
-> instância está na documentação de setup (TASK-60).
+> instância está no [guia de setup](./setup.md).
 
 ## Pré-requisitos
 

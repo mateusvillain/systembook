@@ -54,6 +54,10 @@ buildado no CI do próprio time, self-hosted e sem custo de licença.
 
 ## Quick start (self-hosting)
 
+O onboarding completo (subir a instância, primeiro login, instalar o conector no
+repo do design system e configurar o CI) está no
+[**guia de setup**](./docs/setup.md). O resumo:
+
 A imagem é publicada no GitHub Container Registry:
 [`ghcr.io/mateusvillain/systembook`](https://github.com/mateusvillain/systembook/pkgs/container/systembook)
 (multi-arch: `amd64` + `arm64`).
