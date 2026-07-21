@@ -15,24 +15,28 @@
       "step": 1,
       "description": "Migrate LoginPage",
       "details": "Replace inline-styled form with shadcn `Card` + `Input`/`Label` + `Button`, keeping the existing `useMutation`/error-state logic untouched.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Migrate AdminLayout shell",
       "details": "Rebuild the header (logo/title, nav links, role badge, logout button) with Tailwind layout + shadcn `Button`, preserving the exact role-gating conditionals already in the component.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Verify",
       "details": "Manual/Playwright pass: login as admin and as editor, confirm nav link visibility matches the role matrix, logout, confirm redirect to `/login`.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-75", "TASK-76"],
+  "dependencies": [
+    "TASK-75",
+    "TASK-76"
+  ],
   "estimatedComplexity": "medium",
   "technicalNotes": [
     "Keep the sidebar (`SidebarTree`, inside `AdminLayout`'s `<aside>`) out of scope here — it's migrated separately in TASK-78 since it's a materially different, denser UI (tree with inline editing)."
-  ]
+  ],
+  "passes": true
 }

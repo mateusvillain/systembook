@@ -536,7 +536,7 @@
     "title": "Migrate authentication and app shell to shadcn/ui",
     "category": "ui-ux",
     "specFilePath": ".prd/tasks/TASK-77.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-78",
