@@ -15,36 +15,41 @@
       "step": 1,
       "description": "Write the opening positioning paragraph",
       "details": "Summarize SystemBook using the PRD's section 1/3 content: open source, self-hosted, CMS-real (not Git-based) documentation platform with CI-built live component previews.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Write the 'what this is not' section",
       "details": "List explicit non-goals sourced from the PRD's backlog/assumptions section: no Git-based editing, no multi-tenancy in MVP, no draft/review approval flow, no automatic `.stories.tsx` migration.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Write the comparison table",
       "details": "Build a table comparing SystemBook, Storybook, Zeroheight, and Decap CMS across: hosting model, content editing model, live component preview support, and cost — sourced from PRD section 3.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Add quick-start and meta links",
       "details": "Add a 'Quick start' section linking to `docs/setup.md` (TASK-60) and the GHCR image (TASK-58), plus a license badge/line and a link to `CONTRIBUTING.md` (TASK-63).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 5,
       "description": "Review for accuracy against implementation",
       "details": "Cross-check every capability claim in the README against what's actually implemented by this point in the task list — do not describe backlog V2 items as available.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-58", "TASK-60", "TASK-63"],
+  "dependencies": [
+    "TASK-58",
+    "TASK-60",
+    "TASK-63"
+  ],
   "estimatedComplexity": "low",
   "technicalNotes": [
     "This README is the first thing a prospective open-source user/contributor reads — prioritize clarity on what problem this solves over exhaustive feature listing."
-  ]
+  ],
+  "passes": true
 }
