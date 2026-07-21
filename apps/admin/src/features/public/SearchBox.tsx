@@ -50,7 +50,9 @@ export function SearchBox() {
   const [debounced, setDebounced] = useState('');
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1); // índice destacado por teclado
+  const [mobileOpen, setMobileOpen] = useState(false); // overlay full-screen no mobile
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Debounce: só atualiza o termo buscado após o usuário parar de digitar.
   useEffect(() => {
@@ -79,13 +81,28 @@ export function SearchBox() {
 
   function goTo(r: (typeof results)[number]) {
     setOpen(false);
+    setMobileOpen(false);
     setQuery('');
     navigate(`/docs/${r.sectionSlug ?? ''}/${r.pageSlug}`);
+  }
+
+  function openMobile() {
+    setMobileOpen(true);
+    setOpen(true);
+    // Foca o input após o overlay aparecer.
+    requestAnimationFrame(() => inputRef.current?.focus());
+  }
+
+  function closeMobile() {
+    setMobileOpen(false);
+    setOpen(false);
+    setQuery('');
   }
 
   function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Escape') {
       setOpen(false);
+      setMobileOpen(false);
       return;
     }
     if (!open || results.length === 0) return;
@@ -106,27 +123,59 @@ export function SearchBox() {
   const showNoResults = showDropdown && !searchQuery.isLoading && results.length === 0;
 
   return (
-    <div className="sb-searchbox" ref={containerRef} role="search">
-      <input
-        type="search"
-        className="sb-searchbox-input"
-        value={query}
-        onChange={(e) => {
-          setQuery(e.target.value);
-          setOpen(true);
-        }}
-        onFocus={() => setOpen(true)}
-        onKeyDown={onKeyDown}
-        placeholder="Buscar na documentação…"
+    <>
+      {/* Gatilho só-mobile: abre o overlay de busca full-screen (CSS controla a
+          visibilidade por breakpoint). */}
+      <button
+        type="button"
+        className="sb-search-trigger"
         aria-label="Buscar na documentação"
-        role="combobox"
-        aria-expanded={showDropdown}
-        aria-controls={listboxId}
-        aria-autocomplete="list"
-        data-testid="public-search-input"
-      />
+        onClick={openMobile}
+        data-testid="search-trigger"
+      >
+        <span aria-hidden>🔍</span>
+      </button>
 
-      {showDropdown && (
+      <div
+        className="sb-searchbox"
+        ref={containerRef}
+        role="search"
+        data-mobile-open={mobileOpen || undefined}
+        data-testid="searchbox"
+      >
+        <div className="sb-searchbox-field">
+          <input
+            ref={inputRef}
+            type="search"
+            className="sb-searchbox-input"
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setOpen(true);
+            }}
+            onFocus={() => setOpen(true)}
+            onKeyDown={onKeyDown}
+            placeholder="Buscar na documentação…"
+            aria-label="Buscar na documentação"
+            role="combobox"
+            aria-expanded={showDropdown}
+            aria-controls={listboxId}
+            aria-autocomplete="list"
+            data-testid="public-search-input"
+          />
+          {/* Botão fechar só aparece no overlay mobile (CSS). */}
+          <button
+            type="button"
+            className="sb-search-close"
+            aria-label="Fechar busca"
+            onClick={closeMobile}
+            data-testid="search-close"
+          >
+            <span aria-hidden>✕</span>
+          </button>
+        </div>
+
+        {showDropdown && (
         <div className="sb-searchbox-dropdown" id={listboxId} role="listbox" data-testid="search-dropdown">
           {searchQuery.isLoading ? (
             <p className="sb-searchbox-hint">Buscando…</p>
@@ -161,7 +210,8 @@ export function SearchBox() {
             </ul>
           )}
         </div>
-      )}
-    </div>
+        )}
+      </div>
+    </>
   );
 }
