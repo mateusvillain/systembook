@@ -15,36 +15,42 @@
       "step": 1,
       "description": "Screen-by-screen visual review",
       "details": "Walk every migrated screen in the browser; note and fix any inconsistency (spacing, misaligned icons, broken responsive behavior) introduced across TASK-77..80.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Re-verify prior E2E flows",
       "details": "Re-run (via Playwright or manually) the key flows already covered by earlier tasks' own verification: login, sidebar CRUD, editor autosave/publish including dos-donts, token reveal-once, per-page restore.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Accessibility spot-check",
       "details": "Tab through the main flows checking focus visibility; confirm form inputs have labels; check icon-only buttons have `aria-label`s (a pattern already used elsewhere in this codebase, e.g. `SidebarTree`).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Confirm public docs untouched",
       "details": "Compare `/docs/...` rendering and the Tiptap editable prose area before/after the migration — no visual drift from the Tailwind reset.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 5,
       "description": "Full fan-out",
       "details": "`pnpm lint` / `pnpm typecheck` / `pnpm -r --workspace-concurrency=1 run test` all green.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-77", "TASK-78", "TASK-79", "TASK-80"],
+  "dependencies": [
+    "TASK-77",
+    "TASK-78",
+    "TASK-79",
+    "TASK-80"
+  ],
   "estimatedComplexity": "low",
   "technicalNotes": [
     "This task has no new UI to build — it's a verification gate closing Fase 9, same role TASK-74 plays for Fase 8."
-  ]
+  ],
+  "passes": true
 }

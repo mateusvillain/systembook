@@ -1,6 +1,18 @@
 import { useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import { useEditorState } from '@tiptap/react';
+import {
+  Bold,
+  Code,
+  Heading1,
+  Heading2,
+  Heading3,
+  Italic,
+  List,
+  ListOrdered,
+  Puzzle,
+  Table as TableIcon,
+} from 'lucide-react';
 import type { CalloutVariant, DosDontsVariant } from '@systembook/schema';
 import { CALLOUT_META, CALLOUT_VARIANTS } from './nodes/Callout.js';
 import { DOS_DONTS_META, DOS_DONTS_VARIANTS } from './nodes/DosDonts.js';
@@ -8,16 +20,7 @@ import {
   ComponentEmbedPicker,
   type ComponentEmbedSelection,
 } from './ComponentEmbedPicker.js';
-
-const buttonStyle = (active: boolean): React.CSSProperties => ({
-  padding: '0.25rem 0.5rem',
-  border: '1px solid #ccc',
-  borderRadius: 4,
-  background: active ? '#333' : '#fff',
-  color: active ? '#fff' : '#333',
-  cursor: 'pointer',
-  fontSize: '0.85rem',
-});
+import { Button } from '@/components/ui/button';
 
 function ToolbarButton({
   label,
@@ -25,23 +28,25 @@ function ToolbarButton({
   active = false,
   onClick,
 }: {
-  label: string;
+  label: React.ReactNode;
   title: string;
   active?: boolean;
   onClick: () => void;
 }) {
   return (
-    <button
+    <Button
       type="button"
+      variant={active ? 'default' : 'outline'}
+      size="sm"
       title={title}
       aria-pressed={active}
-      style={buttonStyle(active)}
+      aria-label={title}
       // onMouseDown+preventDefault mantém a seleção/foco no editor ao clicar
       onMouseDown={(e) => e.preventDefault()}
       onClick={onClick}
     >
       {label}
-    </button>
+    </Button>
   );
 }
 
@@ -132,88 +137,96 @@ export function EditorToolbar({ editor }: { editor: Editor | null }) {
     insertBlockWithCaret('dosDonts', { variant, titulo: '', cover: null }, '.sb-dos-donts-content');
 
   return (
-    <div
-      role="toolbar"
-      aria-label="Formatação"
-      style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginBottom: '0.5rem' }}
-    >
+    <div role="toolbar" aria-label="Formatação" className="mb-2 flex flex-wrap items-center gap-1.5">
       <ToolbarButton
-        label="H1"
+        label={<Heading1 />}
         title="Título 1"
         active={state.h1}
         onClick={() => chain().toggleHeading({ level: 1 }).run()}
       />
       <ToolbarButton
-        label="H2"
+        label={<Heading2 />}
         title="Título 2"
         active={state.h2}
         onClick={() => chain().toggleHeading({ level: 2 }).run()}
       />
       <ToolbarButton
-        label="H3"
+        label={<Heading3 />}
         title="Título 3"
         active={state.h3}
         onClick={() => chain().toggleHeading({ level: 3 }).run()}
       />
       <ToolbarButton
-        label="B"
+        label={<Bold />}
         title="Negrito (Cmd/Ctrl+B)"
         active={state.bold}
         onClick={() => chain().toggleBold().run()}
       />
       <ToolbarButton
-        label="I"
+        label={<Italic />}
         title="Itálico (Cmd/Ctrl+I)"
         active={state.italic}
         onClick={() => chain().toggleItalic().run()}
       />
       <ToolbarButton
-        label="• Lista"
+        label={<List />}
         title="Lista com marcadores"
         active={state.bulletList}
         onClick={() => chain().toggleBulletList().run()}
       />
       <ToolbarButton
-        label="1. Lista"
+        label={<ListOrdered />}
         title="Lista numerada"
         active={state.orderedList}
         onClick={() => chain().toggleOrderedList().run()}
       />
       <ToolbarButton
-        label="</>"
+        label={<Code />}
         title="Bloco de código"
         active={state.codeBlock}
         onClick={() => chain().toggleCodeBlock().run()}
       />
       <ToolbarButton
-        label="⊞ Tabela"
+        label={<TableIcon />}
         title="Inserir tabela 3×3"
         onClick={() => chain().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
       />
       {/* Picker de variante do callout: o primeiro (info) é o padrão */}
-      <span role="group" aria-label="Inserir callout" style={{ display: 'flex', gap: '0.35rem' }}>
+      <span role="group" aria-label="Inserir callout" className="flex gap-1.5">
         {CALLOUT_VARIANTS.map((variant) => (
           <ToolbarButton
             key={variant}
-            label={`${CALLOUT_META[variant].icon} ${CALLOUT_META[variant].label}`}
+            label={
+              <>
+                <span aria-hidden>{CALLOUT_META[variant].icon}</span> {CALLOUT_META[variant].label}
+              </>
+            }
             title={`Inserir callout ${CALLOUT_META[variant].label.toLowerCase()}`}
             onClick={() => insertCallout(variant)}
           />
         ))}
       </span>
       {/* Picker de variante do dos-donts (TASK-72): "do" é o padrão */}
-      <span role="group" aria-label="Inserir Do/Don't" style={{ display: 'flex', gap: '0.35rem' }}>
+      <span role="group" aria-label="Inserir Do/Don't" className="flex gap-1.5">
         {DOS_DONTS_VARIANTS.map((variant) => (
           <ToolbarButton
             key={variant}
-            label={`${DOS_DONTS_META[variant].icon} ${DOS_DONTS_META[variant].label}`}
+            label={
+              <>
+                <span aria-hidden>{DOS_DONTS_META[variant].icon}</span> {DOS_DONTS_META[variant].label}
+              </>
+            }
             title={`Inserir bloco ${DOS_DONTS_META[variant].label}`}
             onClick={() => insertDosDonts(variant)}
           />
         ))}
       </span>
       <ToolbarButton
-        label="🧩 Embed"
+        label={
+          <>
+            <Puzzle /> Embed
+          </>
+        }
         title="Inserir embed de componente"
         onClick={() => setPickerOpen(true)}
       />
@@ -227,11 +240,7 @@ export function EditorToolbar({ editor }: { editor: Editor | null }) {
         />
       )}
       {state.inTable && (
-        <span
-          role="group"
-          aria-label="Tabela"
-          style={{ display: 'flex', gap: '0.35rem', paddingLeft: '0.5rem', borderLeft: '1px solid #ddd' }}
-        >
+        <span role="group" aria-label="Tabela" className="flex gap-1.5 border-l pl-2">
           <ToolbarButton
             label="+Linha"
             title="Adicionar linha abaixo"

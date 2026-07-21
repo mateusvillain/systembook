@@ -1,7 +1,16 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Link, Navigate, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Navigate, Outlet, useNavigate } from 'react-router-dom';
+import { LogOut } from 'lucide-react';
 import { queryClient, useTRPC } from '../lib/trpc.js';
 import { SidebarTree } from '../features/navigation/SidebarTree.js';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+
+const navLinkClass = ({ isActive }: { isActive: boolean }) =>
+  cn(
+    'text-sm font-medium transition-colors hover:text-foreground',
+    isActive ? 'text-foreground' : 'text-muted-foreground',
+  );
 
 /**
  * Layout protegido: resolve auth.me; não autenticado → /login.
@@ -22,50 +31,55 @@ export function AdminLayout() {
   );
 
   if (me.isPending) {
-    return <p style={{ padding: '2rem', fontFamily: 'system-ui' }}>Carregando…</p>;
+    return <p className="p-8 text-muted-foreground">Carregando…</p>;
   }
   if (!me.data) {
     return <Navigate to="/login" replace />;
   }
 
   return (
-    <div style={{ fontFamily: 'system-ui', maxWidth: 1100, margin: '0 auto', padding: '1rem' }}>
-      <header
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '1.5rem',
-          borderBottom: '1px solid #ddd',
-          paddingBottom: '0.75rem',
-          marginBottom: '1.5rem',
-        }}
-      >
-        <strong>SystemBook</strong>
-        <nav style={{ display: 'flex', gap: '1rem', flex: 1 }}>
-          <Link to="/">Início</Link>
-          <Link to="/admin/history">Histórico</Link>
-          <Link to="/admin/settings/landing-page">Página inicial</Link>
-          {me.data.role === 'admin' && <Link to="/admin/users">Usuários</Link>}
-          {me.data.role === 'admin' && <Link to="/admin/settings/tokens">Tokens</Link>}
+    // `sb-admin`: escopo do Tailwind/shadcn (reset e tokens) — só no painel,
+    // nunca na doc pública `.sb-public` (Fase 9, TASK-75).
+    <div className="sb-admin mx-auto max-w-[1100px] p-4">
+      <header className="mb-6 flex items-center gap-6 border-b pb-3">
+        <strong className="text-base">SystemBook</strong>
+        <nav className="flex flex-1 gap-4">
+          <NavLink to="/" end className={navLinkClass}>
+            Início
+          </NavLink>
+          <NavLink to="/admin/history" className={navLinkClass}>
+            Histórico
+          </NavLink>
+          <NavLink to="/admin/settings/landing-page" className={navLinkClass}>
+            Página inicial
+          </NavLink>
+          {me.data.role === 'admin' && (
+            <NavLink to="/admin/users" className={navLinkClass}>
+              Usuários
+            </NavLink>
+          )}
+          {me.data.role === 'admin' && (
+            <NavLink to="/admin/settings/tokens" className={navLinkClass}>
+              Tokens
+            </NavLink>
+          )}
         </nav>
-        <span style={{ color: '#666', fontSize: '0.9rem' }}>{me.data.role}</span>
-        <button onClick={() => logout.mutate()} disabled={logout.isPending}>
-          Sair
-        </button>
-      </header>
-      <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start' }}>
-        <aside
-          style={{
-            width: 280,
-            flexShrink: 0,
-            borderRight: '1px solid #eee',
-            paddingRight: '1rem',
-            minHeight: '60vh',
-          }}
+        <span className="text-muted-foreground text-sm">{me.data.role}</span>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => logout.mutate()}
+          disabled={logout.isPending}
         >
+          <LogOut />
+          Sair
+        </Button>
+      </header>
+      <div className="flex items-start gap-6">
+        <aside className="min-h-[60vh] w-[280px] shrink-0 border-r pr-4">
           <SidebarTree />
         </aside>
-        <main style={{ flex: 1, minWidth: 0 }}>
+        <main className="min-w-0 flex-1">
           <Outlet context={{ me: me.data }} />
         </main>
       </div>

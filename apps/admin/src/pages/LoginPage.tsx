@@ -2,6 +2,10 @@ import { useState, type FormEvent } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { queryClient, useTRPC } from '../lib/trpc.js';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export function LoginPage() {
   const trpc = useTRPC();
@@ -37,47 +41,53 @@ export function LoginPage() {
   }
 
   return (
-    <main
-      style={{
-        fontFamily: 'system-ui',
-        maxWidth: 360,
-        margin: '10vh auto',
-        padding: '1rem',
-      }}
-    >
-      <h1>SystemBook</h1>
-      <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '0.75rem' }}>
-        <label style={{ display: 'grid', gap: '0.25rem' }}>
-          Email
-          <input
-            type="email"
-            name="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            autoComplete="username"
-          />
-        </label>
-        <label style={{ display: 'grid', gap: '0.25rem' }}>
-          Senha
-          <input
-            type="password"
-            name="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
-          />
-        </label>
-        <button type="submit" disabled={login.isPending}>
-          {login.isPending ? 'Entrando…' : 'Entrar'}
-        </button>
-        {error && (
-          <p role="alert" style={{ color: '#b00020', margin: 0 }}>
-            {error}
-          </p>
-        )}
-      </form>
+    <main className="sb-admin flex min-h-screen items-center justify-center p-4">
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          <CardTitle className="text-2xl">SystemBook</CardTitle>
+          <CardDescription>Entre para gerenciar a documentação.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="login-email">Email</Label>
+              <Input
+                id="login-email"
+                type="email"
+                name="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="username"
+                aria-invalid={error ? true : undefined}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="login-password">Senha</Label>
+              <Input
+                id="login-password"
+                type="password"
+                name="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                aria-invalid={error ? true : undefined}
+              />
+            </div>
+            <Button type="submit" disabled={login.isPending} className="w-full">
+              {login.isPending ? 'Entrando…' : 'Entrar'}
+            </Button>
+            {/* Erro de login é de campo/formulário → inline (convenção TASK-76),
+                não toast. Mensagem genérica anti-enumeração (TASK-10). */}
+            {error && (
+              <p role="alert" className="text-destructive text-sm">
+                {error}
+              </p>
+            )}
+          </form>
+        </CardContent>
+      </Card>
     </main>
   );
 }

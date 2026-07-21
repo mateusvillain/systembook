@@ -16,31 +16,36 @@
       "step": 1,
       "description": "Migrate EditorToolbar",
       "details": "Rebuild button groups with shadcn `Button`/`ToggleGroup`, lucide-react icons for each command, and a `Popover`/small menu for the callout-variant and dos-donts-variant pickers, preserving the caret-preservation `onMouseDown` handling.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Migrate ComponentEmbedPicker and ControlsPanel",
       "details": "Rebuild the two-step component/variant picker and the props controls panel with shadcn primitives, preserving all existing query/mutation wiring.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Migrate PageContentPage header/tab bar",
       "details": "Rebuild the page header and the body/tabs navigation (from TASK-67) with shadcn `Tabs`/`Button`, preserving the flush-before-publish behavior and the toast conversion from TASK-76.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Verify across all block types",
       "details": "Exercise every toolbar command, insert every block type including a dos-donts with both cover kinds (TASK-72/73), confirm the prose content area is visually unchanged, confirm autosave/publish still work.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-75", "TASK-76", "TASK-74"],
+  "dependencies": [
+    "TASK-75",
+    "TASK-76",
+    "TASK-74"
+  ],
   "estimatedComplexity": "high",
   "technicalNotes": [
     "Depends on TASK-74 (Fase 8 fully landed) so the dos-donts toolbar/cover controls exist before being restyled here, rather than restyling twice.",
     "Explicitly do not touch `editor.css` / the ProseMirror content styling — Tailwind's preflight reset must not leak into the editable prose area (verify headings/lists/tables/callouts render identically before and after)."
-  ]
+  ],
+  "passes": true
 }

@@ -1,8 +1,11 @@
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, NavLink, useParams } from 'react-router-dom';
+import { toast } from 'sonner';
 import { useTRPC } from '../lib/trpc.js';
 import { ContentEditor, type ContentEditorHandle } from '../features/editor/ContentEditor.js';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 /**
  * Superfície de edição de uma página (TASK-67). Edita o **corpo** da página (a
@@ -18,18 +21,16 @@ export function PageContentPage() {
   const userTabs = useQuery(trpc.tabs.listByPage.queryOptions({ pageId: pageId! }));
 
   const editorRef = useRef<ContentEditorHandle>(null);
-  const [publishFeedback, setPublishFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(
-    null,
-  );
+  // Publicar é um evento transiente → toast (convenção TASK-76). O indicador
+  // de autosave segue inline (estado contínuo do editor, não vira toast).
   const publish = useMutation(
     trpc.pages.publish.mutationOptions({
-      onSuccess: () => setPublishFeedback({ type: 'success', text: 'Página publicada.' }),
-      onError: () => setPublishFeedback({ type: 'error', text: 'Falha ao publicar. Tente novamente.' }),
+      onSuccess: () => toast.success('Página publicada.'),
+      onError: () => toast.error('Falha ao publicar. Tente novamente.'),
     }),
   );
 
   async function handlePublish() {
-    setPublishFeedback(null);
     // Garante que o rascunho da tab ativa está salvo antes do snapshot
     // (nota da TASK-34: o autosave continua independente do publish).
     await editorRef.current?.flush();
@@ -49,36 +50,21 @@ export function PageContentPage() {
 
   return (
     <section>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <h1 style={{ marginTop: 0 }}>{heading}</h1>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <Link to={`/pages/${pageId}/history`}>Histórico</Link>
-          <button type="button" onClick={handlePublish} disabled={publish.isPending}>
+      <div className="flex items-center justify-between">
+        <h1 className="mt-0 text-2xl font-semibold">{heading}</h1>
+        <div className="flex items-center gap-3">
+          <Button asChild variant="link" className="px-0">
+            <Link to={`/pages/${pageId}/history`}>Histórico</Link>
+          </Button>
+          <Button type="button" onClick={handlePublish} disabled={publish.isPending}>
             {publish.isPending ? 'Publicando…' : 'Publicar'}
-          </button>
+          </Button>
         </div>
       </div>
 
-      {publishFeedback && (
-        <p
-          role={publishFeedback.type === 'error' ? 'alert' : 'status'}
-          style={{
-            background: publishFeedback.type === 'error' ? '#fdecea' : '#e6f4ea',
-            color: publishFeedback.type === 'error' ? '#b00020' : 'inherit',
-            padding: '0.5rem 0.75rem',
-            margin: '0 0 1rem',
-          }}
-        >
-          {publishFeedback.text}
-        </p>
-      )}
-
       {/* Tab bar só quando há tabs de usuário: Corpo + as tabs (TASK-67). */}
       {tabs.length > 0 && (
-        <nav
-          aria-label="Visões da página"
-          style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid #ddd', marginBottom: '1rem' }}
-        >
+        <nav aria-label="Visões da página" className="mb-4 flex gap-2 border-b">
           <PageViewLink to={`/pages/${pageId}`} end>
             Corpo
           </PageViewLink>
@@ -101,14 +87,14 @@ function PageViewLink({ to, end, children }: { to: string; end?: boolean; childr
     <NavLink
       to={to}
       end={end}
-      style={({ isActive }) => ({
-        padding: '0.4rem 0.75rem',
-        textDecoration: 'none',
-        color: isActive ? '#0b57d0' : 'inherit',
-        fontWeight: isActive ? 600 : 400,
-        borderBottom: isActive ? '2px solid #0b57d0' : '2px solid transparent',
-        marginBottom: '-1px',
-      })}
+      className={({ isActive }) =>
+        cn(
+          '-mb-px border-b-2 px-3 py-2 no-underline transition-colors',
+          isActive
+            ? 'border-primary text-primary font-semibold'
+            : 'border-transparent text-muted-foreground hover:text-foreground',
+        )
+      }
     >
       {children}
     </NavLink>
