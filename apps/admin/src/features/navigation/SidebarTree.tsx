@@ -196,14 +196,31 @@ function PageNode({
         onMoveUp={onMoveUp}
         onMoveDown={onMoveDown}
         titleElement={
-          <button
-            style={{ ...iconButton, flex: 1, textAlign: 'left' }}
-            aria-expanded={expanded}
-            onClick={() => setExpanded((v) => !v)}
-          >
-            {expanded ? '▾' : '▸'} {page.titulo}
-            <span style={{ color: '#999', marginLeft: '0.35rem' }}>/{page.slug}</span>
-          </button>
+          <span style={{ display: 'flex', flex: 1, alignItems: 'center', minWidth: 0 }}>
+            <button
+              style={{ ...iconButton, flexShrink: 0 }}
+              aria-expanded={expanded}
+              aria-label={`${expanded ? 'Recolher' : 'Expandir'} tabs de ${page.titulo}`}
+              onClick={() => setExpanded((v) => !v)}
+            >
+              {expanded ? '▾' : '▸'}
+            </button>
+            {/* Clicar na página abre o editor do corpo (TASK-67). */}
+            <NavLink
+              to={`/pages/${page.id}`}
+              end
+              style={({ isActive }) => ({
+                flex: 1,
+                minWidth: 0,
+                textDecoration: 'none',
+                color: isActive ? '#0b57d0' : 'inherit',
+                fontWeight: isActive ? 600 : 400,
+              })}
+            >
+              {page.titulo}
+              <span style={{ color: '#999', marginLeft: '0.35rem' }}>/{page.slug}</span>
+            </NavLink>
+          </span>
         }
       />
       {expanded && <TabsList pageId={page.id} />}

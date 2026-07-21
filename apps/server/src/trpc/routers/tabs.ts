@@ -26,6 +26,18 @@ export const tabsRouter = router({
       .all(),
   ),
 
+  // A tab primária (corpo da página, TASK-66/67). Fica fora de `listByPage`;
+  // o editor do corpo a resolve por aqui. Toda página tem exatamente uma.
+  getPrimary: protectedProcedure.input(z.object({ pageId: z.string() })).query(({ ctx, input }) => {
+    const primary = ctx.db
+      .select()
+      .from(tabs)
+      .where(and(eq(tabs.pageId, input.pageId), eq(tabs.isPrimary, true)))
+      .get();
+    if (!primary) throw new TRPCError({ code: 'NOT_FOUND', message: 'Página não encontrada' });
+    return primary;
+  }),
+
   create: protectedProcedure
     .input(z.object({ pageId: z.string(), titulo: z.string().min(1) }))
     .mutation(({ ctx, input }) => {
