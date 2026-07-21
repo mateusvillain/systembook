@@ -14,6 +14,22 @@ export const slugSchema = z
   .string()
   .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, 'Slug deve ser minúsculo e hifenizado (ex.: meu-slug)');
 
+/**
+ * Deriva um slug a partir de um título (TASK-70): remove acentos (NFD + tira as
+ * marcas combinantes — importante para títulos em PT: "Botão" → "botao"),
+ * minúsculo, colapsa qualquer run de não-alfanuméricos num único hífen e apara
+ * hífens das pontas. O resultado (quando não-vazio) sempre casa `slugSchema`.
+ * Vazio quando o título não tem caracteres sluggáveis (ex.: só emoji/símbolos).
+ */
+export function slugify(titulo: string): string {
+  return titulo
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 function slugConflict(): TRPCError {
   return new TRPCError({ code: 'CONFLICT', message: 'Já existe uma página com este slug na seção' });
 }
@@ -35,7 +51,10 @@ export const pagesRouter = router({
     ),
 
   create: protectedProcedure
-    .input(z.object({ sectionId: z.string(), titulo: z.string().min(1), slug: slugSchema }))
+    // slug opcional (TASK-70): quando ausente, é derivado do título no server.
+    // Se informado, é validado exatamente como antes (regex + CONFLICT na
+    // colisão). O admin manda `undefined` quando o campo fica em branco.
+    .input(z.object({ sectionId: z.string(), titulo: z.string().min(1), slug: slugSchema.optional() }))
     .mutation(({ ctx, input }) => {
       const section = ctx.db
         .select({ id: sections.id })
@@ -43,6 +62,19 @@ export const pagesRouter = router({
         .where(eq(sections.id, input.sectionId))
         .get();
       if (!section) throw new TRPCError({ code: 'NOT_FOUND', message: 'Seção não encontrada' });
+
+      const isDerived = input.slug === undefined;
+      let slug = input.slug;
+      if (isDerived) {
+        const base = slugify(input.titulo);
+        if (!base) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'O título não gera um slug válido — informe um slug manualmente.',
+          });
+        }
+        slug = base;
+      }
 
       const row = ctx.db
         .select({ maxOrdem: max(pages.ordem) })
@@ -55,12 +87,31 @@ export const pagesRouter = router({
         // faz o backfill das páginas antigas). `is_primary=true` marca o corpo;
         // fica fora do tab bar (a UI a esconde) e não é renomeável/removível.
         return ctx.db.transaction((tx) => {
+          // Slug derivado nunca falha o usuário: se colidir na seção, sufixa
+          // -2, -3, … até um livre. Slug digitado mantém o CONFLICT (catch).
+          let finalSlug = slug!;
+          if (isDerived) {
+            const taken = new Set(
+              tx
+                .select({ slug: pages.slug })
+                .from(pages)
+                .where(eq(pages.sectionId, input.sectionId))
+                .all()
+                .map((p) => p.slug),
+            );
+            if (taken.has(finalSlug)) {
+              let n = 2;
+              while (taken.has(`${slug}-${n}`)) n++;
+              finalSlug = `${slug}-${n}`;
+            }
+          }
+
           const page = tx
             .insert(pages)
             .values({
               sectionId: input.sectionId,
               titulo: input.titulo,
-              slug: input.slug,
+              slug: finalSlug,
               ordem: (row?.maxOrdem ?? -1) + 1,
             })
             .returning()
