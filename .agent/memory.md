@@ -273,7 +273,7 @@ O painel em dev acessa-se por `http://localhost:5173`; o proxy do `vite.config.t
 
 ## Pendências / próximos passos
 
-1. **Fase 6 COMPLETA** (TASK-52..57 ✅) na branch `feature/fase-6-layout-publico`, **7 commits desde o início da branch** (52 já estava; 53–57 desta sessão). **Próximo: abrir PR desta branch e mergear na `main`** (padrão das fases anteriores: PR #1/#2/#3). Depois iniciar a **Fase 7** (TASK-58..64: imagem Docker publicada, compose de produção, docs de setup/CI/schema, README, CONTRIBUTING+licença, backup).
+1. **Fase 6 COMPLETA** (TASK-52..57 ✅). **PR #4 aberto** (`feature/fase-6-layout-publico` → `main`): https://github.com/mateusvillain/systembook/pull/4 — CI rodando no push. **Próximo: aguardar CI verde + merge do PR #4**, depois iniciar a **Fase 7** (TASK-58..64: imagem Docker publicada, compose de produção, docs de setup/CI/schema, README, CONTRIBUTING+licença, backup).
 2. Fixes de dev já na `main`: proxy do Vite encaminha `/previews` e `/api/previews` (PR #3) — o embed funciona em `pnpm dev`. Fases 4 e 5 mergeadas (PR #1, #2).
 3. Race conhecido (aceito no MVP): flush de autosave no unmount × fetch do `getByTab` na remontagem — em navegação muito rápida ida-e-volta o editor pode abrir sem o último flush (o dado não se perde no banco; basta recarregar).
 4. `.pnpm-store/` local (criado pelo container de dev) está no `.gitignore`; pode ser apagado à vontade.
