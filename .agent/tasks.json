@@ -473,7 +473,7 @@
     "title": "Page-level content: public read-only render",
     "category": "ui-ux",
     "specFilePath": ".agent/tasks/TASK-68.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-69",

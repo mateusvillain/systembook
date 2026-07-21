@@ -14,25 +14,32 @@
       "step": 1,
       "description": "Render the body",
       "details": "Update `apps/admin/src/features/public/PublicPageView.tsx` and `PageRenderer.tsx` to render the primary/body container from the latest published revision as the page body.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Optional tabs",
       "details": "When user tabs exist, render them as additional views (reuse the existing public tab rendering). Ensure the primary container isn't shown as a user tab and its tabId isn't used as a public URL segment.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Verify logged out",
       "details": "With a published page that has body-only content, confirm `/docs/...` renders it logged out; add a tab, republish, confirm body + tab both render; confirm a pre-existing tab-only page still renders. Confirm search deep-links land on the right content.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-65", "TASK-66", "TASK-50", "TASK-52", "TASK-54"],
+  "dependencies": [
+    "TASK-65",
+    "TASK-66",
+    "TASK-50",
+    "TASK-52",
+    "TASK-54"
+  ],
   "estimatedComplexity": "medium",
   "technicalNotes": [
     "`PageRenderer` is shared between the admin revision preview and the public view — changes here also affect the read-only revision preview; verify both.",
     "The public route already handles `/docs/:sectionSlug/:pageSlug` and `/docs/:sectionSlug/:pageSlug/:tabId`; decide how the body maps into that scheme without breaking existing tab deep-links."
-  ]
+  ],
+  "passes": true
 }

@@ -40,6 +40,9 @@ export function PublicPageView() {
   }
 
   const { titulo, snapshot } = query.data;
+  // O corpo (tab primária) vive na URL sem `tabId`; as tabs de usuário em
+  // `/:tabId`. Sem `tabId` na URL, a visão ativa é o corpo (TASK-68).
+  const primaryTabId = snapshot?.tabs.find((t) => t.isPrimary)?.tabId;
 
   return (
     <article>
@@ -47,9 +50,13 @@ export function PublicPageView() {
       {snapshot ? (
         <PageRenderer
           snapshot={snapshot as RenderableSnapshot}
-          activeTabId={tabId ?? snapshot.tabs[0]?.tabId ?? ''}
+          activeTabId={tabId ?? primaryTabId ?? snapshot.tabs[0]?.tabId ?? ''}
           onSelectTab={(nextTabId) =>
-            navigate(`/docs/${sectionSlug}/${pageSlug}/${nextTabId}`)
+            navigate(
+              nextTabId === primaryTabId
+                ? `/docs/${sectionSlug}/${pageSlug}`
+                : `/docs/${sectionSlug}/${pageSlug}/${nextTabId}`,
+            )
           }
         />
       ) : (
