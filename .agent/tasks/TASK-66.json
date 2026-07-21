@@ -1,0 +1,52 @@
+{
+  "id": "TASK-66",
+  "title": "Page-level content with tabs as an optional resource",
+  "category": "functional",
+  "description": "Today all editable content lives inside tabs: `blocks.tab_id` is a NOT NULL FK to `tabs`, and a page with zero tabs has nowhere to hold content. A page should be able to have its own body content directly, with tabs becoming an OPTIONAL way to add extra named views (e.g. 'Usage', 'Code', 'Accessibility'). A brand-new page must be immediately editable without the user having to create a tab first.",
+  "acceptanceCriteria": [
+    "A newly created page is immediately editable and can hold content without the user creating any tab",
+    "Tabs are optional: a page with no user-defined tabs shows no tab bar and just renders/edits its body; adding one or more tabs shows them as additional named views alongside (or after) the page body",
+    "The content pipeline keeps working end-to-end for page-level content: autosave draft, publish (revision snapshot), history/restore, full-text search indexing, and the public read-only render all include the page body — not only tab content",
+    "A migration backfills existing pages so no current content is lost (existing tabs and their blocks remain intact and reachable)",
+    "The public route and the admin editor route resolve page body content correctly (the current `/pages/:pageId/tabs/:tabId` editor route and `/docs/:sectionSlug/:pageSlug` public route must still work, plus a way to reach the page body itself)"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Decide and document the data model for page body content",
+      "details": "Confirm the approach with the project owner. RECOMMENDED (lowest risk): every page owns one implicit 'primary' content container that renders as the page body without tab chrome; user tabs are additional. Implement it by guaranteeing a system primary tab per page (keep `blocks.tab_id`, so serialize/snapshot/publish/restore/FTS in `apps/server/src/db/revisions.ts` + `blocks/serialize.ts` need no structural change), with the migration promoting each existing page's first tab (or creating one) as primary. ALTERNATIVE (larger): make `blocks.tab_id` nullable and add a nullable `blocks.page_id` with a one-of constraint, then rework serialization, `PageSnapshot` (`packages/schema/src/block.ts`), publish/restore, FTS reindex, and public rendering to merge page-level blocks with tab blocks. Pick one before writing code.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Schema + migration",
+      "details": "Update `apps/server/src/db/schema.ts` per step 1's decision and generate a migration via `pnpm --filter @systembook/server db:generate`. Backfill existing pages so their current content maps to the new page-body model. If the primary-tab approach is chosen, mark the primary container so the UI can distinguish it (e.g. a `tipo`/`is_primary` flag on `tabs`, or a reserved ordem/sentinel) and hide it from the tab bar.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Update the content pipeline",
+      "details": "Ensure autosave (`blocks.saveDraft`/`getByTab`), publish snapshot (`buildPageSnapshot`), restore (`restoreRevision`), FTS reindex (`reindexPageFts`), and the `PageSnapshot` shape all account for page-body content. If the primary-tab approach is used, most of this works unchanged but the snapshot/UI must still render the primary container as the page body.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Admin editor UX",
+      "details": "In `apps/admin`: a new page opens straight into an editable body (no 'create a tab first' step). The `SidebarTree` and `TabContentPage` must let the user edit the page body and optionally add tabs; when a page has no user tabs, no tab bar is shown. Keep the publish/history controls at page level (already the case in `TabContentPage.tsx`).",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Public rendering + verification",
+      "details": "Update the public read-only render (`features/public/PublicPageView.tsx` / `PageRenderer.tsx`) to show the page body, with tabs (if any) as additional views. Verify end-to-end: create a page, write body content without adding a tab, publish, view it on `/docs/...` logged out, then add a tab and confirm both body and tab render. Confirm existing pages still render after the migration.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-30", "TASK-31", "TASK-34", "TASK-36", "TASK-50", "TASK-53"],
+  "estimatedComplexity": "high",
+  "technicalNotes": [
+    "This is a cross-cutting change (data model → serialization → publish/restore → FTS → admin editor → public render). Consider splitting into a data-model task + an api task + a ui task if it grows; step 1's decision determines the blast radius.",
+    "The primary-tab approach keeps the whole revisions/snapshot/FTS machinery (which is keyed on tabs) intact and is strongly preferred for the MVP; the nullable page_id approach is cleaner conceptually but touches every consumer of blocks.",
+    "Watch the FTS reindex and the public sidebar/nav: they currently assume content == tabs. Whatever the model, published page body must be searchable and linkable."
+  ]
+}
