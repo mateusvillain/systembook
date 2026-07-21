@@ -16,30 +16,35 @@
       "step": 1,
       "description": "Migrate UsersPage",
       "details": "Table of users with role `Select`, password-reset inline form, deactivate button (self-deactivation still disabled) — shadcn `Table`/`Input`/`Select`/`Button`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Migrate UploadTokensPage",
       "details": "Table of tokens + create form + the reveal-once panel — preserve the security property (token value never re-appears in the DOM after the initial reveal) exactly.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Migrate the remaining pages",
       "details": "`LandingPageSettingsPage`, `GlobalHistoryPage` (TASK-69's feed, preserving links to per-page history), `PageHistoryPage`/`RevisionHistoryList` (list + preview + restore confirmation).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Apply the toast convention and verify",
       "details": "Convert action-result banners to `sonner` toasts per TASK-76; exercise every CRUD/action path in the browser across all five pages.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-75", "TASK-76", "TASK-69"],
+  "dependencies": [
+    "TASK-75",
+    "TASK-76",
+    "TASK-69"
+  ],
   "estimatedComplexity": "medium",
   "technicalNotes": [
     "The token reveal-once behavior (TASK-44) is a genuine security property, not just UI polish — verify carefully that restyling doesn't accidentally keep the token value mounted/cached anywhere reachable after the initial reveal."
-  ]
+  ],
+  "passes": true
 }

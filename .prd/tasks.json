@@ -557,7 +557,7 @@
     "title": "Migrate admin management pages to shadcn/ui",
     "category": "ui-ux",
     "specFilePath": ".prd/tasks/TASK-80.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-81",
