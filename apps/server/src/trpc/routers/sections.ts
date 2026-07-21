@@ -101,7 +101,13 @@ export const sectionsRouter = router({
   reorder: protectedProcedure
     .input(z.object({ orderedIds: z.array(z.string()).min(1) }))
     .mutation(({ ctx, input }) => {
-      const existing = ctx.db.select({ id: sections.id }).from(sections).all();
+      // Exclui a section reservada da landing (TASK-56) — ela é oculta de
+      // `list`, então o cliente nunca a inclui na lista de reordenação.
+      const existing = ctx.db
+        .select({ id: sections.id })
+        .from(sections)
+        .where(ne(sections.id, LANDING_SECTION_ID))
+        .all();
       assertCompleteReorder(
         existing.map((s) => s.id),
         input.orderedIds,
