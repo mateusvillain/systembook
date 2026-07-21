@@ -146,6 +146,38 @@ describe('estrutura de navegação (sections/pages/tabs)', () => {
       expect(ok.slug).toBe('button-2');
     });
 
+    it('slug em branco é derivado do título (TASK-70)', async () => {
+      const caller = callerFor(db, editor);
+      const p1 = await caller.pages.create({ sectionId, titulo: 'Get started' });
+      expect(p1.slug).toBe('get-started');
+      // acentos são removidos
+      const p2 = await caller.pages.create({ sectionId, titulo: 'Botão' });
+      expect(p2.slug).toBe('botao');
+    });
+
+    it('slug derivado que colide na seção é de-duplicado com -2/-3 (TASK-70)', async () => {
+      const caller = callerFor(db, editor);
+      const a = await caller.pages.create({ sectionId, titulo: 'Get started' });
+      const b = await caller.pages.create({ sectionId, titulo: 'Get started' });
+      const c = await caller.pages.create({ sectionId, titulo: 'Get started' });
+      expect([a.slug, b.slug, c.slug]).toEqual(['get-started', 'get-started-2', 'get-started-3']);
+    });
+
+    it('slug DIGITADO duplicado ainda dá CONFLICT (sem de-dup silencioso) (TASK-70)', async () => {
+      const caller = callerFor(db, editor);
+      await caller.pages.create({ sectionId, titulo: 'Primeira', slug: 'guia' });
+      await expect(
+        caller.pages.create({ sectionId, titulo: 'Segunda', slug: 'guia' }),
+      ).rejects.toMatchObject({ code: 'CONFLICT' });
+    });
+
+    it('título sem caracteres sluggáveis (slug em branco) dá BAD_REQUEST (TASK-70)', async () => {
+      const caller = callerFor(db, editor);
+      await expect(caller.pages.create({ sectionId, titulo: '🎉🎉' })).rejects.toMatchObject({
+        code: 'BAD_REQUEST',
+      });
+    });
+
     it('create já nasce com exatamente uma tab primária (corpo) e zero tabs de usuário (TASK-66)', async () => {
       const caller = callerFor(db, editor);
       const page = await caller.pages.create({ sectionId, titulo: 'Get started', slug: 'get-started' });
