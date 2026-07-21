@@ -2,6 +2,7 @@
   "name": "@systembook/preview-kit",
   "version": "0.0.0",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "types": "./src/index.ts",
   "exports": {
