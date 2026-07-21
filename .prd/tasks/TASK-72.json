@@ -15,31 +15,37 @@
       "step": 1,
       "description": "Define the Tiptap Node",
       "details": "Create `apps/admin/src/features/editor/nodes/DosDonts.tsx`: `Node.create` named `dosDonts`, `content: 'block+'`, attrs `variant` (default `'do'`), `titulo` (default `''`), `cover` (default `null`); `parseHTML`/`renderHTML` mirroring attrs to `data-*`, same convention as `Callout.tsx`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Build the NodeView",
       "details": "`ReactNodeViewRenderer` component: variant switcher (2 buttons, mirrors `CALLOUT_VARIANTS` switcher pattern with `updateAttributes`), a plain controlled text input for `titulo` (not part of ProseMirror content — a NodeView-local input calling `updateAttributes({ titulo })`), and `NodeViewContent` for the editable description body.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Register and wire the toolbar",
       "details": "Add `DosDonts` to `editorExtensions` in `apps/admin/src/features/editor/extensions.ts`. Add an insert control to `EditorToolbar.tsx` (mirrors `insertCallout`'s pattern, including the caret-positioning workaround documented there for inserting into a non-empty paragraph).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Verify manually / via Playwright",
       "details": "Insert a `do` block, type a title and description, switch to `dont` and confirm content is preserved, confirm autosave reaches `saved` status, reload and confirm the content round-trips through `getByTab`.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-71", "TASK-28", "TASK-26", "TASK-32"],
+  "dependencies": [
+    "TASK-71",
+    "TASK-28",
+    "TASK-26",
+    "TASK-32"
+  ],
   "estimatedComplexity": "medium",
   "technicalNotes": [
     "Reuse the caret-positioning fix documented in `EditorToolbar.tsx`'s `insertCallout` (NodeView mounts async; the DOM caret needs a manual `view.domAtPos` retry via rAF) — the same gotcha applies here.",
     "Cover UI is out of scope for this task by design (TASK-73) — ship with `cover: null` always for now; the attr exists in the schema (TASK-71) so TASK-73 doesn't need another type change."
-  ]
+  ],
+  "passes": true
 }

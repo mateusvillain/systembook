@@ -125,6 +125,84 @@
   margin-bottom: 0;
 }
 
+/* Dos and Don'ts (Fase 8, TASK-72) — mesmo padrão de tokens CSS por variante
+   do callout (permite tematizar na doc pública sem !important). */
+.sb-editor .sb-dos-donts {
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  margin: 0.75rem 0;
+  border-left: 4px solid var(--sb-dos-donts-border, #5fbf7a);
+  background: var(--sb-dos-donts-bg, #ecf8f0);
+}
+
+.sb-editor .sb-dos-donts[data-variant='do'] {
+  --sb-dos-donts-border: #5fbf7a;
+  --sb-dos-donts-bg: #ecf8f0;
+}
+
+.sb-editor .sb-dos-donts[data-variant='dont'] {
+  --sb-dos-donts-border: #e05a5a;
+  --sb-dos-donts-bg: #fdecec;
+}
+
+.sb-editor .sb-dos-donts-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.sb-editor .sb-dos-donts-switcher {
+  display: inline-flex;
+  gap: 0.25rem;
+  opacity: 0.35;
+  transition: opacity 0.15s;
+}
+
+.sb-editor .sb-dos-donts:hover .sb-dos-donts-switcher {
+  opacity: 1;
+}
+
+.sb-editor .sb-dos-donts-switch {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.7rem;
+  padding: 0.1rem 0.35rem;
+}
+
+.sb-editor .sb-dos-donts-switch[data-active] {
+  border-color: #333;
+  font-weight: 600;
+}
+
+.sb-editor .sb-dos-donts-title-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 0.15rem 0.25rem;
+}
+
+.sb-editor .sb-dos-donts-title-input:focus {
+  outline: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.sb-editor .sb-dos-donts-title {
+  font-size: 0.95rem;
+}
+
+.sb-editor .sb-dos-donts-content > :first-child {
+  margin-top: 0;
+}
+
+.sb-editor .sb-dos-donts-content > :last-child {
+  margin-bottom: 0;
+}
+
 /* Component embed — placeholder (sem seleção / carregando / sem artefato) */
 .sb-editor .sb-component-embed {
   display: flex;

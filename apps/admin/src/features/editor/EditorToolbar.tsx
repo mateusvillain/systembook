@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import { useEditorState } from '@tiptap/react';
-import type { CalloutVariant } from '@systembook/schema';
+import type { CalloutVariant, DosDontsVariant } from '@systembook/schema';
 import { CALLOUT_META, CALLOUT_VARIANTS } from './nodes/Callout.js';
+import { DOS_DONTS_META, DOS_DONTS_VARIANTS } from './nodes/DosDonts.js';
 import {
   ComponentEmbedPicker,
   type ComponentEmbedSelection,
@@ -77,34 +78,40 @@ export function EditorToolbar({ editor }: { editor: Editor | null }) {
       })
       .run();
   };
-  // Insere com um parágrafo dentro e posiciona o cursor nele — o insertContent
-  // sozinho deixa o cursor fora do callout quando o parágrafo atual não é vazio.
-  const insertCallout = (variant: CalloutVariant) => {
+  // Insere `nodeType` com um parágrafo dentro e posiciona o cursor nele — o
+  // insertContent sozinho deixa o cursor fora do node quando o parágrafo
+  // atual não é vazio. Reusado por insertCallout e insertDosDonts (mesma
+  // lógica fiddly de posicionamento do caret, parametrizada por node/attrs).
+  const insertBlockWithCaret = (
+    nodeType: string,
+    attrs: Record<string, unknown>,
+    contentSelector: string,
+  ) => {
     const from = editor.state.selection.from;
     chain()
-      .insertContent({ type: 'callout', attrs: { variant }, content: [{ type: 'paragraph' }] })
+      .insertContent({ type: nodeType, attrs, content: [{ type: 'paragraph' }] })
       .run();
-    let calloutPos: number | null = null;
+    let nodePos: number | null = null;
     editor.state.doc.nodesBetween(
       Math.max(0, from - 1),
       editor.state.doc.content.size,
       (node, pos) => {
-        if (calloutPos === null && node.type.name === 'callout') calloutPos = pos;
+        if (nodePos === null && node.type.name === nodeType) nodePos = pos;
       },
     );
-    if (calloutPos !== null) {
-      // +2: entra no callout (+1) e no parágrafo inicial (+1)
-      const pos = calloutPos + 2;
+    if (nodePos !== null) {
+      // +2: entra no node (+1) e no parágrafo inicial (+1)
+      const pos = nodePos + 2;
       chain().setTextSelection(pos).run();
       // O NodeView React monta assíncrono e o selectionToDOM do ProseMirror
       // não reposiciona o caret do DOM dentro dele depois — sem isto a
-      // digitação seguiria o caret antigo, fora do callout. Posiciona o Range
+      // digitação seguiria o caret antigo, fora do node. Posiciona o Range
       // manualmente assim que o contentDOM existir.
       const placeCaret = (attempt: number) => {
         if (editor.isDestroyed) return;
         const { node, offset } = editor.view.domAtPos(pos);
         const element = node instanceof Element ? node : node.parentElement;
-        if (!element?.closest('.sb-callout-content')) {
+        if (!element?.closest(contentSelector)) {
           if (attempt < 10) requestAnimationFrame(() => placeCaret(attempt + 1));
           return;
         }
@@ -119,6 +126,10 @@ export function EditorToolbar({ editor }: { editor: Editor | null }) {
       requestAnimationFrame(() => placeCaret(0));
     }
   };
+  const insertCallout = (variant: CalloutVariant) =>
+    insertBlockWithCaret('callout', { variant }, '.sb-callout-content');
+  const insertDosDonts = (variant: DosDontsVariant) =>
+    insertBlockWithCaret('dosDonts', { variant, titulo: '', cover: null }, '.sb-dos-donts-content');
 
   return (
     <div
@@ -187,6 +198,17 @@ export function EditorToolbar({ editor }: { editor: Editor | null }) {
             label={`${CALLOUT_META[variant].icon} ${CALLOUT_META[variant].label}`}
             title={`Inserir callout ${CALLOUT_META[variant].label.toLowerCase()}`}
             onClick={() => insertCallout(variant)}
+          />
+        ))}
+      </span>
+      {/* Picker de variante do dos-donts (TASK-72): "do" é o padrão */}
+      <span role="group" aria-label="Inserir Do/Don't" style={{ display: 'flex', gap: '0.35rem' }}>
+        {DOS_DONTS_VARIANTS.map((variant) => (
+          <ToolbarButton
+            key={variant}
+            label={`${DOS_DONTS_META[variant].icon} ${DOS_DONTS_META[variant].label}`}
+            title={`Inserir bloco ${DOS_DONTS_META[variant].label}`}
+            onClick={() => insertDosDonts(variant)}
           />
         ))}
       </span>
