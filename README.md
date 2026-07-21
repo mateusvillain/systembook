@@ -78,7 +78,8 @@ docker compose -f docker-compose.production.yml up -d
 No primeiro boot, o container roda as migrations e faz o seed do admin inicial a
 partir das variáveis de ambiente. Acesse a instância na porta configurada e faça
 login. O banco SQLite persiste no volume declarado no compose — o backup dele é
-responsabilidade operacional de quem hospeda (sugestão: Litestream).
+responsabilidade operacional de quem hospeda; veja o
+[guia de backup e recuperação](./docs/backup.md) (setup recomendado com Litestream).
 
 Para conectar o **pipeline de preview de componentes** (buildar os `*.preview.tsx`
 do seu design system no CI e enviar o artefato para a instância), veja
