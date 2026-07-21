@@ -16,7 +16,7 @@
     {
       "step": 1,
       "description": "Read prerequisite requirements from the PRD",
-      "details": "Open `PROJECT_ROOT/.agent/prd/PRD.md`, section 8 (\"Prerequisitos e Acesso\"). Confirm there are no external database, MCP, or paid service dependencies for the MVP.",
+      "details": "Open `PROJECT_ROOT/.prd/PRD.md`, section 8 (\"Prerequisitos e Acesso\"). Confirm there are no external database, MCP, or paid service dependencies for the MVP.",
       "pass": true
     },
     {

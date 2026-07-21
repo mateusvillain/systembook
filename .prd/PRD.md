@@ -189,4 +189,4 @@ Fase 7 (empacotamento/lançamento)
 
 ## Índice de Requisitos (TASK-IDs)
 
-`TASK-1` é reservado para verificação de prerequisitos. Requisitos de feature começam em `TASK-2` — ver `PROJECT_ROOT/.agent/tasks.json` para o índice completo e `PROJECT_ROOT/.agent/tasks/TASK-*.json` para as especificações detalhadas.
+`TASK-1` é reservado para verificação de prerequisitos. Requisitos de feature começam em `TASK-2` — ver `PROJECT_ROOT/.prd/tasks.json` para o índice completo e `PROJECT_ROOT/.prd/tasks/TASK-*.json` para as especificações detalhadas.
