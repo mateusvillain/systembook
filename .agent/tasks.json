@@ -389,7 +389,7 @@
     "title": "Customizable landing page for documentation home",
     "category": "functional",
     "specFilePath": ".agent/tasks/TASK-56.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-57",

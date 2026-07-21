@@ -7,6 +7,7 @@ import { LoginPage } from './pages/LoginPage.js';
 import { DashboardPage } from './pages/DashboardPage.js';
 import { UsersPage } from './pages/UsersPage.js';
 import { UploadTokensPage } from './pages/UploadTokensPage.js';
+import { LandingPageSettingsPage } from './pages/LandingPageSettingsPage.js';
 import { TabContentPage } from './pages/TabContentPage.js';
 import { PageHistoryPage } from './pages/PageHistoryPage.js';
 import { PublicPage } from './pages/PublicPage.js';
@@ -37,6 +38,7 @@ const router = createBrowserRouter([
       { index: true, element: <DashboardPage /> },
       { path: 'admin/users', element: <UsersPage /> },
       { path: 'admin/settings/tokens', element: <UploadTokensPage /> },
+      { path: 'admin/settings/landing-page', element: <LandingPageSettingsPage /> },
       { path: 'pages/:pageId/tabs/:tabId', element: <TabContentPage /> },
       { path: 'pages/:pageId/history', element: <PageHistoryPage /> },
     ],

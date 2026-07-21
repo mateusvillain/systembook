@@ -1,6 +1,7 @@
 import { TRPCError } from '@trpc/server';
-import { asc, eq, max, sql } from 'drizzle-orm';
+import { and, asc, eq, max, ne, sql } from 'drizzle-orm';
 import { z } from 'zod';
+import { LANDING_PAGE_ID, LANDING_SECTION_ID } from '../../db/landing.js';
 import { pages, revisions, sections } from '../../db/schema.js';
 import { generateUniqueSectionSlug } from '../../db/sections.js';
 import { protectedProcedure, publicProcedure, router } from '../init.js';
@@ -10,7 +11,13 @@ import { assertCompleteReorder } from './reorder.js';
 // TASK-24) — por isso protectedProcedure, não adminProcedure.
 export const sectionsRouter = router({
   list: protectedProcedure.query(({ ctx }) =>
-    ctx.db.select().from(sections).orderBy(asc(sections.ordem), asc(sections.id)).all(),
+    ctx.db
+      .select()
+      .from(sections)
+      // Oculta a section reservada da landing (TASK-56) da árvore do admin.
+      .where(ne(sections.id, LANDING_SECTION_ID))
+      .orderBy(asc(sections.ordem), asc(sections.id))
+      .all(),
   ),
 
   /**
@@ -32,13 +39,20 @@ export const sectionsRouter = router({
         sectionId: pages.sectionId,
       })
       .from(pages)
-      .where(sql`EXISTS (SELECT 1 FROM ${revisions} WHERE ${revisions.pageId} = ${pages.id})`)
+      .where(
+        and(
+          ne(pages.id, LANDING_PAGE_ID),
+          sql`EXISTS (SELECT 1 FROM ${revisions} WHERE ${revisions.pageId} = ${pages.id})`,
+        ),
+      )
       .orderBy(asc(pages.ordem), asc(pages.id))
       .all();
 
     const secs = ctx.db
       .select()
       .from(sections)
+      // Landing (TASK-56) não faz parte da árvore de navegação pública.
+      .where(ne(sections.id, LANDING_SECTION_ID))
       .orderBy(asc(sections.ordem), asc(sections.id))
       .all();
 
