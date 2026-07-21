@@ -4,7 +4,7 @@ import { z } from 'zod';
 import type { PageSnapshot } from '@systembook/schema';
 import { isUniqueViolation } from '../../db/errors.js';
 import { createRevision, restoreRevision } from '../../db/revisions.js';
-import { pages, revisions, sections } from '../../db/schema.js';
+import { pages, revisions, sections, tabs } from '../../db/schema.js';
 import { protectedProcedure, publicProcedure, router } from '../init.js';
 import { assertCompleteReorder } from './reorder.js';
 
@@ -50,16 +50,26 @@ export const pagesRouter = router({
         .where(eq(pages.sectionId, input.sectionId))
         .get();
       try {
-        return ctx.db
-          .insert(pages)
-          .values({
-            sectionId: input.sectionId,
-            titulo: input.titulo,
-            slug: input.slug,
-            ordem: (row?.maxOrdem ?? -1) + 1,
-          })
-          .returning()
-          .get();
+        // Página + tab primária (o corpo da página) na mesma transação — toda
+        // página nasce com exatamente uma primária (TASK-66; a migration 0010
+        // faz o backfill das páginas antigas). `is_primary=true` marca o corpo;
+        // fica fora do tab bar (a UI a esconde) e não é renomeável/removível.
+        return ctx.db.transaction((tx) => {
+          const page = tx
+            .insert(pages)
+            .values({
+              sectionId: input.sectionId,
+              titulo: input.titulo,
+              slug: input.slug,
+              ordem: (row?.maxOrdem ?? -1) + 1,
+            })
+            .returning()
+            .get();
+          tx.insert(tabs)
+            .values({ pageId: page.id, titulo: 'Conteúdo', ordem: 0, isPrimary: true })
+            .run();
+          return page;
+        });
       } catch (error) {
         if (isUniqueViolation(error)) throw slugConflict();
         throw error;

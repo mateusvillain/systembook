@@ -459,7 +459,7 @@
     "title": "Page-level content: content pipeline (autosave, snapshot, publish, restore, FTS)",
     "category": "api-endpoint",
     "specFilePath": ".agent/tasks/TASK-66.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-67",

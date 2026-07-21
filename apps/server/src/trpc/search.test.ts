@@ -5,7 +5,8 @@ import type { ServerResponse } from 'node:http';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDb, type Db } from '../db/client.js';
 import { runMigrations } from '../db/migrate.js';
-import { memberships, users } from '../db/schema.js';
+import { and, eq } from 'drizzle-orm';
+import { memberships, tabs, users } from '../db/schema.js';
 import type { TiptapDoc } from '../blocks/serialize.js';
 import { appRouter } from './router.js';
 import type { AuthUser } from './context.js';
@@ -105,6 +106,25 @@ describe('search.query (TASK-53) — FTS5 full-text', () => {
 
     expect(await caller.search.query({ q: 'alfacaralho' })).toHaveLength(1);
     expect(await caller.search.query({ q: 'betacaralho' })).toEqual([]);
+  });
+
+  it('indexa o conteúdo do corpo da página (tab primária), não só o das tabs (TASK-66)', async () => {
+    const caller = callerFor(db, editor);
+    // Escreve no corpo da página (tab primária), sem tocar na tab 'Usage'.
+    const primary = db
+      .select({ id: tabs.id })
+      .from(tabs)
+      .where(and(eq(tabs.pageId, pageId), eq(tabs.isPrimary, true)))
+      .get();
+    await caller.blocks.saveDraft({
+      tabId: primary!.id,
+      doc: paragraph('texto exclusivo do corpo: xilofagia'),
+    });
+    await caller.pages.publish({ pageId });
+
+    const results = await caller.search.query({ q: 'xilofagia' });
+    expect(results).toHaveLength(1);
+    expect(results[0]).toMatchObject({ pageId, pageSlug: 'button' });
   });
 
   it('q em branco (só símbolos) devolve lista vazia sem erro de sintaxe FTS5', async () => {

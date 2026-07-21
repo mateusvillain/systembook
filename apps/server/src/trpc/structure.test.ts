@@ -2,6 +2,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import type { ServerResponse } from 'node:http';
+import { and, eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDb, type Db } from '../db/client.js';
 import { runMigrations } from '../db/migrate.js';
@@ -143,6 +144,45 @@ describe('estrutura de navegação (sections/pages/tabs)', () => {
       }
       const ok = await caller.pages.create({ sectionId, titulo: 'Button', slug: 'button-2' });
       expect(ok.slug).toBe('button-2');
+    });
+
+    it('create já nasce com exatamente uma tab primária (corpo) e zero tabs de usuário (TASK-66)', async () => {
+      const caller = callerFor(db, editor);
+      const page = await caller.pages.create({ sectionId, titulo: 'Get started', slug: 'get-started' });
+
+      const allTabs = db.select().from(tabs).where(eq(tabs.pageId, page.id)).all();
+      expect(allTabs).toHaveLength(1);
+      expect(allTabs[0]?.isPrimary).toBe(true);
+
+      // a primária não aparece na listagem de tabs de usuário
+      expect(await caller.tabs.listByPage({ pageId: page.id })).toHaveLength(0);
+
+      const primaries = db
+        .select()
+        .from(tabs)
+        .where(and(eq(tabs.pageId, page.id), eq(tabs.isPrimary, true)))
+        .all();
+      expect(primaries).toHaveLength(1);
+    });
+
+    it('a tab primária não é renomeável nem removível como tab de usuário (TASK-66)', async () => {
+      const caller = callerFor(db, editor);
+      const page = await caller.pages.create({ sectionId, titulo: 'Body', slug: 'body' });
+      const primary = db
+        .select()
+        .from(tabs)
+        .where(and(eq(tabs.pageId, page.id), eq(tabs.isPrimary, true)))
+        .get();
+
+      await expect(caller.tabs.rename({ id: primary!.id, titulo: 'Hack' })).rejects.toMatchObject({
+        code: 'NOT_FOUND',
+      });
+      await expect(caller.tabs.delete({ id: primary!.id })).rejects.toMatchObject({
+        code: 'NOT_FOUND',
+      });
+      // segue existindo e intacta
+      const still = db.select().from(tabs).where(eq(tabs.id, primary!.id)).get();
+      expect(still?.isPrimary).toBe(true);
     });
 
     it('slug duplicado na mesma seção dá CONFLICT; em seção diferente funciona', async () => {
