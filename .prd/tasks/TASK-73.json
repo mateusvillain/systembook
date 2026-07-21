@@ -15,31 +15,36 @@
       "step": 1,
       "description": "Add/remove cover control",
       "details": "In the `DosDonts` NodeView, add a toggle: no cover → \"Adicionar cover\" button; cover present → a way to remove it (sets `cover: null` via `updateAttributes`).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Kind switcher + image form",
       "details": "A small switcher between `image`/`component-embed`. Image kind renders two inputs (`src`, `alt`) bound to `updateAttributes({ cover: { kind: 'image', src, alt } })`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Component-embed kind",
       "details": "Embed `ComponentEmbedPicker` for selection. For rendering, reuse the loading/empty/live state logic from `apps/admin/src/features/editor/nodes/ComponentEmbed.tsx` (`componentPreviews.getLatest` lookup + `data-preview-state`) — extract a small shared helper if that avoids duplicating the state machine, or duplicate minimally with a comment pointing at the canonical version if extraction isn't clean; judgment call for whoever implements, but don't silently diverge the two state machines.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Verify via Playwright",
       "details": "Add an image cover (src/alt), publish, reload, confirm it persists. Add a component-embed cover selecting a real published preview (reuse a fixture from the connector's published previews, as in TASK-47/48's checks), confirm the iframe renders. Remove the cover, confirm it's gone after reload.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-72", "TASK-47", "TASK-48"],
+  "dependencies": [
+    "TASK-72",
+    "TASK-47",
+    "TASK-48"
+  ],
   "estimatedComplexity": "medium",
   "technicalNotes": [
     "Explicit scope decision: image cover is URL-only, no file upload. Building a generic image upload/storage pipeline is out of scope and materially larger than this task — flag it as a separate future task if the project owner wants it later.",
     "`ComponentEmbedPicker` already supports an `initial` selection for re-selecting over an existing embed (TASK-48) — reuse that same prop when editing an existing component-embed cover."
-  ]
+  ],
+  "passes": true
 }

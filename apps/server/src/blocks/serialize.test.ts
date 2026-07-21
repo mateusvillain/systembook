@@ -57,11 +57,16 @@ const FULL_DOC: TiptapDoc = {
       ],
     },
     { type: 'componentEmbed', attrs: { componentName: 'Button', variantId: null } },
+    {
+      type: 'dosDonts',
+      attrs: { variant: 'do', titulo: 'Use espaçamento consistente', cover: null },
+      content: [{ type: 'paragraph', content: [text('Alinhe os elementos à grade de 8px')] }],
+    },
   ],
 };
 
 describe('serialização doc ↔ blocks (TASK-31)', () => {
-  it('round-trip dos 8 tipos preserva o doc (inclusive via JSON de banco)', () => {
+  it('round-trip dos 9 tipos preserva o doc (inclusive via JSON de banco)', () => {
     const inserts = tiptapDocToBlocks(FULL_DOC, 'tab-1');
     expect(inserts.map((b) => b.tipo)).toEqual([
       'heading',
@@ -72,8 +77,9 @@ describe('serialização doc ↔ blocks (TASK-31)', () => {
       'table',
       'callout',
       'component-embed',
+      'dos-donts',
     ]);
-    expect(inserts.map((b) => b.ordem)).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
+    expect(inserts.map((b) => b.ordem)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8]);
     expect(inserts.every((b) => b.tabId === 'tab-1')).toBe(true);
 
     // simula a ida e volta pelo banco: conteudo vira string e volta
@@ -116,6 +122,46 @@ describe('serialização doc ↔ blocks (TASK-31)', () => {
       conteudo: JSON.parse(JSON.stringify(b.conteudo)),
     }));
     expect(blocksToTiptapDoc(stored)).toEqual(emptyParagraph);
+  });
+
+  it('dos-donts round-trippa os 3 tipos de cover (imagem, component-embed, sem cover) (TASK-71)', () => {
+    const withImageCover: TiptapNode = {
+      type: 'dosDonts',
+      attrs: {
+        variant: 'do',
+        titulo: 'Use contraste suficiente',
+        cover: { kind: 'image', src: '/uploads/contraste.png', alt: 'Exemplo com bom contraste' },
+      },
+      content: [{ type: 'paragraph', content: [] }],
+    };
+    const withEmbedCover: TiptapNode = {
+      type: 'dosDonts',
+      attrs: {
+        variant: 'dont',
+        titulo: 'Não desabilite o foco visível',
+        cover: { kind: 'component-embed', componentName: 'Button', variantId: 'disabled' },
+      },
+      content: [{ type: 'paragraph', content: [] }],
+    };
+    const withoutCover: TiptapNode = {
+      type: 'dosDonts',
+      attrs: { variant: 'do', titulo: 'Sem cover', cover: null },
+      content: [{ type: 'paragraph', content: [] }],
+    };
+
+    for (const node of [withImageCover, withEmbedCover, withoutCover]) {
+      const doc: TiptapDoc = { type: 'doc', content: [node] };
+      const inserts = tiptapDocToBlocks(doc, 'tab-1');
+      expect(inserts).toHaveLength(1);
+      expect(inserts[0]?.tipo).toBe('dos-donts');
+      // simula a ida e volta pelo banco (stringify/parse do conteudo_json)
+      const stored = inserts.map((b) => ({
+        tipo: b.tipo,
+        conteudo: JSON.parse(JSON.stringify(b.conteudo)),
+        ordem: b.ordem,
+      }));
+      expect(blocksToTiptapDoc(stored)).toEqual(doc);
+    }
   });
 
   it('nó top-level desconhecido lança UnknownNodeTypeError', () => {

@@ -10,6 +10,7 @@ import { Table, TableCell, TableHeader, TableRow } from '@tiptap/extension-table
 import { Dropcursor, Gapcursor, UndoRedo } from '@tiptap/extensions';
 import { Callout } from './nodes/Callout.js';
 import { ComponentEmbed } from './nodes/ComponentEmbed.js';
+import { DosDonts } from './nodes/DosDonts.js';
 
 /**
  * Conjunto intencional de extensões do MVP (TASK-25/26/27) — sem StarterKit de
@@ -37,6 +38,7 @@ export const editorExtensions = [
   TableCell,
   Callout,
   ComponentEmbed,
+  DosDonts,
   UndoRedo,
   Dropcursor,
   Gapcursor,
