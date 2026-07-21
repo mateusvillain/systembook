@@ -1,45 +1,45 @@
 {
   "id": "TASK-67",
-  "title": "Global panel history/activity view (across all pages)",
-  "category": "functional",
-  "description": "History today is scoped to a single page: revisions are stored per page (`revisions` table) and surfaced only at `/pages/:pageId/history` via `revisions.listByPage`. An admin needs a panel-wide history — a single view showing recent activity across the whole instance (which pages were published/restored, by whom, when), not just the page currently being edited.",
+  "title": "Page-level content: admin editor UX (tabs optional)",
+  "category": "ui-ux",
+  "description": "Admin-side UX for page body content: a newly created page opens straight into an editable body with no 'create a tab first' step, and tabs become an optional way to add extra named views. Builds on the data model (TASK-65) and pipeline (TASK-66).",
   "acceptanceCriteria": [
-    "A new admin route (e.g. `/admin/history`) shows a chronological, panel-wide activity feed aggregating events across ALL pages, most recent first, with author (email, may be null after user hard-delete) and timestamp",
-    "Each entry identifies the page it refers to (title + link) and the event (at minimum: published / restored, derived from the revision's `mensagem`), and links through to that page's existing per-page history at `/pages/:pageId/history`",
-    "The view is reachable from the admin navigation (`AdminLayout` header) and is paginated or capped to a sensible recent window (not an unbounded query)",
-    "A new backend query powers it (e.g. `revisions.listRecent`) joining `revisions` → `pages` → `users`, ordered by `criado_em` desc with a stable tiebreaker (rowid, mirroring `listByPage`)"
+    "Creating a page and clicking it opens an editable body immediately — no need to create a tab first",
+    "When a page has no user-defined tabs, no tab bar is shown; the editor edits the page body directly",
+    "Adding one or more tabs shows them as additional named views; the primary/body container is never shown as a removable/renamable user tab",
+    "Publish and history controls stay at page level (as they already are in `TabContentPage.tsx`) and act on body + tabs together",
+    "The editor route(s) resolve correctly: reaching a page shows its body, and `/pages/:pageId/tabs/:tabId` still works for user tabs"
   ],
   "steps": [
     {
       "step": 1,
-      "description": "Confirm scope: revisions feed vs. full audit log",
-      "details": "Confirm with the project owner. RECOMMENDED MVP: aggregate the existing `revisions` (publish + restore events already recorded) into a global feed — real data, no new table. LARGER ALTERNATIVE (note as follow-up, do not silently build): a true audit log capturing structural mutations too (user/section/page/tab create-rename-delete, token create/revoke) would require a new `audit_log` table and instrumenting many mutations. Pick the scope before building.",
+      "description": "Routing + entry to the body editor",
+      "details": "In `apps/admin`, make clicking a page in `SidebarTree` land on its body editor (decide the route: reuse `/pages/:pageId` for the body, keeping `/pages/:pageId/tabs/:tabId` for user tabs). Mount `ContentEditor` on the primary container's blocks.",
       "pass": false
     },
     {
       "step": 2,
-      "description": "Backend query",
-      "details": "Add `revisions.listRecent` in `apps/server/src/trpc/routers/revisions.ts`: leftJoin `users` (autor_id is SET NULL on user delete — mirror `listByPage`) and join `pages` for the page title, order by `criado_em` desc with a `rowid` tiebreaker, `limit` input with a sane default/cap. Update the permissions matrix in `router.ts`. Decide protectedProcedure (admin+editor) vs adminProcedure — a panel-wide view leans admin, confirm in step 1.",
+      "description": "Hide the primary container from the tab UI",
+      "details": "Update `SidebarTree` and `TabContentPage` so the primary/body container is not listed as a user tab (no rename/delete/reorder on it). The '+ Nova tab' affordance still creates optional additional tabs.",
       "pass": false
     },
     {
       "step": 3,
-      "description": "Admin page + route + nav",
-      "details": "Add a `GlobalHistoryPage` and route (`/admin/history`) in `apps/admin/src/main.tsx`, plus a nav link in `AdminLayout.tsx` (respect the role gate chosen in step 1). Reuse the revision-row presentation patterns from `features/revisions/RevisionHistoryList.tsx` where sensible; each row links to `/pages/:pageId/history`.",
+      "description": "Tab bar visibility",
+      "details": "Show a tab bar only when the page has ≥1 user tab; otherwise the page is just its body. When tabs exist, present body + tabs coherently (decide whether the body is the first view or a distinct 'Overview').",
       "pass": false
     },
     {
       "step": 4,
-      "description": "Tests + verification",
-      "details": "Add a vitest for `revisions.listRecent` (multiple pages, ordering with same-second tiebreak, null author after delete, limit). Verify in the browser: publish/restore across two pages and confirm the global feed shows both, newest first, with working links.",
+      "description": "Verify with Playwright/manual",
+      "details": "Create a page, type body content without adding a tab, confirm autosave + publish work; then add a tab, confirm both are editable and the tab bar appears; confirm the primary container can't be deleted/renamed as a tab.",
       "pass": false
     }
   ],
-  "dependencies": ["TASK-33", "TASK-34", "TASK-35"],
+  "dependencies": ["TASK-65", "TASK-66", "TASK-25", "TASK-32"],
   "estimatedComplexity": "medium",
   "technicalNotes": [
-    "The per-page history already exists (`revisions.listByPage`, `/pages/:pageId/history`); this task adds the aggregated cross-page view, not a replacement.",
-    "`criado_em` has second resolution — reuse the rowid tiebreaker lesson from TASK-35 so fast sequential publishes don't tie in the feed order.",
-    "If the owner wants a full audit log (structural events), scope that as a separate follow-up task with its own `audit_log` table — it's materially larger than aggregating revisions."
+    "`ContentEditor` mounts per container with `key=` and loads `getByTab` with `gcTime: 0` — keep that pattern when the body becomes its own editor instance.",
+    "Publish already flushes the active editor before snapshotting (`TabContentPage.handlePublish`); ensure the body editor participates in that flush."
   ]
 }
