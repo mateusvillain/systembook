@@ -1,52 +1,45 @@
 {
   "id": "TASK-66",
-  "title": "Page-level content with tabs as an optional resource",
-  "category": "functional",
-  "description": "Today all editable content lives inside tabs: `blocks.tab_id` is a NOT NULL FK to `tabs`, and a page with zero tabs has nowhere to hold content. A page should be able to have its own body content directly, with tabs becoming an OPTIONAL way to add extra named views (e.g. 'Usage', 'Code', 'Accessibility'). A brand-new page must be immediately editable without the user having to create a tab first.",
+  "title": "Page-level content: content pipeline (autosave, snapshot, publish, restore, FTS)",
+  "category": "api-endpoint",
+  "description": "Wire the page body content (data model from TASK-65) through the whole server-side content pipeline so it behaves exactly like tab content: draft autosave, publish revision snapshot, history/restore, and full-text search indexing must all include the page body — not only user tabs.",
   "acceptanceCriteria": [
-    "A newly created page is immediately editable and can hold content without the user creating any tab",
-    "Tabs are optional: a page with no user-defined tabs shows no tab bar and just renders/edits its body; adding one or more tabs shows them as additional named views alongside (or after) the page body",
-    "The content pipeline keeps working end-to-end for page-level content: autosave draft, publish (revision snapshot), history/restore, full-text search indexing, and the public read-only render all include the page body — not only tab content",
-    "A migration backfills existing pages so no current content is lost (existing tabs and their blocks remain intact and reachable)",
-    "The public route and the admin editor route resolve page body content correctly (the current `/pages/:pageId/tabs/:tabId` editor route and `/docs/:sectionSlug/:pageSlug` public route must still work, plus a way to reach the page body itself)"
+    "Autosave (`blocks.saveDraft` / `blocks.getByTab`) persists and loads the page body container's blocks",
+    "Publish (`buildPageSnapshot` / `createRevision`) includes the page body in the `PageSnapshot`, and restore (`restoreRevision`) restores it — including the primary container",
+    "FTS reindex (`reindexPageFts`) indexes the published page body so it is searchable via `search.query`, same as tab content",
+    "The `PageSnapshot` shape in `packages/schema/src/block.ts` correctly represents body + optional tabs (whatever TASK-65 chose), and both server serialize (`apps/server/src/blocks/serialize.ts`) and the admin mirror (`apps/admin/src/features/revisions/blocksToTiptapDoc.ts`) stay in sync",
+    "New/updated vitest cover the body round-trip through save → publish → restore and the FTS index of body content"
   ],
   "steps": [
     {
       "step": 1,
-      "description": "Decide and document the data model for page body content",
-      "details": "Confirm the approach with the project owner. RECOMMENDED (lowest risk): every page owns one implicit 'primary' content container that renders as the page body without tab chrome; user tabs are additional. Implement it by guaranteeing a system primary tab per page (keep `blocks.tab_id`, so serialize/snapshot/publish/restore/FTS in `apps/server/src/db/revisions.ts` + `blocks/serialize.ts` need no structural change), with the migration promoting each existing page's first tab (or creating one) as primary. ALTERNATIVE (larger): make `blocks.tab_id` nullable and add a nullable `blocks.page_id` with a one-of constraint, then rework serialization, `PageSnapshot` (`packages/schema/src/block.ts`), publish/restore, FTS reindex, and public rendering to merge page-level blocks with tab blocks. Pick one before writing code.",
+      "description": "Confirm what changed from TASK-65",
+      "details": "If TASK-65 used the primary-tab approach, most of the pipeline already works because it iterates tabs — verify the primary container is included everywhere and not accidentally filtered out. If TASK-65 made block.tab_id nullable + page_id, extend each pipeline stage to merge page-level blocks with tab blocks.",
       "pass": false
     },
     {
       "step": 2,
-      "description": "Schema + migration",
-      "details": "Update `apps/server/src/db/schema.ts` per step 1's decision and generate a migration via `pnpm --filter @systembook/server db:generate`. Backfill existing pages so their current content maps to the new page-body model. If the primary-tab approach is chosen, mark the primary container so the UI can distinguish it (e.g. a `tipo`/`is_primary` flag on `tabs`, or a reserved ordem/sentinel) and hide it from the tab bar.",
+      "description": "Autosave + snapshot",
+      "details": "Ensure `blocks.getByTab`/`saveDraft` operate on the primary container, and `buildPageSnapshot` (`apps/server/src/db/revisions.ts`) includes it. Adjust the `PageSnapshot` type if the body is represented distinctly from tabs.",
       "pass": false
     },
     {
       "step": 3,
-      "description": "Update the content pipeline",
-      "details": "Ensure autosave (`blocks.saveDraft`/`getByTab`), publish snapshot (`buildPageSnapshot`), restore (`restoreRevision`), FTS reindex (`reindexPageFts`), and the `PageSnapshot` shape all account for page-body content. If the primary-tab approach is used, most of this works unchanged but the snapshot/UI must still render the primary container as the page body.",
+      "description": "Restore + FTS",
+      "details": "Confirm `restoreRevision` restores the body container (respecting the tab-drift skip logic) and `reindexPageFts` indexes body text. Keep the block→node mapping duplicated in `serialize.ts` and `blocksToTiptapDoc.ts` consistent.",
       "pass": false
     },
     {
       "step": 4,
-      "description": "Admin editor UX",
-      "details": "In `apps/admin`: a new page opens straight into an editable body (no 'create a tab first' step). The `SidebarTree` and `TabContentPage` must let the user edit the page body and optionally add tabs; when a page has no user tabs, no tab bar is shown. Keep the publish/history controls at page level (already the case in `TabContentPage.tsx`).",
-      "pass": false
-    },
-    {
-      "step": 5,
-      "description": "Public rendering + verification",
-      "details": "Update the public read-only render (`features/public/PublicPageView.tsx` / `PageRenderer.tsx`) to show the page body, with tabs (if any) as additional views. Verify end-to-end: create a page, write body content without adding a tab, publish, view it on `/docs/...` logged out, then add a tab and confirm both body and tab render. Confirm existing pages still render after the migration.",
+      "description": "Tests",
+      "details": "Extend the vitest suites (`revisions.test.ts`, `blocks.test.ts`, `serialize.test.ts`, and the FTS/search test) so page-body content is covered through the full save→publish→restore→search path.",
       "pass": false
     }
   ],
-  "dependencies": ["TASK-30", "TASK-31", "TASK-34", "TASK-36", "TASK-50", "TASK-53"],
-  "estimatedComplexity": "high",
+  "dependencies": ["TASK-65", "TASK-31", "TASK-34", "TASK-36", "TASK-53"],
+  "estimatedComplexity": "medium",
   "technicalNotes": [
-    "This is a cross-cutting change (data model → serialization → publish/restore → FTS → admin editor → public render). Consider splitting into a data-model task + an api task + a ui task if it grows; step 1's decision determines the blast radius.",
-    "The primary-tab approach keeps the whole revisions/snapshot/FTS machinery (which is keyed on tabs) intact and is strongly preferred for the MVP; the nullable page_id approach is cleaner conceptually but touches every consumer of blocks.",
-    "Watch the FTS reindex and the public sidebar/nav: they currently assume content == tabs. Whatever the model, published page body must be searchable and linkable."
+    "The whole revisions/snapshot/FTS machinery is keyed on tabs today — if TASK-65 chose the primary-tab model this task is mostly verification + a couple of filters; if it chose nullable page_id it is a real extension of every stage.",
+    "Do not let the primary container leak into places that assume 'a tab' with user-facing chrome; keep it addressable by the pipeline but distinguishable."
   ]
 }
