@@ -29,7 +29,7 @@ import { usersRouter } from './routers/users.js';
  * | tabs      | listByPage, getPrimary, create, rename,          | protectedProcedure (admin + editor)  |
  * |           | reorder, delete                                  |                                       |
  * | blocks    | getByTab, saveDraft                              | protectedProcedure (admin + editor)  |
- * | revisions | listByPage, getById                              | protectedProcedure (admin + editor)  |
+ * | revisions | listByPage, listRecent, getById                  | protectedProcedure (admin + editor)  |
  * | revisions | getLatestPublished                               | publicProcedure (doc pública)        |
  * | componentPreviews | listComponents, listVariants             | protectedProcedure (admin + editor)  |
  * | componentPreviews | getLatest                                | publicProcedure (embed público)      |

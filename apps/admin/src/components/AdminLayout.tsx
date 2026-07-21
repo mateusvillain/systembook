@@ -43,6 +43,7 @@ export function AdminLayout() {
         <strong>SystemBook</strong>
         <nav style={{ display: 'flex', gap: '1rem', flex: 1 }}>
           <Link to="/">Início</Link>
+          <Link to="/admin/history">Histórico</Link>
           <Link to="/admin/settings/landing-page">Página inicial</Link>
           {me.data.role === 'admin' && <Link to="/admin/users">Usuários</Link>}
           {me.data.role === 'admin' && <Link to="/admin/settings/tokens">Tokens</Link>}
