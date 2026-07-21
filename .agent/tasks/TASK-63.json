@@ -14,25 +14,25 @@
       "step": 1,
       "description": "Confirm license choice",
       "details": "Confirm with the project owner whether MIT (recommended default for this kind of infra tool) or another OSI license is intended; add the corresponding `LICENSE` file text with the correct copyright holder name and year.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Set package.json license fields",
       "details": "Update the root and per-workspace `package.json` `license` fields to match the chosen license identifier (e.g. `\"MIT\"`).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Write local dev setup instructions",
       "details": "In `CONTRIBUTING.md`, document cloning the repo, `pnpm install`, `docker-compose up` (TASK-7) for local dev, and running `pnpm -r run lint/typecheck/test` (TASK-8) before opening a PR.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Document PR conventions and schema-change caution",
       "details": "Add a section noting that changes to `packages/schema` types affect server, admin, and the publishable `connector`/`preview-kit` packages, and should be called out explicitly in PR descriptions.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 5,
@@ -41,7 +41,10 @@
       "pass": false
     }
   ],
-  "dependencies": ["TASK-7", "TASK-8"],
+  "dependencies": [
+    "TASK-7",
+    "TASK-8"
+  ],
   "estimatedComplexity": "low",
   "technicalNotes": [
     "License choice has real legal/adoption implications — treat step 1's confirmation as a genuine decision point with the project owner, not a default to silently apply."
