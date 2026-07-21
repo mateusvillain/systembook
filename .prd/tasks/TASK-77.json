@@ -1,0 +1,38 @@
+{
+  "id": "TASK-77",
+  "title": "Migrate authentication and app shell to shadcn/ui",
+  "category": "ui-ux",
+  "description": "Migrate the first screens a user sees — `LoginPage` and the `AdminLayout` shell (header, nav links, role indicator, logout) — from inline styles to shadcn/ui components (Button, Input, Card, Label) and Tailwind utility classes, using lucide-react icons where emoji/text placeholders exist today.",
+  "acceptanceCriteria": [
+    "`LoginPage` uses shadcn `Card`/`Input`/`Label`/`Button`; the generic anti-enumeration error message behavior (TASK-10) is unchanged, now shown via the toast-vs-inline convention from TASK-76 (login failure is a field-level/form error → stays inline, per that convention) — no change to auth logic, purely presentational",
+    "`AdminLayout`'s header/nav (Início, Histórico, Página inicial, Usuários, Tokens — role-gated links unchanged) is rebuilt with shadcn nav/button primitives and Tailwind layout; the role-based visibility logic (`me.data.role === 'admin'`) is unchanged",
+    "Logout button and loading/disabled states behave identically to today",
+    "No change to any tRPC call, route, or permission gate — this is presentation-only",
+    "Verified in the browser: login flow (success + generic error), nav links visible per role, logout"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Migrate LoginPage",
+      "details": "Replace inline-styled form with shadcn `Card` + `Input`/`Label` + `Button`, keeping the existing `useMutation`/error-state logic untouched.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Migrate AdminLayout shell",
+      "details": "Rebuild the header (logo/title, nav links, role badge, logout button) with Tailwind layout + shadcn `Button`, preserving the exact role-gating conditionals already in the component.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Verify",
+      "details": "Manual/Playwright pass: login as admin and as editor, confirm nav link visibility matches the role matrix, logout, confirm redirect to `/login`.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-75", "TASK-76"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "Keep the sidebar (`SidebarTree`, inside `AdminLayout`'s `<aside>`) out of scope here — it's migrated separately in TASK-78 since it's a materially different, denser UI (tree with inline editing)."
+  ]
+}

@@ -16,6 +16,8 @@
 1. Fim da Fase 3: utilizável internamente como CMS de documentação de texto (sem live preview) — valida que a dor "designer edita sem dev" está resolvida.
 2. Fim da Fase 5: produto completo com live preview funcional — valida a proposta de valor central frente a Storybook/Zeroheight.
 3. Fim da Fase 7: pronto para divulgação pública como projeto open source — alguém de fora consegue subir uma instância só com a documentação.
+4. Fim da Fase 8: times de design system conseguem documentar convenções de uso (Dos and Don'ts) com o mesmo nível de riqueza visual dos outros blocos (cover opcional, incl. componente real embutido).
+5. Fim da Fase 9: painel administrativo com aparência moderna e consistente (Tailwind + shadcn/ui), sem regressão funcional em nenhum fluxo existente.
 
 ## 2. Público-Alvo
 
@@ -32,7 +34,7 @@ Times de design system (designers, editores de conteúdo, e devs que mantêm a i
 
 1. **Autenticação e papéis**: login local (email/senha), papéis `admin` e `editor`.
 2. **Estrutura de navegação**: árvore `sections → pages → tabs` (ex: tab "Usage", "Code", "Accessibility").
-3. **Editor de conteúdo rich text (Tiptap)**: blocos tipados (heading, paragraph, list, code, image, table, callout, component-embed), com autosave e revisões versionadas.
+3. **Editor de conteúdo rich text (Tiptap)**: blocos tipados (heading, paragraph, list, code, image, table, callout, component-embed, dos-donts — Fase 8), com autosave e revisões versionadas.
 4. **Conector e harness de preview**: pacote instalado no repo do time consumidor, que builda `*.preview.tsx` no CI deles e envia o artefato estático para a instância.
 5. **component-embed real**: dentro do editor e da doc publicada, renderiza iframe real do preview do componente, com seletor de variante e controles interativos.
 6. **Visualização pública**: leitura navegável, com busca full-text e tema dark/light.
@@ -168,6 +170,10 @@ Fase 5 (integração preview no editor)
 Fase 6 (visualização pública/polimento)
    ↓
 Fase 7 (empacotamento/lançamento)
+   ↓
+Fase 8 (bloco Dos and Don'ts) — nova funcionalidade pós-lançamento
+   ↓
+Fase 9 (modernização visual do painel, Shadcn) — independente de conteúdo, pode rodar em paralelo à Fase 8
 ```
 
 - **Fase 0 — Fundamentos**: monorepo, Drizzle+SQLite, tRPC health-check, Dockerfile, docker-compose dev, CI do projeto.
@@ -178,6 +184,8 @@ Fase 7 (empacotamento/lançamento)
 - **Fase 5 — Integração do preview**: `component-embed` renderiza iframe real, seletor de componente/variante, painel de controles interativos, página pública com os mesmos embeds, estado "sem preview disponível".
 - **Fase 6 — Publicação e polimento**: layout público de leitura, busca full-text (FTS5), tema dark/light, landing customizável, responsividade.
 - **Fase 7 — Empacotamento e lançamento**: imagem Docker publicada, docker-compose de produção, documentação de setup/CI/schema, README de posicionamento, CONTRIBUTING + licença, documentação de backup (Litestream).
+- **Fase 8 — Bloco Dos and Don'ts**: novo tipo de bloco `dos-donts` no editor (variant `do`/`dont`, título, descrição rich-text, cover opcional — imagem ou `component-embed` real), com serialização, render público e busca full-text, seguindo o mesmo padrão dos blocos custom da Fase 3 (`callout`/`component-embed`).
+- **Fase 9 — Modernização visual do painel (Shadcn)**: migração do painel admin (login, navegação, editor, telas de gestão) de estilo inline para Tailwind CSS + shadcn/ui, com lucide-react (ícones) e sonner (toasts). Escopo confirmado como admin-only — a doc pública mantém o tema CSS-vars da Fase 6 (TASK-55), que já é dedicado a prosa/leitura e não precisa de um design system de aplicação.
 
 ## 13. Suposições e Dependências
 

@@ -1,0 +1,44 @@
+{
+  "id": "TASK-76",
+  "title": "Add lucide-react (icons) and sonner (toasts); establish the toast-vs-inline convention",
+  "category": "setup",
+  "description": "Install `lucide-react` (icons) and `sonner` (toast notifications) — the two libraries the project owner confirmed alongside shadcn/ui — mount a single `<Toaster/>` at the app root, and convert the clearest transient-notification case (publish success/error) as a proof of the pattern. Full icon/emoji replacement and toast conversion across every screen happens in the per-screen tasks (TASK-77..80); this task establishes the convention they follow.",
+  "acceptanceCriteria": [
+    "`lucide-react` and `sonner` are dependencies of `apps/admin`; a single `<Toaster/>` is mounted once (e.g. in `main.tsx` or `AdminLayout`)",
+    "`PageContentPage`'s publish feedback (\"Página publicada.\" / \"Falha ao publicar. Tente novamente.\") is converted from the inline `role=\"status\"/\"alert\"` banner to a `sonner` toast",
+    "The autosave status indicator (`data-save-status`, in `ContentEditor`) is explicitly NOT converted to a toast — it's persistent inline state, not a transient event; this distinction is documented for the later tasks to follow",
+    "A short convention note exists (code comment near the `Toaster` mount, or in this task's notes) stating: toast = transient action result (publish, save-as-new-token success, delete confirmation result); inline `role=\"alert\"` = persistent/field-level validation state — later tasks should follow it, not invent a new rule per screen",
+    "No functional regression; `pnpm --filter @systembook/admin build/lint/typecheck` green"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Install and mount",
+      "details": "Add `lucide-react` + `sonner`; mount `<Toaster/>` once at the app root.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Convert publish feedback to a toast",
+      "details": "In `apps/admin/src/pages/PageContentPage.tsx`, replace the inline banner state with `toast.success(...)`/`toast.error(...)` calls from `sonner` on the `pages.publish` mutation's `onSuccess`/`onError`.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Document the convention",
+      "details": "Write the toast-vs-inline rule where the `Toaster` is mounted, and reference it from this task's technical notes so TASK-77..80 don't need to re-derive it.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Verify",
+      "details": "Manually confirm publish success/error shows a toast, autosave status still shows inline as before, and the fan-out (`lint`/`typecheck`) is green.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-75"],
+  "estimatedComplexity": "low",
+  "technicalNotes": [
+    "Scope deliberately kept tight: this task does NOT replace emoji icons across the app (▸▾ carets, ℹ️⚠️💡 callout icons, ✓✕ buttons) — that happens screen-by-screen in TASK-77..80, where lucide-react icons are now available to use."
+  ]
+}

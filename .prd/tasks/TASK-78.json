@@ -1,0 +1,43 @@
+{
+  "id": "TASK-78",
+  "title": "Migrate the navigation sidebar (SidebarTree) to shadcn/ui",
+  "category": "ui-ux",
+  "description": "Migrate `SidebarTree` (sections → pages → tabs tree, inline create/rename, reorder buttons, delete confirmation) from inline styles to Tailwind + shadcn/ui, replacing the `▸`/`▾`/`✓`/`✕`/`↑`/`↓` text glyphs with lucide-react icons, without changing any interaction, tRPC call, or the TASK-67/70 behaviors (primary tab hidden from the tree, optional-slug create form).",
+  "acceptanceCriteria": [
+    "Tree rows (sections, pages, tabs), the inline rename form, the create forms (`InlineCreate`, `CreatePageForm`), and the reorder ↑/↓ buttons are rebuilt with shadcn `Button`/`Input` + Tailwind layout, with lucide-react icons replacing the emoji/glyph carets and action buttons",
+    "All existing behaviors are unchanged: expand/collapse lazy-loads children, inline rename, reorder via ↑/↓, delete via confirmation (window.confirm or a shadcn `AlertDialog` — either is acceptable, but the destructive-cascade warning text must be preserved), the optional-slug hint from TASK-70, and the primary tab staying invisible in the tab list (TASK-67)",
+    "No change to any tRPC call or query invalidation logic",
+    "Verified in the browser: create/rename/reorder/delete at each level (section/page/tab), confirm the primary tab never appears, confirm blank-slug page creation still derives the slug"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Migrate tree row presentation",
+      "details": "Rebuild `NodeRow` and the section/page/tab row components with Tailwind layout + shadcn `Button` for the icon actions (expand caret, rename, delete, move up/down), using lucide-react icons (`ChevronRight`/`ChevronDown`, `Pencil`, `Trash2`, `ArrowUp`/`ArrowDown`) in place of the current text glyphs.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Migrate inline create/rename forms",
+      "details": "Rebuild `InlineCreate` and `CreatePageForm` with shadcn `Input`/`Button`, preserving the optional-slug hint text (TASK-70) and the inline error display on `CONFLICT`/`BAD_REQUEST`.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Consider AlertDialog for destructive actions",
+      "details": "Optionally replace `window.confirm` cascade-delete warnings with a shadcn `AlertDialog` for a more polished confirmation — keep the exact warning copy (mentions what cascades) if doing so; this is a judgment call, not mandatory.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Verify",
+      "details": "Exercise create/rename/reorder/delete at each tree level; confirm the primary tab is never listed (TASK-67); confirm creating a page with a blank slug still derives one from the title (TASK-70).",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-75", "TASK-76", "TASK-67", "TASK-70"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "This is the densest, most interaction-heavy screen in the admin — budget more care here than in TASK-77/80. Regression risk is highest for the lazy-load-on-expand and reorder logic; don't refactor that logic while restyling, only the presentation layer."
+  ]
+}
