@@ -1,0 +1,45 @@
+{
+  "id": "TASK-67",
+  "title": "Global panel history/activity view (across all pages)",
+  "category": "functional",
+  "description": "History today is scoped to a single page: revisions are stored per page (`revisions` table) and surfaced only at `/pages/:pageId/history` via `revisions.listByPage`. An admin needs a panel-wide history — a single view showing recent activity across the whole instance (which pages were published/restored, by whom, when), not just the page currently being edited.",
+  "acceptanceCriteria": [
+    "A new admin route (e.g. `/admin/history`) shows a chronological, panel-wide activity feed aggregating events across ALL pages, most recent first, with author (email, may be null after user hard-delete) and timestamp",
+    "Each entry identifies the page it refers to (title + link) and the event (at minimum: published / restored, derived from the revision's `mensagem`), and links through to that page's existing per-page history at `/pages/:pageId/history`",
+    "The view is reachable from the admin navigation (`AdminLayout` header) and is paginated or capped to a sensible recent window (not an unbounded query)",
+    "A new backend query powers it (e.g. `revisions.listRecent`) joining `revisions` → `pages` → `users`, ordered by `criado_em` desc with a stable tiebreaker (rowid, mirroring `listByPage`)"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Confirm scope: revisions feed vs. full audit log",
+      "details": "Confirm with the project owner. RECOMMENDED MVP: aggregate the existing `revisions` (publish + restore events already recorded) into a global feed — real data, no new table. LARGER ALTERNATIVE (note as follow-up, do not silently build): a true audit log capturing structural mutations too (user/section/page/tab create-rename-delete, token create/revoke) would require a new `audit_log` table and instrumenting many mutations. Pick the scope before building.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Backend query",
+      "details": "Add `revisions.listRecent` in `apps/server/src/trpc/routers/revisions.ts`: leftJoin `users` (autor_id is SET NULL on user delete — mirror `listByPage`) and join `pages` for the page title, order by `criado_em` desc with a `rowid` tiebreaker, `limit` input with a sane default/cap. Update the permissions matrix in `router.ts`. Decide protectedProcedure (admin+editor) vs adminProcedure — a panel-wide view leans admin, confirm in step 1.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Admin page + route + nav",
+      "details": "Add a `GlobalHistoryPage` and route (`/admin/history`) in `apps/admin/src/main.tsx`, plus a nav link in `AdminLayout.tsx` (respect the role gate chosen in step 1). Reuse the revision-row presentation patterns from `features/revisions/RevisionHistoryList.tsx` where sensible; each row links to `/pages/:pageId/history`.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Tests + verification",
+      "details": "Add a vitest for `revisions.listRecent` (multiple pages, ordering with same-second tiebreak, null author after delete, limit). Verify in the browser: publish/restore across two pages and confirm the global feed shows both, newest first, with working links.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-33", "TASK-34", "TASK-35"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "The per-page history already exists (`revisions.listByPage`, `/pages/:pageId/history`); this task adds the aggregated cross-page view, not a replacement.",
+    "`criado_em` has second resolution — reuse the rowid tiebreaker lesson from TASK-35 so fast sequential publishes don't tie in the feed order.",
+    "If the owner wants a full audit log (structural events), scope that as a separate follow-up task with its own `audit_log` table — it's materially larger than aggregating revisions."
+  ]
+}
