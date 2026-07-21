@@ -452,7 +452,7 @@
     "title": "Page-level content: data model + migration (tabs become optional)",
     "category": "data-model",
     "specFilePath": ".agent/tasks/TASK-65.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-66",

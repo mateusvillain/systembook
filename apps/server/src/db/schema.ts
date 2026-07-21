@@ -84,6 +84,12 @@ export const pages = sqliteTable(
 
 // Título livre (Usage, Code, Accessibility ou custom) e sem unicidade por
 // page — duplicar nome de tab é uma simplificação aceita do MVP (TASK-21).
+//
+// `is_primary` (TASK-65): cada página tem exatamente uma tab primária, que
+// guarda o **corpo da página** e é renderizada sem chrome de tab. As demais
+// (is_primary=false) são as tabs opcionais visíveis pelo usuário. Toda a
+// máquina de blocks/revisions/snapshot/FTS continua keyed-by-tab; só a UI
+// distingue a primária (não aparece no tab bar, não é renomeável/removível).
 export const tabs = sqliteTable('tabs', {
   id: text('id')
     .primaryKey()
@@ -93,6 +99,7 @@ export const tabs = sqliteTable('tabs', {
     .references(() => pages.id, { onDelete: 'cascade' }),
   titulo: text('titulo').notNull(),
   ordem: integer('ordem').notNull(),
+  isPrimary: integer('is_primary', { mode: 'boolean' }).notNull().default(false),
 });
 
 /**
