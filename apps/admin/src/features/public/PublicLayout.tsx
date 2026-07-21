@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTRPC } from '../../lib/trpc.js';
@@ -23,14 +24,25 @@ export function PublicLayout() {
   const navQuery = useQuery(trpc.sections.listPublic.queryOptions());
   const tree = navQuery.data ?? [];
   const { theme, toggle } = useTheme();
+  const [navOpen, setNavOpen] = useState(false);
 
   const context: PublicOutletContext = { tree, isLoading: navQuery.isLoading };
 
   return (
     <div className="sb-public" data-theme={theme}>
       <header className="sb-public-header">
+        <button
+          type="button"
+          className="sb-nav-toggle"
+          aria-label="Abrir navegação"
+          aria-expanded={navOpen}
+          onClick={() => setNavOpen((o) => !o)}
+          data-testid="nav-toggle"
+        >
+          <span aria-hidden>☰</span>
+        </button>
         <span aria-hidden>📘</span>
-        <span>Documentação</span>
+        <span className="sb-public-brand">Documentação</span>
         <SearchBox />
         <button
           type="button"
@@ -44,7 +56,14 @@ export function PublicLayout() {
         </button>
       </header>
       <div className="sb-public-body">
-        <PublicSidebar tree={tree} />
+        {navOpen && (
+          <div
+            className="sb-public-backdrop"
+            onClick={() => setNavOpen(false)}
+            data-testid="nav-backdrop"
+          />
+        )}
+        <PublicSidebar tree={tree} open={navOpen} onNavigate={() => setNavOpen(false)} />
         <main className="sb-public-content">
           <Outlet context={context} />
         </main>

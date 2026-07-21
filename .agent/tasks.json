@@ -396,7 +396,7 @@
     "title": "Responsive layout for public documentation views",
     "category": "ui-ux",
     "specFilePath": ".agent/tasks/TASK-57.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-58",
