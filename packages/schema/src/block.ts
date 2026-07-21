@@ -117,11 +117,17 @@ export type Block =
  * Forma do `snapshot_json` de `revisions` (TASK-33): snapshot da **página
  * inteira** no momento do publish — todas as tabs com todos os seus blocks —
  * porque "Publicar" é uma ação de página no fluxo do PRD, não de tab.
+ *
+ * `isPrimary` (TASK-65/66): a tab primária guarda o **corpo da página** e é
+ * renderizada sem chrome de tab; as demais são as tabs opcionais. Revisões
+ * antigas (pré-TASK-66) não têm o campo — consumidores devem tratá-lo como
+ * `false` quando ausente (degrada para "todas são tabs", comportamento antigo).
  */
 export interface PageSnapshot {
   tabs: {
     tabId: string;
     titulo: string;
+    isPrimary: boolean;
     blocks: Block[];
   }[];
 }

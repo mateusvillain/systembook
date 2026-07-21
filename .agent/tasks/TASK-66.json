@@ -1,0 +1,58 @@
+{
+  "id": "TASK-66",
+  "title": "Page-level content: content pipeline (autosave, snapshot, publish, restore, FTS)",
+  "category": "api-endpoint",
+  "description": "Wire the page body content (data model from TASK-65) through the whole server-side content pipeline so it behaves exactly like tab content: draft autosave, publish revision snapshot, history/restore, and full-text search indexing must all include the page body — not only user tabs.",
+  "acceptanceCriteria": [
+    "Autosave (`blocks.saveDraft` / `blocks.getByTab`) persists and loads the page body container's blocks",
+    "Publish (`buildPageSnapshot` / `createRevision`) includes the page body in the `PageSnapshot`, and restore (`restoreRevision`) restores it — including the primary container",
+    "FTS reindex (`reindexPageFts`) indexes the published page body so it is searchable via `search.query`, same as tab content",
+    "The `PageSnapshot` shape in `packages/schema/src/block.ts` correctly represents body + optional tabs (whatever TASK-65 chose), and both server serialize (`apps/server/src/blocks/serialize.ts`) and the admin mirror (`apps/admin/src/features/revisions/blocksToTiptapDoc.ts`) stay in sync",
+    "New/updated vitest cover the body round-trip through save → publish → restore and the FTS index of body content"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Confirm what changed from TASK-65",
+      "details": "TASK-65 chose the primary-tab approach (a `tabs.is_primary` boolean, backfilled so every EXISTING page has exactly one primary). Most of the pipeline already works because it iterates tabs — verify the primary container is included everywhere and not accidentally filtered out.",
+      "pass": true
+    },
+    {
+      "step": 2,
+      "description": "Ensure new pages get a primary tab (invariant for new rows)",
+      "details": "The TASK-65 backfill only covers existing pages. Make `pages.create` (`apps/server/src/trpc/routers/pages.ts`) atomically create the page's primary tab (is_primary=true) in the same transaction, so every NEW page also owns a body container. Cover it with a test (create page → exactly one primary tab exists).",
+      "pass": true
+    },
+    {
+      "step": 3,
+      "description": "Autosave + snapshot",
+      "details": "Ensure `blocks.getByTab`/`saveDraft` operate on the primary container, and `buildPageSnapshot` (`apps/server/src/db/revisions.ts`) includes it. Adjust the `PageSnapshot` type if the body is represented distinctly from tabs.",
+      "pass": true
+    },
+    {
+      "step": 4,
+      "description": "Restore + FTS",
+      "details": "Confirm `restoreRevision` restores the body container (respecting the tab-drift skip logic) and `reindexPageFts` indexes body text. Keep the block→node mapping duplicated in `serialize.ts` and `blocksToTiptapDoc.ts` consistent.",
+      "pass": true
+    },
+    {
+      "step": 5,
+      "description": "Tests",
+      "details": "Extend the vitest suites (`revisions.test.ts`, `blocks.test.ts`, `serialize.test.ts`, and the FTS/search test) so page-body content is covered through the full save→publish→restore→search path.",
+      "pass": true
+    }
+  ],
+  "dependencies": [
+    "TASK-65",
+    "TASK-31",
+    "TASK-34",
+    "TASK-36",
+    "TASK-53"
+  ],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "The whole revisions/snapshot/FTS machinery is keyed on tabs today — if TASK-65 chose the primary-tab model this task is mostly verification + a couple of filters; if it chose nullable page_id it is a real extension of every stage.",
+    "Do not let the primary container leak into places that assume 'a tab' with user-facing chrome; keep it addressable by the pipeline but distinguishable."
+  ],
+  "passes": true
+}

@@ -1,5 +1,5 @@
 import type { Block, PageSnapshot } from '@systembook/schema';
-import { asc, eq } from 'drizzle-orm';
+import { asc, desc, eq } from 'drizzle-orm';
 import type { Db, DbTx } from './client.js';
 import { listBlocksByTab, replaceBlocksForTabInTx, type BlockRecord, type NewBlock } from './blocks.js';
 import { reindexPageFts } from './search.js';
@@ -28,17 +28,21 @@ function toNewBlock(tabId: string, block: Block): NewBlock {
  * mesma transação, antes de fazer commit.
  */
 export function buildPageSnapshot(db: Db | DbTx, pageId: string): PageSnapshot {
+  // Primária (corpo) sempre primeiro; depois as tabs de usuário por (ordem, id).
+  // A primária e a 1ª tab de usuário podem compartilhar ordem 0, então o
+  // `desc(isPrimary)` garante ordenação determinística (corpo no índice 0).
   const pageTabs = db
     .select()
     .from(tabs)
     .where(eq(tabs.pageId, pageId))
-    .orderBy(asc(tabs.ordem), asc(tabs.id))
+    .orderBy(desc(tabs.isPrimary), asc(tabs.ordem), asc(tabs.id))
     .all();
 
   return {
     tabs: pageTabs.map((tab) => ({
       tabId: tab.id,
       titulo: tab.titulo,
+      isPrimary: tab.isPrimary,
       blocks: listBlocksByTab(db, tab.id).map(toBlock),
     })),
   };

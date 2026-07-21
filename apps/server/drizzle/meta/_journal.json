@@ -71,6 +71,13 @@
       "when": 1784600000000,
       "tag": "0009_faithful_fts5_search",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1784651351459,
+      "tag": "0010_sweet_tinkerer",
+      "breakpoints": true
     }
   ]
 }

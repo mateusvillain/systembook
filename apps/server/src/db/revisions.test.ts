@@ -42,7 +42,8 @@ describe('revisions (TASK-33)', () => {
       tabs: [
         {
           tabId: 'tab-usage',
-          titulo: 'Usage',
+          titulo: 'Conteúdo',
+          isPrimary: true,
           blocks: [
             {
               id: 'b1',
@@ -56,6 +57,7 @@ describe('revisions (TASK-33)', () => {
         {
           tabId: 'tab-code',
           titulo: 'Code',
+          isPrimary: false,
           blocks: [
             {
               id: 'b2',
