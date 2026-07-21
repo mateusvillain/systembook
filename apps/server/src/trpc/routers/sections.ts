@@ -1,16 +1,73 @@
 import { TRPCError } from '@trpc/server';
-import { asc, eq, max } from 'drizzle-orm';
+import { and, asc, eq, max, ne, sql } from 'drizzle-orm';
 import { z } from 'zod';
-import { sections } from '../../db/schema.js';
-import { protectedProcedure, router } from '../init.js';
+import { LANDING_PAGE_ID, LANDING_SECTION_ID } from '../../db/landing.js';
+import { pages, revisions, sections } from '../../db/schema.js';
+import { generateUniqueSectionSlug } from '../../db/sections.js';
+import { protectedProcedure, publicProcedure, router } from '../init.js';
 import { assertCompleteReorder } from './reorder.js';
 
 // Estrutura de navegação: admin E editor têm CRUD completo (decisão do PRD,
 // TASK-24) — por isso protectedProcedure, não adminProcedure.
 export const sectionsRouter = router({
   list: protectedProcedure.query(({ ctx }) =>
-    ctx.db.select().from(sections).orderBy(asc(sections.ordem), asc(sections.id)).all(),
+    ctx.db
+      .select()
+      .from(sections)
+      // Oculta a section reservada da landing (TASK-56) da árvore do admin.
+      .where(ne(sections.id, LANDING_SECTION_ID))
+      .orderBy(asc(sections.ordem), asc(sections.id))
+      .all(),
   ),
+
+  /**
+   * Árvore de navegação da doc pública (TASK-52), sem auth. Retorna só as
+   * seções que têm ao menos uma página **publicada** (com ≥1 revisão), cada
+   * uma já com suas páginas publicadas aninhadas — um round-trip, sem N+1.
+   * Nunca expõe rascunhos: uma página só aparece depois de publicada.
+   *
+   * Desvio deliberado do "sections.listPublic/pages.listPublicBySection" do
+   * spec: a versão aninhada é a estrutura que a sidebar precisa e evita o
+   * lazy-load por seção do painel admin.
+   */
+  listPublic: publicProcedure.query(({ ctx }) => {
+    const publishedPages = ctx.db
+      .select({
+        id: pages.id,
+        titulo: pages.titulo,
+        slug: pages.slug,
+        sectionId: pages.sectionId,
+      })
+      .from(pages)
+      .where(
+        and(
+          ne(pages.id, LANDING_PAGE_ID),
+          sql`EXISTS (SELECT 1 FROM ${revisions} WHERE ${revisions.pageId} = ${pages.id})`,
+        ),
+      )
+      .orderBy(asc(pages.ordem), asc(pages.id))
+      .all();
+
+    const secs = ctx.db
+      .select()
+      .from(sections)
+      // Landing (TASK-56) não faz parte da árvore de navegação pública.
+      .where(ne(sections.id, LANDING_SECTION_ID))
+      .orderBy(asc(sections.ordem), asc(sections.id))
+      .all();
+
+    return secs
+      .map((s) => ({
+        id: s.id,
+        titulo: s.titulo,
+        // slug sempre presente pós-backfill; fallback defensivo ao id
+        slug: s.slug ?? s.id,
+        pages: publishedPages
+          .filter((p) => p.sectionId === s.id)
+          .map((p) => ({ id: p.id, titulo: p.titulo, slug: p.slug })),
+      }))
+      .filter((s) => s.pages.length > 0);
+  }),
 
   create: protectedProcedure
     .input(z.object({ titulo: z.string().min(1) }))
@@ -18,7 +75,12 @@ export const sectionsRouter = router({
       const row = ctx.db.select({ maxOrdem: max(sections.ordem) }).from(sections).get();
       return ctx.db
         .insert(sections)
-        .values({ titulo: input.titulo, ordem: (row?.maxOrdem ?? -1) + 1 })
+        .values({
+          titulo: input.titulo,
+          // Slug estável gerado do título (TASK-52) — desambiguado se colidir.
+          slug: generateUniqueSectionSlug(ctx.db, input.titulo),
+          ordem: (row?.maxOrdem ?? -1) + 1,
+        })
         .returning()
         .get();
     }),
@@ -39,7 +101,13 @@ export const sectionsRouter = router({
   reorder: protectedProcedure
     .input(z.object({ orderedIds: z.array(z.string()).min(1) }))
     .mutation(({ ctx, input }) => {
-      const existing = ctx.db.select({ id: sections.id }).from(sections).all();
+      // Exclui a section reservada da landing (TASK-56) — ela é oculta de
+      // `list`, então o cliente nunca a inclui na lista de reordenação.
+      const existing = ctx.db
+        .select({ id: sections.id })
+        .from(sections)
+        .where(ne(sections.id, LANDING_SECTION_ID))
+        .all();
       assertCompleteReorder(
         existing.map((s) => s.id),
         input.orderedIds,

@@ -30,11 +30,7 @@ function CalloutView({ node, updateAttributes, editor }: NodeViewProps) {
   const meta = CALLOUT_META[variant];
 
   return (
-    <NodeViewWrapper
-      className="sb-callout"
-      data-variant={variant}
-      style={{ borderLeft: `4px solid ${meta.border}`, background: meta.bg }}
-    >
+    <NodeViewWrapper className="sb-callout" data-variant={variant}>
       <div className="sb-callout-header" contentEditable={false}>
         <span aria-hidden>{meta.icon}</span>
         {editor.isEditable && (

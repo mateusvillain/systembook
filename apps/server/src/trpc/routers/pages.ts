@@ -1,10 +1,11 @@
 import { TRPCError } from '@trpc/server';
-import { and, asc, eq, max } from 'drizzle-orm';
+import { and, asc, desc, eq, max, sql } from 'drizzle-orm';
 import { z } from 'zod';
+import type { PageSnapshot } from '@systembook/schema';
 import { isUniqueViolation } from '../../db/errors.js';
 import { createRevision, restoreRevision } from '../../db/revisions.js';
 import { pages, revisions, sections } from '../../db/schema.js';
-import { protectedProcedure, router } from '../init.js';
+import { protectedProcedure, publicProcedure, router } from '../init.js';
 import { assertCompleteReorder } from './reorder.js';
 
 // Schema único de slug compartilhado por create e updateSlug — as regras não
@@ -171,5 +172,40 @@ export const pagesRouter = router({
         targetRevision,
         autorId: ctx.user.userId,
       });
+    }),
+
+  /**
+   * Resolve `sectionSlug`/`pageSlug` para o conteúdo publicado da página, para
+   * a rota `/docs/:sectionSlug/:pageSlug` (TASK-52). publicProcedure, sem auth.
+   *
+   * Retorna `null` se a seção/página não existir (→ 404 na doc). Se a página
+   * existir mas nunca foi publicada, `snapshot` vem `null` (→ estado "não
+   * publicada"). O snapshot é o da última revisão — mesma ordenação/desempate
+   * do `revisions.getLatestPublished`.
+   */
+  getPublishedBySlug: publicProcedure
+    .input(z.object({ sectionSlug: z.string(), pageSlug: z.string() }))
+    .query(({ ctx, input }) => {
+      const page = ctx.db
+        .select({ id: pages.id, titulo: pages.titulo })
+        .from(pages)
+        .innerJoin(sections, eq(sections.id, pages.sectionId))
+        .where(and(eq(sections.slug, input.sectionSlug), eq(pages.slug, input.pageSlug)))
+        .get();
+      if (!page) return null;
+
+      const rev = ctx.db
+        .select({ snapshotJson: revisions.snapshotJson })
+        .from(revisions)
+        .where(eq(revisions.pageId, page.id))
+        .orderBy(desc(revisions.criadoEm), desc(sql`${revisions}.rowid`))
+        .limit(1)
+        .get();
+
+      return {
+        pageId: page.id,
+        titulo: page.titulo,
+        snapshot: rev ? (JSON.parse(rev.snapshotJson) as PageSnapshot) : null,
+      };
     }),
 });

@@ -4,6 +4,8 @@ import type { Block } from '@systembook/schema';
 import { loadEnv } from './env.js';
 import { createDb } from './db/client.js';
 import { runMigrations } from './db/migrate.js';
+import { ensureLandingPage } from './db/landing.js';
+import { backfillSectionSlugs } from './db/sections.js';
 import { seedBootstrapAdmin } from './db/seed.js';
 import { appRouter } from './trpc/router.js';
 import { createContext } from './trpc/context.js';
@@ -19,6 +21,9 @@ const env = loadEnv();
 
 const db = createDb(env.DATABASE_PATH);
 runMigrations(db);
+// Preenche o slug de sections legadas (pré-migration 0008, TASK-52); idempotente.
+backfillSectionSlugs(db);
+ensureLandingPage(db);
 await seedBootstrapAdmin(db);
 
 const adminDist = resolveAdminDist();

@@ -13,8 +13,10 @@ import '../editor/editor.css';
  * mantendo o iframe + painel de controles interativo (TASK-47/49).
  *
  * É a peça de renderização de conteúdo compartilhada entre o preview de
- * revisões do editor (TASK-35, `RevisionSnapshotPreview`) e a doc pública.
- * O chrome de layout público (nav/busca/tema) vem na Fase 6 (TASK-52+).
+ * revisões do editor (TASK-35, `RevisionSnapshotPreview`) e a doc pública
+ * (TASK-50/52). Aceita seleção de tab **controlada** (`activeTabId`/
+ * `onSelectTab`, usada pela doc pública para refletir a tab na URL) ou, se
+ * omitida, gerencia a tab ativa internamente.
  */
 
 /** Forma estrutural comum aos snapshots vindos das queries de revisão. */
@@ -42,11 +44,27 @@ function TabContent({ blocks }: { blocks: unknown[] }) {
   );
 }
 
-export function PageRenderer({ snapshot }: { snapshot: RenderableSnapshot }) {
-  const [activeTabId, setActiveTabId] = useState(snapshot.tabs[0]?.tabId);
-  const activeTab = snapshot.tabs.find((t) => t.tabId === activeTabId) ?? snapshot.tabs[0];
+export function PageRenderer({
+  snapshot,
+  activeTabId: controlledTabId,
+  onSelectTab,
+}: {
+  snapshot: RenderableSnapshot;
+  /** Se fornecido, a tab ativa é controlada por quem chama (reflete a URL). */
+  activeTabId?: string;
+  onSelectTab?: (tabId: string) => void;
+}) {
+  const [internalTabId, setInternalTabId] = useState(snapshot.tabs[0]?.tabId);
+  const controlled = controlledTabId !== undefined && onSelectTab !== undefined;
+  const wantedTabId = controlled ? controlledTabId : internalTabId;
 
+  const activeTab = snapshot.tabs.find((t) => t.tabId === wantedTabId) ?? snapshot.tabs[0];
   if (!activeTab) return <p>Página sem conteúdo.</p>;
+
+  const selectTab = (tabId: string) => {
+    if (controlled) onSelectTab(tabId);
+    else setInternalTabId(tabId);
+  };
 
   return (
     <div>
@@ -58,7 +76,7 @@ export function PageRenderer({ snapshot }: { snapshot: RenderableSnapshot }) {
               type="button"
               role="tab"
               aria-selected={tab.tabId === activeTab.tabId}
-              onClick={() => setActiveTabId(tab.tabId)}
+              onClick={() => selectTab(tab.tabId)}
               style={{
                 padding: '0.35rem 0.75rem',
                 border: '1px solid #ccc',

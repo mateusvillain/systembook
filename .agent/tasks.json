@@ -361,42 +361,42 @@
     "title": "Public reading layout with section/page/tab navigation",
     "category": "ui-ux",
     "specFilePath": ".agent/tasks/TASK-52.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-53",
     "title": "Full-text search over blocks using SQLite FTS5",
     "category": "functional",
     "specFilePath": ".agent/tasks/TASK-53.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-54",
     "title": "Search UI in public layout",
     "category": "ui-ux",
     "specFilePath": ".agent/tasks/TASK-54.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-55",
     "title": "Dark/light theme and typography for public documentation",
     "category": "ui-ux",
     "specFilePath": ".agent/tasks/TASK-55.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-56",
     "title": "Customizable landing page for documentation home",
     "category": "functional",
     "specFilePath": ".agent/tasks/TASK-56.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-57",
     "title": "Responsive layout for public documentation views",
     "category": "ui-ux",
     "specFilePath": ".agent/tasks/TASK-57.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-58",
