@@ -15,34 +15,38 @@
       "step": 1,
       "description": "Add responsive breakpoints to the layout shell",
       "details": "Update `apps/admin/src/features/public/PublicLayout.tsx` (from TASK-52) with a CSS breakpoint (e.g. 768px) toggling between a permanent sidebar (desktop) and a collapsible off-canvas nav (mobile).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Implement the mobile nav toggle",
       "details": "Add a hamburger button visible only below the breakpoint, opening/closing the sidebar as an overlay with a backdrop.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Constrain wide content to scroll within its container",
       "details": "Apply `overflow-x: auto` wrappers around tables and code blocks in `PageRenderer` (TASK-50) styling, and set `max-width: 100%` on iframes/images so nothing forces the page body to scroll horizontally.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Adapt search UI for mobile",
       "details": "On narrow viewports, render the search trigger as an icon that opens a full-width/full-height search overlay instead of a small inline dropdown.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 5,
       "description": "Verify in browser at multiple viewports",
       "details": "Using Playwright, set viewport to a common desktop size (e.g. 1440x900) and a common mobile size (e.g. 390x844); confirm nav toggle behavior, absence of page-level horizontal scroll on a page containing a wide table, and that search remains usable at both sizes.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-52", "TASK-54", "TASK-55"],
+  "dependencies": [
+    "TASK-52",
+    "TASK-54",
+    "TASK-55"
+  ],
   "estimatedComplexity": "medium",
   "technicalNotes": [
     "This task only covers the public-facing site per PRD scope ('Responsividade da visualização pública') — the admin editing panel is not required to be mobile-responsive for the MVP."

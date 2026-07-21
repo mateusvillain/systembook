@@ -47,13 +47,23 @@ export const memberships = sqliteTable('memberships', {
  * Deleção é hard delete com FK cascade em toda a árvore (decisão TASK-18).
  */
 
-export const sections = sqliteTable('sections', {
-  id: text('id')
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  titulo: text('titulo').notNull(),
-  ordem: integer('ordem').notNull(),
-});
+export const sections = sqliteTable(
+  'sections',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    titulo: text('titulo').notNull(),
+    // Slug para a URL pública (`/docs/:sectionSlug/...`, TASK-52). Nullable no
+    // DB para permitir ADD COLUMN sem rebuild; a aplicação sempre popula (no
+    // create e via backfill idempotente no boot). Índice único: NULLs são
+    // distintos no SQLite, então múltiplos legados sem slug convivem até o
+    // backfill preenchê-los.
+    slug: text('slug'),
+    ordem: integer('ordem').notNull(),
+  },
+  (t) => [uniqueIndex('sections_slug_unique').on(t.slug)],
+);
 
 // Slug único por section (não global): duas sections podem ter "overview".
 export const pages = sqliteTable(

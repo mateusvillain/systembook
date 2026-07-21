@@ -7,14 +7,29 @@ import { LoginPage } from './pages/LoginPage.js';
 import { DashboardPage } from './pages/DashboardPage.js';
 import { UsersPage } from './pages/UsersPage.js';
 import { UploadTokensPage } from './pages/UploadTokensPage.js';
+import { LandingPageSettingsPage } from './pages/LandingPageSettingsPage.js';
 import { TabContentPage } from './pages/TabContentPage.js';
 import { PageHistoryPage } from './pages/PageHistoryPage.js';
 import { PublicPage } from './pages/PublicPage.js';
+import { PublicLayout } from './features/public/PublicLayout.js';
+import { PublicHome } from './features/public/PublicHome.js';
+import { PublicPageView } from './features/public/PublicPageView.js';
 import { AdminLayout } from './components/AdminLayout.js';
 
 const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
-  // Doc pública (TASK-50) — fora do AdminLayout: sem auth, sem chrome de admin.
+  // Doc pública navegável (TASK-52) — árvore de rotas separada do AdminLayout:
+  // sem auth, sem chrome de admin.
+  {
+    path: '/docs',
+    element: <PublicLayout />,
+    children: [
+      { index: true, element: <PublicHome /> },
+      { path: ':sectionSlug/:pageSlug', element: <PublicPageView /> },
+      { path: ':sectionSlug/:pageSlug/:tabId', element: <PublicPageView /> },
+    ],
+  },
+  // Link direto por id (TASK-50) — mantido para bookmarks/preview sem slug.
   { path: '/p/:pageId', element: <PublicPage /> },
   {
     path: '/',
@@ -23,6 +38,7 @@ const router = createBrowserRouter([
       { index: true, element: <DashboardPage /> },
       { path: 'admin/users', element: <UsersPage /> },
       { path: 'admin/settings/tokens', element: <UploadTokensPage /> },
+      { path: 'admin/settings/landing-page', element: <LandingPageSettingsPage /> },
       { path: 'pages/:pageId/tabs/:tabId', element: <TabContentPage /> },
       { path: 'pages/:pageId/history', element: <PageHistoryPage /> },
     ],
