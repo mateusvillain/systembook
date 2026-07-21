@@ -38,6 +38,7 @@ export function LoginPage() {
 
   return (
     <main
+      className="sb-admin"
       style={{
         fontFamily: 'system-ui',
         maxWidth: 360,

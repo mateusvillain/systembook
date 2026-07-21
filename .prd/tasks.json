@@ -522,7 +522,7 @@
     "title": "Setup Tailwind CSS + shadcn/ui in the admin panel",
     "category": "setup",
     "specFilePath": ".prd/tasks/TASK-75.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-76",

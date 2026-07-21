@@ -15,25 +15,25 @@
       "step": 1,
       "description": "Install and configure Tailwind",
       "details": "Add `tailwindcss` + its Vite plugin to `apps/admin`, wire into `vite.config.ts`, add the global stylesheet import. Scope carefully so the utility reset doesn't bleed into `.sb-public` or `editor.css` (Tailwind's preflight reset can affect prose-style content — verify the public doc pages and the Tiptap editor content render unchanged).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Initialize shadcn/ui",
       "details": "Run the shadcn CLI init for `apps/admin`, producing `components.json` and `lib/utils.ts`. Pick and document a base color (recommend neutral/slate, consistent with the current minimal aesthetic) and border-radius scale.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Smoke test",
       "details": "Install the `Button` component via the shadcn CLI and render it once (e.g. temporarily in `DashboardPage` or wherever is least disruptive) to confirm the pipeline (Tailwind classes + CVA variants) works end-to-end.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Verify no regressions",
       "details": "Run the admin app in the browser; confirm the public doc pages (`/docs/...`) and the Tiptap editor still render as before. Run the full fan-out (`pnpm lint`/`typecheck`/`test`).",
-      "pass": false
+      "pass": true
     }
   ],
   "dependencies": [],
@@ -41,5 +41,6 @@
   "technicalNotes": [
     "Pin Tailwind/shadcn versions compatible with Vite 6 + React 19 (current admin stack) — verify before locking in the exact major version at implementation time.",
     "This task is pure setup: no existing screen is migrated here. TASK-77..80 do the actual per-screen migration."
-  ]
+  ],
+  "passes": true
 }
