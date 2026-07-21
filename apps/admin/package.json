@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@radix-ui/react-label": "^2.1.12",
     "@radix-ui/react-slot": "^1.3.0",
     "@systembook/schema": "workspace:*",
     "@tanstack/react-query": "^5.101.2",
