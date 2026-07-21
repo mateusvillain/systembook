@@ -71,8 +71,11 @@ describe('revisions router (TASK-35) + pages.restoreRevision (TASK-36)', () => {
     const r1 = await caller.pages.publish({ pageId, mensagem: 'Primeira' });
 
     const full = await caller.revisions.getById({ id: r1.id });
-    expect(full.snapshot.tabs).toHaveLength(1);
-    expect(full.snapshot.tabs[0]?.blocks[0]).toMatchObject({ type: 'paragraph' });
+    // tab primária (corpo) + a tab de usuário 'Usage' (TASK-66)
+    expect(full.snapshot.tabs).toHaveLength(2);
+    expect(full.snapshot.tabs.find((t) => t.tabId === tabId)?.blocks[0]).toMatchObject({
+      type: 'paragraph',
+    });
     expect(full.autorEmail).toBe('editor@test.local');
 
     await expect(caller.revisions.getById({ id: 'nao-existe' })).rejects.toMatchObject({
@@ -100,7 +103,7 @@ describe('revisions router (TASK-35) + pages.restoreRevision (TASK-36)', () => {
 
       const anon = callerFor(db, null);
       const snapshot = await anon.revisions.getLatestPublished({ pageId });
-      expect(snapshot?.tabs[0]?.blocks[0]).toMatchObject({
+      expect(snapshot?.tabs.find((t) => t.tabId === tabId)?.blocks[0]).toMatchObject({
         content: { body: [{ type: 'text', text: 'Versão 2' }] },
       });
     });
@@ -129,7 +132,7 @@ describe('revisions router (TASK-35) + pages.restoreRevision (TASK-36)', () => {
 
     // e a nova revisão encadeada também captura esse mesmo estado
     const newest = await caller.revisions.getById({ id: result.revision.id });
-    expect(newest.snapshot.tabs[0]?.blocks[0]).toMatchObject({
+    expect(newest.snapshot.tabs.find((t) => t.tabId === tabId)?.blocks[0]).toMatchObject({
       content: { body: [{ type: 'text', text: 'Versão 1' }] },
     });
 

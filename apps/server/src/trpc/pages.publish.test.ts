@@ -68,9 +68,11 @@ describe('pages.publish (TASK-34)', () => {
     expect(revision.autorId).toBe(editor.userId);
 
     const snapshot = JSON.parse(revision.snapshotJson) as {
-      tabs: { tabId: string; titulo: string; blocks: { type: string }[] }[];
+      tabs: { tabId: string; titulo: string; isPrimary: boolean; blocks: { type: string }[] }[];
     };
-    expect(snapshot.tabs).toHaveLength(2);
+    // tab primária (corpo) + as 2 tabs de usuário (TASK-66)
+    expect(snapshot.tabs).toHaveLength(3);
+    expect(snapshot.tabs.some((t) => t.isPrimary)).toBe(true);
     expect(snapshot.tabs.find((t) => t.tabId === usageTabId)?.blocks[0]?.type).toBe('paragraph');
     expect(snapshot.tabs.find((t) => t.tabId === codeTabId)?.blocks[0]?.type).toBe('code');
     expect(db.select().from(revisions).all()).toHaveLength(1);

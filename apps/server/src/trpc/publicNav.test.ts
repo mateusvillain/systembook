@@ -79,7 +79,10 @@ describe('navegação pública (TASK-52)', () => {
     const anon = callerFor(db, null);
     const resolved = await anon.pages.getPublishedBySlug({ sectionSlug: 'botoes', pageSlug: 'primary' });
     expect(resolved?.titulo).toBe('Primary');
-    expect(resolved?.snapshot?.tabs[0]?.blocks[0]).toMatchObject({ type: 'paragraph' });
+    // tabs[0] é a primária (corpo, vazio); o conteúdo está na tab de usuário
+    expect(resolved?.snapshot?.tabs.find((t) => t.tabId === tab.id)?.blocks[0]).toMatchObject({
+      type: 'paragraph',
+    });
 
     expect(
       await anon.pages.getPublishedBySlug({ sectionSlug: 'botoes', pageSlug: 'nope' }),
