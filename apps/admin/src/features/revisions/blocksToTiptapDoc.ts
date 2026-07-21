@@ -45,6 +45,16 @@ function blockToNode(block: Block): JSONContent {
         type: 'componentEmbed',
         attrs: { componentName: block.content.componentName, variantId: block.content.variantId },
       };
+    case 'dos-donts':
+      return {
+        type: 'dosDonts',
+        attrs: {
+          variant: block.content.variant,
+          titulo: block.content.titulo,
+          cover: block.content.cover ?? null,
+        },
+        content: block.content.descricao as JSONContent[],
+      };
   }
 }
 

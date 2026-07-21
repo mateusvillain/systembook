@@ -12,7 +12,8 @@ export type BlockType =
   | 'image'
   | 'table'
   | 'callout'
-  | 'component-embed';
+  | 'component-embed'
+  | 'dos-donts';
 
 /** JSON de conteúdo Tiptap (ProseMirror doc/node). Não re-validado neste pacote. */
 export type TiptapJson = unknown;
@@ -94,6 +95,28 @@ export interface ComponentEmbedBlockContent {
   variantId: string | null;
 }
 
+export type DosDontsVariant = 'do' | 'dont';
+
+/** Cover opcional do bloco `dos-donts` (TASK-71/73): imagem OU o mesmo tipo
+ * de embed do bloco `component-embed` (reaproveita o preview real, TASK-47). */
+export type DosDontsCover =
+  | { kind: 'image'; src: string; alt: string }
+  | { kind: 'component-embed'; componentName: string; variantId: string | null };
+
+/**
+ * Fase 8 (TASK-71): card de convenção de uso (Do/Don't), análogo ao `callout`
+ * na forma — o nó Tiptap é `{ type: 'dosDonts', attrs: { variant, titulo,
+ * cover }, content: [...] }`, com `descricao` guardando o `content` aninhado
+ * (block+, mesmo padrão do `callout`). `cover` é opcional por decisão do
+ * dono do produto — um card sem cover é válido e comum.
+ */
+export interface DosDontsBlockContent {
+  variant: DosDontsVariant;
+  titulo: string;
+  descricao: TiptapJson;
+  cover?: DosDontsCover;
+}
+
 export type HeadingBlock = BlockBase<'heading', HeadingBlockContent>;
 export type ParagraphBlock = BlockBase<'paragraph', ParagraphBlockContent>;
 export type ListBlock = BlockBase<'list', ListBlockContent>;
@@ -102,6 +125,7 @@ export type ImageBlock = BlockBase<'image', ImageBlockContent>;
 export type TableBlock = BlockBase<'table', TableBlockContent>;
 export type CalloutBlock = BlockBase<'callout', CalloutBlockContent>;
 export type ComponentEmbedBlock = BlockBase<'component-embed', ComponentEmbedBlockContent>;
+export type DosDontsBlock = BlockBase<'dos-donts', DosDontsBlockContent>;
 
 export type Block =
   | HeadingBlock
@@ -111,7 +135,8 @@ export type Block =
   | ImageBlock
   | TableBlock
   | CalloutBlock
-  | ComponentEmbedBlock;
+  | ComponentEmbedBlock
+  | DosDontsBlock;
 
 /**
  * Forma do `snapshot_json` de `revisions` (TASK-33): snapshot da **página

@@ -127,6 +127,25 @@ describe('search.query (TASK-53) — FTS5 full-text', () => {
     expect(results[0]).toMatchObject({ pageId, pageSlug: 'button' });
   });
 
+  it('indexa título e descrição de um bloco dos-donts (TASK-71)', async () => {
+    const caller = callerFor(db, editor);
+    const doc: TiptapDoc = {
+      type: 'doc',
+      content: [
+        {
+          type: 'dosDonts',
+          attrs: { variant: 'do', titulo: 'Use hierarquia visual zurbagante', cover: null },
+          content: [{ type: 'paragraph', content: [{ type: 'text', text: 'texto quixotesco da descrição' }] }],
+        },
+      ],
+    };
+    await caller.blocks.saveDraft({ tabId, doc });
+    await caller.pages.publish({ pageId });
+
+    expect(await caller.search.query({ q: 'zurbagante' })).toHaveLength(1); // título
+    expect(await caller.search.query({ q: 'quixotesco' })).toHaveLength(1); // descrição
+  });
+
   it('q em branco (só símbolos) devolve lista vazia sem erro de sintaxe FTS5', async () => {
     const caller = callerFor(db, editor);
     await caller.blocks.saveDraft({ tabId, doc: paragraph('algo publicado') });

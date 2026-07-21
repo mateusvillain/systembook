@@ -24,6 +24,7 @@ const SEARCHABLE_BLOCK_TYPES = new Set<BlockType>([
   'list',
   'callout',
   'table',
+  'dos-donts',
 ]);
 
 /** Coleta recursivamente todo `text` de um nó/array Tiptap, ignorando marks. */
@@ -41,14 +42,21 @@ function collectText(node: unknown, out: string[]): void {
 
 /**
  * Extrai o texto plano pesquisável de um snapshot de página: concatena o texto
- * de todos os blocos heading/paragraph/list/callout/table de todas as tabs,
- * reduzindo o JSON Tiptap (com marks) a prosa pura.
+ * de todos os blocos heading/paragraph/list/callout/table/dos-donts de todas
+ * as tabs, reduzindo o JSON Tiptap (com marks) a prosa pura.
  */
 export function extractSearchableText(snapshot: PageSnapshot): string {
   const parts: string[] = [];
   for (const tab of snapshot.tabs) {
     for (const block of tab.blocks) {
       if (!SEARCHABLE_BLOCK_TYPES.has(block.type)) continue;
+      // dos-donts não tem `body`: o título é texto puro e a descrição é o
+      // corpo rich-text aninhado (mesmo formato de conteúdo do callout).
+      if (block.type === 'dos-donts') {
+        parts.push(block.content.titulo);
+        collectText(block.content.descricao, parts);
+        continue;
+      }
       collectText((block.content as { body?: unknown }).body, parts);
     }
   }

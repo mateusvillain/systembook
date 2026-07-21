@@ -79,6 +79,16 @@ function nodeToBlock(node: TiptapNode): { tipo: BlockType; conteudo: unknown } {
           variantId: node.attrs?.variantId ?? null,
         },
       };
+    case 'dosDonts':
+      return {
+        tipo: 'dos-donts',
+        conteudo: {
+          variant: node.attrs?.variant ?? 'do',
+          titulo: node.attrs?.titulo ?? '',
+          cover: node.attrs?.cover ?? undefined,
+          descricao: node.content,
+        },
+      };
     default:
       throw new UnknownNodeTypeError(node.type);
   }
@@ -119,6 +129,14 @@ function blockToNode(tipo: BlockType, conteudo: unknown): TiptapNode {
       return {
         type: 'componentEmbed',
         attrs: { componentName: c.componentName, variantId: c.variantId },
+      };
+    }
+    case 'dos-donts': {
+      const c = conteudo as BlockContentFor<'dos-donts'>;
+      return {
+        type: 'dosDonts',
+        attrs: { variant: c.variant, titulo: c.titulo, cover: c.cover ?? null },
+        content: c.descricao as TiptapNode[],
       };
     }
   }

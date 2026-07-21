@@ -494,7 +494,7 @@
     "title": "Dos and Don'ts block: schema type and serialization",
     "category": "data-model",
     "specFilePath": ".prd/tasks/TASK-71.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-72",
