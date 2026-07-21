@@ -508,7 +508,7 @@
     "title": "Dos and Don'ts block: optional cover (image or component-embed)",
     "category": "ui-ux",
     "specFilePath": ".prd/tasks/TASK-73.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-74",

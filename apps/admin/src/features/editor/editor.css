@@ -203,6 +203,61 @@
   margin-bottom: 0;
 }
 
+/* Cover do dos-donts (TASK-73) — opcional, imagem ou component-embed */
+.sb-editor .sb-dos-donts-cover {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+
+.sb-editor .sb-dos-donts-cover--empty {
+  padding: 0.35rem 0;
+}
+
+.sb-editor .sb-dos-donts-cover-image-form {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.sb-editor .sb-dos-donts-cover-image-form input {
+  flex: 1;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.8rem;
+}
+
+.sb-editor .sb-dos-donts-cover-image {
+  max-width: 100%;
+  max-height: 220px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.sb-editor .sb-dos-donts-cover-embed,
+.sb-editor .sb-dos-donts-cover-embed-frame {
+  width: 100%;
+  min-height: 160px;
+  border-radius: 4px;
+}
+
+.sb-editor .sb-dos-donts-cover-embed {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  font-size: 0.85rem;
+  background: #f6f6f6;
+  border: 1px dashed #ccc;
+  text-align: center;
+  padding: 0.5rem;
+}
+
+.sb-editor .sb-dos-donts-cover-embed-frame {
+  border: none;
+}
+
 /* Component embed — placeholder (sem seleção / carregando / sem artefato) */
 .sb-editor .sb-component-embed {
   display: flex;
