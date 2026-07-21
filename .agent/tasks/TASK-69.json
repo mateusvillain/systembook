@@ -14,32 +14,37 @@
       "step": 1,
       "description": "Confirm scope: revisions feed vs. full audit log",
       "details": "Confirm with the project owner. RECOMMENDED MVP: aggregate the existing `revisions` (publish + restore events already recorded) into a global feed — real data, no new table. LARGER ALTERNATIVE (note as follow-up, do not silently build): a true audit log capturing structural mutations too (user/section/page/tab create-rename-delete, token create/revoke) would require a new `audit_log` table and instrumenting many mutations. Pick the scope before building.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Backend query",
       "details": "Add `revisions.listRecent` in `apps/server/src/trpc/routers/revisions.ts`: leftJoin `users` (autor_id is SET NULL on user delete — mirror `listByPage`) and join `pages` for the page title, order by `criado_em` desc with a `rowid` tiebreaker, `limit` input with a sane default/cap. Update the permissions matrix in `router.ts`. Decide protectedProcedure (admin+editor) vs adminProcedure — a panel-wide view leans admin, confirm in step 1.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Admin page + route + nav",
       "details": "Add a `GlobalHistoryPage` and route (`/admin/history`) in `apps/admin/src/main.tsx`, plus a nav link in `AdminLayout.tsx` (respect the role gate chosen in step 1). Reuse the revision-row presentation patterns from `features/revisions/RevisionHistoryList.tsx` where sensible; each row links to `/pages/:pageId/history`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Tests + verification",
       "details": "Add a vitest for `revisions.listRecent` (multiple pages, ordering with same-second tiebreak, null author after delete, limit). Verify in the browser: publish/restore across two pages and confirm the global feed shows both, newest first, with working links.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-33", "TASK-34", "TASK-35"],
+  "dependencies": [
+    "TASK-33",
+    "TASK-34",
+    "TASK-35"
+  ],
   "estimatedComplexity": "medium",
   "technicalNotes": [
     "The per-page history already exists (`revisions.listByPage`, `/pages/:pageId/history`); this task adds the aggregated cross-page view, not a replacement.",
     "`criado_em` has second resolution — reuse the rowid tiebreaker lesson from TASK-35 so fast sequential publishes don't tie in the feed order.",
     "If the owner wants a full audit log (structural events), scope that as a separate follow-up task with its own `audit_log` table — it's materially larger than aggregating revisions."
-  ]
+  ],
+  "passes": true
 }
