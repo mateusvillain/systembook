@@ -1,10 +1,10 @@
 # Memória do projeto — SystemBook
 
-> Log de desenvolvimento mantido pelo agente. Última atualização: **2026-07-20** (Fase 6 **completa** na branch `feature/fase-6-layout-publico` — TASK-52..57 concluídas e verificadas. TASK-57: layout responsivo da doc pública (drawer mobile + busca em overlay + tabelas roláveis). **Próximo: abrir PR da Fase 6 e mergear na `main`**, depois iniciar a Fase 7 (TASK-58+, empacotamento/lançamento)).
+> Log de desenvolvimento mantido pelo agente. Última atualização: **2026-07-20** (Fase 6 **mergeada na `main`** via **PR #4** — TASK-52..57. Uma regressão pega na revisão de código (`sections.reorder` × section reservada da landing) foi corrigida antes do merge. Branch deletada. **Próximo: iniciar a Fase 7 (TASK-58+, empacotamento/lançamento)**).
 
 ## Estado atual
 
-**Tasks 1–57 concluídas e verificadas** (1–51 mergeadas na `main`; TASK-52..57 na branch da Fase 6, **prontas para PR**). Fases 0–6 fechadas. Próximo passo: **abrir o PR da Fase 6 → merge na `main`**, depois Fase 7 (TASK-58+). Existe um `CLAUDE.md` na raiz com o guia do repositório. **Atenção à numeração real dos `.json`** (a tabela de fases herdada abaixo estava trocada): TASK-52 layout público, TASK-53 busca FTS5 (backend), TASK-54 UI de busca, **TASK-55 tema dark/light + tipografia**, TASK-56 landing customizável, TASK-57 layout responsivo.
+**Tasks 1–57 concluídas, verificadas e mergeadas na `main`** (Fase 6 via **PR #4**, mergeado). Fases 0–6 fechadas. Próximo passo: **iniciar a Fase 7** (TASK-58+, empacotamento/lançamento). Existe um `CLAUDE.md` na raiz com o guia do repositório. **Atenção à numeração real dos `.json`** (a tabela de fases herdada abaixo estava trocada): TASK-52 layout público, TASK-53 busca FTS5 (backend), TASK-54 UI de busca, **TASK-55 tema dark/light + tipografia**, TASK-56 landing customizável, TASK-57 layout responsivo.
 
 | Task | Status | Verificação |
 | --- | --- | --- |
@@ -83,6 +83,7 @@ Critérios de sucesso do PRD (§1): fim da Fase 3 = CMS de texto utilizável sem
 - Histórico inicial: **14 commits Conventional Commits** na `main` (chore/build/feat/test/ci), pushados para `github.com/mateusvillain/systembook`.
 - CI (GitHub Actions): Node 24, pnpm via campo `packageManager`, steps separados Lint → Typecheck → Test. **Gotcha corrigido**: `pnpm/action-setup@v4` não aceita `version:` no workflow quando `package.json` tem `packageManager` — deixar só o `packageManager`.
 - Branch de teste `ci-test/lint-failure` foi criado e removido (local + remoto) após validar a falha seletiva do lint.
+- **PRs mergeados**: #1 (Fase 4), #2 (Fase 5), #3 (fix proxy Vite dev), **#4 (Fase 6 — TASK-52..57)**. Cada fase fecha com PR + merge na `main` e branch deletada; o CI (2 jobs `build`) precisa estar verde antes do merge.
 
 ## Arquitetura de auth (Fase 1)
 
@@ -273,7 +274,7 @@ O painel em dev acessa-se por `http://localhost:5173`; o proxy do `vite.config.t
 
 ## Pendências / próximos passos
 
-1. **Fase 6 COMPLETA** (TASK-52..57 ✅). **PR #4 aberto** (`feature/fase-6-layout-publico` → `main`): https://github.com/mateusvillain/systembook/pull/4 — CI rodando no push. **Próximo: aguardar CI verde + merge do PR #4**, depois iniciar a **Fase 7** (TASK-58..64: imagem Docker publicada, compose de produção, docs de setup/CI/schema, README, CONTRIBUTING+licença, backup).
+1. **Fase 6 MERGEADA na `main`** (TASK-52..57 ✅) via **PR #4** (branch `feature/fase-6-layout-publico` deletada). CI verde. **Revisão de código pré-merge pegou 1 regressão** (`sections.reorder` validava contra todas as sections incl. a reservada da landing, que é oculta de `sections.list` → reordenar seções no admin dava BAD_REQUEST; corrigido com `ne(id, LANDING_SECTION_ID)` + teste de regressão). Verificado também que `db:generate` roda limpo apesar da migration 0009 (FTS5) não ter snapshot — drizzle-kit só rastreia as 10 tabelas do schema.ts e ignora a virtual table. **Próximo: iniciar a Fase 7** (TASK-58..64: imagem Docker publicada, compose de produção, docs de setup/CI/schema, README, CONTRIBUTING+licença, backup).
 2. Fixes de dev já na `main`: proxy do Vite encaminha `/previews` e `/api/previews` (PR #3) — o embed funciona em `pnpm dev`. Fases 4 e 5 mergeadas (PR #1, #2).
 3. Race conhecido (aceito no MVP): flush de autosave no unmount × fetch do `getByTab` na remontagem — em navegação muito rápida ida-e-volta o editor pode abrir sem o último flush (o dado não se perde no banco; basta recarregar).
 4. `.pnpm-store/` local (criado pelo container de dev) está no `.gitignore`; pode ser apagado à vontade.
