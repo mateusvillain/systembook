@@ -1,0 +1,45 @@
+{
+  "id": "TASK-68",
+  "title": "Page-level content: public read-only render",
+  "category": "ui-ux",
+  "description": "Public-side rendering of page body content: the logged-out documentation view must show a page's body, with tabs (if any) as additional views. Builds on the data model (TASK-65), pipeline (TASK-66), and admin UX (TASK-67).",
+  "acceptanceCriteria": [
+    "The public page render (`/docs/:sectionSlug/:pageSlug`) shows the published page body content",
+    "When a page has user tabs, they render as additional views alongside/after the body; when it has none, only the body shows (no empty tab bar)",
+    "Existing published pages still render correctly after the TASK-65 migration (no regression for tab-only pages)",
+    "Search results and public navigation link to the page body correctly; the primary/body container is not exposed as a separate tab URL to visitors"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Render the body",
+      "details": "Update `apps/admin/src/features/public/PublicPageView.tsx` and `PageRenderer.tsx` to render the primary/body container from the latest published revision as the page body.",
+      "pass": true
+    },
+    {
+      "step": 2,
+      "description": "Optional tabs",
+      "details": "When user tabs exist, render them as additional views (reuse the existing public tab rendering). Ensure the primary container isn't shown as a user tab and its tabId isn't used as a public URL segment.",
+      "pass": true
+    },
+    {
+      "step": 3,
+      "description": "Verify logged out",
+      "details": "With a published page that has body-only content, confirm `/docs/...` renders it logged out; add a tab, republish, confirm body + tab both render; confirm a pre-existing tab-only page still renders. Confirm search deep-links land on the right content.",
+      "pass": true
+    }
+  ],
+  "dependencies": [
+    "TASK-65",
+    "TASK-66",
+    "TASK-50",
+    "TASK-52",
+    "TASK-54"
+  ],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "`PageRenderer` is shared between the admin revision preview and the public view — changes here also affect the read-only revision preview; verify both.",
+    "The public route already handles `/docs/:sectionSlug/:pageSlug` and `/docs/:sectionSlug/:pageSlug/:tabId`; decide how the body maps into that scheme without breaking existing tab deep-links."
+  ],
+  "passes": true
+}

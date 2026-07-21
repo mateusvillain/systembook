@@ -21,8 +21,11 @@ import '../editor/editor.css';
 
 /** Forma estrutural comum aos snapshots vindos das queries de revisão. */
 export interface RenderableSnapshot {
-  tabs: { tabId: string; titulo: string; blocks: unknown[] }[];
+  tabs: { tabId: string; titulo: string; isPrimary?: boolean; blocks: unknown[] }[];
 }
+
+/** Rótulo da "visão" do corpo da página (a tab primária) no tab bar público. */
+export const BODY_VIEW_LABEL = 'Visão geral';
 
 function TabContent({ blocks }: { blocks: unknown[] }) {
   const editor = useEditor(
@@ -54,12 +57,24 @@ export function PageRenderer({
   activeTabId?: string;
   onSelectTab?: (tabId: string) => void;
 }) {
-  const [internalTabId, setInternalTabId] = useState(snapshot.tabs[0]?.tabId);
+  // Separa o corpo (tab primária) das tabs de usuário. Snapshots antigos
+  // (pré-TASK-66) não têm `isPrimary` — nesse caso não há corpo distinto e
+  // todas as entradas são tratadas como tabs (comportamento original).
+  const primary = snapshot.tabs.find((t) => t.isPrimary);
+  const userTabs = primary ? snapshot.tabs.filter((t) => !t.isPrimary) : snapshot.tabs;
+
+  // Visões do tab bar: "Visão geral" (corpo) primeiro, depois as tabs de usuário.
+  const views = [
+    ...(primary ? [{ tabId: primary.tabId, titulo: BODY_VIEW_LABEL, blocks: primary.blocks }] : []),
+    ...userTabs.map((t) => ({ tabId: t.tabId, titulo: t.titulo, blocks: t.blocks })),
+  ];
+
+  const [internalTabId, setInternalTabId] = useState(views[0]?.tabId);
   const controlled = controlledTabId !== undefined && onSelectTab !== undefined;
   const wantedTabId = controlled ? controlledTabId : internalTabId;
 
-  const activeTab = snapshot.tabs.find((t) => t.tabId === wantedTabId) ?? snapshot.tabs[0];
-  if (!activeTab) return <p>Página sem conteúdo.</p>;
+  const activeView = views.find((v) => v.tabId === wantedTabId) ?? views[0];
+  if (!activeView) return <p>Página sem conteúdo.</p>;
 
   const selectTab = (tabId: string) => {
     if (controlled) onSelectTab(tabId);
@@ -68,28 +83,30 @@ export function PageRenderer({
 
   return (
     <div>
-      {snapshot.tabs.length > 1 && (
+      {/* Tab bar só quando há mais de uma visão (corpo + ≥1 tab de usuário, ou
+          múltiplas tabs em snapshots antigos). Página só-corpo não mostra bar. */}
+      {views.length > 1 && (
         <div role="tablist" style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
-          {snapshot.tabs.map((tab) => (
+          {views.map((view) => (
             <button
-              key={tab.tabId}
+              key={view.tabId}
               type="button"
               role="tab"
-              aria-selected={tab.tabId === activeTab.tabId}
-              onClick={() => selectTab(tab.tabId)}
+              aria-selected={view.tabId === activeView.tabId}
+              onClick={() => selectTab(view.tabId)}
               style={{
                 padding: '0.35rem 0.75rem',
                 border: '1px solid #ccc',
-                background: tab.tabId === activeTab.tabId ? '#eef4ff' : 'white',
+                background: view.tabId === activeView.tabId ? '#eef4ff' : 'white',
                 cursor: 'pointer',
               }}
             >
-              {tab.titulo}
+              {view.titulo}
             </button>
           ))}
         </div>
       )}
-      <TabContent key={activeTab.tabId} blocks={activeTab.blocks} />
+      <TabContent key={activeView.tabId} blocks={activeView.blocks} />
     </div>
   );
 }

@@ -1,0 +1,51 @@
+{
+  "id": "TASK-70",
+  "title": "Auto-generate page slug from title when left blank",
+  "category": "functional",
+  "description": "Creating a page currently requires the user to type a slug: `pages.create` takes `slug: slugSchema` (required) and the admin `CreatePageForm` has a separate slug input. When the slug field is left empty, the system should derive it automatically from the page title (e.g. title 'Get started' → slug 'get-started').",
+  "acceptanceCriteria": [
+    "When the slug is omitted/blank on page creation, a valid slug is derived from the title: lowercased, spaces/punctuation collapsed to single hyphens, diacritics stripped (e.g. 'Botão' → 'botao', 'Get started' → 'get-started'), trimmed of leading/trailing hyphens — always matching the existing `slugSchema` regex `^[a-z0-9]+(-[a-z0-9]+)*$`",
+    "If the derived slug collides with an existing page in the same section, it is de-duplicated automatically (e.g. `get-started-2`) rather than throwing a CONFLICT — auto-derivation should not fail the user; an explicitly typed slug keeps the existing CONFLICT behavior",
+    "If a slug IS typed, it is used as-is and validated exactly as today (no silent rewriting of user input)",
+    "A title that yields an empty slug after normalization (e.g. all-emoji/all-symbol title) is handled with a clear validation error, not a broken empty slug",
+    "The admin `CreatePageForm` slug field is marked optional with a hint that it will be generated from the title"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Write a slugify helper",
+      "details": "Add a pure `slugify(titulo: string): string` in the server (near `slugSchema` in `apps/server/src/trpc/routers/pages.ts` or a small util): Unicode NFD normalize + strip combining marks for diacritics, lowercase, replace non-alphanumeric runs with a single hyphen, trim leading/trailing hyphens. Cover it with unit tests including accented and symbol-heavy inputs.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Make slug optional in the API and derive server-side",
+      "details": "Change `pages.create` input so `slug` is optional. When absent/blank, derive via `slugify(titulo)`; if the result is empty, throw a BAD_REQUEST explaining the title has no sluggable characters. Keep server-side derivation as the single source of truth.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Auto de-duplicate derived slugs within the section",
+      "details": "For derived slugs only, resolve collisions against `(section_id, slug)` by appending `-2`, `-3`, … until free (query existing slugs in the section, or catch the UNIQUE violation and retry with the next suffix). Explicitly typed slugs keep raising CONFLICT (`isUniqueViolation` → `slugConflict()`), unchanged.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Admin UI",
+      "details": "In `apps/admin/src/features/navigation/SidebarTree.tsx` `CreatePageForm`: make the slug input optional (remove any required constraint), update the placeholder/hint to indicate it is generated from the title when left blank, and stop sending an empty string as a real slug (send undefined so the server derives). Optionally show a live preview of the derived slug.",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Tests + verification",
+      "details": "Unit-test `slugify` and the `pages.create` derivation + de-dup path (blank slug → derived; duplicate title in same section → `-2`; typed duplicate slug → CONFLICT; symbol-only title → BAD_REQUEST). Verify in the browser: create 'Get started' with no slug → `get-started`; create a second 'Get started' → `get-started-2`.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-19", "TASK-20"],
+  "estimatedComplexity": "low",
+  "technicalNotes": [
+    "`slugSchema` (`^[a-z0-9]+(-[a-z0-9]+)*$`) is shared by `create` and `updateSlug` in `pages.ts` — the derived slug must satisfy it. Diacritic stripping matters because domain titles are in Portuguese (accents are common).",
+    "Deriving on the server (not the client) keeps one canonical implementation and avoids client/server drift; a client-side live preview is fine as long as the server value is authoritative."
+  ]
+}
