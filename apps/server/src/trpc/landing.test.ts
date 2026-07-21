@@ -79,4 +79,19 @@ describe('landing page (TASK-56)', () => {
     await expect(anon.landing.getEditorTarget()).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
     await expect(anon.landing.get()).resolves.toMatchObject({ snapshot: null });
   });
+
+  it('sections.reorder funciona com a section reservada presente (não exige incluí-la)', async () => {
+    const caller = callerFor(db, editor);
+    const a = await caller.sections.create({ titulo: 'A' });
+    const b = await caller.sections.create({ titulo: 'B' });
+
+    // O cliente só conhece as sections visíveis (list exclui a landing); a
+    // reordenação com apenas esses ids não pode falhar por causa da reservada.
+    const visible = await caller.sections.list();
+    expect(visible.some((s) => s.id === LANDING_SECTION_ID)).toBe(false);
+
+    await expect(
+      caller.sections.reorder({ orderedIds: [b.id, a.id] }),
+    ).resolves.toEqual({ ok: true });
+  });
 });
