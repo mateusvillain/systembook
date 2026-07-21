@@ -403,48 +403,55 @@
     "title": "Docker image build and publish to registry via CI",
     "category": "setup",
     "specFilePath": ".agent/tasks/TASK-58.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-59",
     "title": "Production docker-compose.yml reference",
     "category": "documentation",
     "specFilePath": ".agent/tasks/TASK-59.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-60",
     "title": "Setup documentation: install connector, configure CI, bootstrap instance, create first admin",
     "category": "documentation",
     "specFilePath": ".agent/tasks/TASK-60.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-61",
     "title": "Documentation of *.preview.tsx schema with examples",
     "category": "documentation",
     "specFilePath": ".agent/tasks/TASK-61.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-62",
     "title": "README with project positioning and comparison vs Storybook/Zeroheight/Decap",
     "category": "documentation",
     "specFilePath": ".agent/tasks/TASK-62.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-63",
     "title": "CONTRIBUTING.md and open source license",
     "category": "documentation",
     "specFilePath": ".agent/tasks/TASK-63.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-64",
     "title": "SQLite backup documented as operator responsibility (Litestream)",
     "category": "documentation",
     "specFilePath": ".agent/tasks/TASK-64.json",
+    "passes": true
+  },
+  {
+    "id": "TASK-65",
+    "title": "Publish @systembook/connector (and its workspace deps) to npm with a working CLI bin",
+    "category": "setup",
+    "specFilePath": ".agent/tasks/TASK-65.json",
     "passes": false
   }
 ]

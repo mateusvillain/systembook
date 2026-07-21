@@ -1,0 +1,75 @@
+name: Docker Publish
+
+# Publica a imagem de produção (Dockerfile da raiz, TASK-6) no GitHub Container
+# Registry (GHCR). Escolhemos GHCR por não exigir conta/segredo além do próprio
+# repositório GitHub — a autenticação usa o GITHUB_TOKEN embutido do Actions.
+#
+# ⚠️ Passo manual único (nota da TASK-58): pacotes do GHCR nascem **privados**
+# mesmo em repositório público. Após a primeira publicação, torne o pacote
+# público em Repo → Packages → systembook → Package settings → Change visibility,
+# para que terceiros consigam `docker pull` sem autenticar.
+
+on:
+  push:
+    branches: [main] # publica a tag `edge` (imagem viva da main)
+    tags: ['v*'] # publica a versão semver + `latest` num release
+  workflow_dispatch: {}
+
+env:
+  REGISTRY: ghcr.io
+  # Nome da imagem = owner/repo em minúsculas (ghcr.io/mateusvillain/systembook).
+  # Usar github.repository mantém o workflow correto em forks.
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write # necessário para o push no GHCR via GITHUB_TOKEN
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Derive image tags and labels
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            type=edge,branch=main
+
+      # QEMU permite buildar a variante arm64 nos runners amd64 do GitHub
+      # (por emulação) — necessário para o multi-arch abaixo.
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          # Imagem multi-arch: roda nativo em x86-64 (Intel/AMD) e em ARM64
+          # (Apple Silicon, AWS Graviton, Oracle Ampere, Raspberry Pi). O build
+          # arm64 sai por emulação QEMU, então o run leva ~3-5min (só no release).
+          platforms: linux/amd64,linux/arm64
+          # Sem tag e sem branch main (ex.: workflow_dispatch em outra branch)
+          # nada seria empurrado; só publica quando há tags a aplicar.
+          push: ${{ steps.meta.outputs.tags != '' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Cache de camadas via GitHub Actions — evita rebuild completo a cada run.
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

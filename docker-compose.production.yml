@@ -1,0 +1,59 @@
+# ==============================================================================
+# SystemBook — compose de PRODUÇÃO (referência para self-hosting)
+#
+# Roda a imagem publicada no GHCR (TASK-58), NÃO um build local. É distinto do
+# docker-compose.yml (dev, com hot-reload) — use este em produção.
+#
+# Uso:
+#   1. Copie .env.production.example para .env e preencha os valores:
+#        cp .env.production.example .env && $EDITOR .env
+#   2. Suba:
+#        docker compose -f docker-compose.production.yml up -d
+#   3. Acesse http://localhost:3000 (ou a porta que definir em PORT).
+#
+# Variáveis de ambiente (definidas no arquivo .env que VOCÊ cria — nunca
+# commitado). Espelham os placeholders do .env.local:
+#   Obrigatórias:
+#     SESSION_SECRET          segredo dos cookies de sessão (openssl rand -base64 32)
+#     ARGON2_SECRET           pepper do hash de senha    (openssl rand -base64 32)
+#     INITIAL_ADMIN_EMAIL     email do admin criado no 1º boot (banco vazio)
+#     INITIAL_ADMIN_PASSWORD  senha do admin criado no 1º boot
+#   Opcionais (têm default na imagem):
+#     PORT                    porta HTTP (default 3000)
+#     DATABASE_PATH           caminho do SQLite (default /app/data/systembook.db —
+#                             deve ficar sob /app/data para persistir no volume)
+#     PREVIEWS_PATH           artefatos de preview (default /app/data/previews)
+# ==============================================================================
+
+services:
+  app:
+    # :latest acompanha o último release. Para reprodutibilidade, fixe uma
+    # versão, ex.: ghcr.io/mateusvillain/systembook:0.1.0
+    image: ghcr.io/mateusvillain/systembook:latest
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      # host:container — ambos seguem PORT (default 3000). Compose lê PORT do
+      # mesmo arquivo .env (que ele carrega automaticamente para interpolação).
+      - '${PORT:-3000}:${PORT:-3000}'
+    volumes:
+      # Volume nomeado no diretório de dados da imagem (VOLUME /app/data): o
+      # SQLite e os previews sobrevivem a recriações/updates do container.
+      - systembook-data:/app/data
+    healthcheck:
+      # A imagem é node:slim (sem wget/curl) — usamos o próprio node. O endpoint
+      # /trpc/health.check (TASK-5) responde 200 quando o server está pronto.
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/trpc/health.check').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  systembook-data:
