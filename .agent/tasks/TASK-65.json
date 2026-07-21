@@ -14,31 +14,36 @@
       "step": 1,
       "description": "Decide the data model (owner confirmation)",
       "details": "RECOMMENDED (lowest risk): every page owns one implicit 'primary' content container that renders as the page body without tab chrome; user tabs are additional. Implement by guaranteeing a system primary tab per page (keep `blocks.tab_id` NOT NULL) — so the revisions/snapshot/FTS machinery that is keyed on tabs (`buildPageSnapshot`, `serialize.ts`, `reindexPageFts`) needs no structural change. ALTERNATIVE (larger blast radius): make `blocks.tab_id` nullable and add nullable `blocks.page_id` with a one-of constraint. Confirm the choice before writing the migration — it determines the scope of TASK-66/67/68.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Update schema.ts",
       "details": "Apply the step-1 decision in `apps/server/src/db/schema.ts`. For the primary-tab approach: add a marker to `tabs` (e.g. `is_primary` boolean or a reserved `tipo`) so a page's body container is identifiable and excludable from the tab bar. Keep FK cascade semantics.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Generate migration + backfill",
       "details": "Run `db:generate` to create the migration. Add the backfill so every existing page gets a primary container: promote each page's first tab (lowest ordem) to primary, or create one where a page has no tabs. Ensure idempotency and FK integrity.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Verify migration + types",
       "details": "Run migrations on a fresh temp DB and on a copy with existing content; confirm no content is lost and every page has exactly one primary container. `pnpm --filter @systembook/server test` and `pnpm typecheck` green.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-19", "TASK-21", "TASK-30"],
+  "dependencies": [
+    "TASK-19",
+    "TASK-21",
+    "TASK-30"
+  ],
   "estimatedComplexity": "medium",
   "technicalNotes": [
     "This decision is the crux of the whole page-content feature: the primary-tab approach keeps the revisions/snapshot/FTS pipeline (keyed on tabs) intact and is strongly preferred for the MVP; the nullable page_id approach is conceptually cleaner but touches every consumer of blocks.",
     "Migrations in `apps/server/drizzle/` are generated, never hand-edited — the one documented exception is raw virtual tables (FTS5). A data backfill may need raw SQL appended in the generated migration; follow the FTS5 precedent if so."
-  ]
+  ],
+  "passes": true
 }
