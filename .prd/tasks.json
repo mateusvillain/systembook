@@ -529,7 +529,7 @@
     "title": "Add lucide-react (icons) and sonner (toasts); establish the toast-vs-inline convention",
     "category": "setup",
     "specFilePath": ".prd/tasks/TASK-76.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-77",

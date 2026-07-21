@@ -15,30 +15,33 @@
       "step": 1,
       "description": "Install and mount",
       "details": "Add `lucide-react` + `sonner`; mount `<Toaster/>` once at the app root.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Convert publish feedback to a toast",
       "details": "In `apps/admin/src/pages/PageContentPage.tsx`, replace the inline banner state with `toast.success(...)`/`toast.error(...)` calls from `sonner` on the `pages.publish` mutation's `onSuccess`/`onError`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Document the convention",
       "details": "Write the toast-vs-inline rule where the `Toaster` is mounted, and reference it from this task's technical notes so TASK-77..80 don't need to re-derive it.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Verify",
       "details": "Manually confirm publish success/error shows a toast, autosave status still shows inline as before, and the fan-out (`lint`/`typecheck`) is green.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-75"],
+  "dependencies": [
+    "TASK-75"
+  ],
   "estimatedComplexity": "low",
   "technicalNotes": [
     "Scope deliberately kept tight: this task does NOT replace emoji icons across the app (▸▾ carets, ℹ️⚠️💡 callout icons, ✓✕ buttons) — that happens screen-by-screen in TASK-77..80, where lucide-react icons are now available to use."
-  ]
+  ],
+  "passes": true
 }
