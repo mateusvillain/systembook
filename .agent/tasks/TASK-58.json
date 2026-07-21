@@ -15,19 +15,19 @@
       "step": 1,
       "description": "Choose the registry and document the decision",
       "details": "Default to GHCR (`ghcr.io/<org>/systembook`) since it requires no separate account setup beyond the GitHub repo itself, using `GITHUB_TOKEN` for auth.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Write the publish workflow",
       "details": "Create `.github/workflows/docker-publish.yml`: on tag push matching `v*` (and optionally `main` for a `latest`/`edge` tag), log in to the registry, `docker build` using the root `Dockerfile` (TASK-6), and `docker push` with appropriate tags.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Use build caching for reasonable CI speed",
       "details": "Add `docker/build-push-action` with GitHub Actions cache (`cache-from`/`cache-to: type=gha`) to avoid full rebuilds on every run.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
@@ -36,7 +36,10 @@
       "pass": false
     }
   ],
-  "dependencies": ["TASK-6", "TASK-8"],
+  "dependencies": [
+    "TASK-6",
+    "TASK-8"
+  ],
   "estimatedComplexity": "medium",
   "technicalNotes": [
     "GHCR images are private by default even in public repos until explicitly set to public in package settings — document this one-time manual step in the release process if GHCR is chosen."
