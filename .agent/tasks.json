@@ -382,7 +382,7 @@
     "title": "Dark/light theme and typography for public documentation",
     "category": "ui-ux",
     "specFilePath": ".agent/tasks/TASK-55.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-56",
