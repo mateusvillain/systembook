@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Image as ImageIcon, Puzzle, X } from 'lucide-react';
 import type { DosDontsCover } from '@systembook/schema';
 import { useTRPC } from '../../../lib/trpc.js';
 import { ComponentEmbedPicker } from '../ComponentEmbedPicker.js';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 /**
  * UI de cover do bloco dos-donts (TASK-73): opcional, imagem OU
@@ -15,16 +18,6 @@ import { ComponentEmbedPicker } from '../ComponentEmbedPicker.js';
  * o cover não expõe o painel de controles interativos (`ControlsPanel`) —
  * é um slot de apoio visual, não o embed principal da página.
  */
-
-const actionButtonStyle: React.CSSProperties = {
-  border: '1px solid #ccc',
-  borderRadius: 4,
-  background: '#fff',
-  padding: '0.2rem 0.5rem',
-  fontSize: '0.8rem',
-  cursor: 'pointer',
-  whiteSpace: 'nowrap',
-};
 
 function EmbedCoverPreview({
   componentName,
@@ -98,23 +91,25 @@ export function DosDontsCoverField({
     if (!editable) return null;
     return (
       <div className="sb-dos-donts-cover sb-dos-donts-cover--empty" contentEditable={false}>
-        <div role="group" aria-label="Adicionar cover" style={{ display: 'flex', gap: '0.35rem' }}>
-          <button
+        <div role="group" aria-label="Adicionar cover" className="flex gap-1.5">
+          <Button
             type="button"
-            style={actionButtonStyle}
+            variant="outline"
+            size="sm"
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => onChange({ kind: 'image', src: '', alt: '' })}
           >
-            🖼️ Adicionar cover de imagem
-          </button>
-          <button
+            <ImageIcon /> Adicionar cover de imagem
+          </Button>
+          <Button
             type="button"
-            style={actionButtonStyle}
+            variant="outline"
+            size="sm"
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => setPickerOpen(true)}
           >
-            🧩 Adicionar cover de componente
-          </button>
+            <Puzzle /> Adicionar cover de componente
+          </Button>
         </div>
         {pickerOpen && (
           <ComponentEmbedPicker
@@ -139,14 +134,14 @@ export function DosDontsCoverField({
         <>
           {editable && (
             <div className="sb-dos-donts-cover-image-form">
-              <input
+              <Input
                 type="text"
                 placeholder="URL da imagem"
                 aria-label="URL da imagem do cover"
                 value={cover.src}
                 onChange={(e) => onChange({ ...cover, src: e.target.value })}
               />
-              <input
+              <Input
                 type="text"
                 placeholder="Texto alternativo"
                 aria-label="Texto alternativo do cover"
@@ -160,14 +155,15 @@ export function DosDontsCoverField({
       ) : (
         <>
           {editable && (
-            <button
+            <Button
               type="button"
-              style={actionButtonStyle}
+              variant="outline"
+              size="sm"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => setPickerOpen(true)}
             >
               {cover.componentName ? 'Trocar componente' : 'Selecionar componente'}
-            </button>
+            </Button>
           )}
           {pickerOpen && (
             <ComponentEmbedPicker
@@ -187,14 +183,16 @@ export function DosDontsCoverField({
         </>
       )}
       {editable && (
-        <button
+        <Button
           type="button"
-          style={actionButtonStyle}
+          variant="ghost"
+          size="sm"
+          className="self-start text-muted-foreground hover:text-destructive"
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => onChange(null)}
         >
-          ✕ Remover cover
-        </button>
+          <X /> Remover cover
+        </Button>
       )}
     </div>
   );
