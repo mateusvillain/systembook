@@ -430,7 +430,8 @@ function InlineCreate({
 function CreatePageForm({
   onCreate,
 }: {
-  onCreate: (titulo: string, slug: string) => Promise<unknown>;
+  // slug opcional (TASK-70): em branco → o server deriva do título.
+  onCreate: (titulo: string, slug: string | undefined) => Promise<unknown>;
 }) {
   const [open, setOpen] = useState(false);
   const [titulo, setTitulo] = useState('');
@@ -441,7 +442,8 @@ function CreatePageForm({
     event.preventDefault();
     setError(null);
     try {
-      await onCreate(titulo.trim(), slug.trim());
+      // Envia undefined quando em branco, para o server derivar o slug do título.
+      await onCreate(titulo.trim(), slug.trim() || undefined);
       setTitulo('');
       setSlug('');
       setOpen(false);
@@ -472,10 +474,10 @@ function CreatePageForm({
         style={{ flex: 1, minWidth: 0 }}
       />
       <input
-        placeholder="slug-da-pagina"
+        placeholder="slug (opcional)"
         value={slug}
         onChange={(e) => setSlug(e.target.value)}
-        aria-label="Slug da nova página"
+        aria-label="Slug da nova página (opcional)"
         style={{ flex: 1, minWidth: 0 }}
       />
       <button type="submit" style={iconButton} aria-label="Criar página">
@@ -484,6 +486,9 @@ function CreatePageForm({
       <button type="button" style={iconButton} onClick={() => setOpen(false)}>
         ✕
       </button>
+      <span style={{ fontSize: '0.75rem', color: '#777', width: '100%' }}>
+        Deixe o slug em branco para gerá-lo a partir do título.
+      </span>
       {error && (
         <span role="alert" style={{ color: '#b00020', fontSize: '0.8rem', width: '100%' }}>
           {error}
