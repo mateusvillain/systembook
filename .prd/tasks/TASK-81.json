@@ -1,0 +1,50 @@
+{
+  "id": "TASK-81",
+  "title": "Fase 9 visual QA pass and final verification",
+  "category": "ui-ux",
+  "description": "Close out Fase 9 with an end-to-end visual and functional QA pass across the fully migrated admin panel (TASK-77..80), a basic accessibility spot-check, and the full monorepo verification. Treat gaps found here as blocking, mirroring the review discipline used to close TASK-60 and TASK-68.",
+  "acceptanceCriteria": [
+    "Every admin screen (login, layout/nav, sidebar tree, content editor + all block types including Fase 8's dos-donts, users, tokens, landing settings, global history, per-page history) is reviewed in the browser for visual consistency (spacing, color, typography) after the shadcn migration",
+    "No regression in any previously-verified E2E flow across the tasks this phase touched (auth, navigation CRUD, editor autosave/publish, token reveal-once, restore)",
+    "A basic accessibility spot-check: focus states are visible on interactive elements, form inputs have associated labels, color contrast is reasonable for text/icon-only buttons (no rigorous WCAG audit required, but obvious regressions from the migration are caught)",
+    "The public documentation pages (`/docs/...`) and the Tiptap prose content are confirmed unchanged (Tailwind's reset did not leak into `.sb-public` or `editor.css`, per TASK-75's scoping)",
+    "Full monorepo fan-out is green: `pnpm lint`, `pnpm typecheck`, `pnpm test` (serialized, per the known parallel preview-kit flake documented in the project's dev log)"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Screen-by-screen visual review",
+      "details": "Walk every migrated screen in the browser; note and fix any inconsistency (spacing, misaligned icons, broken responsive behavior) introduced across TASK-77..80.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Re-verify prior E2E flows",
+      "details": "Re-run (via Playwright or manually) the key flows already covered by earlier tasks' own verification: login, sidebar CRUD, editor autosave/publish including dos-donts, token reveal-once, per-page restore.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Accessibility spot-check",
+      "details": "Tab through the main flows checking focus visibility; confirm form inputs have labels; check icon-only buttons have `aria-label`s (a pattern already used elsewhere in this codebase, e.g. `SidebarTree`).",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Confirm public docs untouched",
+      "details": "Compare `/docs/...` rendering and the Tiptap editable prose area before/after the migration — no visual drift from the Tailwind reset.",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Full fan-out",
+      "details": "`pnpm lint` / `pnpm typecheck` / `pnpm -r --workspace-concurrency=1 run test` all green.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-77", "TASK-78", "TASK-79", "TASK-80"],
+  "estimatedComplexity": "low",
+  "technicalNotes": [
+    "This task has no new UI to build — it's a verification gate closing Fase 9, same role TASK-74 plays for Fase 8."
+  ]
+}

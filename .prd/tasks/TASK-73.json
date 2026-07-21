@@ -1,0 +1,45 @@
+{
+  "id": "TASK-73",
+  "title": "Dos and Don'ts block: optional cover (image or component-embed)",
+  "category": "ui-ux",
+  "description": "Add the optional cover control to the `dos-donts` NodeView (built in TASK-72): add/remove a cover, switch its kind between `image` and `component-embed`, and edit it. The cover is optional per the project owner's decision — a block with no cover is valid and common.",
+  "acceptanceCriteria": [
+    "An \"add cover\" control appears when `cover` is `null`; once added, a way to remove it entirely (round-trips back to `cover: null`)",
+    "A kind switch toggles between `image` and `component-embed` covers",
+    "Image cover: `src` and `alt` text inputs (URL-based — this project has no generic image upload pipeline; the only upload path is the CI-authenticated preview artifact upload from TASK-43, which is not reused here)",
+    "Component-embed cover: reuses `ComponentEmbedPicker` (same picker used by the standalone `component-embed` block) to select `componentName`/`variantId`, and renders the same loading/empty/live iframe states as the standalone `ComponentEmbed` NodeView (TASK-47/51)",
+    "Cover attrs persist via `updateAttributes` and round-trip through `serialize.ts`'s `cover` shape (TASK-71) on save/reload"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Add/remove cover control",
+      "details": "In the `DosDonts` NodeView, add a toggle: no cover → \"Adicionar cover\" button; cover present → a way to remove it (sets `cover: null` via `updateAttributes`).",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Kind switcher + image form",
+      "details": "A small switcher between `image`/`component-embed`. Image kind renders two inputs (`src`, `alt`) bound to `updateAttributes({ cover: { kind: 'image', src, alt } })`.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Component-embed kind",
+      "details": "Embed `ComponentEmbedPicker` for selection. For rendering, reuse the loading/empty/live state logic from `apps/admin/src/features/editor/nodes/ComponentEmbed.tsx` (`componentPreviews.getLatest` lookup + `data-preview-state`) — extract a small shared helper if that avoids duplicating the state machine, or duplicate minimally with a comment pointing at the canonical version if extraction isn't clean; judgment call for whoever implements, but don't silently diverge the two state machines.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Verify via Playwright",
+      "details": "Add an image cover (src/alt), publish, reload, confirm it persists. Add a component-embed cover selecting a real published preview (reuse a fixture from the connector's published previews, as in TASK-47/48's checks), confirm the iframe renders. Remove the cover, confirm it's gone after reload.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-72", "TASK-47", "TASK-48"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "Explicit scope decision: image cover is URL-only, no file upload. Building a generic image upload/storage pipeline is out of scope and materially larger than this task — flag it as a separate future task if the project owner wants it later.",
+    "`ComponentEmbedPicker` already supports an `initial` selection for re-selecting over an existing embed (TASK-48) — reuse that same prop when editing an existing component-embed cover."
+  ]
+}

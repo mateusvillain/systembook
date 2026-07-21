@@ -1,0 +1,45 @@
+{
+  "id": "TASK-80",
+  "title": "Migrate admin management pages to shadcn/ui",
+  "category": "ui-ux",
+  "description": "Migrate the remaining admin screens — `UsersPage`, `UploadTokensPage`, `LandingPageSettingsPage`, `GlobalHistoryPage` (TASK-69), and `PageHistoryPage`/`RevisionHistoryList` — from inline styles to Tailwind + shadcn/ui (`Table`, `Dialog`/`AlertDialog`, `Form` inputs, `Badge`), converting the toast-appropriate feedback per the TASK-76 convention.",
+  "acceptanceCriteria": [
+    "`UsersPage` (list + create form + inline role/password-reset/deactivate actions) is rebuilt with shadcn `Table` + `Input`/`Select`/`Button`; the admin-only gate and self-deactivation guard are unchanged",
+    "`UploadTokensPage`/`UploadTokens` (create form, reveal-once token display, revoke) is rebuilt with shadcn primitives; the one-time reveal behavior and copy-to-clipboard affordance are preserved exactly (no re-display after reload)",
+    "`LandingPageSettingsPage`, `GlobalHistoryPage`, and `PageHistoryPage`/`RevisionHistoryList` (revision list + read-only preview + restore confirmation) are rebuilt with shadcn `Table`/`Card`/`Button`",
+    "Per the TASK-76 convention: action-result feedback (user created, token generated/revoked, restore succeeded) uses `sonner` toasts; field-level validation errors stay inline",
+    "No change to any tRPC call, permission gate, or the one-time-secret-reveal security property of the tokens screen",
+    "Verified in the browser: user CRUD, token create/reveal-once/revoke, landing page settings, global history feed and its links, per-page history + restore"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Migrate UsersPage",
+      "details": "Table of users with role `Select`, password-reset inline form, deactivate button (self-deactivation still disabled) — shadcn `Table`/`Input`/`Select`/`Button`.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Migrate UploadTokensPage",
+      "details": "Table of tokens + create form + the reveal-once panel — preserve the security property (token value never re-appears in the DOM after the initial reveal) exactly.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Migrate the remaining pages",
+      "details": "`LandingPageSettingsPage`, `GlobalHistoryPage` (TASK-69's feed, preserving links to per-page history), `PageHistoryPage`/`RevisionHistoryList` (list + preview + restore confirmation).",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Apply the toast convention and verify",
+      "details": "Convert action-result banners to `sonner` toasts per TASK-76; exercise every CRUD/action path in the browser across all five pages.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-75", "TASK-76", "TASK-69"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "The token reveal-once behavior (TASK-44) is a genuine security property, not just UI polish — verify carefully that restyling doesn't accidentally keep the token value mounted/cached anywhere reachable after the initial reveal."
+  ]
+}

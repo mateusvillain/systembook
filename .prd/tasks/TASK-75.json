@@ -1,0 +1,45 @@
+{
+  "id": "TASK-75",
+  "title": "Setup Tailwind CSS + shadcn/ui in the admin panel",
+  "category": "setup",
+  "description": "Lay the foundation for Fase 9's visual overhaul: install and configure Tailwind CSS and shadcn/ui in `apps/admin` (Vite + React 19), establish base design tokens (colors, radius, spacing), and validate the toolchain with a smoke-test component. Scope is admin-only, confirmed with the project owner: the public documentation app (`apps/admin/src/features/public`) keeps its existing CSS-variables theme (TASK-55) untouched — shadcn/Tailwind is not applied there.",
+  "acceptanceCriteria": [
+    "Tailwind CSS is configured and working in `apps/admin` (Vite plugin + global stylesheet), scoped so it does not affect `apps/admin/src/features/public`'s existing theme/CSS (`.sb-public` scoping, TASK-55) or `apps/admin/src/features/editor/editor.css`",
+    "shadcn/ui is initialized for `apps/admin` (`components.json`, `lib/utils.ts` `cn` helper, base theme tokens) with a documented base color/style choice",
+    "At least one shadcn component (`Button`) is installed and rendered somewhere as a smoke test",
+    "No visual regression on existing admin screens or the public doc pages — this task only lays groundwork, it does not migrate any screen yet",
+    "`pnpm --filter @systembook/admin build/dev/lint/typecheck` all pass; full monorepo fan-out (`pnpm lint`/`typecheck`/`test`) stays green"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Install and configure Tailwind",
+      "details": "Add `tailwindcss` + its Vite plugin to `apps/admin`, wire into `vite.config.ts`, add the global stylesheet import. Scope carefully so the utility reset doesn't bleed into `.sb-public` or `editor.css` (Tailwind's preflight reset can affect prose-style content — verify the public doc pages and the Tiptap editor content render unchanged).",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Initialize shadcn/ui",
+      "details": "Run the shadcn CLI init for `apps/admin`, producing `components.json` and `lib/utils.ts`. Pick and document a base color (recommend neutral/slate, consistent with the current minimal aesthetic) and border-radius scale.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Smoke test",
+      "details": "Install the `Button` component via the shadcn CLI and render it once (e.g. temporarily in `DashboardPage` or wherever is least disruptive) to confirm the pipeline (Tailwind classes + CVA variants) works end-to-end.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Verify no regressions",
+      "details": "Run the admin app in the browser; confirm the public doc pages (`/docs/...`) and the Tiptap editor still render as before. Run the full fan-out (`pnpm lint`/`typecheck`/`test`).",
+      "pass": false
+    }
+  ],
+  "dependencies": [],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "Pin Tailwind/shadcn versions compatible with Vite 6 + React 19 (current admin stack) — verify before locking in the exact major version at implementation time.",
+    "This task is pure setup: no existing screen is migrated here. TASK-77..80 do the actual per-screen migration."
+  ]
+}

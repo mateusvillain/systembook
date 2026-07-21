@@ -1,0 +1,43 @@
+{
+  "id": "TASK-74",
+  "title": "Dos and Don'ts block: public read-only render and end-to-end verification",
+  "category": "ui-ux",
+  "description": "Render the `dos-donts` block read-only wherever published content is displayed — the shared `PageRenderer` (used by both the admin's revision preview and the public `/docs` pages, TASK-50) — and verify the whole feature end-to-end: editor → autosave → publish → public render → search.",
+  "acceptanceCriteria": [
+    "`dos-donts` renders correctly in read-only mode (via the shared `editorExtensions` with `editable: false`, same mechanism used by `Callout`/`ComponentEmbed` today) inside `PageRenderer` — variant styling, title, description, and cover (image `<img>`, or the component-embed iframe in its read-only/live state)",
+    "The public doc page (`/docs/:sectionSlug/:pageSlug`) shows `dos-donts` blocks with correct visual distinction between `do` and `dont`",
+    "A page containing a `do` with an image cover, a `dont` with a component-embed cover, and a `do` with no cover — round-trips correctly through save → publish → public view logged out",
+    "The block's title/description text is findable via `search.query` after publish (confirms TASK-71's FTS extraction end-to-end, not just at the unit level)"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Confirm read-only rendering",
+      "details": "Verify the `DosDonts` NodeView already behaves correctly with `editable: false` (same check Callout/ComponentEmbed already do internally) inside `PageRenderer`/`RevisionSnapshotPreview` — no separate renderer needed since `PageRenderer` reuses `editorExtensions`.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Confirm cover rendering read-only",
+      "details": "Component-embed-as-cover must render the same way the standalone `component-embed` block already does in the public context (TASK-50) — same iframe, same states.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "End-to-end Playwright verification",
+      "details": "Build server+admin, run against a temp DB: create a page, insert the three `dos-donts` variants described in the acceptance criteria, publish, view logged out on `/docs/...`, confirm rendering; hit `search.query` with distinctive text from the description and confirm the page is found.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Full fan-out",
+      "details": "`pnpm lint` / `pnpm typecheck` / `pnpm test` (serialized, per the known parallel preview-kit flake) all green before considering Fase 8 complete.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-71", "TASK-72", "TASK-73", "TASK-50"],
+  "estimatedComplexity": "low",
+  "technicalNotes": [
+    "This task closes Fase 8 — treat any gap found here (e.g. cover not rendering in the public context) as blocking, not polish, mirroring the review discipline used for TASK-60's setup doc."
+  ]
+}
