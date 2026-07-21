@@ -403,7 +403,7 @@
     "title": "Docker image build and publish to registry via CI",
     "category": "setup",
     "specFilePath": ".agent/tasks/TASK-58.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-59",

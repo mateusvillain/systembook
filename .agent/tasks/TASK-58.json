@@ -33,7 +33,7 @@
       "step": 4,
       "description": "Verify a real publish and pull",
       "details": "Push a test tag, confirm the workflow succeeds, then `docker pull` the resulting image from a separate machine/context and run it with a valid `.env.local` to confirm the health-check endpoint responds.",
-      "pass": false
+      "pass": true
     }
   ],
   "dependencies": [
