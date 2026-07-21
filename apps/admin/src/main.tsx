@@ -8,7 +8,7 @@ import { DashboardPage } from './pages/DashboardPage.js';
 import { UsersPage } from './pages/UsersPage.js';
 import { UploadTokensPage } from './pages/UploadTokensPage.js';
 import { LandingPageSettingsPage } from './pages/LandingPageSettingsPage.js';
-import { TabContentPage } from './pages/TabContentPage.js';
+import { PageContentPage } from './pages/PageContentPage.js';
 import { PageHistoryPage } from './pages/PageHistoryPage.js';
 import { PublicPage } from './pages/PublicPage.js';
 import { PublicLayout } from './features/public/PublicLayout.js';
@@ -39,7 +39,8 @@ const router = createBrowserRouter([
       { path: 'admin/users', element: <UsersPage /> },
       { path: 'admin/settings/tokens', element: <UploadTokensPage /> },
       { path: 'admin/settings/landing-page', element: <LandingPageSettingsPage /> },
-      { path: 'pages/:pageId/tabs/:tabId', element: <TabContentPage /> },
+      { path: 'pages/:pageId', element: <PageContentPage /> },
+      { path: 'pages/:pageId/tabs/:tabId', element: <PageContentPage /> },
       { path: 'pages/:pageId/history', element: <PageHistoryPage /> },
     ],
   },

@@ -15,31 +15,37 @@
       "step": 1,
       "description": "Routing + entry to the body editor",
       "details": "In `apps/admin`, make clicking a page in `SidebarTree` land on its body editor (decide the route: reuse `/pages/:pageId` for the body, keeping `/pages/:pageId/tabs/:tabId` for user tabs). Mount `ContentEditor` on the primary container's blocks.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Hide the primary container from the tab UI",
       "details": "Update `SidebarTree` and `TabContentPage` so the primary/body container is not listed as a user tab (no rename/delete/reorder on it). The '+ Nova tab' affordance still creates optional additional tabs.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Tab bar visibility",
       "details": "Show a tab bar only when the page has ≥1 user tab; otherwise the page is just its body. When tabs exist, present body + tabs coherently (decide whether the body is the first view or a distinct 'Overview').",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Verify with Playwright/manual",
       "details": "Create a page, type body content without adding a tab, confirm autosave + publish work; then add a tab, confirm both are editable and the tab bar appears; confirm the primary container can't be deleted/renamed as a tab.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-65", "TASK-66", "TASK-25", "TASK-32"],
+  "dependencies": [
+    "TASK-65",
+    "TASK-66",
+    "TASK-25",
+    "TASK-32"
+  ],
   "estimatedComplexity": "medium",
   "technicalNotes": [
     "`ContentEditor` mounts per container with `key=` and loads `getByTab` with `gcTime: 0` — keep that pattern when the body becomes its own editor instance.",
     "Publish already flushes the active editor before snapshotting (`TabContentPage.handlePublish`); ensure the body editor participates in that flush."
-  ]
+  ],
+  "passes": true
 }

@@ -276,6 +276,17 @@ describe('estrutura de navegação (sections/pages/tabs)', () => {
       ).rejects.toMatchObject({ code: 'NOT_FOUND' });
     });
 
+    it('getPrimary devolve a tab primária (corpo); página inexistente dá NOT_FOUND (TASK-67)', async () => {
+      const caller = callerFor(db, editor);
+      const primary = await caller.tabs.getPrimary({ pageId });
+      expect(primary.isPrimary).toBe(true);
+      expect(primary.pageId).toBe(pageId);
+
+      await expect(caller.tabs.getPrimary({ pageId: 'nao-existe' })).rejects.toMatchObject({
+        code: 'NOT_FOUND',
+      });
+    });
+
     it('rename e reorder escopado à página', async () => {
       const caller = callerFor(db, editor);
       const a = await caller.tabs.create({ pageId, titulo: 'Usage' });
