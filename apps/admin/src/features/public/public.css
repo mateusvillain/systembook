@@ -310,6 +310,19 @@
   color: #c3eccf;
 }
 
+/* ---- Dos and Don'ts por variante no tema escuro (Fase 8, editor.css tem o claro) ---- */
+.sb-public[data-theme='dark'] .sb-editor .sb-dos-donts[data-variant='do'] {
+  --sb-dos-donts-border: #3f9a5c;
+  --sb-dos-donts-bg: #12271a;
+  color: #c3eccf;
+}
+
+.sb-public[data-theme='dark'] .sb-editor .sb-dos-donts[data-variant='dont'] {
+  --sb-dos-donts-border: #b5453f;
+  --sb-dos-donts-bg: #2c1414;
+  color: #f4c9c6;
+}
+
 /* ---- Busca em dropdown ao vivo (TASK-54) ---- */
 .sb-searchbox {
   position: relative;

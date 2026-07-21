@@ -14,30 +14,36 @@
       "step": 1,
       "description": "Confirm read-only rendering",
       "details": "Verify the `DosDonts` NodeView already behaves correctly with `editable: false` (same check Callout/ComponentEmbed already do internally) inside `PageRenderer`/`RevisionSnapshotPreview` — no separate renderer needed since `PageRenderer` reuses `editorExtensions`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Confirm cover rendering read-only",
       "details": "Component-embed-as-cover must render the same way the standalone `component-embed` block already does in the public context (TASK-50) — same iframe, same states.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "End-to-end Playwright verification",
       "details": "Build server+admin, run against a temp DB: create a page, insert the three `dos-donts` variants described in the acceptance criteria, publish, view logged out on `/docs/...`, confirm rendering; hit `search.query` with distinctive text from the description and confirm the page is found.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Full fan-out",
       "details": "`pnpm lint` / `pnpm typecheck` / `pnpm test` (serialized, per the known parallel preview-kit flake) all green before considering Fase 8 complete.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-71", "TASK-72", "TASK-73", "TASK-50"],
+  "dependencies": [
+    "TASK-71",
+    "TASK-72",
+    "TASK-73",
+    "TASK-50"
+  ],
   "estimatedComplexity": "low",
   "technicalNotes": [
     "This task closes Fase 8 — treat any gap found here (e.g. cover not rendering in the public context) as blocking, not polish, mirroring the review discipline used for TASK-60's setup doc."
-  ]
+  ],
+  "passes": true
 }

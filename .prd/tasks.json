@@ -515,7 +515,7 @@
     "title": "Dos and Don'ts block: public read-only render and end-to-end verification",
     "category": "ui-ux",
     "specFilePath": ".prd/tasks/TASK-74.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-75",
