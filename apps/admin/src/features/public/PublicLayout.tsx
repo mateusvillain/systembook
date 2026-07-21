@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTRPC } from '../../lib/trpc.js';
 import { PublicSidebar, type PublicNavTree } from './PublicSidebar.js';
 import { SearchBox } from './SearchBox.js';
+import { useTheme } from './useTheme.js';
 import './public.css';
 
 /** Passado aos filhos via Outlet context (evita re-buscar a árvore). */
@@ -21,15 +22,26 @@ export function PublicLayout() {
   const trpc = useTRPC();
   const navQuery = useQuery(trpc.sections.listPublic.queryOptions());
   const tree = navQuery.data ?? [];
+  const { theme, toggle } = useTheme();
 
   const context: PublicOutletContext = { tree, isLoading: navQuery.isLoading };
 
   return (
-    <div className="sb-public">
+    <div className="sb-public" data-theme={theme}>
       <header className="sb-public-header">
         <span aria-hidden>📘</span>
         <span>Documentação</span>
         <SearchBox />
+        <button
+          type="button"
+          className="sb-theme-toggle"
+          onClick={toggle}
+          aria-label={theme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
+          title={theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
+          data-testid="theme-toggle"
+        >
+          <span aria-hidden>{theme === 'dark' ? '☀️' : '🌙'}</span>
+        </button>
       </header>
       <div className="sb-public-body">
         <PublicSidebar tree={tree} />

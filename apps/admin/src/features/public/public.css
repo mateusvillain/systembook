@@ -1,23 +1,89 @@
-/* Layout da documentação pública (TASK-52) — chrome próprio, separado do
-   painel admin. */
+/* Documentação pública (TASK-52) com tema claro/escuro + tipografia (TASK-55).
+   Chrome próprio, separado do painel admin. As cores vivem em tokens (custom
+   properties) definidos no root `.sb-public` por tema (`data-theme`), e o
+   conteúdo Tiptap (editor.css) lê os mesmos tokens via `var(--…, fallback)`. */
 
+/* ---- Tokens: tema claro (padrão) ---- */
 .sb-public {
+  --sb-bg: #ffffff;
+  --sb-surface: #fafbfc;
+  --sb-fg: #1c2024;
+  --sb-fg-muted: #6b7280;
+  --sb-border: #e5e7eb;
+  --sb-accent: #1d4ed8;
+  --sb-accent-soft: #eef4ff;
+  --sb-hover: #f3f4f6;
+  --sb-code-bg: #f4f5f7;
+  --sb-code-fg: #1c2024;
+  --sb-th-bg: #f4f5f7;
+  --sb-mark-bg: #fde68a;
+  --sb-mark-fg: #3b2f00;
+  --sb-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  color: #1a1a1a;
-  background: #fff;
+  color: var(--sb-fg);
+  background: var(--sb-bg);
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
+/* ---- Tokens: tema escuro ---- */
+.sb-public[data-theme='dark'] {
+  --sb-bg: #0f1419;
+  --sb-surface: #161b22;
+  --sb-fg: #e6e8eb;
+  --sb-fg-muted: #9aa4b2;
+  --sb-border: #2a3038;
+  --sb-accent: #6ea8fe;
+  --sb-accent-soft: #1b2b4d;
+  --sb-hover: #1c232c;
+  --sb-code-bg: #1a2028;
+  --sb-code-fg: #e6e8eb;
+  --sb-th-bg: #1a2028;
+  --sb-mark-bg: #6b5300;
+  --sb-mark-fg: #ffe9a8;
+  --sb-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+}
+
+/* ---- Header ---- */
 .sb-public-header {
   display: flex;
   align-items: center;
   gap: 0.6rem;
   padding: 0.9rem 1.5rem;
-  border-bottom: 1px solid #eaeaea;
+  border-bottom: 1px solid var(--sb-border);
+  background: var(--sb-surface);
   font-weight: 600;
 }
 
+.sb-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border: 1px solid var(--sb-border);
+  border-radius: 6px;
+  background: var(--sb-bg);
+  color: var(--sb-fg);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.sb-theme-toggle:hover {
+  background: var(--sb-hover);
+}
+
+.sb-theme-toggle:focus-visible {
+  outline: 2px solid var(--sb-accent);
+  outline-offset: 2px;
+}
+
+/* ---- Corpo / colunas ---- */
 .sb-public-body {
   flex: 1;
   display: flex;
@@ -27,7 +93,8 @@
 .sb-public-sidebar {
   width: 260px;
   flex-shrink: 0;
-  border-right: 1px solid #eaeaea;
+  border-right: 1px solid var(--sb-border);
+  background: var(--sb-surface);
   padding: 1.25rem 1rem;
   overflow-y: auto;
 }
@@ -35,16 +102,20 @@
 .sb-public-content {
   flex: 1;
   min-width: 0;
-  padding: 2rem clamp(1.5rem, 5vw, 3.5rem);
-  max-width: 900px;
+  padding: 2.25rem clamp(1.5rem, 5vw, 3.5rem);
+  max-width: 860px;
+  font-size: 1.02rem;
+  line-height: 1.7;
 }
 
 .sb-public-content h1.sb-public-title {
-  margin: 0 0 1.25rem;
-  font-size: 1.9rem;
+  margin: 0 0 1.5rem;
+  font-size: 2rem;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
 }
 
-/* Navegação */
+/* ---- Navegação ---- */
 .sb-public-section {
   margin-bottom: 1.25rem;
 }
@@ -53,7 +124,7 @@
   font-size: 0.72rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #888;
+  color: var(--sb-fg-muted);
   margin: 0 0 0.4rem;
   padding: 0 0.5rem;
 }
@@ -70,27 +141,118 @@
   display: block;
   padding: 0.35rem 0.5rem;
   border-radius: 5px;
-  color: #333;
+  color: var(--sb-fg);
   text-decoration: none;
   font-size: 0.92rem;
 }
 
 .sb-public-pagelink:hover {
-  background: #f3f4f6;
+  background: var(--sb-hover);
 }
 
 .sb-public-pagelink.active {
-  background: #eef4ff;
-  color: #1d4ed8;
+  background: var(--sb-accent-soft);
+  color: var(--sb-accent);
   font-weight: 600;
 }
 
 .sb-public-empty {
-  color: #666;
+  color: var(--sb-fg-muted);
   padding: 1rem;
 }
 
-/* Busca em dropdown ao vivo (TASK-54) */
+/* ---- Tipografia da prosa (read-only PageRenderer, TASK-50/55) ---- */
+/* Remove o chrome de editor (borda/min-height/padding) — é leitura, não edição. */
+.sb-public .sb-editor .ProseMirror {
+  min-height: 0;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+}
+
+.sb-public .sb-editor .ProseMirror h1,
+.sb-public .sb-editor .ProseMirror h2,
+.sb-public .sb-editor .ProseMirror h3 {
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  margin: 2rem 0 0.75rem;
+}
+
+.sb-public .sb-editor .ProseMirror h1 {
+  font-size: 1.7rem;
+}
+
+.sb-public .sb-editor .ProseMirror h2 {
+  font-size: 1.4rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--sb-border);
+}
+
+.sb-public .sb-editor .ProseMirror h3 {
+  font-size: 1.15rem;
+}
+
+.sb-public .sb-editor .ProseMirror > :first-child {
+  margin-top: 0;
+}
+
+.sb-public .sb-editor .ProseMirror p {
+  margin: 0.9rem 0;
+}
+
+.sb-public .sb-editor .ProseMirror ul,
+.sb-public .sb-editor .ProseMirror ol {
+  padding-left: 1.4rem;
+  margin: 0.9rem 0;
+}
+
+.sb-public .sb-editor .ProseMirror li {
+  margin: 0.25rem 0;
+}
+
+.sb-public .sb-editor .ProseMirror a {
+  color: var(--sb-accent);
+  text-decoration: none;
+}
+
+.sb-public .sb-editor .ProseMirror a:hover {
+  text-decoration: underline;
+}
+
+.sb-public .sb-editor .ProseMirror code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.88em;
+  background: var(--sb-code-bg);
+  color: var(--sb-code-fg);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+
+.sb-public .sb-editor .ProseMirror pre code {
+  background: none;
+  padding: 0;
+}
+
+/* ---- Callouts por variante no tema escuro (editor.css tem o claro) ---- */
+.sb-public[data-theme='dark'] .sb-editor .sb-callout[data-variant='info'] {
+  --sb-callout-border: #4b7bd6;
+  --sb-callout-bg: #16233b;
+  color: #d6e4ff;
+}
+
+.sb-public[data-theme='dark'] .sb-editor .sb-callout[data-variant='warning'] {
+  --sb-callout-border: #b5851f;
+  --sb-callout-bg: #2c2410;
+  color: #f4e3b6;
+}
+
+.sb-public[data-theme='dark'] .sb-editor .sb-callout[data-variant='tip'] {
+  --sb-callout-border: #3f9a5c;
+  --sb-callout-bg: #12271a;
+  color: #c3eccf;
+}
+
+/* ---- Busca em dropdown ao vivo (TASK-54) ---- */
 .sb-searchbox {
   position: relative;
   margin-left: auto;
@@ -99,16 +261,20 @@
 .sb-searchbox-input {
   width: min(320px, 40vw);
   padding: 0.45rem 0.7rem;
-  border: 1px solid #d5d7db;
+  border: 1px solid var(--sb-border);
   border-radius: 6px;
   font-size: 0.9rem;
-  background: #fafafa;
+  background: var(--sb-bg);
+  color: var(--sb-fg);
+}
+
+.sb-searchbox-input::placeholder {
+  color: var(--sb-fg-muted);
 }
 
 .sb-searchbox-input:focus {
   outline: none;
-  border-color: #1d4ed8;
-  background: #fff;
+  border-color: var(--sb-accent);
 }
 
 .sb-searchbox-dropdown {
@@ -118,17 +284,17 @@
   width: min(420px, 80vw);
   max-height: 60vh;
   overflow-y: auto;
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--sb-bg);
+  border: 1px solid var(--sb-border);
   border-radius: 8px;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--sb-shadow);
   z-index: 50;
 }
 
 .sb-searchbox-hint {
   margin: 0;
   padding: 0.9rem 1rem;
-  color: #666;
+  color: var(--sb-fg-muted);
   font-size: 0.9rem;
 }
 
@@ -152,27 +318,28 @@
   background: none;
   cursor: pointer;
   font: inherit;
+  color: var(--sb-fg);
 }
 
 .sb-searchbox-result.active {
-  background: #eef4ff;
+  background: var(--sb-accent-soft);
 }
 
 .sb-searchbox-result-section {
   font-size: 0.68rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #888;
+  color: var(--sb-fg-muted);
 }
 
 .sb-searchbox-result-title {
   font-size: 0.98rem;
   font-weight: 600;
-  color: #1d4ed8;
+  color: var(--sb-accent);
 }
 
 .sb-searchbox-result-snippet {
-  color: #555;
+  color: var(--sb-fg-muted);
   font-size: 0.85rem;
   line-height: 1.45;
   display: -webkit-box;
@@ -181,9 +348,10 @@
   overflow: hidden;
 }
 
-.sb-searchbox-result-snippet mark {
-  background: #fde68a;
-  color: inherit;
+.sb-searchbox-result-snippet mark,
+.sb-public mark {
+  background: var(--sb-mark-bg);
+  color: var(--sb-mark-fg);
   padding: 0 1px;
   border-radius: 2px;
 }
