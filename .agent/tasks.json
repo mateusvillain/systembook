@@ -446,5 +446,12 @@
     "category": "documentation",
     "specFilePath": ".agent/tasks/TASK-64.json",
     "passes": false
+  },
+  {
+    "id": "TASK-65",
+    "title": "Publish @systembook/connector (and its workspace deps) to npm with a working CLI bin",
+    "category": "setup",
+    "specFilePath": ".agent/tasks/TASK-65.json",
+    "passes": false
   }
 ]
