@@ -6,15 +6,15 @@ import {
   type NodeViewProps,
 } from '@tiptap/react';
 import type { DosDontsCover, DosDontsVariant } from '@systembook/schema';
+import { DosDontsCoverField } from './DosDontsCover.js';
 
 /**
- * Bloco de convenção de uso (Fase 8, TASK-72) — mesmo padrão NodeView React
+ * Bloco de convenção de uso (Fase 8, TASK-72/73) — mesmo padrão NodeView React
  * estabelecido pelo `Callout` (TASK-28): extensão + view no mesmo arquivo,
  * attrs espelhados em `data-*`, switcher in-place preservando o conteúdo.
  *
- * `cover` é intencionalmente sempre `null` nesta task — a UI de cover
- * (imagem/component-embed) é a TASK-73; o attr já existe no schema (TASK-71)
- * para a próxima task não precisar de outra mudança de tipo.
+ * `cover` (TASK-73) é opcional — imagem OU component-embed — e sua UI vive em
+ * `DosDontsCover.tsx`.
  */
 
 export const DOS_DONTS_VARIANTS = ['do', 'dont'] as const satisfies readonly DosDontsVariant[];
@@ -40,10 +40,16 @@ function parseCover(raw: string | null): DosDontsCover | null {
 function DosDontsView({ node, updateAttributes, editor }: NodeViewProps) {
   const variant = node.attrs.variant as DosDontsVariant;
   const titulo = node.attrs.titulo as string;
+  const cover = node.attrs.cover as DosDontsCover | null;
   const meta = DOS_DONTS_META[variant];
 
   return (
     <NodeViewWrapper className="sb-dos-donts" data-variant={variant}>
+      <DosDontsCoverField
+        cover={cover}
+        editable={editor.isEditable}
+        onChange={(next) => updateAttributes({ cover: next })}
+      />
       <div className="sb-dos-donts-header" contentEditable={false}>
         <span aria-hidden>{meta.icon}</span>
         {editor.isEditable && (
