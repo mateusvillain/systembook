@@ -1,6 +1,7 @@
 import type { BlockType, PageSnapshot } from '@systembook/schema';
 import { eq, sql } from 'drizzle-orm';
 import type { Db, DbTx } from './client.js';
+import { LANDING_PAGE_ID } from './landing.js';
 import { pages, sections } from './schema.js';
 
 /**
@@ -60,6 +61,10 @@ export function extractSearchableText(snapshot: PageSnapshot): string {
  * `Db` ou um `tx` já aberto (o restore reindexará dentro da própria transação).
  */
 export function reindexPageFts(db: Db | DbTx, pageId: string, snapshot: PageSnapshot): void {
+  // A landing (TASK-56) reusa a máquina de publish, mas não é conteúdo de
+  // documentação pesquisável — fora do índice de busca.
+  if (pageId === LANDING_PAGE_ID) return;
+
   const titles = db
     .select({ pageTitulo: pages.titulo, sectionTitulo: sections.titulo })
     .from(pages)

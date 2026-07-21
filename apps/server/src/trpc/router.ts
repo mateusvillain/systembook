@@ -3,6 +3,7 @@ import { authRouter } from './routers/auth.js';
 import { blocksRouter } from './routers/blocks.js';
 import { componentPreviewsRouter } from './routers/componentPreviews.js';
 import { healthRouter } from './routers/health.js';
+import { landingRouter } from './routers/landing.js';
 import { pagesRouter } from './routers/pages.js';
 import { revisionsRouter } from './routers/revisions.js';
 import { searchRouter } from './routers/search.js';
@@ -32,6 +33,8 @@ import { usersRouter } from './routers/users.js';
  * | componentPreviews | listComponents, listVariants             | protectedProcedure (admin + editor)  |
  * | componentPreviews | getLatest                                | publicProcedure (embed público)      |
  * | search    | query                                             | publicProcedure (busca pública)      |
+ * | landing   | get                                               | publicProcedure (raiz pública)       |
+ * | landing   | getEditorTarget                                   | protectedProcedure (admin + editor)  |
  * | uploadTokens | list, create, revoke                          | adminProcedure (só admin)            |
  *
  * Decisão de escopo do PRD: `editor` tem CRUD completo sobre a estrutura de
@@ -54,6 +57,7 @@ export const appRouter = router({
   revisions: revisionsRouter,
   componentPreviews: componentPreviewsRouter,
   search: searchRouter,
+  landing: landingRouter,
   uploadTokens: uploadTokensRouter,
 });
 
