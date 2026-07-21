@@ -17,6 +17,7 @@ import { PublicLayout } from './features/public/PublicLayout.js';
 import { PublicHome } from './features/public/PublicHome.js';
 import { PublicPageView } from './features/public/PublicPageView.js';
 import { AdminLayout } from './components/AdminLayout.js';
+import { Toaster } from './components/ui/sonner.js';
 
 const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
@@ -49,11 +50,21 @@ const router = createBrowserRouter([
   },
 ]);
 
+/*
+ * Convenção de feedback (TASK-76) — as TASK-77..80 devem seguir, não reinventar:
+ *   • TOAST (sonner, `toast.success`/`toast.error`): resultado TRANSIENTE de uma
+ *     ação — publicar, criar/revogar token, restaurar, criar usuário. Some sozinho.
+ *   • INLINE (`role="alert"` / `role="status"`): estado PERSISTENTE ou de campo —
+ *     erro de validação de formulário, "Acesso negado", o indicador de autosave
+ *     (`data-save-status` no ContentEditor) — este NUNCA vira toast (é estado
+ *     contínuo do editor, não um evento pontual).
+ */
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
         <RouterProvider router={router} />
+        <Toaster />
       </TRPCProvider>
     </QueryClientProvider>
   </StrictMode>,

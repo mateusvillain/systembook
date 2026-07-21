@@ -1,6 +1,7 @@
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, NavLink, useParams } from 'react-router-dom';
+import { toast } from 'sonner';
 import { useTRPC } from '../lib/trpc.js';
 import { ContentEditor, type ContentEditorHandle } from '../features/editor/ContentEditor.js';
 
@@ -18,18 +19,16 @@ export function PageContentPage() {
   const userTabs = useQuery(trpc.tabs.listByPage.queryOptions({ pageId: pageId! }));
 
   const editorRef = useRef<ContentEditorHandle>(null);
-  const [publishFeedback, setPublishFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(
-    null,
-  );
+  // Publicar é um evento transiente → toast (convenção TASK-76). O indicador
+  // de autosave segue inline (estado contínuo do editor, não vira toast).
   const publish = useMutation(
     trpc.pages.publish.mutationOptions({
-      onSuccess: () => setPublishFeedback({ type: 'success', text: 'Página publicada.' }),
-      onError: () => setPublishFeedback({ type: 'error', text: 'Falha ao publicar. Tente novamente.' }),
+      onSuccess: () => toast.success('Página publicada.'),
+      onError: () => toast.error('Falha ao publicar. Tente novamente.'),
     }),
   );
 
   async function handlePublish() {
-    setPublishFeedback(null);
     // Garante que o rascunho da tab ativa está salvo antes do snapshot
     // (nota da TASK-34: o autosave continua independente do publish).
     await editorRef.current?.flush();
@@ -59,19 +58,6 @@ export function PageContentPage() {
         </div>
       </div>
 
-      {publishFeedback && (
-        <p
-          role={publishFeedback.type === 'error' ? 'alert' : 'status'}
-          style={{
-            background: publishFeedback.type === 'error' ? '#fdecea' : '#e6f4ea',
-            color: publishFeedback.type === 'error' ? '#b00020' : 'inherit',
-            padding: '0.5rem 0.75rem',
-            margin: '0 0 1rem',
-          }}
-        >
-          {publishFeedback.text}
-        </p>
-      )}
 
       {/* Tab bar só quando há tabs de usuário: Corpo + as tabs (TASK-67). */}
       {tabs.length > 0 && (
