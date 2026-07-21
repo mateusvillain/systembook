@@ -2,6 +2,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import type { ServerResponse } from 'node:http';
+import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDb, type Db } from '../db/client.js';
 import { runMigrations } from '../db/migrate.js';
@@ -63,6 +64,63 @@ describe('revisions router (TASK-35) + pages.restoreRevision (TASK-36)', () => {
     const list = await caller.revisions.listByPage({ pageId });
     expect(list.map((r) => r.id)).toEqual([r2.id, r1.id]);
     expect(list[0]).toMatchObject({ mensagem: 'Segunda', autorEmail: 'editor@test.local' });
+  });
+
+  describe('listRecent (TASK-69) — feed do painel inteiro', () => {
+    it('agrega revisões de todas as páginas, mais recentes primeiro (desempate por rowid)', async () => {
+      const caller = callerFor(db, editor);
+      const section = await caller.sections.create({ titulo: 'Padrões' });
+      const page2 = await caller.pages.create({ sectionId: section.id, titulo: 'Cores', slug: 'cores' });
+      const tab2 = await caller.tabs.create({ pageId: page2.id, titulo: 'Tokens' });
+
+      await caller.blocks.saveDraft({ tabId, doc: USAGE_V1 });
+      const r1 = await caller.pages.publish({ pageId, mensagem: 'p1' });
+      await caller.blocks.saveDraft({ tabId: tab2.id, doc: USAGE_V1 });
+      const r2 = await caller.pages.publish({ pageId: page2.id, mensagem: 'p2' });
+      await caller.blocks.saveDraft({ tabId, doc: USAGE_V2 });
+      const r3 = await caller.pages.publish({ pageId, mensagem: 'p3' });
+
+      const feed = await caller.revisions.listRecent({});
+      // publishes no mesmo segundo (unixepoch) → ordem = inserção desc (rowid)
+      expect(feed.map((r) => r.id)).toEqual([r3.id, r2.id, r1.id]);
+      // cada entrada traz página (título) e autor
+      expect(feed[0]).toMatchObject({ pageId, pageTitulo: 'Button', autorEmail: 'editor@test.local' });
+      expect(feed[1]).toMatchObject({ pageId: page2.id, pageTitulo: 'Cores' });
+    });
+
+    it('respeita o limit', async () => {
+      const caller = callerFor(db, editor);
+      await caller.blocks.saveDraft({ tabId, doc: USAGE_V1 });
+      await caller.pages.publish({ pageId, mensagem: 'a' });
+      await caller.blocks.saveDraft({ tabId, doc: USAGE_V2 });
+      await caller.pages.publish({ pageId, mensagem: 'b' });
+      await caller.blocks.saveDraft({ tabId, doc: USAGE_V1 });
+      const last = await caller.pages.publish({ pageId, mensagem: 'c' });
+
+      const feed = await caller.revisions.listRecent({ limit: 2 });
+      expect(feed).toHaveLength(2);
+      expect(feed[0]?.id).toBe(last.id);
+    });
+
+    it('autor removido (hard delete → SET NULL) aparece com autorEmail null', async () => {
+      const caller = callerFor(db, editor);
+      await caller.blocks.saveDraft({ tabId, doc: USAGE_V1 });
+      await caller.pages.publish({ pageId, mensagem: 'x' });
+
+      // hard delete do autor: revisions.autor_id vira NULL (SET NULL)
+      db.delete(users).where(eq(users.id, editor.userId)).run();
+
+      const feed = await caller.revisions.listRecent({});
+      expect(feed).toHaveLength(1);
+      expect(feed[0]?.autorEmail).toBeNull();
+      expect(feed[0]?.pageTitulo).toBe('Button');
+    });
+
+    it('não autenticado recebe UNAUTHORIZED', async () => {
+      await expect(callerFor(db, null).revisions.listRecent({})).rejects.toMatchObject({
+        code: 'UNAUTHORIZED',
+      });
+    });
   });
 
   it('getById devolve o snapshot completo parseado; inexistente dá NOT_FOUND', async () => {

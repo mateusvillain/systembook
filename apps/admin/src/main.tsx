@@ -10,6 +10,7 @@ import { UploadTokensPage } from './pages/UploadTokensPage.js';
 import { LandingPageSettingsPage } from './pages/LandingPageSettingsPage.js';
 import { PageContentPage } from './pages/PageContentPage.js';
 import { PageHistoryPage } from './pages/PageHistoryPage.js';
+import { GlobalHistoryPage } from './pages/GlobalHistoryPage.js';
 import { PublicPage } from './pages/PublicPage.js';
 import { PublicLayout } from './features/public/PublicLayout.js';
 import { PublicHome } from './features/public/PublicHome.js';
@@ -39,6 +40,7 @@ const router = createBrowserRouter([
       { path: 'admin/users', element: <UsersPage /> },
       { path: 'admin/settings/tokens', element: <UploadTokensPage /> },
       { path: 'admin/settings/landing-page', element: <LandingPageSettingsPage /> },
+      { path: 'admin/history', element: <GlobalHistoryPage /> },
       { path: 'pages/:pageId', element: <PageContentPage /> },
       { path: 'pages/:pageId/tabs/:tabId', element: <PageContentPage /> },
       { path: 'pages/:pageId/history', element: <PageHistoryPage /> },

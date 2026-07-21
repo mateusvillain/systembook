@@ -480,7 +480,7 @@
     "title": "Global panel history/activity view (across all pages)",
     "category": "functional",
     "specFilePath": ".agent/tasks/TASK-69.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-70",
