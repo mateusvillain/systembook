@@ -121,6 +121,7 @@ export const BLOCK_TYPES = [
   'table',
   'callout',
   'component-embed',
+  'dos-donts',
 ] as const satisfies readonly BlockType[];
 
 const _assertAllBlockTypes: [Exclude<BlockType, (typeof BLOCK_TYPES)[number]>] extends [never]

@@ -30,6 +30,12 @@ const SAMPLES: { [T in BlockType]: BlockContentFor<T> } = {
   },
   callout: { variant: 'warning', body: { type: 'paragraph', content: [] } },
   'component-embed': { componentName: 'Button', variantId: null },
+  'dos-donts': {
+    variant: 'do',
+    titulo: 'Use espaçamento consistente',
+    descricao: [{ type: 'paragraph', content: [] }],
+    cover: { kind: 'image', src: '/uploads/do.png', alt: 'Exemplo correto' },
+  },
 };
 
 describe('blocks (TASK-30)', () => {
