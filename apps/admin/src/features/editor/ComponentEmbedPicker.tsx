@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { ChevronLeft, Puzzle, X } from 'lucide-react';
 import { useTRPC } from '../../lib/trpc.js';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
+
+const optionButtonClass =
+  'w-full rounded-md border bg-muted/40 px-2.5 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors';
 
 /**
  * Picker de componente/variante para o component-embed (TASK-48). Fonte de
@@ -57,15 +64,7 @@ export function ComponentEmbedPicker({
     <div
       role="presentation"
       onMouseDown={onCancel}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0,0,0,0.35)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
-      }}
+      className="sb-admin fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
     >
       <div
         role="dialog"
@@ -73,40 +72,16 @@ export function ComponentEmbedPicker({
         aria-label="Selecionar componente para embed"
         data-testid="component-embed-picker"
         onMouseDown={(e) => e.stopPropagation()}
-        style={{
-          background: '#fff',
-          borderRadius: 8,
-          width: 'min(440px, 92vw)',
-          maxHeight: '80vh',
-          display: 'flex',
-          flexDirection: 'column',
-          boxShadow: '0 10px 40px rgba(0,0,0,0.25)',
-          overflow: 'hidden',
-        }}
+        className="bg-background flex max-h-[80vh] w-[min(440px,92vw)] flex-col overflow-hidden rounded-lg border shadow-lg"
       >
-        <header
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '0.75rem 1rem',
-            borderBottom: '1px solid #eee',
-          }}
-        >
-          <strong>
-            {component === null ? 'Escolha um componente' : `Variante de ${component}`}
-          </strong>
-          <button
-            type="button"
-            aria-label="Fechar"
-            onClick={onCancel}
-            style={{ border: 'none', background: 'none', fontSize: '1.2rem', cursor: 'pointer' }}
-          >
-            ×
-          </button>
+        <header className="flex items-center justify-between border-b px-4 py-3">
+          <strong>{component === null ? 'Escolha um componente' : `Variante de ${component}`}</strong>
+          <Button type="button" variant="ghost" size="icon" aria-label="Fechar" onClick={onCancel}>
+            <X />
+          </Button>
         </header>
 
-        <div style={{ padding: '0.75rem 1rem', overflow: 'auto' }}>
+        <div className="overflow-auto px-4 py-3">
           {component === null ? (
             <ComponentStep
               query={componentsQuery}
@@ -145,40 +120,33 @@ function ComponentStep({
 }) {
   return (
     <>
-      <input
+      <Input
         type="search"
         autoFocus
         placeholder="Filtrar componentes…"
         value={filter}
         onChange={(e) => setFilter(e.target.value)}
         aria-label="Filtrar componentes"
-        style={{
-          width: '100%',
-          padding: '0.4rem 0.6rem',
-          border: '1px solid #ccc',
-          borderRadius: 4,
-          marginBottom: '0.5rem',
-          boxSizing: 'border-box',
-        }}
+        className="mb-2"
       />
-      {query.isLoading && <p style={{ color: '#666' }}>Carregando…</p>}
-      {query.isError && <p style={{ color: '#c00' }}>Erro ao carregar componentes.</p>}
+      {query.isLoading && <p className="text-muted-foreground text-sm">Carregando…</p>}
+      {query.isError && <p className="text-destructive text-sm">Erro ao carregar componentes.</p>}
       {!query.isLoading && !query.isError && (query.data?.length ?? 0) === 0 && (
-        <p style={{ color: '#666' }}>
+        <p className="text-muted-foreground text-sm">
           Nenhum componente publicado ainda — rode o conector no repositório do design system.
         </p>
       )}
       {components.length > 0 && (
-        <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 4 }}>
+        <ul className="grid list-none gap-1 p-0">
           {components.map((name) => (
             <li key={name}>
               <button
                 type="button"
                 data-component-option={name}
                 onClick={() => onPick(name)}
-                style={optionButtonStyle}
+                className={cn(optionButtonClass, 'flex items-center gap-2')}
               >
-                🧩 {name}
+                <Puzzle className="size-4" /> {name}
               </button>
             </li>
           ))}
@@ -203,41 +171,27 @@ function VariantStep({
 }) {
   return (
     <>
-      <button
-        type="button"
-        onClick={onBack}
-        style={{
-          border: 'none',
-          background: 'none',
-          color: '#3366cc',
-          cursor: 'pointer',
-          padding: 0,
-          marginBottom: '0.5rem',
-        }}
-      >
-        ← Trocar componente
-      </button>
-      {query.isLoading && <p style={{ color: '#666' }}>Carregando variantes…</p>}
-      {query.isError && <p style={{ color: '#c00' }}>Erro ao carregar variantes.</p>}
+      <Button type="button" variant="link" className="mb-2 h-auto gap-1 px-0" onClick={onBack}>
+        <ChevronLeft className="size-4" /> Trocar componente
+      </Button>
+      {query.isLoading && <p className="text-muted-foreground text-sm">Carregando variantes…</p>}
+      {query.isError && <p className="text-destructive text-sm">Erro ao carregar variantes.</p>}
       {!query.isLoading && (query.data?.length ?? 0) === 0 && (
-        <p style={{ color: '#666' }}>Nenhuma variante publicada para {component}.</p>
+        <p className="text-muted-foreground text-sm">Nenhuma variante publicada para {component}.</p>
       )}
       {(query.data?.length ?? 0) > 0 && (
-        <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 4 }}>
+        <ul className="grid list-none gap-1 p-0">
           {query.data!.map((variantId) => (
             <li key={variantId}>
               <button
                 type="button"
                 data-variant-option={variantId}
                 onClick={() => onPick(variantId)}
-                style={{
-                  ...optionButtonStyle,
-                  fontWeight: variantId === currentVariant ? 700 : 400,
-                }}
+                className={cn(optionButtonClass, variantId === currentVariant && 'font-bold')}
               >
                 {variantId}
                 {variantId === currentVariant && (
-                  <span style={{ color: '#666', fontWeight: 400 }}> (atual)</span>
+                  <span className="text-muted-foreground font-normal"> (atual)</span>
                 )}
               </button>
             </li>
@@ -247,14 +201,3 @@ function VariantStep({
     </>
   );
 }
-
-const optionButtonStyle: React.CSSProperties = {
-  width: '100%',
-  textAlign: 'left',
-  padding: '0.5rem 0.6rem',
-  border: '1px solid #e2e2e2',
-  borderRadius: 4,
-  background: '#fafafa',
-  cursor: 'pointer',
-  fontSize: '0.9rem',
-};

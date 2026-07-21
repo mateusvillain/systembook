@@ -550,7 +550,7 @@
     "title": "Migrate the content editor chrome to shadcn/ui",
     "category": "ui-ux",
     "specFilePath": ".prd/tasks/TASK-79.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-80",
