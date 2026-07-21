@@ -1,32 +1,28 @@
-import { useState, type CSSProperties, type FormEvent, type ReactNode } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
 import { TRPCClientError } from '@trpc/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { NavLink } from 'react-router-dom';
+import { ArrowDown, ArrowUp, Check, ChevronDown, ChevronRight, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { queryClient, useTRPC } from '../../lib/trpc.js';
+import { cn } from '@/lib/utils';
 
 /**
  * Árvore de navegação (TASK-23): sections → pages → tabs, com criar/renomear/
  * reordenar/excluir inline em cada nível. Reordenação usa botões ↑/↓ enviando
  * a lista completa de ids ao `reorder` (drag-and-drop fica para depois).
  * Exclusão confirma via window.confirm — o delete cascateia toda a subárvore.
+ * Fase 9 (TASK-78): estilo migrado para Tailwind + ícones lucide (só
+ * apresentação — a lógica de query/mutation/reorder é intocada).
  */
 
-const rowStyle: CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '0.25rem',
-  padding: '0.15rem 0.25rem',
-  borderRadius: 4,
-};
+const rowClass = 'flex items-center gap-1 rounded px-1 py-0.5';
+const iconBtnClass =
+  'inline-flex items-center justify-center rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors';
+const treeInputClass =
+  'min-w-0 flex-1 rounded border border-input bg-transparent px-2 py-0.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]';
 
-const iconButton: CSSProperties = {
-  border: 'none',
-  background: 'none',
-  cursor: 'pointer',
-  padding: '0 0.15rem',
-  fontSize: '0.85rem',
-  lineHeight: 1.4,
-};
+const treeNavLinkClass = ({ isActive }: { isActive: boolean }) =>
+  cn('min-w-0 flex-1 truncate rounded px-1 py-0.5 no-underline hover:bg-accent', isActive ? 'text-primary font-semibold' : 'text-foreground');
 
 export function SidebarTree() {
   const trpc = useTRPC();
@@ -50,12 +46,10 @@ export function SidebarTree() {
   return (
     <nav
       aria-label="Estrutura da documentação"
-      style={{ fontSize: '0.9rem', display: 'grid', gap: '0.25rem', alignContent: 'start' }}
+      className="grid content-start gap-1 text-sm"
     >
-      <strong style={{ padding: '0.15rem 0.25rem', color: '#666', fontSize: '0.8rem' }}>
-        ESTRUTURA
-      </strong>
-      {sectionsQuery.isPending && <span style={rowStyle}>Carregando…</span>}
+      <strong className="text-muted-foreground px-1 py-0.5 text-xs tracking-wide">ESTRUTURA</strong>
+      {sectionsQuery.isPending && <span className={cn(rowClass, 'text-muted-foreground')}>Carregando…</span>}
       {sections.map((section, i) => (
         <SectionNode
           key={section.id}
@@ -110,11 +104,13 @@ function SectionNode({
         onMoveDown={onMoveDown}
         titleElement={
           <button
-            style={{ ...iconButton, fontWeight: 600, flex: 1, textAlign: 'left' }}
+            className="flex flex-1 items-center gap-1 rounded px-1 py-0.5 text-left font-semibold hover:bg-accent"
             aria-expanded={expanded}
+            aria-label={`${expanded ? 'Recolher' : 'Expandir'} seção ${section.titulo}`}
             onClick={() => setExpanded((v) => !v)}
           >
-            {expanded ? '▾' : '▸'} {section.titulo}
+            {expanded ? <ChevronDown className="size-4 shrink-0" /> : <ChevronRight className="size-4 shrink-0" />}
+            {section.titulo}
           </button>
         }
       />
@@ -144,8 +140,8 @@ function PagesList({ sectionId }: { sectionId: string }) {
   }
 
   return (
-    <div style={{ marginLeft: '1rem', display: 'grid', gap: '0.1rem' }}>
-      {pagesQuery.isPending && <span style={rowStyle}>Carregando…</span>}
+    <div className="ml-4 grid gap-0.5">
+      {pagesQuery.isPending && <span className={cn(rowClass, 'text-muted-foreground')}>Carregando…</span>}
       {pages.map((page, i) => (
         <PageNode
           key={page.id}
@@ -196,29 +192,19 @@ function PageNode({
         onMoveUp={onMoveUp}
         onMoveDown={onMoveDown}
         titleElement={
-          <span style={{ display: 'flex', flex: 1, alignItems: 'center', minWidth: 0 }}>
+          <span className="flex min-w-0 flex-1 items-center">
             <button
-              style={{ ...iconButton, flexShrink: 0 }}
+              className={cn(iconBtnClass, 'shrink-0')}
               aria-expanded={expanded}
               aria-label={`${expanded ? 'Recolher' : 'Expandir'} tabs de ${page.titulo}`}
               onClick={() => setExpanded((v) => !v)}
             >
-              {expanded ? '▾' : '▸'}
+              {expanded ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
             </button>
             {/* Clicar na página abre o editor do corpo (TASK-67). */}
-            <NavLink
-              to={`/pages/${page.id}`}
-              end
-              style={({ isActive }) => ({
-                flex: 1,
-                minWidth: 0,
-                textDecoration: 'none',
-                color: isActive ? '#0b57d0' : 'inherit',
-                fontWeight: isActive ? 600 : 400,
-              })}
-            >
+            <NavLink to={`/pages/${page.id}`} end className={treeNavLinkClass}>
               {page.titulo}
-              <span style={{ color: '#999', marginLeft: '0.35rem' }}>/{page.slug}</span>
+              <span className="text-muted-foreground ml-1.5">/{page.slug}</span>
             </NavLink>
           </span>
         }
@@ -249,8 +235,8 @@ function TabsList({ pageId }: { pageId: string }) {
   }
 
   return (
-    <div style={{ marginLeft: '1rem', display: 'grid', gap: '0.1rem' }}>
-      {tabsQuery.isPending && <span style={rowStyle}>Carregando…</span>}
+    <div className="ml-4 grid gap-0.5">
+      {tabsQuery.isPending && <span className={cn(rowClass, 'text-muted-foreground')}>Carregando…</span>}
       {tabs.map((tab, i) => (
         <NodeRow
           key={tab.id}
@@ -265,15 +251,7 @@ function TabsList({ pageId }: { pageId: string }) {
           onMoveUp={i > 0 ? () => move(i, -1) : undefined}
           onMoveDown={i < tabs.length - 1 ? () => move(i, 1) : undefined}
           titleElement={
-            <NavLink
-              to={`/pages/${pageId}/tabs/${tab.id}`}
-              style={({ isActive }) => ({
-                flex: 1,
-                textDecoration: 'none',
-                color: isActive ? '#0b57d0' : 'inherit',
-                fontWeight: isActive ? 600 : 400,
-              })}
-            >
+            <NavLink to={`/pages/${pageId}/tabs/${tab.id}`} className={treeNavLinkClass}>
               {tab.titulo}
             </NavLink>
           }
@@ -308,7 +286,7 @@ function NodeRow({
   if (editing) {
     return (
       <form
-        style={rowStyle}
+        className={rowClass}
         onSubmit={(e) => {
           e.preventDefault();
           if (draft.trim()) onRename(draft.trim());
@@ -320,24 +298,24 @@ function NodeRow({
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           aria-label={`Novo título de ${label}`}
-          style={{ flex: 1, minWidth: 0 }}
+          className={treeInputClass}
         />
-        <button type="submit" style={iconButton} aria-label={`Salvar título de ${label}`}>
-          ✓
+        <button type="submit" className={iconBtnClass} aria-label={`Salvar título de ${label}`}>
+          <Check className="size-4" />
         </button>
-        <button type="button" style={iconButton} onClick={() => setEditing(false)}>
-          ✕
+        <button type="button" className={iconBtnClass} aria-label="Cancelar" onClick={() => setEditing(false)}>
+          <X className="size-4" />
         </button>
       </form>
     );
   }
 
   return (
-    <div style={rowStyle}>
+    <div className={cn(rowClass, 'group hover:bg-accent')}>
       {titleElement}
-      <span style={{ display: 'inline-flex', gap: '0.1rem' }}>
+      <span className="inline-flex gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
         <button
-          style={iconButton}
+          className={iconBtnClass}
           aria-label={`Renomear ${label}`}
           title="Renomear"
           onClick={() => {
@@ -345,31 +323,31 @@ function NodeRow({
             setEditing(true);
           }}
         >
-          ✎
+          <Pencil className="size-3.5" />
         </button>
         <button
-          style={{ ...iconButton, visibility: onMoveUp ? 'visible' : 'hidden' }}
+          className={cn(iconBtnClass, !onMoveUp && 'invisible')}
           aria-label={`Mover ${label} para cima`}
           title="Mover para cima"
           onClick={onMoveUp}
         >
-          ↑
+          <ArrowUp className="size-3.5" />
         </button>
         <button
-          style={{ ...iconButton, visibility: onMoveDown ? 'visible' : 'hidden' }}
+          className={cn(iconBtnClass, !onMoveDown && 'invisible')}
           aria-label={`Mover ${label} para baixo`}
           title="Mover para baixo"
           onClick={onMoveDown}
         >
-          ↓
+          <ArrowDown className="size-3.5" />
         </button>
         <button
-          style={iconButton}
+          className={cn(iconBtnClass, 'hover:text-destructive')}
           aria-label={`Excluir ${label}`}
           title="Excluir"
           onClick={onDelete}
         >
-          🗑
+          <Trash2 className="size-3.5" />
         </button>
       </span>
     </div>
@@ -398,29 +376,29 @@ function InlineCreate({
   if (!open) {
     return (
       <button
-        style={{ ...iconButton, textAlign: 'left', color: '#0b57d0', padding: '0.15rem 0.25rem' }}
+        className="text-primary flex items-center gap-1 rounded px-1 py-0.5 text-left hover:bg-accent"
         onClick={() => setOpen(true)}
       >
-        + {label}
+        <Plus className="size-3.5" /> {label}
       </button>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} style={rowStyle}>
+    <form onSubmit={handleSubmit} className={rowClass}>
       <input
         autoFocus
         placeholder={label}
         value={titulo}
         onChange={(e) => setTitulo(e.target.value)}
         aria-label={label}
-        style={{ flex: 1, minWidth: 0 }}
+        className={treeInputClass}
       />
-      <button type="submit" style={iconButton} aria-label={`Criar ${label.toLowerCase()}`}>
-        ✓
+      <button type="submit" className={iconBtnClass} aria-label={`Criar ${label.toLowerCase()}`}>
+        <Check className="size-4" />
       </button>
-      <button type="button" style={iconButton} onClick={() => setOpen(false)}>
-        ✕
+      <button type="button" className={iconBtnClass} aria-label="Cancelar" onClick={() => setOpen(false)}>
+        <X className="size-4" />
       </button>
     </form>
   );
@@ -455,42 +433,42 @@ function CreatePageForm({
   if (!open) {
     return (
       <button
-        style={{ ...iconButton, textAlign: 'left', color: '#0b57d0', padding: '0.15rem 0.25rem' }}
+        className="text-primary flex items-center gap-1 rounded px-1 py-0.5 text-left hover:bg-accent"
         onClick={() => setOpen(true)}
       >
-        + Nova página
+        <Plus className="size-3.5" /> Nova página
       </button>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} style={{ ...rowStyle, flexWrap: 'wrap' }}>
+    <form onSubmit={handleSubmit} className={cn(rowClass, 'flex-wrap')}>
       <input
         autoFocus
         placeholder="Título da página"
         value={titulo}
         onChange={(e) => setTitulo(e.target.value)}
         aria-label="Título da nova página"
-        style={{ flex: 1, minWidth: 0 }}
+        className={treeInputClass}
       />
       <input
         placeholder="slug (opcional)"
         value={slug}
         onChange={(e) => setSlug(e.target.value)}
         aria-label="Slug da nova página (opcional)"
-        style={{ flex: 1, minWidth: 0 }}
+        className={treeInputClass}
       />
-      <button type="submit" style={iconButton} aria-label="Criar página">
-        ✓
+      <button type="submit" className={iconBtnClass} aria-label="Criar página">
+        <Check className="size-4" />
       </button>
-      <button type="button" style={iconButton} onClick={() => setOpen(false)}>
-        ✕
+      <button type="button" className={iconBtnClass} aria-label="Cancelar" onClick={() => setOpen(false)}>
+        <X className="size-4" />
       </button>
-      <span style={{ fontSize: '0.75rem', color: '#777', width: '100%' }}>
+      <span className="text-muted-foreground w-full text-xs">
         Deixe o slug em branco para gerá-lo a partir do título.
       </span>
       {error && (
-        <span role="alert" style={{ color: '#b00020', fontSize: '0.8rem', width: '100%' }}>
+        <span role="alert" className="text-destructive w-full text-xs">
           {error}
         </span>
       )}
