@@ -38,7 +38,7 @@
       "step": 5,
       "description": "Cross-link from README",
       "details": "Ensure TASK-62's README links to both `LICENSE` and `CONTRIBUTING.md`.",
-      "pass": false
+      "pass": true
     }
   ],
   "dependencies": [
@@ -48,5 +48,6 @@
   "estimatedComplexity": "low",
   "technicalNotes": [
     "License choice has real legal/adoption implications — treat step 1's confirmation as a genuine decision point with the project owner, not a default to silently apply."
-  ]
+  ],
+  "passes": true
 }

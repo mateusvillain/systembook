@@ -431,14 +431,14 @@
     "title": "README with project positioning and comparison vs Storybook/Zeroheight/Decap",
     "category": "documentation",
     "specFilePath": ".agent/tasks/TASK-62.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-63",
     "title": "CONTRIBUTING.md and open source license",
     "category": "documentation",
     "specFilePath": ".agent/tasks/TASK-63.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-64",
