@@ -78,7 +78,9 @@ responsabilidade operacional de quem hospeda (sugestão: Litestream).
 
 Para conectar o **pipeline de preview de componentes** (buildar os `*.preview.tsx`
 do seu design system no CI e enviar o artefato para a instância), veja
-[`docs/ci-example.md`](./docs/ci-example.md).
+[`docs/ci-example.md`](./docs/ci-example.md); o contrato dos arquivos
+`*.preview.tsx` está em
+[`docs/preview-tsx-schema.md`](./docs/preview-tsx-schema.md).
 
 ## Desenvolvimento
 
