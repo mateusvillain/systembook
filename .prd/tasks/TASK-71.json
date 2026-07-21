@@ -15,38 +15,43 @@
       "step": 1,
       "description": "Add the type to packages/schema/src/block.ts",
       "details": "Define `DosDontsVariant = 'do' | 'dont'`, `DosDontsCover` (discriminated union by `kind`), `DosDontsBlockContent`, `DosDontsBlock = BlockBase<'dos-donts', DosDontsBlockContent>`; add to `Block` and `BlockType`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Register the block type on the server",
       "details": "Add `'dos-donts'` to `BLOCK_TYPES` in `apps/server/src/db/schema.ts` (keeps the `satisfies readonly BlockType[]` and exhaustiveness assert both compiling — no migration, per the TASK-30 decision documented in that file).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Implement the serialize.ts round-trip",
       "details": "In `tiptapDocToBlocks`/`blocksToTiptapDoc` (`apps/server/src/blocks/serialize.ts`): map the `dosDonts` Tiptap node (attrs `variant`, `titulo`, `cover`; `content` = the description, `block+`) to/from the `dos-donts` block row, following the same nested-content pattern used for `callout`. Mirror identically in `apps/admin/src/features/revisions/blocksToTiptapDoc.ts`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Extend FTS extraction",
       "details": "Update `extractSearchableText` (and its block-type allowlist) in `apps/server/src/db/search.ts` to pull text from `dos-donts.titulo` and the paragraph/heading/list text nested in `descricao`, mirroring the existing `callout` handling.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 5,
       "description": "Tests",
       "details": "Extend `apps/server/src/blocks/serialize.test.ts` with a round-trip case per cover kind (image, component-embed, no cover) and extend the FTS test (`search.test.ts`) to confirm a `dos-donts` block's titulo/descricao text is indexed and searchable after publish.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-30", "TASK-31", "TASK-53"],
+  "dependencies": [
+    "TASK-30",
+    "TASK-31",
+    "TASK-53"
+  ],
   "estimatedComplexity": "medium",
   "technicalNotes": [
     "No Drizzle migration is needed — `blocks.tipo` is validated in the application layer (`BLOCK_TYPES` + zod enum), not a SQLite CHECK, exactly the decision documented in TASK-30's spec.",
     "Naming convention: kebab-case block `tipo` (`dos-donts`) but camelCase Tiptap node name (`dosDonts`), mirroring `component-embed` / `componentEmbed`.",
     "This task is intentionally scoped to types + serialization only — the editor NodeView (TASK-72), cover picker (TASK-73), and public render (TASK-74) build on top of it."
-  ]
+  ],
+  "passes": true
 }

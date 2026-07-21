@@ -494,28 +494,28 @@
     "title": "Dos and Don'ts block: schema type and serialization",
     "category": "data-model",
     "specFilePath": ".prd/tasks/TASK-71.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-72",
     "title": "Dos and Don'ts block: editor NodeView and toolbar insertion",
     "category": "functional",
     "specFilePath": ".prd/tasks/TASK-72.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-73",
     "title": "Dos and Don'ts block: optional cover (image or component-embed)",
     "category": "ui-ux",
     "specFilePath": ".prd/tasks/TASK-73.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-74",
     "title": "Dos and Don'ts block: public read-only render and end-to-end verification",
     "category": "ui-ux",
     "specFilePath": ".prd/tasks/TASK-74.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-75",
