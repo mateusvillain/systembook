@@ -522,49 +522,49 @@
     "title": "Setup Tailwind CSS + shadcn/ui in the admin panel",
     "category": "setup",
     "specFilePath": ".prd/tasks/TASK-75.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-76",
     "title": "Add lucide-react (icons) and sonner (toasts); establish the toast-vs-inline convention",
     "category": "setup",
     "specFilePath": ".prd/tasks/TASK-76.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-77",
     "title": "Migrate authentication and app shell to shadcn/ui",
     "category": "ui-ux",
     "specFilePath": ".prd/tasks/TASK-77.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-78",
     "title": "Migrate the navigation sidebar (SidebarTree) to shadcn/ui",
     "category": "ui-ux",
     "specFilePath": ".prd/tasks/TASK-78.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-79",
     "title": "Migrate the content editor chrome to shadcn/ui",
     "category": "ui-ux",
     "specFilePath": ".prd/tasks/TASK-79.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-80",
     "title": "Migrate admin management pages to shadcn/ui",
     "category": "ui-ux",
     "specFilePath": ".prd/tasks/TASK-80.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-81",
     "title": "Fase 9 visual QA pass and final verification",
     "category": "ui-ux",
     "specFilePath": ".prd/tasks/TASK-81.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-82",

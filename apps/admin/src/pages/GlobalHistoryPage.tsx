@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useTRPC, type RouterOutput } from '../lib/trpc.js';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 
 type Entry = RouterOutput['revisions']['listRecent'][number];
 
@@ -15,18 +17,20 @@ export function GlobalHistoryPage() {
   const feed = useQuery(trpc.revisions.listRecent.queryOptions({ limit: 50 }));
 
   return (
-    <section>
-      <h1 style={{ marginTop: 0 }}>Histórico do painel</h1>
-      <p style={{ color: '#666', marginTop: 0 }}>
-        Atividade recente de publicação e restauração em todas as páginas.
-      </p>
+    <section className="grid gap-4">
+      <div className="grid gap-1">
+        <h1 className="text-2xl font-semibold">Histórico do painel</h1>
+        <p className="text-muted-foreground text-sm">
+          Atividade recente de publicação e restauração em todas as páginas.
+        </p>
+      </div>
 
-      {feed.isPending && <p>Carregando…</p>}
-      {feed.isError && <p role="alert">Erro ao carregar o histórico.</p>}
-      {feed.data?.length === 0 && <p>Nenhuma revisão publicada ainda.</p>}
+      {feed.isPending && <p className="text-muted-foreground">Carregando…</p>}
+      {feed.isError && <p role="alert" className="text-destructive">Erro ao carregar o histórico.</p>}
+      {feed.data?.length === 0 && <p className="text-muted-foreground">Nenhuma revisão publicada ainda.</p>}
 
       {feed.data && feed.data.length > 0 && (
-        <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: '0.5rem' }}>
+        <ul className="grid list-none gap-2 p-0">
           {feed.data.map((rev) => (
             <ActivityRow key={rev.id} rev={rev} />
           ))}
@@ -47,20 +51,26 @@ function ActivityRow({ rev }: { rev: Entry }) {
   const publishNote = label === 'Publicou' ? rev.mensagem : null;
 
   return (
-    <li style={{ border: '1px solid #ddd', borderRadius: 4, padding: '0.6rem 0.75rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
-        <span>
-          <strong>{label}</strong>{' '}
-          <Link to={`/pages/${rev.pageId}/history`}>{rev.pageTitulo}</Link>
-        </span>
-        <span style={{ color: '#555', fontSize: '0.85rem' }}>
-          {new Date(rev.criadoEm).toLocaleString('pt-BR')}
-        </span>
-      </div>
-      <div style={{ fontSize: '0.8rem', color: '#555', marginTop: '0.15rem' }}>
-        {rev.autorEmail ?? 'Autor removido'}
-        {publishNote && <span> — {publishNote}</span>}
-      </div>
+    <li>
+      <Card>
+        <CardContent className="flex flex-col gap-1 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span className="flex items-center gap-2">
+              <Badge variant={label === 'Restaurou' ? 'secondary' : 'default'}>{label}</Badge>
+              <Link to={`/pages/${rev.pageId}/history`} className="text-primary hover:underline">
+                {rev.pageTitulo}
+              </Link>
+            </span>
+            <span className="text-muted-foreground text-sm">
+              {new Date(rev.criadoEm).toLocaleString('pt-BR')}
+            </span>
+          </div>
+          <div className="text-muted-foreground text-xs">
+            {rev.autorEmail ?? 'Autor removido'}
+            {publishNote && <span> — {publishNote}</span>}
+          </div>
+        </CardContent>
+      </Card>
     </li>
   );
 }

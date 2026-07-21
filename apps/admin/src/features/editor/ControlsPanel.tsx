@@ -1,5 +1,8 @@
 import { useState } from 'react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { PreviewControl, PreviewUpdatePropsMessage } from '@systembook/schema';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 
 /**
  * Painel de controles interativos do preview (TASK-49). Renderiza um input por
@@ -73,7 +76,12 @@ export function ControlsPanel({
         onMouseDown={(e) => e.preventDefault()}
         onClick={() => setExpanded((v) => !v)}
       >
-        {expanded ? '▾' : '▸'} Controles ({controls.length})
+        {expanded ? (
+          <ChevronDown className="inline size-4 align-middle" />
+        ) : (
+          <ChevronRight className="inline size-4 align-middle" />
+        )}{' '}
+        Controles ({controls.length})
       </button>
 
       {expanded && (
@@ -86,21 +94,21 @@ export function ControlsPanel({
               <label key={control.propName} className="sb-control-row" htmlFor={id}>
                 <span className="sb-control-label">{label}</span>
                 {control.kind === 'text' && (
-                  <input
+                  <Input
                     id={id}
                     type="text"
+                    className="h-7 w-40"
                     data-control={control.propName}
                     value={String(value ?? '')}
                     onChange={(e) => update(control.propName, e.target.value)}
                   />
                 )}
                 {control.kind === 'boolean' && (
-                  <input
+                  <Switch
                     id={id}
-                    type="checkbox"
                     data-control={control.propName}
                     checked={Boolean(value)}
-                    onChange={(e) => update(control.propName, e.target.checked)}
+                    onCheckedChange={(checked) => update(control.propName, checked)}
                   />
                 )}
                 {control.kind === 'select' && (
