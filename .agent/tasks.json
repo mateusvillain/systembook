@@ -445,7 +445,7 @@
     "title": "SQLite backup documented as operator responsibility (Litestream)",
     "category": "documentation",
     "specFilePath": ".agent/tasks/TASK-64.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-65",

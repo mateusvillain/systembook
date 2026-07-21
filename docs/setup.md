@@ -68,6 +68,10 @@ A instância responde em `http://localhost:3000` (ou na `PORT` que você definir
 produção real, coloque um reverse proxy com TLS na frente (os cookies de sessão são
 marcados `Secure` fora de ambiente local).
 
+> **Antes de ir para produção**, configure um backup: todo o estado fica num único
+> arquivo SQLite no volume, e o SystemBook **não** faz backup automático. Veja o
+> [guia de backup e recuperação](./backup.md) (setup recomendado com Litestream).
+
 ---
 
 ## 2. Primeiro login
