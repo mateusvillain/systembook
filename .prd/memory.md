@@ -87,7 +87,7 @@ O tracking granular (pass por step) está em `.prd/tasks/TASK-*.json` e o índic
 | Pós-fases — Histórico geral | TASK-69 | ✅ | `/admin/history` agregando revisões de todas as páginas — **mergeada (PR #7)** |
 | Pós-fases — Auto-slug | TASK-70 | ✅ | slug derivado do título quando em branco — **mergeada (PR #8)** |
 | 8 — Bloco Dos and Don'ts | TASK-71..74 | ✅ | schema+serialize (71), NodeView+toolbar (72), cover opcional imagem/component-embed (73), render público+verificação (74) — **mergeada (PR #9)** |
-| 9 — Modernização visual (Shadcn) | TASK-75..81 | ✅ | setup Tailwind+shadcn (75), lucide-react+sonner (76), auth/shell (77), sidebar (78), editor (79), telas de gestão (80), QA final (81) — escopo admin-only, doc pública mantém o tema CSS-vars da TASK-55; **completa, branch `feature/fase-9-shadcn`, pendente de PR/merge** |
+| 9 — Modernização visual (Shadcn) | TASK-75..81 | ✅ | setup Tailwind+shadcn (75), lucide-react+sonner (76), auth/shell (77), sidebar (78), editor (79), telas de gestão (80), QA final (81) — escopo admin-only, doc pública mantém o tema CSS-vars da TASK-55; **mergeada (PR #10)** |
 | Backlog aberto (fora das fases) | TASK-82 | ⬜ | publicar `@systembook/connector` no npm (era TASK-71, renumerada) |
 
 Critérios de sucesso do PRD (§1): fim da Fase 3 = CMS de texto utilizável sem dev (✅ atingido); fim da Fase 5 = live preview funcional (proposta de valor central); fim da Fase 7 = pronto para divulgação open source.
@@ -97,7 +97,7 @@ Critérios de sucesso do PRD (§1): fim da Fase 3 = CMS de texto utilizável sem
 - Histórico inicial: **14 commits Conventional Commits** na `main` (chore/build/feat/test/ci), pushados para `github.com/mateusvillain/systembook`.
 - CI (GitHub Actions): Node 24, pnpm via campo `packageManager`, steps separados Lint → Typecheck → Test. **Gotcha corrigido**: `pnpm/action-setup@v4` não aceita `version:` no workflow quando `package.json` tem `packageManager` — deixar só o `packageManager`.
 - Branch de teste `ci-test/lint-failure` foi criado e removido (local + remoto) após validar a falha seletiva do lint.
-- **PRs mergeados**: #1 (Fase 4), #2 (Fase 5), #3 (fix proxy Vite dev), **#4 (Fase 6 — TASK-52..57)**, **#5 (Fase 7 — TASK-58..64, merge commit `c614faa`)**, **#6 (conteúdo na página — TASK-65..68, merge commit `523c340`)**, **#7 (histórico geral do painel — TASK-69, merge commit `ebe52ed`)**, **#8 (auto-slug — TASK-70, merge commit `df2099d`)**, **#9 (Fase 8 — bloco Dos and Don'ts, TASK-71..74, merge commit `6b61734`)**. Cada fase/feature fecha com PR + merge na `main` e branch deletada; o CI (2 jobs `build`) precisa estar verde antes do merge. Validação da Fase 7 antes do merge: `pnpm lint/typecheck/test` local verde (146 testes: 131 server + 7 preview-kit + 8 connector) + os 2 jobs `build` do CI verdes.
+- **PRs mergeados**: #1 (Fase 4), #2 (Fase 5), #3 (fix proxy Vite dev), **#4 (Fase 6 — TASK-52..57)**, **#5 (Fase 7 — TASK-58..64, merge commit `c614faa`)**, **#6 (conteúdo na página — TASK-65..68, merge commit `523c340`)**, **#7 (histórico geral do painel — TASK-69, merge commit `ebe52ed`)**, **#8 (auto-slug — TASK-70, merge commit `df2099d`)**, **#9 (Fase 8 — bloco Dos and Don'ts, TASK-71..74, merge commit `6b61734`)**, **#10 (Fase 9 — modernização visual Shadcn, TASK-75..81, merge commit `8656c9a`)**. Cada fase/feature fecha com PR + merge na `main` e branch deletada; o CI (2 jobs `build`) precisa estar verde antes do merge. Validação da Fase 7 antes do merge: `pnpm lint/typecheck/test` local verde (146 testes: 131 server + 7 preview-kit + 8 connector) + os 2 jobs `build` do CI verdes.
 
 ## Arquitetura de auth (Fase 1)
 
@@ -310,7 +310,7 @@ O painel em dev acessa-se por `http://localhost:5173`; o proxy do `vite.config.t
 - **Flake não-relacionado observado durante a fase**: `pnpm test`/`pnpm -r run test` falha o preview-kit de forma não-determinística com `(0, act) is not a function` — comportamento do runner `pnpm -r`, independe de `--workspace-concurrency`; sempre passa isolado (`pnpm --filter @systembook/preview-kit test`) e o CI (mesmo comando, Linux) vem verde consistentemente. Reexecutar `pnpm test` resolve localmente.
 - **Fan-out final**: lint ✓, typecheck ✓, 165 testes (150 server + 7 preview-kit + 8 connector). **MERGEADA na `main`** (PR #9, merge `6b61734`).
 
-## Fase 9 — Modernização visual do painel com Shadcn (COMPLETA, branch `feature/fase-9-shadcn`)
+## Fase 9 — Modernização visual do painel com Shadcn (MERGEADA na `main`, PR #10, merge `8656c9a`)
 
 Escopo **admin-only** (a doc pública `.sb-public` mantém o tema CSS-vars da TASK-55, intocada).
 
