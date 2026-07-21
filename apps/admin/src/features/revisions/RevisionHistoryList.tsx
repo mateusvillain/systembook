@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { queryClient, useTRPC } from '../../lib/trpc.js';
 import { RevisionSnapshotPreview } from './RevisionSnapshotPreview.js';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface Props {
   pageId: string;
@@ -25,14 +28,14 @@ export function RevisionHistoryList({ pageId, firstTabId }: Props) {
     enabled: selectedId !== null,
   });
 
-  const [restoreError, setRestoreError] = useState<string | null>(null);
   const restore = useMutation(
     trpc.pages.restoreRevision.mutationOptions({
       onSuccess: () => {
         queryClient.invalidateQueries(trpc.revisions.listByPage.queryFilter());
+        toast.success('Revisão restaurada.');
         if (firstTabId) navigate(`/pages/${pageId}/tabs/${firstTabId}`);
       },
-      onError: () => setRestoreError('Falha ao restaurar a revisão. Tente novamente.'),
+      onError: () => toast.error('Falha ao restaurar a revisão. Tente novamente.'),
     }),
   );
 
@@ -43,55 +46,52 @@ export function RevisionHistoryList({ pageId, firstTabId }: Props) {
       'Restaurar esta revisão substitui o conteúdo atual (rascunho) de todas as tabs da página pelo snapshot escolhido. Continuar?',
     );
     if (!ok) return;
-    setRestoreError(null);
     restore.mutate({ pageId, revisionId });
   }
 
-  if (list.isPending) return <p>Carregando histórico…</p>;
-  if (list.isError) return <p role="alert">Erro ao carregar o histórico.</p>;
-  if (list.data.length === 0) return <p>Nenhuma revisão publicada ainda.</p>;
+  if (list.isPending) return <p className="text-muted-foreground">Carregando histórico…</p>;
+  if (list.isError) return <p role="alert" className="text-destructive">Erro ao carregar o histórico.</p>;
+  if (list.data.length === 0) return <p className="text-muted-foreground">Nenhuma revisão publicada ainda.</p>;
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(260px, 340px) 1fr', gap: '1.5rem' }}>
-      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: '0.5rem' }}>
+    <div className="grid gap-6 md:grid-cols-[minmax(260px,340px)_1fr]">
+      <ul className="grid list-none gap-2 p-0">
         {list.data.map((rev) => (
-          <li key={rev.id} style={{ border: '1px solid #ddd', borderRadius: 4 }}>
+          <li key={rev.id} className="overflow-hidden rounded-md border">
             <button
               type="button"
               onClick={() => setSelectedId(rev.id)}
               aria-pressed={rev.id === selectedId}
-              style={{
-                display: 'block',
-                width: '100%',
-                textAlign: 'left',
-                padding: '0.5rem 0.75rem',
-                border: 'none',
-                background: rev.id === selectedId ? '#eef4ff' : 'white',
-                cursor: 'pointer',
-              }}
+              className={cn(
+                'block w-full px-3 py-2 text-left transition-colors',
+                rev.id === selectedId ? 'bg-accent' : 'hover:bg-muted/50',
+              )}
             >
               <strong>{new Date(rev.criadoEm).toLocaleString('pt-BR')}</strong>
-              <div style={{ fontSize: '0.8rem', color: '#555' }}>{rev.autorEmail ?? 'Autor removido'}</div>
-              {rev.mensagem && <div style={{ fontSize: '0.85rem', marginTop: '0.25rem' }}>{rev.mensagem}</div>}
+              <div className="text-muted-foreground text-xs">{rev.autorEmail ?? 'Autor removido'}</div>
+              {rev.mensagem && <div className="mt-1 text-sm">{rev.mensagem}</div>}
             </button>
-            <div style={{ padding: '0 0.75rem 0.5rem' }}>
-              <button type="button" onClick={() => handleRestore(rev.id)} disabled={restore.isPending}>
+            <div className="px-3 pb-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => handleRestore(rev.id)}
+                disabled={restore.isPending}
+              >
                 {restore.isPending ? 'Restaurando…' : 'Restaurar'}
-              </button>
+              </Button>
             </div>
           </li>
         ))}
       </ul>
 
       <div>
-        {restoreError && (
-          <p role="alert" style={{ color: '#b00020' }}>
-            {restoreError}
-          </p>
+        {selectedId === null && (
+          <p className="text-muted-foreground">Selecione uma revisão à esquerda para ver o conteúdo.</p>
         )}
-        {selectedId === null && <p>Selecione uma revisão à esquerda para ver o conteúdo.</p>}
-        {selectedId !== null && preview.isPending && <p>Carregando conteúdo…</p>}
-        {selectedId !== null && preview.isError && <p role="alert">Erro ao carregar o snapshot.</p>}
+        {selectedId !== null && preview.isPending && <p className="text-muted-foreground">Carregando conteúdo…</p>}
+        {selectedId !== null && preview.isError && <p role="alert" className="text-destructive">Erro ao carregar o snapshot.</p>}
         {preview.data && <RevisionSnapshotPreview snapshot={preview.data.snapshot} />}
       </div>
     </div>
