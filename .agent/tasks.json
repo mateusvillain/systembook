@@ -417,7 +417,7 @@
     "title": "Setup documentation: install connector, configure CI, bootstrap instance, create first admin",
     "category": "documentation",
     "specFilePath": ".agent/tasks/TASK-60.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-61",

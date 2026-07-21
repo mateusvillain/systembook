@@ -154,7 +154,9 @@ upload da instância, chaveada por `(component, variantId, commitSha)`. O
 `(component, variantId)` e o renderiza.
 
 Para o passo a passo do pipeline de CI (build + upload por variante), veja
-[`docs/ci-example.md`](./ci-example.md).
+[`docs/ci-example.md`](./ci-example.md); para o onboarding completo (subir a
+instância, instalar o conector, primeiro login), veja o
+[guia de setup](./setup.md).
 
 ## Contrato `postMessage` (`systembook:update-props`)
 

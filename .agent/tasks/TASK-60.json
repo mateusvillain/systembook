@@ -14,36 +14,42 @@
       "step": 1,
       "description": "Write the instance bootstrap section",
       "details": "Document pulling the published image, creating `.env` from the documented variable list (TASK-59), and running `docker-compose -f docker-compose.production.yml up -d`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Write the first-login section",
       "details": "Document navigating to the instance URL and logging in with `INITIAL_ADMIN_EMAIL`/`INITIAL_ADMIN_PASSWORD`, and recommend immediately creating a named admin/editor user and rotating the bootstrap credentials via TASK-15's reset flow.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Write the connector installation section",
       "details": "Document `pnpm add -D @systembook/connector` (or npm/yarn equivalents) in the design system repo, and the minimal `*.preview.tsx` example referencing TASK-61's schema docs.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Write the CI configuration section",
       "details": "Link directly to TASK-45's GitHub Actions example, walking through generating an upload token (TASK-44) and setting the two required secrets.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 5,
       "description": "Review end-to-end for completeness",
       "details": "Read through the full document as if a new user, confirming no step assumes undocumented prior knowledge, and that every referenced command/UI element actually exists per the corresponding implementation task.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-59", "TASK-44", "TASK-45", "TASK-15"],
+  "dependencies": [
+    "TASK-59",
+    "TASK-44",
+    "TASK-45",
+    "TASK-15"
+  ],
   "estimatedComplexity": "medium",
   "technicalNotes": [
     "This is the document validated by the PRD's Fase 7 exit criterion: 'uma pessoa de fora do projeto consegue, seguindo só a documentação, subir uma instância e conectar um repo próprio' — treat gaps found during the step-5 review as blocking, not optional polish."
-  ]
+  ],
+  "passes": true
 }
