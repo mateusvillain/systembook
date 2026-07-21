@@ -29,7 +29,12 @@ export function AdminLayout() {
   }
 
   return (
-    <div style={{ fontFamily: 'system-ui', maxWidth: 1100, margin: '0 auto', padding: '1rem' }}>
+    // `sb-admin`: escopo do Tailwind/shadcn (reset e tokens) — só no painel,
+    // nunca na doc pública `.sb-public` (Fase 9, TASK-75).
+    <div
+      className="sb-admin"
+      style={{ fontFamily: 'system-ui', maxWidth: 1100, margin: '0 auto', padding: '1rem' }}
+    >
       <header
         style={{
           display: 'flex',
