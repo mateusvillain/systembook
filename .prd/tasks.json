@@ -543,7 +543,7 @@
     "title": "Migrate the navigation sidebar (SidebarTree) to shadcn/ui",
     "category": "ui-ux",
     "specFilePath": ".prd/tasks/TASK-78.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-79",
