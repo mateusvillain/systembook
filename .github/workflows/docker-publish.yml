@@ -48,6 +48,11 @@ jobs:
             type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
             type=edge,branch=main
 
+      # QEMU permite buildar a variante arm64 nos runners amd64 do GitHub
+      # (por emulação) — necessário para o multi-arch abaixo.
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -56,6 +61,10 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
+          # Imagem multi-arch: roda nativo em x86-64 (Intel/AMD) e em ARM64
+          # (Apple Silicon, AWS Graviton, Oracle Ampere, Raspberry Pi). O build
+          # arm64 sai por emulação QEMU, então o run leva ~3-5min (só no release).
+          platforms: linux/amd64,linux/arm64
           # Sem tag e sem branch main (ex.: workflow_dispatch em outra branch)
           # nada seria empurrado; só publica quando há tags a aplicar.
           push: ${{ steps.meta.outputs.tags != '' }}
