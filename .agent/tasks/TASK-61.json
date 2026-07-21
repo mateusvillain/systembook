@@ -15,36 +15,41 @@
       "step": 1,
       "description": "Document the PreviewConfig type reference",
       "details": "Write a field-by-field reference table for `PreviewConfig`, `PreviewVariant`, `PreviewControl` sourced from the final types in `packages/schema/src/preview-config.ts` (TASK-37).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Write the complete Button example",
       "details": "Write a full `button.preview.tsx` example with a `default` and `destructive` variant, and controls for `label` (text), `disabled` (boolean), and `size` (select with `sm | md | lg` options), matching the real `PreviewConfig` shape exactly.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Document file discovery conventions",
       "details": "Explain the `*.preview.tsx` naming/location convention, and clarify (per TASK-40's assumption) where the connector expects to find the actual React component being previewed relative to the preview file.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Document the postMessage contract",
       "details": "Document the exact message shape (`{ type: 'systembook:update-props', props: Record<string, unknown> }`) sent from the admin panel's controls (TASK-49) and consumed by `preview-kit`'s `mount()` (TASK-38), for advanced users who want to build custom control UIs.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 5,
       "description": "Cross-link and verify against real implementation",
       "details": "Add a link from TASK-60's setup docs to this file. Verify the documented example actually builds and runs correctly through the real connector pipeline (TASK-39-41) before finalizing.",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-37", "TASK-38", "TASK-41"],
+  "dependencies": [
+    "TASK-37",
+    "TASK-38",
+    "TASK-41"
+  ],
   "estimatedComplexity": "low",
   "technicalNotes": [
     "Keep this document in sync with `packages/schema`'s actual exported types — consider generating the field reference table from TSDoc comments in a later iteration, but hand-written is acceptable for the MVP."
-  ]
+  ],
+  "passes": true
 }
