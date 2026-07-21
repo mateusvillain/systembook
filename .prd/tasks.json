@@ -501,7 +501,7 @@
     "title": "Dos and Don'ts block: editor NodeView and toolbar insertion",
     "category": "functional",
     "specFilePath": ".prd/tasks/TASK-72.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-73",
