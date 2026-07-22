@@ -16,39 +16,42 @@
       "step": 1,
       "description": "Survey current insertion/deletion entry points",
       "details": "Read `EditorToolbar.tsx`, `insertBlockWithCaret`, and each custom NodeView (`Callout.tsx`, `DosDonts.tsx`, `DosDontsCover.tsx`, `ComponentEmbed.tsx`) to catalog exactly what insert/delete/duplicate capability already exists at the Tiptap command level before adding new UI.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Build the hover-triggered per-block control",
       "details": "Implement a small floating control (likely via a Tiptap NodeView wrapper or a decoration-based approach) shown on block hover with '+' and '⋮' actions, styled per TASK-82's tokens (subtle, not heavy chrome).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Wire '+' to the existing block picker",
       "details": "Reuse the insertion logic already backing the top toolbar's buttons so behavior (and caret positioning) is identical — no parallel insertion implementation.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Wire '⋮' to available node actions",
       "details": "At minimum delete; add duplicate/move only if straightforward with Tiptap's command chain. Test on every block type including the custom NodeViews to confirm no conflicts with their own internal controls (e.g. Callout's variant switcher).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 5,
       "description": "Reconcile with the top toolbar",
       "details": "Decide the final division of labor between the persistent toolbar and the new inline controls; update/trim the top toolbar if it's now redundant, or clarify its remaining purpose (e.g. undo/redo, global marks).",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-82", "TASK-87"],
+  "dependencies": [
+    "TASK-82",
+    "TASK-87"
+  ],
   "estimatedComplexity": "high",
   "technicalNotes": [
     "This is the most technically involved task in Fase 10 — it touches Tiptap NodeView/decoration internals, not just Tailwind classes. Budget accordingly; consider shipping delete-only '⋮' first if duplicate/move prove non-trivial with the current schema (blocks are serialized per TASK-30/31, so duplication needs a valid fresh block, not just a DOM clone).",
     "Reuse `insertBlockWithCaret` (TASK-72's generic helper) rather than writing a second insertion code path.",
     "`referencia-2.png` shows the exact visual target for the block-type picker triggered by '/' or '+' — match its list style (icon + label rows, grouped by AI/text/heading/list) rather than inventing a new picker layout."
   ],
-  "passes": false
+  "passes": true
 }

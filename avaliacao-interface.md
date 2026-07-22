@@ -1,0 +1,6 @@
+- Dropdowns estão com fonte diferente, despadronizados, uma borda preta ao redor que não é elegante (dropdown.png)
+- O dropdown de conteúdo, quando está editando a documentação, está bem estruturado, mas pouco elegante (dropdown-conteudo.png)
+- Ao abrir o dropdown, a scrollbar da página some, o que mexe um pouquinho na largura dos elementos já que essa barra de scroll fica oculta no navegador
+- Os menus em configuração (ícone de engrenagem) e menu do usuário estão com os mesmos itens. Remova esse de configuração e mantenha somente o do usuário
+- Remover o breadcrumb em cima do nome da seção
+- O botão 'Histórico' está com sublinhado, dando aparência de link

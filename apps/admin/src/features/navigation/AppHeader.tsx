@@ -1,17 +1,9 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import {
-  Check,
-  ChevronDown,
-  LogOut,
-  MoreHorizontal,
-  Plus,
-  Search,
-  Settings,
-  X,
-} from 'lucide-react';
+import { Check, ChevronDown, LogOut, PanelLeft, Plus, Settings, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { queryClient, useTRPC } from '../../lib/trpc.js';
+import { AdminSearch } from './AdminSearch.js';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +12,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { RowActionsMenu } from '@/components/RowActionsMenu';
+import { createLinkClass } from '@/lib/styles';
 import { cn } from '@/lib/utils';
 
 interface MenuRow {
@@ -40,35 +34,48 @@ export function AppHeader({
   onSelectMenu,
   onLogout,
   logoutPending,
+  onToggleSidebar,
+  sidebarOpen,
 }: {
   role: string;
   activeMenuId: string | null;
   onSelectMenu: (menuId: string) => void;
   onLogout: () => void;
   logoutPending: boolean;
+  /** Alterna a sidebar (drawer no mobile / recolhível no tablet). TASK-92. */
+  onToggleSidebar: () => void;
+  sidebarOpen: boolean;
 }) {
   return (
     <header className="bg-background fixed inset-x-0 top-0 z-40 h-16 border-b">
-      <div className="mx-auto flex h-full max-w-[1440px] items-center gap-6 px-6">
+      <div className="mx-auto flex h-full max-w-[1440px] items-center gap-3 px-4 md:gap-6 md:px-6">
+        {/* Gatilho da sidebar: só abaixo do desktop (no desktop ela é fixa). No
+            mobile abre o drawer; no tablet recolhe/expande a coluna. */}
+        <button
+          type="button"
+          onClick={onToggleSidebar}
+          aria-label="Alternar navegação"
+          aria-expanded={sidebarOpen}
+          aria-controls="admin-sidebar"
+          className="text-muted-foreground hover:text-foreground hover:bg-accent inline-flex size-11 shrink-0 items-center justify-center rounded-editorial-sm lg:hidden"
+        >
+          <PanelLeft className="size-5" />
+        </button>
+
         <Link to="/" className="flex shrink-0 items-center gap-2 no-underline">
           <span className="bg-primary text-primary-foreground flex size-7 items-center justify-center rounded-editorial-sm text-sm font-bold">
             S
           </span>
-          <strong className="text-foreground text-base">SystemBook</strong>
+          {/* Wordmark cede espaço no mobile — o "S" já identifica a marca. */}
+          <strong className="text-foreground hidden text-base sm:inline">SystemBook</strong>
         </Link>
 
-        <MenuNav activeMenuId={activeMenuId} onSelectMenu={onSelectMenu} />
+        {/* No mobile a nav de menus migra para o topo do drawer (AdminLayout);
+            aqui ela fica só do tablet para cima. */}
+        <MenuNav activeMenuId={activeMenuId} onSelectMenu={onSelectMenu} className="hidden md:flex" />
 
-        <div className="ml-auto flex shrink-0 items-center gap-1">
-          <button
-            type="button"
-            aria-label="Busca (em breve)"
-            title="Busca (em breve)"
-            aria-disabled="true"
-            className="text-muted-foreground inline-flex size-8 items-center justify-center rounded-editorial-sm opacity-50"
-          >
-            <Search className="size-4" />
-          </button>
+        <div className="ml-auto flex shrink-0 items-center gap-1 md:gap-2">
+          <AdminSearch onSelectMenu={onSelectMenu} />
           <UserMenu role={role} onLogout={onLogout} logoutPending={logoutPending} />
         </div>
       </div>
@@ -80,9 +87,11 @@ export function AppHeader({
 function MenuNav({
   activeMenuId,
   onSelectMenu,
+  className,
 }: {
   activeMenuId: string | null;
   onSelectMenu: (menuId: string) => void;
+  className?: string;
 }) {
   const trpc = useTRPC();
   const menusQuery = useQuery(trpc.menus.list.queryOptions());
@@ -103,7 +112,7 @@ function MenuNav({
   }
 
   return (
-    <nav aria-label="Menus" className="flex min-w-0 flex-1 items-center gap-1">
+    <nav aria-label="Menus" className={cn('min-w-0 flex-1 items-center gap-1', className)}>
       {menuList.map((menu, i) => (
         <MenuNavItem
           key={menu.id}
@@ -194,33 +203,17 @@ function MenuNavItem({
       >
         {menu.titulo}
       </button>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            aria-label={`Mais ações do menu ${menu.titulo}`}
-            className="text-muted-foreground hover:text-foreground -ml-1 inline-flex size-6 items-center justify-center rounded-editorial-sm opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 data-[state=open]:opacity-100"
-          >
-            <MoreHorizontal className="size-3.5" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
-          <DropdownMenuItem
-            onSelect={() => {
-              setDraft(menu.titulo);
-              setEditing(true);
-            }}
-          >
-            Renomear
-          </DropdownMenuItem>
-          {onMoveUp && <DropdownMenuItem onSelect={onMoveUp}>Mover para cima</DropdownMenuItem>}
-          {onMoveDown && <DropdownMenuItem onSelect={onMoveDown}>Mover para baixo</DropdownMenuItem>}
-          <DropdownMenuSeparator />
-          <DropdownMenuItem variant="destructive" onSelect={onDelete}>
-            Excluir
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <RowActionsMenu
+        triggerLabel={`Mais ações do menu ${menu.titulo}`}
+        onRename={() => {
+          setDraft(menu.titulo);
+          setEditing(true);
+        }}
+        onDelete={onDelete}
+        onMovePrev={onMoveUp}
+        onMoveNext={onMoveDown}
+        triggerClassName="-ml-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+      />
     </div>
   );
 }
@@ -245,7 +238,7 @@ function AddMenu({ onCreate }: { onCreate: (titulo: string) => Promise<unknown> 
         onClick={() => setOpen(true)}
         aria-label="Adicionar menu"
         title="Adicionar menu"
-        className="text-muted-foreground hover:text-foreground hover:bg-accent inline-flex shrink-0 items-center justify-center rounded-editorial-sm p-1.5"
+        className={cn(createLinkClass, 'shrink-0 p-1.5')}
       >
         <Plus className="size-4" />
       </button>
@@ -298,19 +291,21 @@ function UserMenu({
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
+      {/* Engrenagem é atalho redundante do mesmo menu — escondida no mobile,
+          onde o toque no chip do usuário basta e o espaço é escasso. */}
       <button
         type="button"
         aria-label="Configurações"
         title="Configurações"
         onClick={() => setOpen(true)}
-        className="text-muted-foreground hover:text-foreground hover:bg-accent inline-flex size-8 items-center justify-center rounded-editorial-sm"
+        className="text-muted-foreground hover:text-foreground hover:bg-accent hidden size-8 items-center justify-center rounded-editorial-sm sm:inline-flex"
       >
         <Settings className="size-4" />
       </button>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="hover:bg-accent flex items-center gap-2 rounded-editorial-sm py-1 pl-1 pr-2"
+          className="hover:bg-accent flex min-h-11 items-center gap-2 rounded-editorial-sm py-1 pl-1 pr-2 sm:min-h-0"
           aria-label="Menu do usuário"
         >
           <Avatar className="size-7">
@@ -318,8 +313,8 @@ function UserMenu({
               {role.slice(0, 2)}
             </AvatarFallback>
           </Avatar>
-          <span className="text-muted-foreground text-sm">{role}</span>
-          <ChevronDown className="text-muted-foreground size-3.5" />
+          <span className="text-muted-foreground hidden text-sm sm:inline">{role}</span>
+          <ChevronDown className="text-muted-foreground hidden size-3.5 sm:block" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">

@@ -1,52 +1,49 @@
 {
   "id": "TASK-94",
-  "title": "Publish @systembook/connector (and its workspace deps) to npm with a working CLI bin",
-  "category": "setup",
-  "description": "Make the component-preview toolchain installable by external teams from npm. Today `@systembook/connector` is `private: true`, version `0.0.0`, has no `bin` field, and depends on two other unpublished workspace packages (`@systembook/schema`, `@systembook/preview-kit`) via `workspace:*` — so the setup doc's `pnpm add -D @systembook/connector` / `npx systembook-connector build` steps (TASK-60) cannot actually work yet. Publish the three packages so a design system repo can install and run the connector without cloning this monorepo.",
+  "title": "Restyle create/add affordances as accent text-links (Zeroheight style)",
+  "category": "ui-ux",
+  "description": "Prompted by the user comparing the running CMS (`referencia-3.png`) with Zeroheight (`referencia.png`): SystemBook's structure-growing actions read wrong. In Zeroheight, 'Add subcategory', 'Add page' and 'Add tab' are quiet blue text-links with a '+' icon — the single, obvious 'grow your structure' affordance. In SystemBook the equivalent actions ('Nova seção', 'Adicionar página', '+ Aba', the header '+ Adicionar menu') are `text-muted-foreground` gray text (current code) and rendered as gray filled boxes in an older build (`referencia-3.png`) — neither reads as an intentional action. Per `plano-de-interface.md` ('azul como único acento de ação'), promote these create affordances to accent-colored text-links: blue is the sole action accent, and creating structure IS an action, so this is consistent rather than dilutive. This does NOT touch the active/selected nav tint or the primary 'Publicar' button.",
   "acceptanceCriteria": [
-    "`@systembook/schema`, `@systembook/preview-kit`, and `@systembook/connector` are published to npm (public access) with a real semver version, `private` removed, and `license` already set (MIT, from TASK-63)",
-    "`@systembook/connector` exposes a `bin` named `systembook-connector` that runs the CLI (`discover`/`generate`/`build`), so `npx systembook-connector build --root .` works from an installed package — not only `pnpm --filter ... cli`",
-    "The published packages resolve their inter-dependencies via real semver ranges (not `workspace:*`) — the publish tooling must rewrite `workspace:*` to the published versions (e.g. pnpm publish's workspace-protocol replacement), and `@systembook/schema` / `@systembook/preview-kit` are declared as runtime `dependencies` of the connector, not devDependencies",
-    "The published connector actually works: in a scratch repo OUTSIDE this monorepo, `pnpm add -D @systembook/connector`, add a `*.preview.tsx`, and `npx systembook-connector build --root .` produces the `.systembook/dist/` artifact + `manifest.json` (the TASK-60 example, verified end-to-end against the published tarball, e.g. via `npm pack` before a real publish)",
-    "Docs are updated to drop the pre-release caveats now that the package is real: the 'Pré-lançamento' note in `docs/setup.md` and the 'enquanto o pacote não está publicado' note in `docs/ci-example.md` are removed or adjusted to reference the published package"
+    "'Nova seção' and 'Adicionar página' (`SidebarTree.tsx` — `InlineCreate` and `CreatePageForm` collapsed triggers) render as accent-colored (`text-primary`) text-links with a leading '+' icon, no persistent gray/filled background, matching Zeroheight's 'Add subcategory'/'Add page' treatment",
+    "'+ Aba' (`PageContentPage.tsx` — `AddTab`, both in the tab bar and the standalone zero-tabs case) uses the same accent text-link treatment",
+    "The header '+ Adicionar menu' (`AppHeader.tsx` — `AddMenu` collapsed trigger) uses the same accent treatment, staying visually consistent with the other create affordances",
+    "Hover/focus give a subtle reinforcement (e.g. slightly darker accent) without introducing a filled box; keyboard focus stays clearly visible",
+    "The expanded inline-create forms (input + confirm/cancel) are unchanged in behavior; only the collapsed trigger's resting style changes",
+    "No regression to the active-nav tint (selected page / active menu pill keep their subtle `bg-accent`) or to the primary 'Publicar' action — blue stays reserved for actions, and these create-links are the only additions"
   ],
   "steps": [
     {
       "step": 1,
-      "description": "Decide versioning and confirm npm org access",
-      "details": "Confirm the `@systembook` npm scope/org exists and the publisher has access. Pick an initial published version (recommend `0.1.0` to match the Docker image release line from TASK-58) and whether to keep the three packages version-locked together.",
-      "pass": false
+      "description": "Define the shared accent text-link style",
+      "details": "Establish a single className (or tiny helper) for a '+ label' accent text-link: `text-primary`, `hover:text-primary` darker, `inline-flex items-center gap-1.5`, small text, no background at rest. Reuse it across all four call sites so the affordance is uniform.",
+      "pass": true
     },
     {
       "step": 2,
-      "description": "Make the packages publishable",
-      "details": "In `packages/schema`, `packages/preview-kit`, and `packages/connector`: remove `private: true`, set the chosen version, ensure `files`/`exports`/`types` are correct for consumers (schema and connector currently point `exports` at TS source under `src/` — decide whether to ship source-only or add a build; the connector's CLI must be runnable via the `bin`). Confirm `license: \"MIT\"` is present (from TASK-63).",
-      "pass": false
+      "description": "Apply to the sidebar create actions",
+      "details": "Swap the `text-muted-foreground` collapsed triggers in `SidebarTree.tsx` (`InlineCreate` for 'Nova seção', `CreatePageForm` for 'Adicionar página') to the accent text-link. Keep the expand-to-input behavior intact.",
+      "pass": true
     },
     {
       "step": 3,
-      "description": "Add the CLI bin and validate it",
-      "details": "Add a `bin` entry `{ \"systembook-connector\": \"<entry>\" }` to the connector pointing at the CLI (`src/cli.ts` today runs via tsx; a published bin likely needs a Node-runnable entry — either a shebang'd built file or a bin shim, resolving the tsx-only dev setup). Verify `systembook-connector --help` and `build --root` run from an installed context.",
-      "pass": false
+      "description": "Apply to the editor '+ Aba' and header '+ Adicionar menu'",
+      "details": "Update `AddTab` in `PageContentPage.tsx` (tab bar + standalone) and `AddMenu` in `AppHeader.tsx` to the same accent text-link. Confirm the header '+' still reads well next to the menu pills.",
+      "pass": true
     },
     {
       "step": 4,
-      "description": "Handle workspace-protocol dependency rewriting",
-      "details": "Ensure `@systembook/schema` and `@systembook/preview-kit` are `dependencies` (runtime) of the connector, and that publishing rewrites `workspace:*` to the published semver (pnpm does this on `pnpm publish`). Publish the dependency graph in order (schema → preview-kit → connector).",
-      "pass": false
-    },
-    {
-      "step": 5,
-      "description": "Verify end-to-end from outside the monorepo, then update docs",
-      "details": "Using `npm pack` tarballs (or a dry-run registry), install the connector into a scratch repo outside this monorepo, run the TASK-60 `button.preview.tsx` example through `npx systembook-connector build --root .`, and confirm the artifact + manifest are produced. Then remove the pre-release caveats in `docs/setup.md` and `docs/ci-example.md`.",
-      "pass": false
+      "description": "Verify in the browser against the reference",
+      "details": "Rebuild the admin, load the shell, and confirm all four create affordances render as blue text-links with no gray fill, matching `referencia.png`. Confirm the active-nav tint and 'Publicar' are unchanged. Screenshot the sidebar + header + editor tab bar.",
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-41", "TASK-58", "TASK-60", "TASK-63"],
-  "estimatedComplexity": "medium",
+  "dependencies": ["TASK-86", "TASK-90"],
+  "estimatedComplexity": "low",
   "technicalNotes": [
-    "Surfaced during TASK-60: the setup doc documents `pnpm add -D @systembook/connector` / `npx systembook-connector build` but the package is unpublishable as-is (private, 0.0.0, no bin, workspace:* deps). This task closes that gap.",
-    "Key decision: ship TS source or add a build step. `@systembook/schema` is intentionally types-only (source exports); `@systembook/preview-kit` is bundled by the connector into the artifact; the connector itself needs a Node-executable bin. The current `exports.default` pointing at `src/*.ts` works for bundlers/tsx but NOT for `node` invoking the bin directly — resolve this deliberately.",
-    "Publish order matters because of the workspace dependency chain: schema → preview-kit → connector."
-  ]
+    "`referencia-3.png` shows these as gray filled boxes; the current working-tree code already made them ghost gray text (`text-muted-foreground`). This task moves them the rest of the way to Zeroheight's accent text-link — the gray-box appearance in the screenshot is a stale build, so step 4 should rebuild before judging.",
+    "Keep blue strictly for actions: do not accent the section-header category labels, breadcrumb segments, or non-action nav — only the create affordances.",
+    "`text-primary` is the admin accent token from TASK-82; reuse it rather than a hard-coded blue.",
+    "Coordinate with TASK-95 (which flattens the remaining chrome fills) — both touch `SidebarTree.tsx` and `AppHeader.tsx`, so land this first and let TASK-95 build on top to avoid conflicting rewrites."
+  ],
+  "passes": true
 }

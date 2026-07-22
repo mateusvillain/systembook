@@ -148,6 +148,19 @@
 
   .sb-admin button {
     cursor: pointer;
+    /*
+     * O painel não importa o preflight global do Tailwind (ver topo). Sem ele,
+     * um `<button>` cru herda o fundo nativo `ButtonFace` (cinza ~#efefef) — a
+     * exata "caixa cinza" do `referencia-3.png` em todo controle secundário
+     * (⋮ das linhas, handles de bloco, pills de menu não-ativas, botões ghost
+     * da toolbar, breadcrumb). Zerar o fundo aqui, no `@layer base`, deixa o
+     * chrome plano como no Zeroheight: transparente em repouso, feedback só no
+     * hover. As utilities de fundo (`bg-primary` do 'Publicar', `bg-accent` do
+     * item ativo/hover, `bg-muted` etc.) vivem no `@layer utilities` — acima do
+     * base — e continuam vencendo, então os fills intencionais ficam intactos.
+     * Escopado a `.sb-admin`: a doc pública (`.sb-public`) nunca é tocada.
+     */
+    background-color: transparent;
   }
 
   .sb-admin svg {

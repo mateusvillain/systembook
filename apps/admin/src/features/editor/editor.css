@@ -1,12 +1,31 @@
 /* Estilos do conteúdo Tiptap/ProseMirror (TASK-25/26/27). */
 
+/* Canaleta esquerda para o controle inline por bloco (TASK-88): o handle
+   flutua sobre este espaço, alinhado ao topo do bloco sob o cursor. */
+.sb-editor-canvas {
+  position: relative;
+}
+
 .sb-editor .ProseMirror {
   min-height: 40vh;
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 1rem 0.75rem 3.5rem;
   border: 1px solid #ddd;
   border-radius: 6px;
   outline: none;
   line-height: 1.6;
+}
+
+/* Mobile (TASK-92): canaleta do handle de bloco menor para dar mais largura
+   útil ao texto em telas estreitas. */
+@media (max-width: 767px) {
+  .sb-editor .ProseMirror {
+    padding-left: 2.5rem;
+  }
+}
+
+/* O handle vive na canaleta (esquerda), acima do texto, revelado no hover. */
+.sb-block-handle {
+  padding-left: 0.4rem;
 }
 
 .sb-editor .ProseMirror:focus {
@@ -32,6 +51,15 @@
   width: 100%;
   margin: 0.75rem 0;
   overflow: hidden;
+}
+
+/* Responsividade (TASK-92): o Tiptap embrulha cada tabela num `.tableWrapper`.
+   Em telas estreitas uma tabela com muitas colunas (min-width por célula) pode
+   exceder a coluna do editor — rola dentro do próprio wrapper em vez de empurrar
+   scroll horizontal na página (mesmo princípio do `.tableWrapper` público da
+   TASK-57). O `pre` de código já contém o overflow (overflow-x acima). */
+.sb-editor .ProseMirror .tableWrapper {
+  overflow-x: auto;
 }
 
 .sb-editor .ProseMirror th,

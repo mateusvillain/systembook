@@ -156,3 +156,82 @@ describe('search.query (TASK-53) — FTS5 full-text', () => {
     expect(await caller.search.query({ q: 'AND OR' })).toHaveLength(0);
   });
 });
+
+describe('search.structure (TASK-91) — títulos da navegação, incl. rascunhos', () => {
+  let dir: string;
+  let db: Db;
+  let editor: AuthUser;
+  let menuId: string;
+  let sectionId: string;
+  let pageId: string;
+
+  beforeEach(async () => {
+    dir = mkdtempSync(path.join(tmpdir(), 'systembook-structsearch-'));
+    db = createDb(path.join(dir, 'test.db'));
+    runMigrations(db);
+
+    const user = db
+      .insert(users)
+      .values({ nome: 'editor', email: 'editor@test.local', senhaHash: 'irrelevante' })
+      .returning({ id: users.id })
+      .get();
+    db.insert(memberships).values({ userId: user.id, role: 'editor' }).run();
+    editor = { userId: user.id, role: 'editor', sessionId: 'fake-session' };
+
+    const caller = callerFor(db, editor);
+    menuId = (await caller.menus.create({ titulo: 'Fundamentos' })).id;
+    sectionId = (await caller.sections.create({ menuId, titulo: 'Cores da marca' })).id;
+    pageId = (await caller.pages.create({ sectionId, titulo: 'Paleta primária', slug: 'paleta' })).id;
+    await caller.tabs.create({ pageId, titulo: 'Acessibilidade' });
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('casa páginas NÃO publicadas por título (o que a busca de conteúdo não faz)', async () => {
+    const caller = callerFor(db, editor);
+    // A página nunca foi publicada → search.query não a encontra…
+    expect(await caller.search.query({ q: 'paleta' })).toEqual([]);
+    // …mas a busca de estrutura sim, com o alvo de navegação do editor.
+    const results = await caller.search.structure({ q: 'paleta' });
+    expect(results).toHaveLength(1);
+    expect(results[0]).toMatchObject({ type: 'page', id: pageId, pageId, menuId, context: 'Cores da marca' });
+  });
+
+  it('casa menus, seções e tabs de usuário por título, com o menu dono', async () => {
+    const caller = callerFor(db, editor);
+
+    const menuHit = await caller.search.structure({ q: 'fundamentos' });
+    expect(menuHit).toEqual([expect.objectContaining({ type: 'menu', id: menuId, menuId })]);
+
+    const sectionHit = await caller.search.structure({ q: 'cores' });
+    expect(sectionHit).toEqual([expect.objectContaining({ type: 'section', id: sectionId, menuId })]);
+
+    const tabHit = await caller.search.structure({ q: 'acessibilidade' });
+    expect(tabHit).toEqual([
+      expect.objectContaining({ type: 'tab', menuId, pageId, context: 'Paleta primária' }),
+    ]);
+    expect(tabHit[0]?.tabId).toBeTruthy();
+  });
+
+  it('não vaza a tab primária (corpo) nem a estrutura reservada da landing', async () => {
+    const caller = callerFor(db, editor);
+    // A tab primária se chama "Conteúdo" — não deve aparecer como aba de usuário.
+    expect(await caller.search.structure({ q: 'conteúdo' })).toEqual([]);
+    // A landing é "Página inicial" (tab)/reservada — fora da busca de estrutura.
+    expect(await caller.search.structure({ q: 'página inicial' })).toEqual([]);
+  });
+
+  it('é case-insensitive (ASCII) e trata curingas do LIKE como texto literal', async () => {
+    const caller = callerFor(db, editor);
+    expect(await caller.search.structure({ q: 'PALETA' })).toHaveLength(1);
+    // '%' é um curinga do LIKE; deve casar literalmente (nenhuma página tem '%').
+    expect(await caller.search.structure({ q: '%' })).toEqual([]);
+  });
+
+  it('exige autenticação (protectedProcedure, ao contrário de search.query)', async () => {
+    const anon = callerFor(db, null);
+    await expect(anon.search.structure({ q: 'paleta' })).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
+  });
+});

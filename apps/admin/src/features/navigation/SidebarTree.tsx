@@ -1,9 +1,11 @@
-import { useState, type FormEvent } from 'react';
+import { createContext, useContext, useState, type FormEvent } from 'react';
 import { TRPCClientError } from '@trpc/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { NavLink } from 'react-router-dom';
-import { ArrowDown, ArrowUp, Check, ChevronDown, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { Check, ChevronDown, Plus, X } from 'lucide-react';
 import { queryClient, useTRPC } from '../../lib/trpc.js';
+import { RowActionsMenu } from '@/components/RowActionsMenu';
+import { createLinkClass } from '@/lib/styles';
 import { cn } from '@/lib/utils';
 
 /**
@@ -15,8 +17,9 @@ import { cn } from '@/lib/utils';
  * página selecionada com fundo sutil (sem bordas pesadas).
  *
  * Criar/renomear/reordenar/excluir seções e páginas continua inline. As ações
- * por linha (renomear/mover/excluir) são reformuladas na TASK-89 — aqui só a
- * tipografia dos grupos/páginas e o escopo por menu mudam.
+ * por linha (renomear/mover/excluir) usam o `RowActionsMenu` compartilhado
+ * (TASK-89): um único gatilho de overflow "⋯" no hover, no lugar da antiga
+ * fileira de 4 ícones sempre visíveis.
  */
 
 const iconBtnClass =
@@ -24,7 +27,18 @@ const iconBtnClass =
 const treeInputClass =
   'min-w-0 flex-1 rounded-editorial-sm border border-input bg-transparent px-2 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]';
 
-export function SidebarTree({ activeMenuId }: { activeMenuId: string | null }) {
+// Fecha o drawer mobile ao navegar (TASK-92) sem prop-drilling pela árvore:
+// só o `PageRow` (o link que de fato navega) consome isto.
+const OnNavigateContext = createContext<(() => void) | undefined>(undefined);
+
+export function SidebarTree({
+  activeMenuId,
+  onNavigate,
+}: {
+  activeMenuId: string | null;
+  /** Chamado ao clicar numa página — o layout fecha o drawer no mobile (TASK-92). */
+  onNavigate?: () => void;
+}) {
   const trpc = useTRPC();
   const sectionsQuery = useQuery({
     ...trpc.sections.listByMenu.queryOptions({ menuId: activeMenuId ?? '' }),
@@ -55,6 +69,7 @@ export function SidebarTree({ activeMenuId }: { activeMenuId: string | null }) {
   }
 
   return (
+    <OnNavigateContext.Provider value={onNavigate}>
     <nav aria-label="Estrutura da documentação" className="grid content-start gap-6 text-sm">
       {sectionsQuery.isPending && <span className="text-muted-foreground px-2 text-sm">Carregando…</span>}
       {!sectionsQuery.isPending && sections.length === 0 && (
@@ -83,6 +98,7 @@ export function SidebarTree({ activeMenuId }: { activeMenuId: string | null }) {
         onCreate={(titulo) => create.mutateAsync({ menuId: activeMenuId, titulo })}
       />
     </nav>
+    </OnNavigateContext.Provider>
   );
 }
 
@@ -130,7 +146,7 @@ function SectionGroup({
         <div className="group/section flex items-center gap-1 pr-1">
           <button
             type="button"
-            className="text-muted-foreground hover:text-foreground -ml-1 flex min-w-0 flex-1 items-center gap-1 rounded-editorial-sm px-1 py-0.5 text-left text-xs font-semibold uppercase tracking-[0.1em] transition-colors"
+            className="text-muted-foreground hover:text-foreground -ml-1 flex min-h-11 min-w-0 flex-1 items-center gap-1 rounded-editorial-sm px-1 py-0.5 text-left text-xs font-semibold uppercase tracking-[0.1em] transition-colors md:min-h-0"
             aria-expanded={expanded}
             aria-label={`${expanded ? 'Recolher' : 'Expandir'} seção ${section.titulo}`}
             onClick={() => setExpanded((v) => !v)}
@@ -140,16 +156,16 @@ function SectionGroup({
             />
             <span className="truncate">{section.titulo}</span>
           </button>
-          <RowActions
-            label={`seção ${section.titulo}`}
+          <RowActionsMenu
+            triggerLabel={`Mais ações da seção ${section.titulo}`}
             onRename={() => {
               setDraft(section.titulo);
               setEditing(true);
             }}
             onDelete={onDelete}
-            onMoveUp={onMoveUp}
-            onMoveDown={onMoveDown}
-            className="opacity-0 group-hover/section:opacity-100 group-focus-within/section:opacity-100"
+            onMovePrev={onMoveUp}
+            onMoveNext={onMoveDown}
+            triggerClassName="opacity-0 group-hover/section:opacity-100 group-focus-within/section:opacity-100"
           />
         </div>
       )}
@@ -216,6 +232,7 @@ function PageRow({
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(page.titulo);
+  const onNavigate = useContext(OnNavigateContext);
 
   if (editing) {
     return (
@@ -238,9 +255,11 @@ function PageRow({
       <NavLink
         to={`/pages/${page.id}`}
         end
+        onClick={onNavigate}
         className={({ isActive }) =>
           cn(
-            'min-w-0 flex-1 truncate rounded-editorial-sm px-2 py-1 no-underline transition-colors',
+            // ≥44px de alvo de toque no mobile (TASK-92); compacto no desktop.
+            'flex min-h-11 min-w-0 flex-1 items-center truncate rounded-editorial-sm px-2 py-1 no-underline transition-colors md:min-h-0',
             isActive
               ? 'bg-accent text-foreground font-medium'
               : 'text-muted-foreground hover:text-foreground hover:bg-accent',
@@ -249,67 +268,18 @@ function PageRow({
       >
         {page.titulo}
       </NavLink>
-      <RowActions
-        label={`página ${page.titulo}`}
+      <RowActionsMenu
+        triggerLabel={`Mais ações da página ${page.titulo}`}
         onRename={() => {
           setDraft(page.titulo);
           setEditing(true);
         }}
         onDelete={onDelete}
-        onMoveUp={onMoveUp}
-        onMoveDown={onMoveDown}
-        className="opacity-0 group-hover/page:opacity-100 group-focus-within/page:opacity-100"
+        onMovePrev={onMoveUp}
+        onMoveNext={onMoveDown}
+        triggerClassName="opacity-0 group-hover/page:opacity-100 group-focus-within/page:opacity-100"
       />
     </div>
-  );
-}
-
-/** Ações da linha (renomear/mover/excluir) reveladas no hover. Reformuladas na TASK-89. */
-function RowActions({
-  label,
-  onRename,
-  onDelete,
-  onMoveUp,
-  onMoveDown,
-  className,
-}: {
-  label: string;
-  onRename: () => void;
-  onDelete: () => void;
-  onMoveUp?: () => void;
-  onMoveDown?: () => void;
-  className?: string;
-}) {
-  return (
-    <span className={cn('inline-flex shrink-0 gap-0.5 transition-opacity', className)}>
-      <button className={iconBtnClass} aria-label={`Renomear ${label}`} title="Renomear" onClick={onRename}>
-        <Pencil className="size-3.5" />
-      </button>
-      <button
-        className={cn(iconBtnClass, !onMoveUp && 'invisible')}
-        aria-label={`Mover ${label} para cima`}
-        title="Mover para cima"
-        onClick={onMoveUp}
-      >
-        <ArrowUp className="size-3.5" />
-      </button>
-      <button
-        className={cn(iconBtnClass, !onMoveDown && 'invisible')}
-        aria-label={`Mover ${label} para baixo`}
-        title="Mover para baixo"
-        onClick={onMoveDown}
-      >
-        <ArrowDown className="size-3.5" />
-      </button>
-      <button
-        className={cn(iconBtnClass, 'hover:text-destructive')}
-        aria-label={`Excluir ${label}`}
-        title="Excluir"
-        onClick={onDelete}
-      >
-        <Trash2 className="size-3.5" />
-      </button>
-    </span>
   );
 }
 
@@ -374,10 +344,7 @@ function InlineCreate({
 
   if (!open) {
     return (
-      <button
-        className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 rounded-editorial-sm px-1 py-1 text-left text-sm transition-colors"
-        onClick={() => setOpen(true)}
-      >
+      <button className={cn(createLinkClass, 'px-1 py-1')} onClick={() => setOpen(true)}>
         <Plus className="size-3.5" /> {label}
       </button>
     );
@@ -430,10 +397,7 @@ function CreatePageForm({
 
   if (!open) {
     return (
-      <button
-        className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 rounded-editorial-sm px-2 py-1 text-left text-sm transition-colors"
-        onClick={() => setOpen(true)}
-      >
+      <button className={cn(createLinkClass, 'px-2 py-1')} onClick={() => setOpen(true)}>
         <Plus className="size-3.5" /> Adicionar página
       </button>
     );

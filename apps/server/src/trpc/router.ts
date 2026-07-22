@@ -36,6 +36,7 @@ import { usersRouter } from './routers/users.js';
  * | componentPreviews | listComponents, listVariants             | protectedProcedure (admin + editor)  |
  * | componentPreviews | getLatest                                | publicProcedure (embed público)      |
  * | search    | query                                             | publicProcedure (busca pública)      |
+ * | search    | structure                                         | protectedProcedure (admin + editor)  |
  * | landing   | get                                               | publicProcedure (raiz pública)       |
  * | landing   | getEditorTarget                                   | protectedProcedure (admin + editor)  |
  * | uploadTokens | list, create, revoke                          | adminProcedure (só admin)            |

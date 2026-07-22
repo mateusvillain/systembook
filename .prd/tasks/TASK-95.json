@@ -1,0 +1,42 @@
+{
+  "id": "TASK-95",
+  "title": "Flatten residual filled/bordered chip treatments across the admin chrome",
+  "category": "ui-ux",
+  "description": "Second half of the `referencia-3.png` vs `referencia.png` cleanup the user asked for: eliminate the 'filled gray box' feel from secondary chrome so the panel reads as flat and calm like Zeroheight, where secondary controls are bare (icon + label, feedback on hover only) and fills are reserved for the selected item's subtle tint. The main concrete offender still in the current code is the global search trigger, which carries a `border` and reads as a boxed chip; Zeroheight's search is a borderless icon + label. This task also does a systematic audit/rebuild sweep to confirm no other secondary control (section-header category label, breadcrumb segments, header settings/user affordances, block/handle controls) renders a persistent fill or box at rest — the resting state should be transparent with hover-only feedback, keeping only (a) the selected nav item's subtle `bg-accent` tint and (b) the primary 'Publicar' accent button.",
+  "acceptanceCriteria": [
+    "The admin search trigger (`AdminSearch.tsx`) no longer renders as a bordered/filled chip at rest: it becomes a borderless icon + 'Buscar' label (the '⌘K' hint may stay as a subtle `kbd`), with hover/focus as the only visual feedback — matching Zeroheight's bare search affordance",
+    "A rebuilt-admin browser audit confirms that at rest (no hover/focus) none of these render a filled gray box: sidebar section-header category labels, 'Nova seção'/'Adicionar página', the '+ Aba' tab affordance, breadcrumb segments, the header menu pills (non-active), the header '+'/settings/user controls, and the editor block '+'/'⋮' handles",
+    "The only persistent fills remaining in the admin chrome are intentional: the selected page / active menu pill subtle tint (`bg-accent`), status pills, `kbd` hint chips, and the primary 'Publicar' button (accent) — these are explicitly preserved",
+    "Hover and keyboard-focus feedback remains clearly visible on every flattened control (no loss of affordance or a11y — focus rings/hover tints stay)",
+    "The served `apps/admin/dist` is rebuilt so the running app reflects the flattened chrome (the gray-box appearance in `referencia-3.png` is at least partly a stale build; verification must be against a fresh build)"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Flatten the search trigger",
+      "details": "In `AdminSearch.tsx`, drop the `border` (and its hover-border) from the trigger so it reads as a borderless icon + label; keep the '⌘K' `kbd` hint. Preserve the ≥44px mobile touch target and the `aria-label`.",
+      "pass": true
+    },
+    {
+      "step": 2,
+      "description": "Audit every secondary chrome control at rest",
+      "details": "Walk `SidebarTree.tsx`, `AppHeader.tsx`, `Breadcrumbs.tsx`, `PageContentPage.tsx` tab bar, and the editor `BlockHandles.tsx`/toolbar. Confirm each secondary control is transparent at rest with hover-only feedback. Remove any stray persistent `bg-*`/`border` that boxes a control, leaving only the intentional fills listed in the acceptance criteria.",
+      "pass": true
+    },
+    {
+      "step": 3,
+      "description": "Rebuild and verify against the reference",
+      "details": "Rebuild the admin, load every surface (shell, sidebar, editor, empty states, search), and confirm the flat register of `referencia.png`: bare secondary controls, subtle selected-item tint, accent only on actions. Screenshot the header + sidebar + editor and compare with `referencia-3.png` to confirm the gray-box feel is gone.",
+      "pass": true
+    }
+  ],
+  "dependencies": ["TASK-94"],
+  "estimatedComplexity": "low",
+  "technicalNotes": [
+    "Depends on TASK-94: that task restyles the create affordances and also touches `SidebarTree.tsx`/`AppHeader.tsx`; land it first so this audit builds on the final create-action styling instead of conflicting.",
+    "Much of the working tree already uses ghost styling (`hover:bg-accent`, transparent at rest) from TASK-88..92 — so this is primarily a completeness + rebuild pass, not a big rewrite. The search-trigger border is the one clear concrete change; the rest is audit-and-confirm.",
+    "Do NOT flatten the selected-nav tint, status pills, `kbd` chips, or 'Publicar' — those fills are intentional signal, not noise. Removing them would over-correct past the Zeroheight reference.",
+    "This is analogous to the TASK-93 QA sweep but scoped narrowly to the 'no gray boxes on secondary actions' finding; keep it visual/CSS-only with no data-model or endpoint changes."
+  ],
+  "passes": true
+}

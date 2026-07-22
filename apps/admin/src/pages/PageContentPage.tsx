@@ -2,20 +2,15 @@ import { useRef, useState, type FormEvent } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, NavLink, useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Check, MoreHorizontal, Plus, X } from 'lucide-react';
+import { Check, Plus, X } from 'lucide-react';
 import { queryClient, useTRPC } from '../lib/trpc.js';
 import { ContentEditor, type ContentEditorHandle } from '../features/editor/ContentEditor.js';
 import { Breadcrumbs, type Crumb } from '../features/editor/Breadcrumbs.js';
 import { SectionHeader } from '../features/editor/SectionHeader.js';
 import type { AdminOutletContext } from '../components/AdminLayout.js';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { RowActionsMenu } from '@/components/RowActionsMenu';
+import { createLinkClass } from '@/lib/styles';
 import { cn } from '@/lib/utils';
 
 /**
@@ -255,33 +250,19 @@ function TabItem({
   return (
     <span className="group/tab -mb-px flex items-center">
       <PageViewLink to={to}>{tab.titulo}</PageViewLink>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            aria-label={`Mais ações da aba ${tab.titulo}`}
-            className="text-muted-foreground hover:text-foreground -ml-2 mb-1 inline-flex size-6 items-center justify-center rounded-editorial-sm opacity-0 transition-opacity group-hover/tab:opacity-100 group-focus-within/tab:opacity-100 data-[state=open]:opacity-100"
-          >
-            <MoreHorizontal className="size-3.5" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
-          <DropdownMenuItem
-            onSelect={() => {
-              setDraft(tab.titulo);
-              setEditing(true);
-            }}
-          >
-            Renomear
-          </DropdownMenuItem>
-          {onMoveLeft && <DropdownMenuItem onSelect={onMoveLeft}>Mover para a esquerda</DropdownMenuItem>}
-          {onMoveRight && <DropdownMenuItem onSelect={onMoveRight}>Mover para a direita</DropdownMenuItem>}
-          <DropdownMenuSeparator />
-          <DropdownMenuItem variant="destructive" onSelect={onDelete}>
-            Excluir
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <RowActionsMenu
+        triggerLabel={`Mais ações da aba ${tab.titulo}`}
+        onRename={() => {
+          setDraft(tab.titulo);
+          setEditing(true);
+        }}
+        onDelete={onDelete}
+        onMovePrev={onMoveLeft}
+        onMoveNext={onMoveRight}
+        movePrevLabel="Mover para a esquerda"
+        moveNextLabel="Mover para a direita"
+        triggerClassName="-ml-2 mb-1 opacity-0 transition-opacity group-hover/tab:opacity-100 group-focus-within/tab:opacity-100"
+      />
     </span>
   );
 }
@@ -310,10 +291,7 @@ function AddTab({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={cn(
-          'text-muted-foreground hover:text-foreground hover:bg-accent inline-flex items-center gap-1.5 rounded-editorial-sm px-2 py-1 text-sm transition-colors',
-          !standalone && '-mb-px',
-        )}
+        className={cn(createLinkClass, 'px-2 py-1', !standalone && '-mb-px')}
       >
         <Plus className="size-3.5" /> Aba
       </button>
