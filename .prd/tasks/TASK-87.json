@@ -1,0 +1,48 @@
+{
+  "id": "TASK-87",
+  "title": "Redesign the main content area: Section Header, metadata, breadcrumbs",
+  "category": "ui-ux",
+  "description": "Per `plano-de-interface.md`'s `# Área principal`, `# Hierarquia tipográfica`, and `# Navegação` sections, and the `referencia.png` screenshot: the editing surface should read as a document, not a form. This task rebuilds `PageContentPage.tsx`'s header into a proper 'Section Header' component (category eyebrow, large title, optional description, metadata row: created/updated/author, status), adds breadcrumbs above it, centers the content column with a max-width, and generally increases whitespace. This is the task that makes the editor 'feel like editing documentation, not a database' per the plan's core principle.",
+  "acceptanceCriteria": [
+    "A reusable `SectionHeader` component exists with: category/eyebrow label (the page's section title, uppercase, small, muted), page or tab title (large, bold, using TASK-82's type scale), optional description, and a metadata row showing created/updated/author — reusing whatever `pages`/`tabs`/`revisions` data already exposes timestamps and author (check `revisions` table per CLAUDE.md's note on `autor_id`); if per-page author/timestamp data isn't currently returned by the relevant query, surface only what's available rather than inventing new backend fields",
+    "Breadcrumbs render above the Section Header: Menu > Section > Page > (Tab, if not the primary body) — extends the plan's `# Navegação` example ('Get started > Installation > Accessibility') with the Menu level introduced by TASK-83/84/85; the Menu segment navigates back to that menu (selecting it as active, per TASK-85's mechanism)",
+    "The content column is centered with a max-width around 1200px, consistent with the plan's `# Área principal` spec, replacing the current full-width flex layout in `AdminLayout`'s `<main>`",
+    "Status (e.g. a Draft/Published-style tag) is visible near the title per the plan's editor example — reuse or derive from existing publish-state data (`pages.publish`/revisions) without inventing a new status field if one doesn't exist; if there's no draft/published boolean readily available, a minimal derived indicator (e.g. 'never published' vs 'published') is acceptable",
+    "Publicar/Histórico actions remain present and contextual to the page (not moved into the header per TASK-85's 'no edit actions in header' rule) — this task only restyles their container, it doesn't change what they do",
+    "Visual regression check: dos-donts, callout, code, table, and component-embed blocks (Fase 3/8) still render correctly inside the wider/centered layout"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Check what metadata is actually available",
+      "details": "Inspect `pages`/`tabs`/`revisions` schema and the tRPC procedures already used by `PageContentPage` (`tabs.getPrimary`, `tabs.listByPage`) plus revision history endpoints (TASK-34/36/69) for created/updated/author fields. Extend a query only if trivial (e.g. exposing an existing column not yet selected) — do not design new tracking.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Build `SectionHeader` and breadcrumbs",
+      "details": "New shared component(s) under `apps/admin/src/components/` (or `features/editor/`) consuming TASK-82's typography primitives. Breadcrumbs derive from the section/page/tab already loaded by `PageContentPage` (and available to `SidebarTree`'s query cache).",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Rework `PageContentPage.tsx` and the `<main>` container",
+      "details": "Swap the current `<h1>` + inline Publicar/Histórico row for the new `SectionHeader`; adjust `AdminLayout`'s `<main>` to center content at the ~1200px max-width per the plan, increasing whitespace/padding.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Verify blocks still render correctly",
+      "details": "Open a page containing each block type (heading/paragraph/list/code/image/table/callout/component-embed/dos-donts) and confirm layout/wrapping still looks correct at the new max-width; re-check responsiveness isn't broken (full responsive pass is TASK-92).",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-82", "TASK-85", "TASK-86"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "This is the highest-leverage task for the plan's core principle ('conteúdo é o protagonista') — prioritize whitespace and restraint over adding new UI elements.",
+    "Don't invent backend fields for metadata that doesn't exist; better to omit a field than fake data. Cross-check against the `revisions` table nullable `autor_id` note in CLAUDE.md before assuming author is always available.",
+    "Keep Publicar/Histórico functionally identical (same mutations/routes) — this task is presentation only for that part."
+  ],
+  "passes": false
+}

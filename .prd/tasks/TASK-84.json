@@ -1,0 +1,48 @@
+{
+  "id": "TASK-84",
+  "title": "Menu CRUD tRPC endpoints and menu-scoped section endpoints",
+  "category": "api-endpoint",
+  "description": "Backend half of the new Menu feature (TASK-83 built the schema). Add a `menus` router mirroring `sectionsRouter`'s existing CRUD (create/rename/reorder/delete), and update the `sections` router so sections are created/listed within a menu: `sections.create` requires a `menuId`, and a new `sections.listByMenu` procedure returns only that menu's sections (the admin sidebar, TASK-86, will consume this instead of the current unscoped `sections.list`). Follows the exact same protectedProcedure/permission model already used for sections (admin and editor both have full CRUD — PRD decision from TASK-24 — no adminProcedure gating here).",
+  "acceptanceCriteria": [
+    "New `menusRouter` (`apps/server/src/trpc/routers/menus.ts`) with `list` (protectedProcedure, ordered by `ordem`/`id` like `sections.list`), `create` (titulo + auto-derived slug, mirroring `generateUniqueSectionSlug`'s approach for `generateUniqueMenuSlug`), `rename`, `reorder` (using the existing `assertCompleteReorder` helper from `routers/reorder.ts`), and `delete` (hard delete, cascades to sections/pages/tabs/revisions via the FK chain, matching the project's hard-delete convention) — all `protectedProcedure`, none `adminProcedure`, matching sections' current permission model exactly",
+    "`sectionsRouter.create` now requires `menuId` in its input schema, validates the referenced menu exists (mirroring how `pages.create` likely validates its parent), and stores it on the new row",
+    "New `sectionsRouter.listByMenu` procedure (protectedProcedure, `{ menuId }` input) returns sections scoped to that menu, ordered the same way as today's `sections.list` — additive, doesn't remove `sections.list` if anything else still needs the unscoped view (check callers before deciding whether to keep or retire it)",
+    "The default menu created by TASK-83's backfill is reachable and manageable through this API exactly like any user-created menu (no special-cased 'cannot delete/rename the default menu' restriction, since the plan doesn't call for one)",
+    "UNIQUE-constraint-on-slug violations for menus are caught and re-raised as `TRPCError CONFLICT`, matching the existing pattern documented in CLAUDE.md for sections/pages",
+    "New vitest coverage in the style of `sections.test.ts`: CRUD happy paths, reorder validation (reusing `assertCompleteReorder`'s existing tests as reference for what 'complete reorder' enforcement means), delete-cascades-to-sections, and `sections.create`/`listByMenu` menu-scoping behavior"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Add `generateUniqueMenuSlug` and the `menusRouter`",
+      "details": "Mirror `apps/server/src/db/sections.ts`'s slug-generation helper and `sectionsRouter`'s CRUD shape as closely as possible — this keeps the two routers consistent and easy to maintain in parallel.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Update `sectionsRouter.create` to require `menuId`",
+      "details": "Add `menuId: z.string()` to the input schema, validate the menu exists (404/NOT_FOUND if not), persist it on insert.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Add `sectionsRouter.listByMenu`",
+      "details": "New query filtered by `menuId`, same ordering/landing-exclusion semantics as the existing `sections.list`. Audit `sections.list`'s current callers (admin `SidebarTree`, TASK-83's header) to decide whether they migrate to `listByMenu` now or in the later UI tasks (TASK-86/87) — this task only needs the procedure to exist and be correct, wiring happens in those UI tasks.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Register the router and write tests",
+      "details": "Add `menus` to `router.ts` and the router matrix (per CLAUDE.md's testing conventions — temp SQLite + `runMigrations` + `appRouter.createCaller`). Cover CRUD, reorder, cascade-delete, and the `sections.create`/`listByMenu` menu-scoping behavior.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-83"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "Mirror, don't diverge: `sectionsRouter` is the direct template for `menusRouter` — same protectedProcedure gating, same reorder helper, same UNIQUE-violation-to-CONFLICT handling. Divergence here would be a maintenance trap.",
+    "This task delivers the API only; the admin UI for creating/renaming/reordering/deleting menus (from the header) is TASK-85's scope, and switching the sidebar to `listByMenu` is TASK-86's scope. Don't build UI here.",
+    "`sections.list` (unscoped) may become dead code once TASK-85/86 land — don't remove it in this task; flag it for cleanup once its last caller migrates."
+  ],
+  "passes": false
+}

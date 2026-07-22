@@ -1,0 +1,54 @@
+{
+  "id": "TASK-90",
+  "title": "Empty states for menus, sections, pages, and editor content",
+  "category": "ui-ux",
+  "description": "Per `plano-de-interface.md`'s `# Componentes > Empty State` section ('Quando não existir conteúdo, mostrar uma ilustração simples. Título. Descrição. Botão: Adicionar conteúdo'), add proper empty states for the gaps the redesign surfaces: a menu with no sections yet (new, since TASK-83/84 introduced Menu), a section with no pages yet, a page with no content blocks yet, and (if TASK-91 lands search) a search-with-no-results state. Today these cases render bare/minimal (e.g. an empty sidebar group, or presumably a blank Tiptap editor).",
+  "acceptanceCriteria": [
+    "A reusable `EmptyState` component exists: simple illustration/icon (lucide-react, consistent with the rest of the admin — no new illustration asset pipeline needed), title, short description, and a primary action button, per the plan's spec",
+    "A newly-created (or otherwise empty) menu with zero sections shows this empty state in the main content area when selected as active, with the action creating the first section (`sections.create` with that menu's id, per TASK-84/86)",
+    "A section with zero pages shows this empty state in the main content area when navigated to (coordinate with TASK-86's sidebar/section-navigation behavior for what a section with no pages navigates to), with the action creating the first page",
+    "A page/tab with zero content blocks shows this empty state inside the editor area instead of a bare blank editor, with the action inserting the first block (reusing TASK-88's block-insert entry point)",
+    "Empty states use TASK-82's typography tokens for title/description sizing, staying visually consistent with the rest of the redesign",
+    "No change to behavior when content DOES exist — this task only adds the zero-state branches"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Build `EmptyState`",
+      "details": "Generic component: icon slot, title, description, action button (as a prop, so callers wire their own mutation).",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Wire the menu-with-no-sections case",
+      "details": "When the active menu (TASK-85) resolves to zero sections via `sections.listByMenu`, render `EmptyState` with a 'Criar primeira seção' action in the main content area, instead of an empty sidebar with nothing to click into.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Wire the section-with-no-pages case",
+      "details": "Wherever TASK-86's sidebar/navigation routes an empty section (or the main content area when a section has 0 pages), render `EmptyState` with a 'Criar primeira página' action calling the existing `pages.create` mutation.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Wire the page-with-no-blocks case",
+      "details": "Inside `ContentEditor`/`PageContentPage`, detect an empty document and render `EmptyState` with an 'Adicionar conteúdo' action that opens TASK-88's block picker (falling back to the existing top toolbar's insert action if TASK-88 hasn't landed).",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Verify transitions",
+      "details": "Confirm each empty state disappears immediately after the first menu/section/page/block is created (no stale UI, no extra reload needed) — this exercises the same query invalidation already used throughout the app.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-82", "TASK-84", "TASK-86", "TASK-87"],
+  "estimatedComplexity": "low",
+  "technicalNotes": [
+    "Keep illustrations simple (a lucide icon in a soft circle, per common empty-state patterns) — the plan explicitly says 'ilustração simples', not a custom SVG library.",
+    "If TASK-88 (block toolbar) hasn't landed when this task is picked up, the page-empty-state action can fall back to the existing TASK-79 toolbar's insert button; don't block this task on TASK-88's completion, just note the dependency is soft for step 4.",
+    "The menu-empty-state case is new (added when Menu was confirmed as a real entity) — a fresh instance always has at least the TASK-83 default menu, but it starts with zero sections until the operator creates one, so this state is reachable on day one, not just a hypothetical."
+  ],
+  "passes": false
+}

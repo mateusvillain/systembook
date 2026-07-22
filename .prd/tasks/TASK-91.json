@@ -1,0 +1,48 @@
+{
+  "id": "TASK-91",
+  "title": "Admin global search (structure + published content)",
+  "category": "ui-ux",
+  "description": "Per `plano-de-interface.md`'s `# Busca` section, the header's search entry point (stubbed in TASK-85) needs a working global search. The public side already has this (TASK-53's `search.query` FTS5 procedure + TASK-54's debounced dropdown `SearchBox.tsx`), but it only indexes published content and is a `publicProcedure`. This task gives the admin panel its own search surface: navigation structure (sections/pages/tabs by title, including unpublished ones the editor can see) plus published content via the existing FTS index. Full parity with the plan's stretch list (components/tokens/usuários) is intentionally scoped down — see technicalNotes.",
+  "acceptanceCriteria": [
+    "Clicking the header search trigger (from TASK-85) opens a command-palette-style dropdown/dialog (can reuse the visual pattern of the existing public `SearchBox.tsx` dropdown, adapted for the admin's design tokens)",
+    "Typing searches the current navigation structure by title — menus, sections, pages, and tabs the current user has access to (via `protectedProcedure`, so drafts/unpublished structure is included, unlike the public search) — results navigate to that item's editor on selection; a menu result selects it as active (per TASK-85) and a section/page/tab result also switches the active menu if it belongs to a different one (consistent with TASK-86's cross-menu navigation rule)",
+    "Typing also surfaces matches from the existing published-content FTS index (`search.query`) as a secondary result group, each linking to that page's editor (not the public `/docs/...` URL, since this is the admin)",
+    "Results are debounced (matching the public search's 300ms pattern) and keyboard-navigable (↑/↓/Enter/Escape), matching `SearchBox.tsx`'s existing interaction model",
+    "Empty query and no-match states use TASK-90's `EmptyState` treatment or an equivalently minimal message — no dropdown flash on empty query",
+    "Users/tokens/components search from the plan's full wish-list are explicitly NOT required by this task (see technicalNotes) — do not attempt to index them without a real requirement to do so"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Add a structure-search procedure",
+      "details": "New `protectedProcedure` (e.g. `search.structure` or extend an existing router) that title-matches across `menus`/`sections`/`pages`/`tabs` for the current user — a simple `LIKE`/case-insensitive substring match is sufficient given the small expected row counts; FTS5 is not required for structure search.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Build the admin `AdminSearch` component",
+      "details": "Adapt `apps/admin/src/features/public/SearchBox.tsx`'s debounce/keyboard/dropdown pattern for the admin, querying both the new structure procedure and the existing `search.query` (content). Group results with small section headers ('Estrutura' / 'Conteúdo publicado').",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Wire into the header",
+      "details": "Replace TASK-85's search stub with the real trigger + dropdown/dialog.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Verify",
+      "details": "Search for an unpublished page's title (should appear via structure search, would NOT appear in public search), search for published body text (should appear via content search), verify keyboard nav and empty/no-results states.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-84", "TASK-85", "TASK-86"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "Scope decision: the plan lists 'páginas, componentes, tokens, usuários, conteúdo' as searchable. This task covers pages/tabs/sections (structure) and content (reusing TASK-53's FTS). Components (connector-discovered, live outside this DB), design tokens (no indexed entity exists), and users (small, low-value to search) are deliberately out of scope — flag as a possible follow-up task rather than expanding this one.",
+    "Do not duplicate TASK-53's FTS5 index or reindexing logic — call the existing `search.query` procedure as-is.",
+    "New structure-search procedure must be `protectedProcedure` (not `publicProcedure` like `search.query`) since it exposes unpublished titles."
+  ],
+  "passes": false
+}
