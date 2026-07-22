@@ -1,0 +1,43 @@
+{
+  "id": "TASK-89",
+  "title": "Contextual actions menu for sidebar items (replace always-visible icon row)",
+  "category": "ui-ux",
+  "description": "Per `plano-de-interface.md`'s `# Ações` section ('Evitar botões espalhados. Priorizar ações contextuais.' with the example 'Página ⋮ Renomear / Duplicar / Mover / Excluir'), consolidate `SidebarTree.tsx`'s `NodeRow` hover icon row (rename/move-up/move-down/delete as 4 separate buttons, from TASK-78) into a single '⋮' trigger that opens a small menu. This keeps the sidebar visually calm per the plan's 'evitar excesso de botões' guidance.",
+  "acceptanceCriteria": [
+    "Each section/page row in the sidebar shows a single '⋮' affordance on hover/focus (replacing the current 4 separate icon buttons), opening a shadcn `DropdownMenu`/`Popover` with: Renomear, Mover para cima, Mover para baixo, Excluir — using the exact same mutations already wired in `SidebarTree.tsx` (`rename`, `reorder` via `move`, `remove`)",
+    "'Duplicar' and cross-section 'Mover' from the plan's example are explicitly out of scope (no backend support exists for either today) — they are omitted from the menu rather than added as dead/disabled options, and the gap is noted in technicalNotes for potential future tasks",
+    "Rename still uses the existing inline-edit pattern (input replaces the row) triggered from the menu's 'Renomear' item, rather than a separate modal — reuse `NodeRow`'s existing `editing` state machinery",
+    "Move up/down items are hidden/disabled at the first/last position exactly as today's `invisible` class behavior on the icon buttons",
+    "Delete keeps the existing `window.confirm` guard and cascade-delete warning copy, unchanged",
+    "Keyboard accessibility: the ⋮ trigger and menu items are reachable and operable via keyboard (shadcn `DropdownMenu` provides this by default) — this also closes part of the plan's 'discreet but always available' structure principle"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Replace `NodeRow`'s action buttons with a single trigger",
+      "details": "Swap the 4-button `<span>` group in `NodeRow` (SidebarTree.tsx) for a `DropdownMenuTrigger` styled as a single '⋮' icon button, visible on row hover/focus exactly like today's group.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Build the menu content",
+      "details": "`DropdownMenuContent` with Renomear/Mover para cima/Mover para baixo/Excluir items calling the same callback props `NodeRow` already receives (`onRename` trigger via `editing` state, `onMoveUp`, `onMoveDown`, `onDelete`).",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Verify across all three current row types",
+      "details": "Section rows, page rows (post-TASK-86, tabs no longer nested here) — confirm the menu behaves identically to the old buttons for create/rename/reorder/delete, including the first/last-position disabling and the delete confirmation copy.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-86"],
+  "estimatedComplexity": "low",
+  "technicalNotes": [
+    "Depends on TASK-86 landing first since that task removes the tab-nesting layer this component also renders through — avoid conflicting rewrites of `SidebarTree.tsx` in parallel.",
+    "'Duplicar' (page/section) and cross-section 'Mover' have no backend mutation today (only reorder-within-parent exists). Do not add UI for capabilities the API can't perform; this is a known gap vs. the plan's literal example, not an oversight.",
+    "Reuses shadcn `DropdownMenu` — check it's already installed from TASK-80 (used for management screens) before adding a new dependency.",
+    "TASK-85 (header) may have already built a minimal per-menu ⋮ control for menu rename/reorder/delete, ahead of this task in sequence. If so, extract a shared `RowActionsMenu` component here instead of maintaining two near-identical dropdown implementations."
+  ],
+  "passes": false
+}

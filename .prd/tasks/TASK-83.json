@@ -1,0 +1,47 @@
+{
+  "id": "TASK-83",
+  "title": "Menu data model and migration (new top-level entity above Section)",
+  "category": "data-model",
+  "description": "Confirmed with the user while scoping Fase 10: the top header nav in the reference (`referencia.png` — 'Get started', 'Foundation', 'Components', 'Resources') is a genuinely new entity above the existing `sections` table, not a rename of it. The sidebar groups shown under one active top-nav item (e.g. 'OVERVIEW', 'STYLE', 'COMPONENTS', 'RESOURCES' all appearing together under 'Get started') don't map 1:1 to the top-nav labels — confirming a real `Menu → Section → Page → Tab` hierarchy, where `Menu` is the new top-level navigation entity and `Section` keeps its current role as the sidebar group. This task adds the `menus` table and a required `menuId` FK on `sections`, with a migration that backfills existing sections into one default menu so nothing breaks.",
+  "acceptanceCriteria": [
+    "New `menus` table: `id` (UUID, `$defaultFn`), `titulo` (text, not null), `slug` (text, nullable initially like `sections.slug` was — for the future public `/docs/:menuSlug/...` URL segment, populated by the app on create + a boot backfill, unique index allowing NULLs per the existing `sections.slug` pattern), `ordem` (integer, not null) — mirrors the existing `sections` table's conventions exactly (see `apps/server/src/db/schema.ts`'s `sections` definition and its comments)",
+    "`sections` gains `menuId` (text, references `menus.id`, `onDelete: 'cascade'`) as **not null** — matching the project's existing hard-delete-cascade convention (CLAUDE.md: 'Deleção é hard delete com FK cascade em todo o domínio')",
+    "Migration generated via `pnpm --filter @systembook/server db:generate` (never hand-written, per CLAUDE.md) handles the not-null FK addition safely: since SQLite can't add a NOT NULL column without a default to a table with existing rows in one step, the migration (or a boot-time step, consistent with how `slug` backfills were handled in TASK-52/70) creates one default menu (`titulo: 'Documentação'`, matching the recommended migration path) and assigns all pre-existing sections to it before/while enforcing the constraint",
+    "The default-menu backfill is idempotent and runs at boot (same pattern as `ensureLandingPage`/slug backfills in `src/index.ts`), so it's safe on repeated boots and on fresh databases (fresh DBs get zero sections, so the backfill is a no-op there — it only matters for pre-existing data)",
+    "`db:generate` runs clean with no manual edits to the generated migration SQL, and the existing 150+ server test suite still passes (tests that create sections directly will need updating for the new required `menuId` — audit and update fixtures/helpers accordingly, not defer to later tasks)"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Add the `menus` table to `schema.ts`",
+      "details": "Mirror `sections`' shape (id/titulo/slug/ordem) and its unique-slug-allowing-NULL index pattern. Add a code comment cross-referencing the new hierarchy (`Menu → Section → Page → Tab`), consistent with the existing comment style at the top of the sections/pages block.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Add `menuId` to `sections` and generate the migration",
+      "details": "Add the FK column, run `db:generate`, and inspect the generated SQL — since SQLite `ALTER TABLE ADD COLUMN NOT NULL` without a default fails on a non-empty table, decide whether drizzle-kit's interactive prompt needs a temporary default or a multi-step migration (nullable → backfill → tighten); follow whichever path `db:generate` proposes rather than hand-editing the migration file.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Implement the default-menu backfill",
+      "details": "New `ensureDefaultMenu(db)`-style helper (in `src/db/`, following the `landing.ts`/slug-backfill precedent) that idempotently creates one default menu and reassigns any `menuId`-less sections to it. Wire it into the existing boot sequence in `src/index.ts` alongside the other backfills, in the correct order (before anything that assumes `menuId` is always populated).",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Update existing tests and fixtures",
+      "details": "Any vitest helper that inserts a `sections` row directly (or via `sections.create`, once TASK-84 exists) needs a valid `menuId` — update test setup to create/reuse a menu first. Run the full server test suite and fix fallout.",
+      "pass": false
+    }
+  ],
+  "dependencies": [],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "This is the foundation task for the Menu feature — TASK-84 (CRUD endpoints) builds directly on this schema. Keep this task strictly to schema/migration/backfill; no tRPC procedures here (matches the project's established data-model/api-endpoint task split, e.g. TASK-17/18 for sections originally).",
+    "Follow the `slug` nullable-with-backfill pattern already proven twice in this codebase (TASK-52 sections/pages public slugs, TASK-70 auto-slug) rather than inventing a new migration strategy.",
+    "`menuId` being NOT NULL (unlike `slug`, which stayed nullable) is a deliberate choice: a section without a menu has no home in the new navigation model, whereas a section without a slug can still function pre-backfill. The default-menu backfill exists specifically to satisfy this constraint safely."
+  ],
+  "passes": false
+}

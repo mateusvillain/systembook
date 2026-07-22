@@ -1,0 +1,57 @@
+{
+  "id": "TASK-85",
+  "title": "Redesign the header: fixed chrome, menu-driven nav, settings/user menu",
+  "category": "ui-ux",
+  "description": "Per `plano-de-interface.md`'s `# Header` section and the reference screenshots, the header must become pure navigation between large areas — never edit/admin actions — with the primary center nav driven by the new **Menu** entity (TASK-83/84: e.g. 'Get started / Foundation / Components / Resources'), not by `sections` and not by app routes. This supersedes the original plan of using `sections.list` directly for the header nav — confirmed with the user that Menu is a real new top-level entity, and clicking a menu item changes which menu is 'active', which in turn scopes the sidebar (TASK-86) to that menu's sections. Confirmed with the user: the current admin-only links (Usuários, Tokens, Histórico global, Página inicial settings) move into a settings/user menu on the right, alongside search. `AdminLayout.tsx` currently renders a static nav (Início/Histórico/Página inicial/Usuários/Tokens) — this task replaces it.",
+  "acceptanceCriteria": [
+    "Header is a fixed ~64px bar with: left = logo/mark + project name; center = primary nav populated from `menus.list` (TASK-84), each item selecting that menu as 'active' — mirrors the plan's 'Get started / Foundation / Components' example using real menu titles",
+    "Some notion of 'active menu' is established and shared with the sidebar (TASK-86): either URL-driven (e.g. `/menus/:menuId/...` prefix) or lifted app state — pick whichever fits the existing router structure with the least disruption to current page/tab routes (`/pages/:pageId`, `/pages/:pageId/tabs/:tabId`), and document the choice since TASK-86/87 depend on it",
+    "Clicking a menu item with zero sections yet lands on an empty state (coordinate with TASK-90's empty-state work) rather than erroring; the header itself never blocks on a menu having content",
+    "An 'Add' affordance exists near the menu nav (per the plan's reference showing a '+ Add' control next to the top nav) for creating a new menu inline — reuses `menus.create` (TASK-84); renaming/reordering/deleting a menu is exposed via a lightweight per-item control (e.g. hover/click reveal, consistent with the ⋮-menu pattern TASK-89 establishes for sidebar items — reuse that pattern here rather than inventing a second one)",
+    "Right side holds: a search entry point (wired in TASK-91, a disabled/placeholder trigger is acceptable here if TASK-91 hasn't landed yet), a settings/gear affordance, and a user menu (avatar/initials + role) that opens a dropdown containing: Usuários (admin-only), Tokens (admin-only), Histórico global, Página inicial (settings), and Sair — everything currently in the flat nav plus the existing role-gating from `AdminLayout.tsx` preserved exactly",
+    "The header contains no edit/create/delete actions for **content** (pages/tabs/blocks) — per the plan's 'Nunca colocar ações de edição nele' — menu management is the one deliberate, narrowly-scoped exception, since menus are themselves top-level navigation structure, not content",
+    "Active-menu highlighting in the center nav uses the same subtle style already used elsewhere (no heavy borders/pills)",
+    "All existing routes (`/admin/history`, `/admin/settings/landing-page`, `/admin/users`, `/admin/settings/tokens`, `/login` logout flow) remain reachable and functionally unchanged",
+    "Uses the typography/token primitives from TASK-82"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Decide how 'active menu' is represented",
+      "details": "Compare a URL-based approach (menu id/slug in the route) against React state/context. A URL-based approach is recommended for shareable links and consistency with the rest of the app's routing (pages/tabs are already URL-addressed) — but confirm it composes cleanly with existing `/pages/:pageId` routes (a page belongs to exactly one section, which belongs to exactly one menu, so the active menu can often be *derived* from the current page without needing it in the URL at all — evaluate this derivation approach too before adding new URL segments).",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Build the menu-driven center nav + inline menu management",
+      "details": "Query `menus.list`; render each as a nav item with active-state; add the '+' create-menu affordance and per-item rename/reorder/delete (reusing TASK-89's contextual-menu component once available, or building the minimal version here if sequencing requires it — coordinate ordering with TASK-89).",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Build the user/settings dropdown menu",
+      "details": "Add a shadcn `DropdownMenu` (or equivalent) triggered by the avatar/role chip, containing the relocated links with the same `me.data.role === 'admin'` gating already in `AdminLayout.tsx`, plus the existing Sair/logout mutation.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Restructure `AdminLayout.tsx`",
+      "details": "Replace the current flat `<nav>` with the new fixed header (logo/name left, menu nav center, search+settings+user right). Preserve the `me` auth-gate/loading/redirect logic untouched.",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Verify in the browser",
+      "details": "Confirm every relocated link still works (Usuários/Tokens admin-only, Histórico global/Página inicial for both roles), logout still works, menu nav items select correctly with 0/1/many menus, and creating/renaming/deleting a menu from the header works end-to-end including cascade behavior on delete.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-82", "TASK-84"],
+  "estimatedComplexity": "high",
+  "technicalNotes": [
+    "This task's scope grew from the original plan once Menu was confirmed as a real new entity (not a rename of Section) — it now owns both the header chrome AND the minimum menu-management UI, since menus are created/organized from the header, not the sidebar. Budget accordingly; consider whether menu rename/delete strictly needs to ship in this task or can follow immediately after in a fast-follow, but menu **create** must work here since TASK-86 (sidebar) needs at least one real menu to scope against beyond the TASK-83 backfilled default.",
+    "The public documentation site (`/docs/...`) is explicitly untouched by the Menu feature — menus are an admin-only organizational layer for now (same 'admin-only' framing as Fase 9). `sections.listPublic` (TASK-83's schema change doesn't require touching it) continues to group only by section; whether the public reader ever sees a menu-level nav is an open question for a future phase, not this one.",
+    "Search trigger stays a stub here (TASK-91's scope)."
+  ],
+  "passes": false
+}

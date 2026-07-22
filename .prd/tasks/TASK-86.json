@@ -1,0 +1,64 @@
+{
+  "id": "TASK-86",
+  "title": "Redesign the sidebar as a lightweight two-level navigation, scoped to the active menu",
+  "category": "ui-ux",
+  "description": "Per `plano-de-interface.md`'s `# Sidebar` section — confirmed with the user — tabs must stop appearing in the tree ('Tabs devem existir apenas dentro da página. Nunca na árvore.'). `SidebarTree.tsx` today renders 3 nested levels (Section → Page → Tab, via `TabsList`) sourced from the unscoped `sections.list`. This task collapses it to 2 levels (Section → Page), removes `TabsList` and its tab CRUD-in-tree UI entirely, restyles the remaining tree to read as navigation instead of a file-tree, AND switches its data source from `sections.list` to the new menu-scoped `sections.listByMenu` (TASK-84) — the sidebar now shows only the sections belonging to whichever menu is 'active' in the header (TASK-85). Tab access/creation continues to work exactly as today via the tab-bar inside `PageContentPage` (already built in TASK-67) — nothing about tab CRUD itself changes, only where its entry point lives.",
+  "acceptanceCriteria": [
+    "`SidebarTree` queries `sections.listByMenu` using the active-menu value established by TASK-85 (whatever mechanism that task settled on — derived from route or explicit state), not the unscoped `sections.list`",
+    "`SidebarTree` renders exactly 2 levels: section groups (uppercase label, collapsible) containing pages; no tab nodes, no tab expand/collapse chevron on page rows",
+    "Tab creation/rename/reorder/delete (currently `TabsList`'s mutations) remain fully functional but are only reachable from inside the page editor's existing tab-bar (`PageContentPage.tsx`'s 'Corpo + tabs' nav) — if that surface doesn't yet support creating/renaming/deleting tabs (only navigating between them), extend it minimally so no tab-management capability is lost",
+    "Selected page uses only a subtle background + text emphasis (no heavy border), per the plan's 'Página selecionada' section",
+    "'Nova seção' creation (currently at the bottom of the sidebar tree) now creates a section scoped to the active menu (`sections.create` with the active `menuId`, per TASK-84) — a section can no longer be created without a menu context",
+    "Each section group still ends with an 'Add page' affordance; add an 'Add subcategory'-equivalent only if a subgroup concept already exists in the data model — otherwise omit it rather than inventing new backend structure (flag this gap in technicalNotes)",
+    "Navigating to a page belonging to a *different* menu than the one currently active (e.g. via direct URL, search, or breadcrumb) either switches the active menu automatically so the sidebar stays consistent with what's open, or redirects through the menu-selection first — pick one behavior and apply it consistently; silently showing a page whose section isn't in the visible sidebar tree is the one outcome to avoid",
+    "All existing section/page CRUD (rename/reorder/delete) keeps working exactly as before — this task removes the tab nesting, reskins the tree, and adds menu-scoping; it does not otherwise change section/page behavior (that's TASK-89's contextual-menu work)",
+    "Sidebar width and scoping (240-280px per the plan) is respected"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Confirm the tab-bar covers full tab CRUD",
+      "details": "Check `PageContentPage.tsx`'s tab-bar: it currently only navigates between the primary body and existing tabs. Since tab creation/rename/delete is being removed from the sidebar, decide (and implement) where those actions now live in the page editor — e.g. a small '+' after the tab-bar and a per-tab context action, mirroring the sidebar's own patterns before they're removed.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Switch the sidebar's data source to the active menu",
+      "details": "Replace `trpc.sections.list` with `trpc.sections.listByMenu` parameterized by the active-menu value from TASK-85. Handle the 'page belongs to a menu other than the active one' edge case per the acceptance criteria (recommend deriving the active menu from the open page/section when possible, so this mostly resolves itself — confirm with TASK-85's chosen mechanism).",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Remove `TabsList` from the tree",
+      "details": "Delete the tab-expansion chevron and `TabsList` component usage from `PageNode` in `SidebarTree.tsx`. Keep `tabs.listByPage`/mutations only where still consumed (the page editor, per step 1).",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Restyle sections and pages as navigation",
+      "details": "Uppercase, letter-spaced section labels; simplify chevrons/indentation so it reads as a nav menu (per plan: 'não utilizar uma árvore pesada... preferir um menu semelhante ao Zeroheight'); subtle selected-page background instead of the current active-link styling if it's too heavy.",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Update section creation to pass the active `menuId`",
+      "details": "Wire the existing `InlineCreate`-for-sections flow to `sections.create({ menuId: activeMenuId, titulo })`.",
+      "pass": false
+    },
+    {
+      "step": 6,
+      "description": "Verify no functionality lost",
+      "details": "Walk the full CRUD surface in the browser: create/rename/reorder/delete sections (within the active menu) and pages from the sidebar; create/rename/delete tabs from the page editor; confirm direct navigation to a tab via URL still works and correctly resolves/switches the active menu; switch between menus in the header and confirm the sidebar tree swaps content correctly.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-82", "TASK-84", "TASK-85"],
+  "estimatedComplexity": "high",
+  "technicalNotes": [
+    "This is an architectural change confirmed explicitly by the user on two fronts: (1) tab management moves from the sidebar tree into the page editor's tab-bar, and (2) the sidebar becomes menu-scoped rather than showing every section flatly. Do not silently drop tab CRUD capability; relocate it. Do not silently drop visibility of sections belonging to other menus; they're still reachable by switching menus in the header.",
+    "The plan's 'Add subcategory' (nested groups within a top-level section) has no backing data model today (sections are flat within a menu) — do not add new backend structure for this task; only add the affordance if trivially expressible with existing data, otherwise omit and note the gap.",
+    "`NodeRow`'s hover icon-button row (rename/move/delete) is reworked separately in TASK-89 — don't redesign those buttons here, just remove the tab layer, add menu-scoping, and adjust group/page typography.",
+    "Complexity bumped to high (from the original medium) once menu-scoping was added to this task's original tab-removal scope — if timeboxing is needed, the tab-removal/reskin work (steps 1/3/4) is independently shippable from the menu-scoping work (steps 2/5), consider sequencing them as sub-PRs."
+  ],
+  "passes": false
+}

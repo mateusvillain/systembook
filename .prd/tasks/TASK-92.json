@@ -1,0 +1,47 @@
+{
+  "id": "TASK-92",
+  "title": "Responsive admin shell: collapsible sidebar (tablet) and drawer (mobile)",
+  "category": "ui-ux",
+  "description": "Per `plano-de-interface.md`'s `# Responsividade` section: desktop keeps a fixed sidebar, tablet gets a collapsible sidebar, mobile gets a drawer. The admin panel today has no responsive handling for the sidebar/header (fixed 280px `<aside>` in `AdminLayout.tsx`). The public docs already solved an equivalent problem in TASK-57 (768px breakpoint, off-canvas drawer with backdrop, hamburger trigger, mobile search overlay) — this task applies the same pattern to the redesigned admin shell from TASK-85/86, reusing the approach rather than reinventing it.",
+  "acceptanceCriteria": [
+    "At a tablet-ish breakpoint, the sidebar becomes collapsible (toggleable, not always rendered at full width) rather than a fixed 280px column, per the plan's 'Tablet: Sidebar recolhível'",
+    "At a mobile breakpoint (reuse TASK-57's 768px if appropriate for consistency), the sidebar becomes an off-canvas drawer opened via a hamburger trigger in the header, with a backdrop that closes it on click, matching `PublicSidebar`'s established pattern from TASK-57",
+    "Selecting a page in the mobile drawer closes it (same `onNavigate` pattern as `PublicSidebar`)",
+    "The header's center menu-nav and right-side search/settings/user controls degrade sensibly on narrow viewports (e.g. condense into the hamburger/menu rather than overflowing or wrapping awkwardly)",
+    "No horizontal page scroll is introduced at any breakpoint — content, tables, and code blocks inside the editor remain contained (reuse the `.tableWrapper`/overflow patterns already established for the public side in TASK-57, applied to the admin editor's equivalent wide content)",
+    "Touch targets are ≥44px on mobile, matching TASK-57's public-side standard"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Reuse the TASK-57 pattern, not reinvent it",
+      "details": "Read `PublicLayout.tsx`/`PublicSidebar.tsx`'s drawer implementation (fixed positioning, `data-open`, backdrop, `navOpen` state) and port the same mechanism into `AdminLayout.tsx`/the redesigned `SidebarTree`/header from TASK-85/86.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Add the collapsible (tablet) and drawer (mobile) breakpoints",
+      "details": "Implement both breakpoint behaviors; verify the collapsed/tablet state is a genuinely different treatment from full drawer-mode, not just an earlier trigger of the same drawer (per the plan distinguishing the two).",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Adapt the header for narrow viewports",
+      "details": "Condense the center section-nav and right-side controls appropriately at mobile width, consistent with TASK-85's earlier work.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Verify at 3 viewports",
+      "details": "Desktop (~1440px), tablet (~820px), mobile (~390px) — check sidebar behavior, header condensing, zero horizontal scroll including inside a page with a wide table and a code block, and touch target sizing on mobile.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-85", "TASK-86", "TASK-88"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "Strongly prefer porting TASK-57's exact drawer/backdrop/breakpoint mechanism rather than a new implementation — it's already verified (19 Playwright checks) and battle-tested against the same class of bug (horizontal scroll, table overflow).",
+    "TASK-57's known test gotcha applies here too if E2E-verifying: clicking a full-screen backdrop by testid can fail because a smaller drawer element visually sits on top of the click target's center — click by coordinate in the exposed area instead."
+  ],
+  "passes": false
+}

@@ -1,0 +1,73 @@
+{
+  "id": "TASK-93",
+  "title": "Fase 10 visual QA pass and final verification",
+  "category": "ui-ux",
+  "description": "Close out Fase 10 (the Zeroheight-inspired interface redesign, TASK-82..92) with an end-to-end visual and functional QA pass across the fully redesigned admin panel, re-verification of every flow touched by the phase's architectural changes (the new Menu entity above sections, tab relocation from sidebar to page editor, header reshuffle, sidebar contextual menu), an accessibility spot-check, and the full monorepo verification — mirroring the role TASK-81 played for Fase 9 and TASK-74 for Fase 8.",
+  "acceptanceCriteria": [
+    "Every admin screen is reviewed in the browser against `plano-de-interface.md`'s explicit 'Não fazer' list (no heavy boxes/cards, no thick borders, no tree-with-lines look, no gray buttons, no deep indentation, no Explorer-like feel) and against the two reference screenshots' overall visual register",
+    "The Menu feature (TASK-83/84/85) works end-to-end: create/rename/reorder/delete a menu from the header, creating a section within a menu, switching the active menu correctly re-scopes the sidebar (TASK-86), navigating to a page via breadcrumb/search/URL resolves the correct active menu, and deleting a menu cascades correctly (sections/pages/tabs/revisions all removed) with a confirmation guard",
+    "No regression in any flow this phase restructured: section/page CRUD from the sidebar (now via the TASK-89 contextual menu), tab creation/rename/delete (now relocated from the sidebar into the page editor per TASK-86), header navigation and the relocated settings/user-menu links (TASK-85), block insertion/deletion via the new inline toolbar (TASK-88), admin search (TASK-91, including menu results), empty states (TASK-90, including the new menu-with-no-sections case)",
+    "No regression in flows from earlier phases that this phase's components touch indirectly: auth, autosave/publish, revision history/restore, token reveal-once, dos-donts and component-embed blocks",
+    "Accessibility spot-check: focus states visible on all new interactive elements (⋮ menus, hover block controls, drawer trigger), the new dropdown/menu components are keyboard-operable, icon-only buttons retain `aria-label`s",
+    "Responsive behavior (TASK-92) verified at desktop/tablet/mobile with zero horizontal scroll and a working drawer",
+    "The public documentation pages and Tiptap prose are confirmed unaffected by this phase, same guarantee as TASK-81/75 established for Fase 9",
+    "Full monorepo fan-out is green: `pnpm lint`, `pnpm typecheck`, `pnpm -r --workspace-concurrency=1 run test`"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Screen-by-screen visual review against the plan and references",
+      "details": "Walk every redesigned screen; check against `plano-de-interface.md`'s '# Não fazer' list specifically, plus side-by-side comparison with `referencia.png`/`referencia-2.png` for overall register (not pixel-matching, but the same restrained, content-first feel).",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Dedicated Menu feature walkthrough",
+      "details": "Create a second menu from the header, add sections/pages to it, switch back and forth between menus and confirm the sidebar always matches the active menu, delete a menu with content and confirm the cascade (and the confirmation guard), and confirm the TASK-83 default menu ('Documentação') still holds the pre-existing sections correctly after migration.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Re-verify other flows restructured by this phase",
+      "details": "Especially the tab-relocation (TASK-86): confirm no tab-management capability was lost in the move from sidebar to page editor. Confirm the header's relocated admin links (TASK-85) all still gate correctly by role.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Re-verify unrelated-but-adjacent flows",
+      "details": "Auth, autosave/publish, revision history/restore, token reveal-once, dos-donts/component-embed rendering — anything the redesign's shared components (Section Header, block toolbar) touch indirectly.",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Accessibility spot-check",
+      "details": "Tab through the main flows checking focus visibility on the new components specifically (dropdown menus, hover-triggered block controls, mobile drawer trigger).",
+      "pass": false
+    },
+    {
+      "step": 6,
+      "description": "Responsive pass",
+      "details": "Desktop/tablet/mobile viewports; confirm TASK-92's acceptance criteria hold end-to-end alongside the rest of the redesign.",
+      "pass": false
+    },
+    {
+      "step": 7,
+      "description": "Confirm public docs untouched",
+      "details": "Compare `/docs/...` rendering and the editable Tiptap prose area before/after this phase.",
+      "pass": false
+    },
+    {
+      "step": 8,
+      "description": "Full fan-out",
+      "details": "`pnpm lint` / `pnpm typecheck` / `pnpm -r --workspace-concurrency=1 run test` all green.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-82", "TASK-83", "TASK-84", "TASK-85", "TASK-86", "TASK-87", "TASK-88", "TASK-89", "TASK-90", "TASK-91", "TASK-92"],
+  "estimatedComplexity": "low",
+  "technicalNotes": [
+    "This task has no new UI to build — it's a verification gate closing Fase 10, same role TASK-81 played for Fase 9 and TASK-74 for Fase 8.",
+    "Pay particular attention to the two genuinely architectural changes in this phase (versus the rest being visual/structural reskins): the new Menu entity (TASK-83/84/85/86) and the tab-relocation regression risk (TASK-86)."
+  ],
+  "passes": false
+}
