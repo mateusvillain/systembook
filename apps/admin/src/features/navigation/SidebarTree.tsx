@@ -20,6 +20,8 @@ const iconBtnClass =
   'inline-flex items-center justify-center rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors';
 const treeInputClass =
   'min-w-0 flex-1 rounded border border-input bg-transparent px-2 py-0.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]';
+// Compatibilidade temporária: a árvore será escopada ao menu ativo na TASK-86.
+const LEGACY_DEFAULT_MENU_ID = '__sb_default_menu__';
 
 const treeNavLinkClass = ({ isActive }: { isActive: boolean }) =>
   cn('min-w-0 flex-1 truncate rounded px-1 py-0.5 no-underline hover:bg-accent', isActive ? 'text-primary font-semibold' : 'text-foreground');
@@ -68,7 +70,10 @@ export function SidebarTree() {
           onMoveDown={i < sections.length - 1 ? () => move(i, 1) : undefined}
         />
       ))}
-      <InlineCreate label="Nova seção" onCreate={(titulo) => create.mutateAsync({ titulo })} />
+      <InlineCreate
+        label="Nova seção"
+        onCreate={(titulo) => create.mutateAsync({ menuId: LEGACY_DEFAULT_MENU_ID, titulo })}
+      />
     </nav>
   );
 }

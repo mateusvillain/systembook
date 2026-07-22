@@ -578,14 +578,14 @@
     "title": "Menu data model and migration (new top-level entity above Section)",
     "category": "data-model",
     "specFilePath": ".prd/tasks/TASK-83.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-84",
     "title": "Menu CRUD tRPC endpoints and menu-scoped section endpoints",
     "category": "api-endpoint",
     "specFilePath": ".prd/tasks/TASK-84.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-85",

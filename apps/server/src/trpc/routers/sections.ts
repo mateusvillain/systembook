@@ -2,7 +2,7 @@ import { TRPCError } from '@trpc/server';
 import { and, asc, eq, max, ne, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { LANDING_PAGE_ID, LANDING_SECTION_ID } from '../../db/landing.js';
-import { pages, revisions, sections } from '../../db/schema.js';
+import { menus, pages, revisions, sections } from '../../db/schema.js';
 import { generateUniqueSectionSlug } from '../../db/sections.js';
 import { protectedProcedure, publicProcedure, router } from '../init.js';
 import { assertCompleteReorder } from './reorder.js';
@@ -19,6 +19,19 @@ export const sectionsRouter = router({
       .orderBy(asc(sections.ordem), asc(sections.id))
       .all(),
   ),
+
+  // TASK-84: a sidebar futura consome esta lista escopada ao menu ativo.
+  // `list` permanece por compatibilidade até a migração visual da TASK-86.
+  listByMenu: protectedProcedure
+    .input(z.object({ menuId: z.string() }))
+    .query(({ ctx, input }) =>
+      ctx.db
+        .select()
+        .from(sections)
+        .where(and(eq(sections.menuId, input.menuId), ne(sections.id, LANDING_SECTION_ID)))
+        .orderBy(asc(sections.ordem), asc(sections.id))
+        .all(),
+    ),
 
   /**
    * Árvore de navegação da doc pública (TASK-52), sem auth. Retorna só as
@@ -70,12 +83,20 @@ export const sectionsRouter = router({
   }),
 
   create: protectedProcedure
-    .input(z.object({ titulo: z.string().min(1) }))
+    .input(z.object({ menuId: z.string(), titulo: z.string().min(1) }))
     .mutation(({ ctx, input }) => {
-      const row = ctx.db.select({ maxOrdem: max(sections.ordem) }).from(sections).get();
+      const menu = ctx.db.select({ id: menus.id }).from(menus).where(eq(menus.id, input.menuId)).get();
+      if (!menu) throw new TRPCError({ code: 'NOT_FOUND', message: 'Menu não encontrado' });
+
+      const row = ctx.db
+        .select({ maxOrdem: max(sections.ordem) })
+        .from(sections)
+        .where(eq(sections.menuId, input.menuId))
+        .get();
       return ctx.db
         .insert(sections)
         .values({
+          menuId: input.menuId,
           titulo: input.titulo,
           // Slug estável gerado do título (TASK-52) — desambiguado se colidir.
           slug: generateUniqueSectionSlug(ctx.db, input.titulo),

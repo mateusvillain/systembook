@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDb, type Db } from '../db/client.js';
 import { runMigrations } from '../db/migrate.js';
 import { and, eq } from 'drizzle-orm';
-import { memberships, tabs, users } from '../db/schema.js';
+import { DEFAULT_MENU_ID, memberships, tabs, users } from '../db/schema.js';
 import type { TiptapDoc } from '../blocks/serialize.js';
 import { appRouter } from './router.js';
 import type { AuthUser } from './context.js';
@@ -40,7 +40,7 @@ describe('search.query (TASK-53) — FTS5 full-text', () => {
     editor = { userId: user.id, role: 'editor', sessionId: 'fake-session' };
 
     const caller = callerFor(db, editor);
-    const section = await caller.sections.create({ titulo: 'Componentes' });
+    const section = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'Componentes' });
     pageId = (await caller.pages.create({ sectionId: section.id, titulo: 'Button', slug: 'button' }))
       .id;
     tabId = (await caller.tabs.create({ pageId, titulo: 'Usage' })).id;

@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDb, type Db } from '../db/client.js';
 import { runMigrations } from '../db/migrate.js';
 import { ensureLandingPage, LANDING_SECTION_ID } from '../db/landing.js';
-import { memberships, users } from '../db/schema.js';
+import { DEFAULT_MENU_ID, memberships, users } from '../db/schema.js';
 import type { TiptapDoc } from '../blocks/serialize.js';
 import { appRouter } from './router.js';
 import type { AuthUser } from './context.js';
@@ -82,8 +82,8 @@ describe('landing page (TASK-56)', () => {
 
   it('sections.reorder funciona com a section reservada presente (não exige incluí-la)', async () => {
     const caller = callerFor(db, editor);
-    const a = await caller.sections.create({ titulo: 'A' });
-    const b = await caller.sections.create({ titulo: 'B' });
+    const a = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'A' });
+    const b = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'B' });
 
     // O cliente só conhece as sections visíveis (list exclui a landing); a
     // reordenação com apenas esses ids não pode falhar por causa da reservada.
