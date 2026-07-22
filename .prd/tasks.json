@@ -592,21 +592,21 @@
     "title": "Redesign the header: fixed chrome, menu-driven nav, settings/user menu",
     "category": "ui-ux",
     "specFilePath": ".prd/tasks/TASK-85.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-86",
     "title": "Redesign the sidebar as a lightweight two-level navigation, scoped to the active menu",
     "category": "ui-ux",
     "specFilePath": ".prd/tasks/TASK-86.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-87",
     "title": "Redesign the main content area: Section Header, metadata, breadcrumbs",
     "category": "ui-ux",
     "specFilePath": ".prd/tasks/TASK-87.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-88",

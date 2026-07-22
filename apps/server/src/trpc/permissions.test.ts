@@ -49,7 +49,7 @@ describe('matriz de permissões (TASK-24)', () => {
 
     const section = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'Componentes' });
     await caller.sections.rename({ id: section.id, titulo: 'Fundamentos' });
-    await caller.sections.reorder({ orderedIds: [section.id] });
+    await caller.sections.reorder({ menuId: DEFAULT_MENU_ID, orderedIds: [section.id] });
 
     const page = await caller.pages.create({
       sectionId: section.id,

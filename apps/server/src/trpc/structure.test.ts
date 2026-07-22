@@ -73,7 +73,7 @@ describe('estrutura de navegação (sections/pages/tabs)', () => {
       const b = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'B' });
       const c = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'C' });
 
-      await caller.sections.reorder({ orderedIds: [c.id, a.id, b.id] });
+      await caller.sections.reorder({ menuId: DEFAULT_MENU_ID, orderedIds: [c.id, a.id, b.id] });
       const list = await caller.sections.list();
       expect(list.map((s) => s.titulo)).toEqual(['C', 'A', 'B']);
       expect(list.map((s) => s.ordem)).toEqual([0, 1, 2]);
@@ -84,18 +84,59 @@ describe('estrutura de navegação (sections/pages/tabs)', () => {
       const a = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'A' });
       const b = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'B' });
 
-      await expect(caller.sections.reorder({ orderedIds: [a.id] })).rejects.toMatchObject({
-        code: 'BAD_REQUEST',
-      });
       await expect(
-        caller.sections.reorder({ orderedIds: [a.id, 'intruso'] }),
+        caller.sections.reorder({ menuId: DEFAULT_MENU_ID, orderedIds: [a.id] }),
       ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
-      await expect(caller.sections.reorder({ orderedIds: [a.id, a.id] })).rejects.toMatchObject({
-        code: 'BAD_REQUEST',
-      });
+      await expect(
+        caller.sections.reorder({ menuId: DEFAULT_MENU_ID, orderedIds: [a.id, 'intruso'] }),
+      ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+      await expect(
+        caller.sections.reorder({ menuId: DEFAULT_MENU_ID, orderedIds: [a.id, a.id] }),
+      ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
       // nada mudou
       const list = await caller.sections.list();
       expect(list.map((s) => s.id)).toEqual([a.id, b.id]);
+    });
+
+    it('reorder é escopado ao menu: só exige os ids do próprio menu (TASK-86)', async () => {
+      const caller = callerFor(db, editor);
+      const outroMenu = await caller.menus.create({ titulo: 'Componentes' });
+      const a = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'A' });
+      const b = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'B' });
+      // Uma seção em outro menu não deve entrar na conta de completude.
+      await caller.sections.create({ menuId: outroMenu.id, titulo: 'Isolada' });
+
+      await caller.sections.reorder({ menuId: DEFAULT_MENU_ID, orderedIds: [b.id, a.id] });
+      const list = await caller.sections.listByMenu({ menuId: DEFAULT_MENU_ID });
+      expect(list.map((s) => s.id)).toEqual([b.id, a.id]);
+    });
+
+    it('menuOf resolve o menu de uma página; 404 se a página não existe', async () => {
+      const caller = callerFor(db, editor);
+      const menu = await caller.menus.create({ titulo: 'Foundation' });
+      const section = await caller.sections.create({ menuId: menu.id, titulo: 'Cores' });
+      const page = await caller.pages.create({ sectionId: section.id, titulo: 'Tokens', slug: 'tokens' });
+
+      expect(await caller.pages.menuOf({ pageId: page.id })).toEqual({ menuId: menu.id });
+      await expect(caller.pages.menuOf({ pageId: 'nao-existe' })).rejects.toMatchObject({
+        code: 'NOT_FOUND',
+      });
+    });
+
+    it('header retorna página + seção + menu para breadcrumb/section header (TASK-87)', async () => {
+      const caller = callerFor(db, editor);
+      const menu = await caller.menus.create({ titulo: 'Foundation' });
+      const section = await caller.sections.create({ menuId: menu.id, titulo: 'Cores' });
+      const page = await caller.pages.create({ sectionId: section.id, titulo: 'Tokens', slug: 'tokens' });
+
+      expect(await caller.pages.header({ pageId: page.id })).toEqual({
+        page: { id: page.id, titulo: 'Tokens' },
+        section: { id: section.id, titulo: 'Cores' },
+        menu: { id: menu.id, titulo: 'Foundation' },
+      });
+      await expect(caller.pages.header({ pageId: 'nao-existe' })).rejects.toMatchObject({
+        code: 'NOT_FOUND',
+      });
     });
 
     it('delete remove a seção e cascateia para pages e tabs', async () => {

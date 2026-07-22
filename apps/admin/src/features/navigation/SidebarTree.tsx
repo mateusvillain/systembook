@@ -1,35 +1,38 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useState, type FormEvent } from 'react';
 import { TRPCClientError } from '@trpc/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { NavLink } from 'react-router-dom';
-import { ArrowDown, ArrowUp, Check, ChevronDown, ChevronRight, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Check, ChevronDown, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { queryClient, useTRPC } from '../../lib/trpc.js';
 import { cn } from '@/lib/utils';
 
 /**
- * Árvore de navegação (TASK-23): sections → pages → tabs, com criar/renomear/
- * reordenar/excluir inline em cada nível. Reordenação usa botões ↑/↓ enviando
- * a lista completa de ids ao `reorder` (drag-and-drop fica para depois).
- * Exclusão confirma via window.confirm — o delete cascateia toda a subárvore.
- * Fase 9 (TASK-78): estilo migrado para Tailwind + ícones lucide (só
- * apresentação — a lógica de query/mutation/reorder é intocada).
+ * Navegação da documentação (TASK-86): dois níveis — Seção → Página — escopados
+ * ao **menu ativo** (`sections.listByMenu`, do header/TASK-85). As Tabs saíram
+ * da árvore (decisão do usuário no `plano-de-interface.md`): agora só existem
+ * dentro do editor da página (`PageContentPage`). A sidebar deve parecer uma
+ * navegação, não um explorer de arquivos — grupos com rótulo em maiúsculas,
+ * página selecionada com fundo sutil (sem bordas pesadas).
+ *
+ * Criar/renomear/reordenar/excluir seções e páginas continua inline. As ações
+ * por linha (renomear/mover/excluir) são reformuladas na TASK-89 — aqui só a
+ * tipografia dos grupos/páginas e o escopo por menu mudam.
  */
 
-const rowClass = 'flex items-center gap-1 rounded px-1 py-0.5';
 const iconBtnClass =
-  'inline-flex items-center justify-center rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors';
+  'inline-flex items-center justify-center rounded-editorial-sm p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors';
 const treeInputClass =
-  'min-w-0 flex-1 rounded border border-input bg-transparent px-2 py-0.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]';
-// Compatibilidade temporária: a árvore será escopada ao menu ativo na TASK-86.
-const LEGACY_DEFAULT_MENU_ID = '__sb_default_menu__';
+  'min-w-0 flex-1 rounded-editorial-sm border border-input bg-transparent px-2 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]';
 
-const treeNavLinkClass = ({ isActive }: { isActive: boolean }) =>
-  cn('min-w-0 flex-1 truncate rounded px-1 py-0.5 no-underline hover:bg-accent', isActive ? 'text-primary font-semibold' : 'text-foreground');
-
-export function SidebarTree() {
+export function SidebarTree({ activeMenuId }: { activeMenuId: string | null }) {
   const trpc = useTRPC();
-  const sectionsQuery = useQuery(trpc.sections.list.queryOptions());
-  const invalidate = () => queryClient.invalidateQueries(trpc.sections.list.queryFilter());
+  const sectionsQuery = useQuery({
+    ...trpc.sections.listByMenu.queryOptions({ menuId: activeMenuId ?? '' }),
+    enabled: activeMenuId != null,
+  });
+  const invalidate = () =>
+    activeMenuId &&
+    queryClient.invalidateQueries(trpc.sections.listByMenu.queryFilter({ menuId: activeMenuId }));
 
   const create = useMutation(trpc.sections.create.mutationOptions({ onSuccess: invalidate }));
   const rename = useMutation(trpc.sections.rename.mutationOptions({ onSuccess: invalidate }));
@@ -39,28 +42,33 @@ export function SidebarTree() {
   const sections = sectionsQuery.data ?? [];
 
   function move(index: number, delta: -1 | 1) {
+    if (!activeMenuId) return;
     const ids = sections.map((s) => s.id);
     const [id] = ids.splice(index, 1);
     ids.splice(index + delta, 0, id!);
-    reorder.mutate({ orderedIds: ids });
+    reorder.mutate({ menuId: activeMenuId, orderedIds: ids });
+  }
+
+  if (!activeMenuId) {
+    // O header ainda está resolvendo qual menu está ativo (menus.list).
+    return <p className="text-muted-foreground px-2 py-1 text-sm">Carregando menu…</p>;
   }
 
   return (
-    <nav
-      aria-label="Estrutura da documentação"
-      className="grid content-start gap-1 text-sm"
-    >
-      <strong className="text-muted-foreground px-1 py-0.5 text-xs tracking-wide">ESTRUTURA</strong>
-      {sectionsQuery.isPending && <span className={cn(rowClass, 'text-muted-foreground')}>Carregando…</span>}
+    <nav aria-label="Estrutura da documentação" className="grid content-start gap-6 text-sm">
+      {sectionsQuery.isPending && <span className="text-muted-foreground px-2 text-sm">Carregando…</span>}
+      {!sectionsQuery.isPending && sections.length === 0 && (
+        <p className="text-muted-foreground px-2 text-sm">Nenhuma seção neste menu ainda.</p>
+      )}
       {sections.map((section, i) => (
-        <SectionNode
+        <SectionGroup
           key={section.id}
           section={section}
           onRename={(titulo) => rename.mutate({ id: section.id, titulo })}
           onDelete={() => {
             if (
               window.confirm(
-                `Excluir a seção "${section.titulo}"? Todas as páginas e tabs dentro dela também serão removidas.`,
+                `Excluir a seção "${section.titulo}"? Todas as páginas dentro dela também serão removidas.`,
               )
             ) {
               remove.mutate({ id: section.id });
@@ -72,7 +80,7 @@ export function SidebarTree() {
       ))}
       <InlineCreate
         label="Nova seção"
-        onCreate={(titulo) => create.mutateAsync({ menuId: LEGACY_DEFAULT_MENU_ID, titulo })}
+        onCreate={(titulo) => create.mutateAsync({ menuId: activeMenuId, titulo })}
       />
     </nav>
   );
@@ -83,7 +91,11 @@ interface NodeShape {
   titulo: string;
 }
 
-function SectionNode({
+/**
+ * Grupo de seção: rótulo-categoria em maiúsculas (colapsável) + suas páginas.
+ * Aberto por padrão para ler como navegação (não como árvore recolhida).
+ */
+function SectionGroup({
   section,
   onRename,
   onDelete,
@@ -96,29 +108,51 @@ function SectionNode({
   onMoveUp?: () => void;
   onMoveDown?: () => void;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(section.titulo);
 
   return (
-    <div>
-      <NodeRow
-        title={section.titulo}
-        label={`seção ${section.titulo}`}
-        onRename={onRename}
-        onDelete={onDelete}
-        onMoveUp={onMoveUp}
-        onMoveDown={onMoveDown}
-        titleElement={
+    <div className="grid gap-0.5">
+      {editing ? (
+        <RenameForm
+          label={`seção ${section.titulo}`}
+          initial={section.titulo}
+          draft={draft}
+          setDraft={setDraft}
+          onSubmit={() => {
+            if (draft.trim()) onRename(draft.trim());
+            setEditing(false);
+          }}
+          onCancel={() => setEditing(false)}
+        />
+      ) : (
+        <div className="group/section flex items-center gap-1 pr-1">
           <button
-            className="flex flex-1 items-center gap-1 rounded px-1 py-0.5 text-left font-semibold hover:bg-accent"
+            type="button"
+            className="text-muted-foreground hover:text-foreground -ml-1 flex min-w-0 flex-1 items-center gap-1 rounded-editorial-sm px-1 py-0.5 text-left text-xs font-semibold uppercase tracking-[0.1em] transition-colors"
             aria-expanded={expanded}
             aria-label={`${expanded ? 'Recolher' : 'Expandir'} seção ${section.titulo}`}
             onClick={() => setExpanded((v) => !v)}
           >
-            {expanded ? <ChevronDown className="size-4 shrink-0" /> : <ChevronRight className="size-4 shrink-0" />}
-            {section.titulo}
+            <ChevronDown
+              className={cn('size-3.5 shrink-0 transition-transform', !expanded && '-rotate-90')}
+            />
+            <span className="truncate">{section.titulo}</span>
           </button>
-        }
-      />
+          <RowActions
+            label={`seção ${section.titulo}`}
+            onRename={() => {
+              setDraft(section.titulo);
+              setEditing(true);
+            }}
+            onDelete={onDelete}
+            onMoveUp={onMoveUp}
+            onMoveDown={onMoveDown}
+            className="opacity-0 group-hover/section:opacity-100 group-focus-within/section:opacity-100"
+          />
+        </div>
+      )}
       {expanded && <PagesList sectionId={section.id} />}
     </div>
   );
@@ -145,19 +179,15 @@ function PagesList({ sectionId }: { sectionId: string }) {
   }
 
   return (
-    <div className="ml-4 grid gap-0.5">
-      {pagesQuery.isPending && <span className={cn(rowClass, 'text-muted-foreground')}>Carregando…</span>}
+    <div className="grid gap-0.5 pl-2">
+      {pagesQuery.isPending && <span className="text-muted-foreground px-2 text-sm">Carregando…</span>}
       {pages.map((page, i) => (
-        <PageNode
+        <PageRow
           key={page.id}
           page={page}
           onRename={(titulo) => rename.mutate({ id: page.id, titulo })}
           onDelete={() => {
-            if (
-              window.confirm(
-                `Excluir a página "${page.titulo}"? Todas as tabs dela também serão removidas.`,
-              )
-            ) {
+            if (window.confirm(`Excluir a página "${page.titulo}" e todo o seu conteúdo?`)) {
               remove.mutate({ id: page.id });
             }
           }}
@@ -165,201 +195,165 @@ function PagesList({ sectionId }: { sectionId: string }) {
           onMoveDown={i < pages.length - 1 ? () => move(i, 1) : undefined}
         />
       ))}
-      <CreatePageForm
-        onCreate={(titulo, slug) => create.mutateAsync({ sectionId, titulo, slug })}
-      />
+      <CreatePageForm onCreate={(titulo, slug) => create.mutateAsync({ sectionId, titulo, slug })} />
     </div>
   );
 }
 
-function PageNode({
+/** Página: link de navegação (sem chevron de tabs — TASK-86). Selecionada = fundo sutil. */
+function PageRow({
   page,
   onRename,
   onDelete,
   onMoveUp,
   onMoveDown,
 }: {
-  page: NodeShape & { slug: string };
-  onRename: (titulo: string) => void;
-  onDelete: () => void;
-  onMoveUp?: () => void;
-  onMoveDown?: () => void;
-}) {
-  const [expanded, setExpanded] = useState(false);
-
-  return (
-    <div>
-      <NodeRow
-        title={page.titulo}
-        label={`página ${page.titulo}`}
-        onRename={onRename}
-        onDelete={onDelete}
-        onMoveUp={onMoveUp}
-        onMoveDown={onMoveDown}
-        titleElement={
-          <span className="flex min-w-0 flex-1 items-center">
-            <button
-              className={cn(iconBtnClass, 'shrink-0')}
-              aria-expanded={expanded}
-              aria-label={`${expanded ? 'Recolher' : 'Expandir'} tabs de ${page.titulo}`}
-              onClick={() => setExpanded((v) => !v)}
-            >
-              {expanded ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
-            </button>
-            {/* Clicar na página abre o editor do corpo (TASK-67). */}
-            <NavLink to={`/pages/${page.id}`} end className={treeNavLinkClass}>
-              {page.titulo}
-              <span className="text-muted-foreground ml-1.5">/{page.slug}</span>
-            </NavLink>
-          </span>
-        }
-      />
-      {expanded && <TabsList pageId={page.id} />}
-    </div>
-  );
-}
-
-function TabsList({ pageId }: { pageId: string }) {
-  const trpc = useTRPC();
-  const tabsQuery = useQuery(trpc.tabs.listByPage.queryOptions({ pageId }));
-  const invalidate = () =>
-    queryClient.invalidateQueries(trpc.tabs.listByPage.queryFilter({ pageId }));
-
-  const create = useMutation(trpc.tabs.create.mutationOptions({ onSuccess: invalidate }));
-  const rename = useMutation(trpc.tabs.rename.mutationOptions({ onSuccess: invalidate }));
-  const reorder = useMutation(trpc.tabs.reorder.mutationOptions({ onSuccess: invalidate }));
-  const remove = useMutation(trpc.tabs.delete.mutationOptions({ onSuccess: invalidate }));
-
-  const tabs = tabsQuery.data ?? [];
-
-  function move(index: number, delta: -1 | 1) {
-    const ids = tabs.map((t) => t.id);
-    const [id] = ids.splice(index, 1);
-    ids.splice(index + delta, 0, id!);
-    reorder.mutate({ pageId, orderedIds: ids });
-  }
-
-  return (
-    <div className="ml-4 grid gap-0.5">
-      {tabsQuery.isPending && <span className={cn(rowClass, 'text-muted-foreground')}>Carregando…</span>}
-      {tabs.map((tab, i) => (
-        <NodeRow
-          key={tab.id}
-          title={tab.titulo}
-          label={`tab ${tab.titulo}`}
-          onRename={(titulo) => rename.mutate({ id: tab.id, titulo })}
-          onDelete={() => {
-            if (window.confirm(`Excluir a tab "${tab.titulo}" e seu conteúdo?`)) {
-              remove.mutate({ id: tab.id });
-            }
-          }}
-          onMoveUp={i > 0 ? () => move(i, -1) : undefined}
-          onMoveDown={i < tabs.length - 1 ? () => move(i, 1) : undefined}
-          titleElement={
-            <NavLink to={`/pages/${pageId}/tabs/${tab.id}`} className={treeNavLinkClass}>
-              {tab.titulo}
-            </NavLink>
-          }
-        />
-      ))}
-      <InlineCreate label="Nova tab" onCreate={(titulo) => create.mutateAsync({ pageId, titulo })} />
-    </div>
-  );
-}
-
-/** Linha genérica da árvore: título + ações (renomear inline, ↑/↓, excluir). */
-function NodeRow({
-  title,
-  label,
-  titleElement,
-  onRename,
-  onDelete,
-  onMoveUp,
-  onMoveDown,
-}: {
-  title: string;
-  label: string;
-  titleElement: ReactNode;
+  page: NodeShape;
   onRename: (titulo: string) => void;
   onDelete: () => void;
   onMoveUp?: () => void;
   onMoveDown?: () => void;
 }) {
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(title);
+  const [draft, setDraft] = useState(page.titulo);
 
   if (editing) {
     return (
-      <form
-        className={rowClass}
-        onSubmit={(e) => {
-          e.preventDefault();
+      <RenameForm
+        label={`página ${page.titulo}`}
+        initial={page.titulo}
+        draft={draft}
+        setDraft={setDraft}
+        onSubmit={() => {
           if (draft.trim()) onRename(draft.trim());
           setEditing(false);
         }}
-      >
-        <input
-          autoFocus
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          aria-label={`Novo título de ${label}`}
-          className={treeInputClass}
-        />
-        <button type="submit" className={iconBtnClass} aria-label={`Salvar título de ${label}`}>
-          <Check className="size-4" />
-        </button>
-        <button type="button" className={iconBtnClass} aria-label="Cancelar" onClick={() => setEditing(false)}>
-          <X className="size-4" />
-        </button>
-      </form>
+        onCancel={() => setEditing(false)}
+      />
     );
   }
 
   return (
-    <div className={cn(rowClass, 'group hover:bg-accent')}>
-      {titleElement}
-      <span className="inline-flex gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-        <button
-          className={iconBtnClass}
-          aria-label={`Renomear ${label}`}
-          title="Renomear"
-          onClick={() => {
-            setDraft(title);
-            setEditing(true);
-          }}
-        >
-          <Pencil className="size-3.5" />
-        </button>
-        <button
-          className={cn(iconBtnClass, !onMoveUp && 'invisible')}
-          aria-label={`Mover ${label} para cima`}
-          title="Mover para cima"
-          onClick={onMoveUp}
-        >
-          <ArrowUp className="size-3.5" />
-        </button>
-        <button
-          className={cn(iconBtnClass, !onMoveDown && 'invisible')}
-          aria-label={`Mover ${label} para baixo`}
-          title="Mover para baixo"
-          onClick={onMoveDown}
-        >
-          <ArrowDown className="size-3.5" />
-        </button>
-        <button
-          className={cn(iconBtnClass, 'hover:text-destructive')}
-          aria-label={`Excluir ${label}`}
-          title="Excluir"
-          onClick={onDelete}
-        >
-          <Trash2 className="size-3.5" />
-        </button>
-      </span>
+    <div className="group/page flex items-center gap-1">
+      <NavLink
+        to={`/pages/${page.id}`}
+        end
+        className={({ isActive }) =>
+          cn(
+            'min-w-0 flex-1 truncate rounded-editorial-sm px-2 py-1 no-underline transition-colors',
+            isActive
+              ? 'bg-accent text-foreground font-medium'
+              : 'text-muted-foreground hover:text-foreground hover:bg-accent',
+          )
+        }
+      >
+        {page.titulo}
+      </NavLink>
+      <RowActions
+        label={`página ${page.titulo}`}
+        onRename={() => {
+          setDraft(page.titulo);
+          setEditing(true);
+        }}
+        onDelete={onDelete}
+        onMoveUp={onMoveUp}
+        onMoveDown={onMoveDown}
+        className="opacity-0 group-hover/page:opacity-100 group-focus-within/page:opacity-100"
+      />
     </div>
   );
 }
 
-/** Botão "+" que expande para um input de título. */
+/** Ações da linha (renomear/mover/excluir) reveladas no hover. Reformuladas na TASK-89. */
+function RowActions({
+  label,
+  onRename,
+  onDelete,
+  onMoveUp,
+  onMoveDown,
+  className,
+}: {
+  label: string;
+  onRename: () => void;
+  onDelete: () => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  className?: string;
+}) {
+  return (
+    <span className={cn('inline-flex shrink-0 gap-0.5 transition-opacity', className)}>
+      <button className={iconBtnClass} aria-label={`Renomear ${label}`} title="Renomear" onClick={onRename}>
+        <Pencil className="size-3.5" />
+      </button>
+      <button
+        className={cn(iconBtnClass, !onMoveUp && 'invisible')}
+        aria-label={`Mover ${label} para cima`}
+        title="Mover para cima"
+        onClick={onMoveUp}
+      >
+        <ArrowUp className="size-3.5" />
+      </button>
+      <button
+        className={cn(iconBtnClass, !onMoveDown && 'invisible')}
+        aria-label={`Mover ${label} para baixo`}
+        title="Mover para baixo"
+        onClick={onMoveDown}
+      >
+        <ArrowDown className="size-3.5" />
+      </button>
+      <button
+        className={cn(iconBtnClass, 'hover:text-destructive')}
+        aria-label={`Excluir ${label}`}
+        title="Excluir"
+        onClick={onDelete}
+      >
+        <Trash2 className="size-3.5" />
+      </button>
+    </span>
+  );
+}
+
+/** Edição inline de título (compartilhada por seção e página). */
+function RenameForm({
+  label,
+  draft,
+  setDraft,
+  onSubmit,
+  onCancel,
+}: {
+  label: string;
+  initial: string;
+  draft: string;
+  setDraft: (v: string) => void;
+  onSubmit: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <form
+      className="flex items-center gap-1"
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSubmit();
+      }}
+    >
+      <input
+        autoFocus
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        aria-label={`Novo título de ${label}`}
+        className={treeInputClass}
+      />
+      <button type="submit" className={iconBtnClass} aria-label={`Salvar título de ${label}`}>
+        <Check className="size-4" />
+      </button>
+      <button type="button" className={iconBtnClass} aria-label="Cancelar" onClick={onCancel}>
+        <X className="size-4" />
+      </button>
+    </form>
+  );
+}
+
+/** Botão "+" que expande para um input de título (Nova seção). */
 function InlineCreate({
   label,
   onCreate,
@@ -381,7 +375,7 @@ function InlineCreate({
   if (!open) {
     return (
       <button
-        className="text-primary flex items-center gap-1 rounded px-1 py-0.5 text-left hover:bg-accent"
+        className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 rounded-editorial-sm px-1 py-1 text-left text-sm transition-colors"
         onClick={() => setOpen(true)}
       >
         <Plus className="size-3.5" /> {label}
@@ -390,7 +384,7 @@ function InlineCreate({
   }
 
   return (
-    <form onSubmit={handleSubmit} className={rowClass}>
+    <form onSubmit={handleSubmit} className="flex items-center gap-1">
       <input
         autoFocus
         placeholder={label}
@@ -409,7 +403,7 @@ function InlineCreate({
   );
 }
 
-/** Criação de página pede título + slug (validado no server). */
+/** Adicionar página (embaixo do grupo): pede título + slug opcional. */
 function CreatePageForm({
   onCreate,
 }: {
@@ -425,7 +419,6 @@ function CreatePageForm({
     event.preventDefault();
     setError(null);
     try {
-      // Envia undefined quando em branco, para o server derivar o slug do título.
       await onCreate(titulo.trim(), slug.trim() || undefined);
       setTitulo('');
       setSlug('');
@@ -438,16 +431,16 @@ function CreatePageForm({
   if (!open) {
     return (
       <button
-        className="text-primary flex items-center gap-1 rounded px-1 py-0.5 text-left hover:bg-accent"
+        className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 rounded-editorial-sm px-2 py-1 text-left text-sm transition-colors"
         onClick={() => setOpen(true)}
       >
-        <Plus className="size-3.5" /> Nova página
+        <Plus className="size-3.5" /> Adicionar página
       </button>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className={cn(rowClass, 'flex-wrap')}>
+    <form onSubmit={handleSubmit} className="flex flex-wrap items-center gap-1 py-0.5">
       <input
         autoFocus
         placeholder="Título da página"

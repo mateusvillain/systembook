@@ -119,15 +119,16 @@ export const sectionsRouter = router({
       return updated;
     }),
 
+  // Reordenação escopada ao menu (TASK-86): a sidebar só conhece as seções do
+  // menu ativo, então a lista completa exigida por `assertCompleteReorder` é a
+  // do menu — não a global. A landing continua excluída (oculta de `listByMenu`).
   reorder: protectedProcedure
-    .input(z.object({ orderedIds: z.array(z.string()).min(1) }))
+    .input(z.object({ menuId: z.string(), orderedIds: z.array(z.string()).min(1) }))
     .mutation(({ ctx, input }) => {
-      // Exclui a section reservada da landing (TASK-56) — ela é oculta de
-      // `list`, então o cliente nunca a inclui na lista de reordenação.
       const existing = ctx.db
         .select({ id: sections.id })
         .from(sections)
-        .where(ne(sections.id, LANDING_SECTION_ID))
+        .where(and(eq(sections.menuId, input.menuId), ne(sections.id, LANDING_SECTION_ID)))
         .all();
       assertCompleteReorder(
         existing.map((s) => s.id),
@@ -135,7 +136,10 @@ export const sectionsRouter = router({
       );
       ctx.db.transaction((tx) => {
         input.orderedIds.forEach((id, ordem) => {
-          tx.update(sections).set({ ordem }).where(eq(sections.id, id)).run();
+          tx.update(sections)
+            .set({ ordem })
+            .where(and(eq(sections.id, id), eq(sections.menuId, input.menuId)))
+            .run();
         });
       });
       return { ok: true };

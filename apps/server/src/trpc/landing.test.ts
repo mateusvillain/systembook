@@ -91,7 +91,7 @@ describe('landing page (TASK-56)', () => {
     expect(visible.some((s) => s.id === LANDING_SECTION_ID)).toBe(false);
 
     await expect(
-      caller.sections.reorder({ orderedIds: [b.id, a.id] }),
+      caller.sections.reorder({ menuId: DEFAULT_MENU_ID, orderedIds: [b.id, a.id] }),
     ).resolves.toEqual({ ok: true });
   });
 });

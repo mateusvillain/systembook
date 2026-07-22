@@ -4,7 +4,7 @@ import { z } from 'zod';
 import type { PageSnapshot } from '@systembook/schema';
 import { isUniqueViolation } from '../../db/errors.js';
 import { createRevision, restoreRevision } from '../../db/revisions.js';
-import { pages, revisions, sections, tabs } from '../../db/schema.js';
+import { menus, pages, revisions, sections, tabs } from '../../db/schema.js';
 import { protectedProcedure, publicProcedure, router } from '../init.js';
 import { assertCompleteReorder } from './reorder.js';
 
@@ -49,6 +49,49 @@ export const pagesRouter = router({
         .orderBy(asc(pages.ordem), asc(pages.id))
         .all(),
     ),
+
+  // Resolve o menu ao qual uma página pertence (page → section → menu).
+  // A sidebar (TASK-86) é escopada ao menu ativo; ao navegar direto para uma
+  // página de outro menu (URL/busca/breadcrumb) o admin usa isto para trocar o
+  // menu ativo, mantendo a árvore consistente com o que está aberto.
+  menuOf: protectedProcedure.input(z.object({ pageId: z.string() })).query(({ ctx, input }) => {
+    const row = ctx.db
+      .select({ menuId: sections.menuId })
+      .from(pages)
+      .innerJoin(sections, eq(pages.sectionId, sections.id))
+      .where(eq(pages.id, input.pageId))
+      .get();
+    if (!row) throw pageNotFound();
+    return { menuId: row.menuId };
+  }),
+
+  // Dados de cabeçalho/breadcrumb de uma página (TASK-87): título da página +
+  // seção (eyebrow) + menu (nível de topo do breadcrumb), num único round-trip.
+  // A página do editor consome isto para o Section Header e os breadcrumbs
+  // (Menu › Seção › Página). Sem timestamps aqui: `pages`/`sections` não têm
+  // `criadoEm`/`atualizadoEm` — os metadados de data/autor vêm de `revisions`.
+  header: protectedProcedure.input(z.object({ pageId: z.string() })).query(({ ctx, input }) => {
+    const row = ctx.db
+      .select({
+        pageId: pages.id,
+        pageTitulo: pages.titulo,
+        sectionId: sections.id,
+        sectionTitulo: sections.titulo,
+        menuId: menus.id,
+        menuTitulo: menus.titulo,
+      })
+      .from(pages)
+      .innerJoin(sections, eq(pages.sectionId, sections.id))
+      .innerJoin(menus, eq(sections.menuId, menus.id))
+      .where(eq(pages.id, input.pageId))
+      .get();
+    if (!row) throw pageNotFound();
+    return {
+      page: { id: row.pageId, titulo: row.pageTitulo },
+      section: { id: row.sectionId, titulo: row.sectionTitulo },
+      menu: { id: row.menuId, titulo: row.menuTitulo },
+    };
+  }),
 
   create: protectedProcedure
     // slug opcional (TASK-70): quando ausente, é derivado do título no server.
