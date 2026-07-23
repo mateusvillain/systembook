@@ -15,19 +15,19 @@
       "step": 1,
       "description": "Audit current tokens vs. the plan",
       "details": "Compare the current shadcn `neutral` theme (TASK-75) and any ad-hoc Tailwind classes in AdminLayout/SidebarTree/PageContentPage against `plano-de-interface.md`'s `# Tokens visuais` / `# Cores` / `# Hierarquia tipográfica` sections. List concrete gaps (missing radius/shadow tokens, no defined typographic scale).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Extend the Tailwind theme",
       "details": "Add spacing/radius/shadow custom properties to the `@theme` block, staying inside the `.sb-admin` scoping boundary from TASK-75. Keep the shadow tokens deliberately subtle (per plan: 'Sombras muito discretas. Nenhuma borda pesada.').",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Define typographic hierarchy",
       "details": "Create reusable Tailwind utility groupings or small helper components (e.g. `<Eyebrow>`, `<PageTitle>`, `<PageDescription>`, `<Metadata>`) for the 5 text roles in the plan. Prefer composable className constants over one-off inline classes so TASK-85's Section Header can consume them directly.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,

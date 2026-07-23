@@ -4,6 +4,7 @@ import { blocksRouter } from './routers/blocks.js';
 import { componentPreviewsRouter } from './routers/componentPreviews.js';
 import { healthRouter } from './routers/health.js';
 import { landingRouter } from './routers/landing.js';
+import { menusRouter } from './routers/menus.js';
 import { pagesRouter } from './routers/pages.js';
 import { revisionsRouter } from './routers/revisions.js';
 import { searchRouter } from './routers/search.js';
@@ -21,7 +22,8 @@ import { usersRouter } from './routers/users.js';
  * | auth     | login, me                                         | publicProcedure                      |
  * | auth     | logout                                            | protectedProcedure (admin + editor)  |
  * | users    | list, create, update, deactivate, resetPassword   | adminProcedure (só admin)            |
- * | sections | list, create, rename, reorder, delete             | protectedProcedure (admin + editor)  |
+ * | menus    | list, create, rename, reorder, delete              | protectedProcedure (admin + editor)  |
+ * | sections | list, listByMenu, create, rename, reorder, delete | protectedProcedure (admin + editor)  |
  * | sections | listPublic                                        | publicProcedure (doc pública)        |
  * | pages     | listBySection, create, rename, updateSlug,       | protectedProcedure (admin + editor)  |
  * |           | reorder, delete, publish, restoreRevision        |                                       |
@@ -34,6 +36,7 @@ import { usersRouter } from './routers/users.js';
  * | componentPreviews | listComponents, listVariants             | protectedProcedure (admin + editor)  |
  * | componentPreviews | getLatest                                | publicProcedure (embed público)      |
  * | search    | query                                             | publicProcedure (busca pública)      |
+ * | search    | structure                                         | protectedProcedure (admin + editor)  |
  * | landing   | get                                               | publicProcedure (raiz pública)       |
  * | landing   | getEditorTarget                                   | protectedProcedure (admin + editor)  |
  * | uploadTokens | list, create, revoke                          | adminProcedure (só admin)            |
@@ -51,6 +54,7 @@ export const appRouter = router({
   health: healthRouter,
   auth: authRouter,
   users: usersRouter,
+  menus: menusRouter,
   sections: sectionsRouter,
   pages: pagesRouter,
   tabs: tabsRouter,

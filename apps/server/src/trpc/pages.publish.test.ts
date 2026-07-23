@@ -5,7 +5,7 @@ import type { ServerResponse } from 'node:http';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDb, type Db } from '../db/client.js';
 import { runMigrations } from '../db/migrate.js';
-import { memberships, revisions, users } from '../db/schema.js';
+import { DEFAULT_MENU_ID, memberships, revisions, users } from '../db/schema.js';
 import type { TiptapDoc } from '../blocks/serialize.js';
 import { appRouter } from './router.js';
 import type { AuthUser } from './context.js';
@@ -46,7 +46,7 @@ describe('pages.publish (TASK-34)', () => {
     editor = { userId: user.id, role: 'editor', sessionId: 'fake-session' };
 
     const caller = callerFor(db, editor);
-    const section = await caller.sections.create({ titulo: 'Componentes' });
+    const section = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'Componentes' });
     pageId = (await caller.pages.create({ sectionId: section.id, titulo: 'Button', slug: 'button' })).id;
     usageTabId = (await caller.tabs.create({ pageId, titulo: 'Usage' })).id;
     codeTabId = (await caller.tabs.create({ pageId, titulo: 'Code' })).id;

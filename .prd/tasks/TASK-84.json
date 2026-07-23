@@ -16,25 +16,25 @@
       "step": 1,
       "description": "Add `generateUniqueMenuSlug` and the `menusRouter`",
       "details": "Mirror `apps/server/src/db/sections.ts`'s slug-generation helper and `sectionsRouter`'s CRUD shape as closely as possible — this keeps the two routers consistent and easy to maintain in parallel.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Update `sectionsRouter.create` to require `menuId`",
       "details": "Add `menuId: z.string()` to the input schema, validate the menu exists (404/NOT_FOUND if not), persist it on insert.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Add `sectionsRouter.listByMenu`",
       "details": "New query filtered by `menuId`, same ordering/landing-exclusion semantics as the existing `sections.list`. Audit `sections.list`'s current callers (admin `SidebarTree`, TASK-83's header) to decide whether they migrate to `listByMenu` now or in the later UI tasks (TASK-86/87) — this task only needs the procedure to exist and be correct, wiring happens in those UI tasks.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Register the router and write tests",
       "details": "Add `menus` to `router.ts` and the router matrix (per CLAUDE.md's testing conventions — temp SQLite + `runMigrations` + `appRouter.createCaller`). Cover CRUD, reorder, cascade-delete, and the `sections.create`/`listByMenu` menu-scoping behavior.",
-      "pass": false
+      "pass": true
     }
   ],
   "dependencies": ["TASK-83"],
@@ -44,5 +44,5 @@
     "This task delivers the API only; the admin UI for creating/renaming/reordering/deleting menus (from the header) is TASK-85's scope, and switching the sidebar to `listByMenu` is TASK-86's scope. Don't build UI here.",
     "`sections.list` (unscoped) may become dead code once TASK-85/86 land — don't remove it in this task; flag it for cleanup once its last caller migrates."
   ],
-  "passes": false
+  "passes": true
 }

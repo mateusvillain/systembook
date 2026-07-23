@@ -78,6 +78,27 @@
       "when": 1784651351459,
       "tag": "0010_sweet_tinkerer",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1784682748135,
+      "tag": "0011_wandering_bullseye",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1784682854256,
+      "tag": "0012_complex_ulik",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1784682865143,
+      "tag": "0013_perpetual_doomsday",
+      "breakpoints": true
     }
   ]
 }

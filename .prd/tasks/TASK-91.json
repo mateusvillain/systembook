@@ -16,25 +16,25 @@
       "step": 1,
       "description": "Add a structure-search procedure",
       "details": "New `protectedProcedure` (e.g. `search.structure` or extend an existing router) that title-matches across `menus`/`sections`/`pages`/`tabs` for the current user — a simple `LIKE`/case-insensitive substring match is sufficient given the small expected row counts; FTS5 is not required for structure search.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Build the admin `AdminSearch` component",
       "details": "Adapt `apps/admin/src/features/public/SearchBox.tsx`'s debounce/keyboard/dropdown pattern for the admin, querying both the new structure procedure and the existing `search.query` (content). Group results with small section headers ('Estrutura' / 'Conteúdo publicado').",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Wire into the header",
       "details": "Replace TASK-85's search stub with the real trigger + dropdown/dialog.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Verify",
       "details": "Search for an unpublished page's title (should appear via structure search, would NOT appear in public search), search for published body text (should appear via content search), verify keyboard nav and empty/no-results states.",
-      "pass": false
+      "pass": true
     }
   ],
   "dependencies": ["TASK-84", "TASK-85", "TASK-86"],
@@ -44,5 +44,5 @@
     "Do not duplicate TASK-53's FTS5 index or reindexing logic — call the existing `search.query` procedure as-is.",
     "New structure-search procedure must be `protectedProcedure` (not `publicProcedure` like `search.query`) since it exposes unpublished titles."
   ],
-  "passes": false
+  "passes": true
 }

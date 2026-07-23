@@ -18,49 +18,49 @@
       "step": 1,
       "description": "Screen-by-screen visual review against the plan and references",
       "details": "Walk every redesigned screen; check against `plano-de-interface.md`'s '# Não fazer' list specifically, plus side-by-side comparison with `referencia.png`/`referencia-2.png` for overall register (not pixel-matching, but the same restrained, content-first feel).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Dedicated Menu feature walkthrough",
       "details": "Create a second menu from the header, add sections/pages to it, switch back and forth between menus and confirm the sidebar always matches the active menu, delete a menu with content and confirm the cascade (and the confirmation guard), and confirm the TASK-83 default menu ('Documentação') still holds the pre-existing sections correctly after migration.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Re-verify other flows restructured by this phase",
       "details": "Especially the tab-relocation (TASK-86): confirm no tab-management capability was lost in the move from sidebar to page editor. Confirm the header's relocated admin links (TASK-85) all still gate correctly by role.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Re-verify unrelated-but-adjacent flows",
       "details": "Auth, autosave/publish, revision history/restore, token reveal-once, dos-donts/component-embed rendering — anything the redesign's shared components (Section Header, block toolbar) touch indirectly.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 5,
       "description": "Accessibility spot-check",
       "details": "Tab through the main flows checking focus visibility on the new components specifically (dropdown menus, hover-triggered block controls, mobile drawer trigger).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 6,
       "description": "Responsive pass",
       "details": "Desktop/tablet/mobile viewports; confirm TASK-92's acceptance criteria hold end-to-end alongside the rest of the redesign.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 7,
       "description": "Confirm public docs untouched",
       "details": "Compare `/docs/...` rendering and the editable Tiptap prose area before/after this phase.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 8,
       "description": "Full fan-out",
       "details": "`pnpm lint` / `pnpm typecheck` / `pnpm -r --workspace-concurrency=1 run test` all green.",
-      "pass": false
+      "pass": true
     }
   ],
   "dependencies": ["TASK-82", "TASK-83", "TASK-84", "TASK-85", "TASK-86", "TASK-87", "TASK-88", "TASK-89", "TASK-90", "TASK-91", "TASK-92"],
@@ -69,5 +69,5 @@
     "This task has no new UI to build — it's a verification gate closing Fase 10, same role TASK-81 played for Fase 9 and TASK-74 for Fase 8.",
     "Pay particular attention to the two genuinely architectural changes in this phase (versus the rest being visual/structural reskins): the new Menu entity (TASK-83/84/85/86) and the tab-relocation regression risk (TASK-86)."
   ],
-  "passes": false
+  "passes": true
 }

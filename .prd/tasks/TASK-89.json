@@ -16,19 +16,19 @@
       "step": 1,
       "description": "Replace `NodeRow`'s action buttons with a single trigger",
       "details": "Swap the 4-button `<span>` group in `NodeRow` (SidebarTree.tsx) for a `DropdownMenuTrigger` styled as a single '⋮' icon button, visible on row hover/focus exactly like today's group.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Build the menu content",
       "details": "`DropdownMenuContent` with Renomear/Mover para cima/Mover para baixo/Excluir items calling the same callback props `NodeRow` already receives (`onRename` trigger via `editing` state, `onMoveUp`, `onMoveDown`, `onDelete`).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Verify across all three current row types",
       "details": "Section rows, page rows (post-TASK-86, tabs no longer nested here) — confirm the menu behaves identically to the old buttons for create/rename/reorder/delete, including the first/last-position disabling and the delete confirmation copy.",
-      "pass": false
+      "pass": true
     }
   ],
   "dependencies": ["TASK-86"],
@@ -39,5 +39,5 @@
     "Reuses shadcn `DropdownMenu` — check it's already installed from TASK-80 (used for management screens) before adding a new dependency.",
     "TASK-85 (header) may have already built a minimal per-menu ⋮ control for menu rename/reorder/delete, ahead of this task in sequence. If so, extract a shared `RowActionsMenu` component here instead of maintaining two near-identical dropdown implementations."
   ],
-  "passes": false
+  "passes": true
 }

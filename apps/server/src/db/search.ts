@@ -1,8 +1,8 @@
 import type { BlockType, PageSnapshot } from '@systembook/schema';
-import { eq, sql } from 'drizzle-orm';
+import { and, asc, eq, ne, sql } from 'drizzle-orm';
 import type { Db, DbTx } from './client.js';
-import { LANDING_PAGE_ID } from './landing.js';
-import { pages, sections } from './schema.js';
+import { LANDING_PAGE_ID, LANDING_SECTION_ID } from './landing.js';
+import { menus, pages, sections, tabs } from './schema.js';
 
 /**
  * Busca full-text sobre o conteúdo publicado (TASK-53), usando a virtual table
@@ -153,4 +153,110 @@ export function searchPublishedPages(db: Db, q: string, limit = 20): SearchResul
   `);
 
   return rows;
+}
+
+/**
+ * Busca de **estrutura** para o painel admin (TASK-91). Diferente de
+ * `searchPublishedPages` (FTS5, conteúdo publicado, `publicProcedure`), isto
+ * casa **títulos** de menus/seções/páginas/tabs — incluindo rascunhos e
+ * estrutura não publicada — e por isso só é servido por `protectedProcedure`.
+ *
+ * Match simples por substring (LIKE, sem FTS5): a estrutura de navegação tem
+ * poucas linhas, então um `LIKE '%q%'` por entidade é suficiente e barato. O
+ * LIKE do SQLite é case-insensitive para ASCII; acentos não são dobrados
+ * (limitação aceita — a busca de conteúdo cobre o texto real). As linhas
+ * reservadas da landing (TASK-56) e a tab primária/"corpo" (TASK-65, que não é
+ * uma aba visível ao usuário) ficam de fora.
+ */
+export type StructureSearchType = 'menu' | 'section' | 'page' | 'tab';
+
+export interface StructureSearchResult {
+  type: StructureSearchType;
+  id: string;
+  titulo: string;
+  /** Menu dono do resultado — o cliente o ativa ao selecionar (TASK-85/86). */
+  menuId: string;
+  /** Página a abrir no editor (a própria página, ou a página-mãe de uma tab). */
+  pageId?: string;
+  /** Tab a abrir, quando o resultado é uma aba de usuário. */
+  tabId?: string;
+  /** Rótulo de contexto (breadcrumb curto): menu, seção ou página-mãe. */
+  context?: string;
+}
+
+// Neutraliza os curingas do LIKE no texto do usuário; usado com ESCAPE '\'.
+function likePattern(q: string): string {
+  const escaped = q.replace(/[\\%_]/g, (c) => `\\${c}`);
+  return `%${escaped}%`;
+}
+
+const STRUCTURE_PER_TYPE = 8;
+
+export function searchStructure(db: Db, q: string): StructureSearchResult[] {
+  const trimmed = q.trim();
+  if (trimmed.length === 0) return [];
+  const pattern = likePattern(trimmed);
+
+  const menuRows: StructureSearchResult[] = db
+    .select({ id: menus.id, titulo: menus.titulo })
+    .from(menus)
+    .where(sql`${menus.titulo} LIKE ${pattern} ESCAPE '\\'`)
+    .orderBy(asc(menus.ordem), asc(menus.id))
+    .limit(STRUCTURE_PER_TYPE)
+    .all()
+    .map((m) => ({ type: 'menu', id: m.id, titulo: m.titulo, menuId: m.id }));
+
+  const sectionRows: StructureSearchResult[] = db
+    .select({ id: sections.id, titulo: sections.titulo, menuId: sections.menuId, menuTitulo: menus.titulo })
+    .from(sections)
+    .innerJoin(menus, eq(menus.id, sections.menuId))
+    .where(and(ne(sections.id, LANDING_SECTION_ID), sql`${sections.titulo} LIKE ${pattern} ESCAPE '\\'`))
+    .orderBy(asc(sections.ordem), asc(sections.id))
+    .limit(STRUCTURE_PER_TYPE)
+    .all()
+    .map((s) => ({ type: 'section', id: s.id, titulo: s.titulo, menuId: s.menuId, context: s.menuTitulo }));
+
+  const pageRows: StructureSearchResult[] = db
+    .select({ id: pages.id, titulo: pages.titulo, menuId: sections.menuId, sectionTitulo: sections.titulo })
+    .from(pages)
+    .innerJoin(sections, eq(sections.id, pages.sectionId))
+    .where(
+      and(
+        ne(pages.id, LANDING_PAGE_ID),
+        ne(sections.id, LANDING_SECTION_ID),
+        sql`${pages.titulo} LIKE ${pattern} ESCAPE '\\'`,
+      ),
+    )
+    .orderBy(asc(pages.ordem), asc(pages.id))
+    .limit(STRUCTURE_PER_TYPE)
+    .all()
+    .map((p) => ({ type: 'page', id: p.id, titulo: p.titulo, menuId: p.menuId, pageId: p.id, context: p.sectionTitulo }));
+
+  const tabRows: StructureSearchResult[] = db
+    .select({ id: tabs.id, titulo: tabs.titulo, pageId: pages.id, pageTitulo: pages.titulo, menuId: sections.menuId })
+    .from(tabs)
+    .innerJoin(pages, eq(pages.id, tabs.pageId))
+    .innerJoin(sections, eq(sections.id, pages.sectionId))
+    .where(
+      and(
+        eq(tabs.isPrimary, false),
+        ne(pages.id, LANDING_PAGE_ID),
+        ne(sections.id, LANDING_SECTION_ID),
+        sql`${tabs.titulo} LIKE ${pattern} ESCAPE '\\'`,
+      ),
+    )
+    .orderBy(asc(tabs.ordem), asc(tabs.id))
+    .limit(STRUCTURE_PER_TYPE)
+    .all()
+    .map((t) => ({
+      type: 'tab',
+      id: t.id,
+      titulo: t.titulo,
+      menuId: t.menuId,
+      pageId: t.pageId,
+      tabId: t.id,
+      context: t.pageTitulo,
+    }));
+
+  return [...menuRows, ...sectionRows, ...pageRows, ...tabRows];
 }

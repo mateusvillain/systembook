@@ -16,33 +16,37 @@
       "step": 1,
       "description": "Check what metadata is actually available",
       "details": "Inspect `pages`/`tabs`/`revisions` schema and the tRPC procedures already used by `PageContentPage` (`tabs.getPrimary`, `tabs.listByPage`) plus revision history endpoints (TASK-34/36/69) for created/updated/author fields. Extend a query only if trivial (e.g. exposing an existing column not yet selected) — do not design new tracking.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Build `SectionHeader` and breadcrumbs",
       "details": "New shared component(s) under `apps/admin/src/components/` (or `features/editor/`) consuming TASK-82's typography primitives. Breadcrumbs derive from the section/page/tab already loaded by `PageContentPage` (and available to `SidebarTree`'s query cache).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Rework `PageContentPage.tsx` and the `<main>` container",
       "details": "Swap the current `<h1>` + inline Publicar/Histórico row for the new `SectionHeader`; adjust `AdminLayout`'s `<main>` to center content at the ~1200px max-width per the plan, increasing whitespace/padding.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Verify blocks still render correctly",
       "details": "Open a page containing each block type (heading/paragraph/list/code/image/table/callout/component-embed/dos-donts) and confirm layout/wrapping still looks correct at the new max-width; re-check responsiveness isn't broken (full responsive pass is TASK-92).",
-      "pass": false
+      "pass": true
     }
   ],
-  "dependencies": ["TASK-82", "TASK-85", "TASK-86"],
+  "dependencies": [
+    "TASK-82",
+    "TASK-85",
+    "TASK-86"
+  ],
   "estimatedComplexity": "medium",
   "technicalNotes": [
     "This is the highest-leverage task for the plan's core principle ('conteúdo é o protagonista') — prioritize whitespace and restraint over adding new UI elements.",
     "Don't invent backend fields for metadata that doesn't exist; better to omit a field than fake data. Cross-check against the `revisions` table nullable `autor_id` note in CLAUDE.md before assuming author is always available.",
     "Keep Publicar/Histórico functionally identical (same mutations/routes) — this task is presentation only for that part."
   ],
-  "passes": false
+  "passes": true
 }

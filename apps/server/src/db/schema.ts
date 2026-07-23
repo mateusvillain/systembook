@@ -39,13 +39,32 @@ export const memberships = sqliteTable('memberships', {
 });
 
 /**
- * Estrutura de navegação (Fase 2): sections → pages → tabs.
+ * Estrutura de navegação (Fase 10): menus → sections → pages → tabs.
  *
  * `ordem` é um inteiro simples renumerado pela aplicação a cada reorder
  * (0..n-1 dentro do pai), sem unique index — a leitura ordena por
  * (ordem, id) para desempate determinístico caso haja empate transitório.
  * Deleção é hard delete com FK cascade em toda a árvore (decisão TASK-18).
  */
+
+// Menu raiz usado para absorver a estrutura criada antes da Fase 10. Assim
+// como os IDs sentinela da landing, ele é explícito e não é exposto ao usuário.
+export const DEFAULT_MENU_ID = '__sb_default_menu__';
+
+export const menus = sqliteTable(
+  'menus',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    titulo: text('titulo').notNull(),
+    // Preparado para uma futura URL pública `/docs/:menuSlug/...`. NULLs
+    // legados são permitidos pelo SQLite até o backfill idempotente no boot.
+    slug: text('slug'),
+    ordem: integer('ordem').notNull(),
+  },
+  (t) => [uniqueIndex('menus_slug_unique').on(t.slug)],
+);
 
 export const sections = sqliteTable(
   'sections',
@@ -60,6 +79,12 @@ export const sections = sqliteTable(
     // distintos no SQLite, então múltiplos legados sem slug convivem até o
     // backfill preenchê-los.
     slug: text('slug'),
+    // Uma section sempre tem um Menu pai. O default torna a transição de
+    // bancos pré-Fase 10 segura; `ensureDefaultMenu` garante a linha pai.
+    menuId: text('menu_id')
+      .notNull()
+      .default(DEFAULT_MENU_ID)
+      .references(() => menus.id, { onDelete: 'cascade' }),
     ordem: integer('ordem').notNull(),
   },
   (t) => [uniqueIndex('sections_slug_unique').on(t.slug)],

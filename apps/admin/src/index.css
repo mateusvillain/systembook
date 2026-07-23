@@ -20,26 +20,33 @@
 /* Tokens do shadcn/ui (base color: neutral). Só definições de variáveis —
    seguras globalmente, pois só têm efeito via utilities (bg-background etc.). */
 :root {
-  --radius: 0.625rem;
+  /*
+   * Fundação visual editorial (Fase 10, TASK-82).
+   *
+   * O painel usa a paleta neutral do shadcn como base: superfícies quase
+   * brancas e contraste tipográfico fazem o conteúdo liderar. Azul é a única
+   * cor saturada reservada para ações e estados interativos.
+   */
+  --radius: 0.75rem;
   --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --foreground: oklch(0.178 0 0);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.178 0 0);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.178 0 0);
+  --primary: oklch(0.546 0.215 262.88);
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.985 0 0);
+  --secondary-foreground: oklch(0.178 0 0);
+  --muted: oklch(0.985 0 0);
+  --muted-foreground: oklch(0.51 0 0);
+  --accent: oklch(0.985 0 0);
+  --accent-foreground: oklch(0.178 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --border: oklch(0.932 0 0);
+  --input: oklch(0.932 0 0);
+  --ring: oklch(0.546 0.215 262.88);
 }
 
 .dark {
@@ -49,8 +56,8 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
+  --primary: oklch(0.714 0.16 261.325);
+  --primary-foreground: oklch(0.145 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
@@ -86,6 +93,29 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  /* Espaçamento editorial: somente os degraus definidos no plano. */
+  --spacing-editorial-8: 0.5rem;
+  --spacing-editorial-16: 1rem;
+  --spacing-editorial-24: 1.5rem;
+  --spacing-editorial-32: 2rem;
+  --spacing-editorial-48: 3rem;
+  --spacing-editorial-64: 4rem;
+  /* Dois raios e duas elevações — sutis para não competir com o conteúdo. */
+  --radius-editorial-sm: 0.5rem;
+  --radius-editorial-md: 0.75rem;
+  --shadow-editorial-sm: 0 1px 2px rgb(17 17 17 / 0.04);
+  --shadow-editorial-md: 0 4px 14px rgb(17 17 17 / 0.06);
+  /* Hierarquia de texto reutilizada por `adminTypography` (TASK-82). */
+  --text-admin-eyebrow: 0.8125rem;
+  --text-admin-eyebrow--line-height: 1.25rem;
+  --text-admin-title: 2.5rem;
+  --text-admin-title--line-height: 1.1;
+  --text-admin-description: 1.5rem;
+  --text-admin-description--line-height: 1.4;
+  --text-admin-metadata: 0.875rem;
+  --text-admin-metadata--line-height: 1.25rem;
+  --text-admin-body: 1rem;
+  --text-admin-body--line-height: 1.625;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -99,25 +129,68 @@
  * quando renderizado dentro do painel): só box-sizing e borda.
  */
 @layer base {
+  html {
+    scrollbar-gutter: stable;
+  }
+
   .sb-admin,
   .sb-admin *,
   .sb-admin *::before,
-  .sb-admin *::after {
+  .sb-admin *::after,
+  [data-radix-portal],
+  [data-radix-portal] *,
+  [data-radix-portal] *::before,
+  [data-radix-portal] *::after {
     box-sizing: border-box;
     border-width: 0;
     border-style: solid;
     border-color: var(--border);
   }
 
-  .sb-admin {
+  .sb-admin,
+  [data-radix-portal] {
     background-color: var(--background);
     color: var(--foreground);
     font-family:
       ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   }
 
+  /*
+   * Reset de âncora ESCOPADO (TASK-98). Sem o preflight do Tailwind (ver topo),
+   * todo `<a>`/`<Link>` cru herda o estilo nativo do navegador: azul + sublinhado
+   * (roxo quando visitado) — o que fazia o botão 'Histórico' (que embrulha um
+   * `<Link>`) parecer link e os itens do menu do usuário aparecerem azuis
+   * sublinhados (`dropdown-usuario.png`). Zerar aqui deixa a âncora herdar a cor
+   * e ficar sem sublinhado por padrão; um link intencional opta pelo acento via
+   * utilities (`text-primary`/`hover:underline` do `createLinkClass` e do
+   * `variant="link"`), que vivem acima do `base` e continuam vencendo.
+   *
+   * O conteúdo de dropdown/popover do Radix é portado para o `<body>` (fora de
+   * `.sb-admin`) dentro de `[data-radix-popper-content-wrapper]` — NÃO existe um
+   * `[data-radix-portal]` no DOM desta versão do Radix; é este o seletor que
+   * alcança os `<Link>` dos itens de menu.
+   */
+  .sb-admin a,
+  [data-radix-popper-content-wrapper] a {
+    color: inherit;
+    text-decoration: none;
+  }
+
   .sb-admin button {
     cursor: pointer;
+    /*
+     * O painel não importa o preflight global do Tailwind (ver topo). Sem ele,
+     * um `<button>` cru herda o fundo nativo `ButtonFace` (cinza ~#efefef) — a
+     * exata "caixa cinza" do `referencia-3.png` em todo controle secundário
+     * (⋮ das linhas, handles de bloco, pills de menu não-ativas, botões ghost
+     * da toolbar, breadcrumb). Zerar o fundo aqui, no `@layer base`, deixa o
+     * chrome plano como no Zeroheight: transparente em repouso, feedback só no
+     * hover. As utilities de fundo (`bg-primary` do 'Publicar', `bg-accent` do
+     * item ativo/hover, `bg-muted` etc.) vivem no `@layer utilities` — acima do
+     * base — e continuam vencendo, então os fills intencionais ficam intactos.
+     * Escopado a `.sb-admin`: a doc pública (`.sb-public`) nunca é tocada.
+     */
+    background-color: transparent;
   }
 
   .sb-admin svg {

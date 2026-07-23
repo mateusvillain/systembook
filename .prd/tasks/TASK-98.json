@@ -1,0 +1,45 @@
+{
+  "id": "TASK-98",
+  "title": "Simplify header user navigation, remove top section breadcrumbs, and restyle History action button",
+  "category": "ui-ux",
+  "description": "Address feedback from avaliacao-interface.md (items 4, 5, and 6): (1) In AppHeader.tsx, the Settings gear button and User Menu chip open identical menus — remove the redundant Settings gear button and retain only the User Menu chip (dropdown-usuario.png). (2) Remove the top <Breadcrumbs /> component positioned above the section title in SectionHeader.tsx / PageContentPage.tsx so the section title starts directly with the section category eyebrow. (3) Restyle the 'Histórico' action button in SectionHeader.tsx to remove the text underline (hover:underline / link look) and present it as a clean ghost action button matching the editorial header controls.",
+  "acceptanceCriteria": [
+    "The standalone Settings gear button is removed from AppHeader.tsx; user menu options (History, Home, Users, Tokens, Logout) remain accessible via the top-right User Menu chip",
+    "The <Breadcrumbs /> component above the section category title in SectionHeader.tsx / PageContentPage.tsx is removed",
+    "The 'Histórico' button in SectionHeader.tsx no longer renders with an underline; it uses a clean secondary/ghost button style matching action controls",
+    "Responsive layout (mobile drawer and tablet/desktop views) remains functional and uninhibited"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Remove redundant Settings gear icon button",
+      "details": "In AppHeader.tsx, remove the standalone Settings gear button so only the UserMenu chip triggers user settings and navigation options.",
+      "pass": true
+    },
+    {
+      "step": 2,
+      "description": "Remove top breadcrumb component from section header",
+      "details": "In SectionHeader.tsx / PageContentPage.tsx, remove the <Breadcrumbs /> rendering above the section category title.",
+      "pass": true
+    },
+    {
+      "step": 3,
+      "description": "Restyle the Histórico action button",
+      "details": "In SectionHeader.tsx, remove hover:underline / underline styles from the Histórico button and style it as a secondary ghost button.",
+      "pass": true
+    },
+    {
+      "step": 4,
+      "description": "Verify in browser",
+      "details": "Rebuild and inspect the admin shell to confirm header simplification, breadcrumb removal, and clean Histórico button styling.",
+      "pass": true
+    }
+  ],
+  "dependencies": ["TASK-96"],
+  "estimatedComplexity": "low",
+  "technicalNotes": [
+    "Addresses items 4, 5, and 6 from avaliacao-interface.md.",
+    "Removing Breadcrumbs cleans up vertical margin in SectionHeader.tsx, aligning with Zeroheight's clean document title header."
+  ],
+  "passes": true
+}

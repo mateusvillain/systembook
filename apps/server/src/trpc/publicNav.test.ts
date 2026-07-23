@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDb, type Db } from '../db/client.js';
 import { runMigrations } from '../db/migrate.js';
 import { backfillSectionSlugs, generateUniqueSectionSlug } from '../db/sections.js';
-import { memberships, sections, users } from '../db/schema.js';
+import { DEFAULT_MENU_ID, memberships, sections, users } from '../db/schema.js';
 import type { TiptapDoc } from '../blocks/serialize.js';
 import { appRouter } from './router.js';
 import type { AuthUser } from './context.js';
@@ -42,15 +42,15 @@ describe('navegação pública (TASK-52)', () => {
 
   it('create gera slug estável do título e desambigua colisões', async () => {
     const caller = callerFor(db, editor);
-    const a = await caller.sections.create({ titulo: 'Componentes de UI' });
-    const b = await caller.sections.create({ titulo: 'Componentes de UI' });
+    const a = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'Componentes de UI' });
+    const b = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'Componentes de UI' });
     expect(a.slug).toBe('componentes-de-ui');
     expect(b.slug).toBe('componentes-de-ui-2');
   });
 
   it('listPublic (anônimo) mostra só seções com página publicada, aninhadas', async () => {
     const caller = callerFor(db, editor);
-    const sec = await caller.sections.create({ titulo: 'Botões' });
+    const sec = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'Botões' });
     // página publicada
     const pubPage = await caller.pages.create({ sectionId: sec.id, titulo: 'Primary', slug: 'primary' });
     const tab = await caller.tabs.create({ pageId: pubPage.id, titulo: 'Uso' });
@@ -59,7 +59,7 @@ describe('navegação pública (TASK-52)', () => {
     // página NÃO publicada (não deve aparecer)
     await caller.pages.create({ sectionId: sec.id, titulo: 'Rascunho', slug: 'rascunho' });
     // seção vazia (sem página publicada) — não deve aparecer
-    await caller.sections.create({ titulo: 'Vazia' });
+    await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'Vazia' });
 
     const anon = callerFor(db, null);
     const tree = await anon.sections.listPublic();
@@ -70,7 +70,7 @@ describe('navegação pública (TASK-52)', () => {
 
   it('getPublishedBySlug (anônimo) resolve o snapshot; null para inexistente', async () => {
     const caller = callerFor(db, editor);
-    const sec = await caller.sections.create({ titulo: 'Botões' });
+    const sec = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'Botões' });
     const page = await caller.pages.create({ sectionId: sec.id, titulo: 'Primary', slug: 'primary' });
     const tab = await caller.tabs.create({ pageId: page.id, titulo: 'Uso' });
     await caller.blocks.saveDraft({ tabId: tab.id, doc: DOC });
@@ -91,7 +91,7 @@ describe('navegação pública (TASK-52)', () => {
 
   it('getPublishedBySlug retorna snapshot null para página nunca publicada', async () => {
     const caller = callerFor(db, editor);
-    const sec = await caller.sections.create({ titulo: 'Botões' });
+    const sec = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'Botões' });
     await caller.pages.create({ sectionId: sec.id, titulo: 'Rascunho', slug: 'rascunho' });
 
     const anon = callerFor(db, null);
