@@ -16,25 +16,25 @@
       "step": 1,
       "description": "Reuse the TASK-57 pattern, not reinvent it",
       "details": "Read `PublicLayout.tsx`/`PublicSidebar.tsx`'s drawer implementation (fixed positioning, `data-open`, backdrop, `navOpen` state) and port the same mechanism into `AdminLayout.tsx`/the redesigned `SidebarTree`/header from TASK-85/86.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Add the collapsible (tablet) and drawer (mobile) breakpoints",
       "details": "Implement both breakpoint behaviors; verify the collapsed/tablet state is a genuinely different treatment from full drawer-mode, not just an earlier trigger of the same drawer (per the plan distinguishing the two).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Adapt the header for narrow viewports",
       "details": "Condense the center section-nav and right-side controls appropriately at mobile width, consistent with TASK-85's earlier work.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Verify at 3 viewports",
       "details": "Desktop (~1440px), tablet (~820px), mobile (~390px) — check sidebar behavior, header condensing, zero horizontal scroll including inside a page with a wide table and a code block, and touch target sizing on mobile.",
-      "pass": false
+      "pass": true
     }
   ],
   "dependencies": ["TASK-85", "TASK-86", "TASK-88"],
@@ -43,5 +43,5 @@
     "Strongly prefer porting TASK-57's exact drawer/backdrop/breakpoint mechanism rather than a new implementation — it's already verified (19 Playwright checks) and battle-tested against the same class of bug (horizontal scroll, table overflow).",
     "TASK-57's known test gotcha applies here too if E2E-verifying: clicking a full-screen backdrop by testid can fail because a smaller drawer element visually sits on top of the click target's center — click by coordinate in the exposed area instead."
   ],
-  "passes": false
+  "passes": true
 }

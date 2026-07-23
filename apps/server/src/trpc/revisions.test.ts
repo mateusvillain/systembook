@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDb, type Db } from '../db/client.js';
 import { runMigrations } from '../db/migrate.js';
-import { memberships, revisions, users } from '../db/schema.js';
+import { DEFAULT_MENU_ID, memberships, revisions, users } from '../db/schema.js';
 import type { TiptapDoc } from '../blocks/serialize.js';
 import { appRouter } from './router.js';
 import type { AuthUser } from './context.js';
@@ -45,7 +45,7 @@ describe('revisions router (TASK-35) + pages.restoreRevision (TASK-36)', () => {
     editor = { userId: user.id, role: 'editor', sessionId: 'fake-session' };
 
     const caller = callerFor(db, editor);
-    const section = await caller.sections.create({ titulo: 'Componentes' });
+    const section = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'Componentes' });
     pageId = (await caller.pages.create({ sectionId: section.id, titulo: 'Button', slug: 'button' })).id;
     tabId = (await caller.tabs.create({ pageId, titulo: 'Usage' })).id;
   });
@@ -69,7 +69,7 @@ describe('revisions router (TASK-35) + pages.restoreRevision (TASK-36)', () => {
   describe('listRecent (TASK-69) — feed do painel inteiro', () => {
     it('agrega revisões de todas as páginas, mais recentes primeiro (desempate por rowid)', async () => {
       const caller = callerFor(db, editor);
-      const section = await caller.sections.create({ titulo: 'Padrões' });
+      const section = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'Padrões' });
       const page2 = await caller.pages.create({ sectionId: section.id, titulo: 'Cores', slug: 'cores' });
       const tab2 = await caller.tabs.create({ pageId: page2.id, titulo: 'Tokens' });
 
@@ -220,7 +220,7 @@ describe('revisions router (TASK-35) + pages.restoreRevision (TASK-36)', () => {
       code: 'NOT_FOUND',
     });
 
-    const section2 = await caller.sections.create({ titulo: 'Outra seção' });
+    const section2 = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'Outra seção' });
     const otherPageId = (
       await caller.pages.create({ sectionId: section2.id, titulo: 'Input', slug: 'input' })
     ).id;

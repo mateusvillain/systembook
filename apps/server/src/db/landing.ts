@@ -1,5 +1,5 @@
 import type { Db } from './client.js';
-import { pages, sections, tabs } from './schema.js';
+import { DEFAULT_MENU_ID, pages, sections, tabs } from './schema.js';
 
 /**
  * Página inicial customizável da doc pública (TASK-56). Em vez de um sistema de
@@ -29,7 +29,13 @@ const LANDING_SLUG = '__sb_landing__';
  */
 export function ensureLandingPage(db: Db): void {
   db.insert(sections)
-    .values({ id: LANDING_SECTION_ID, titulo: 'Página inicial', slug: LANDING_SLUG, ordem: -1 })
+    .values({
+      id: LANDING_SECTION_ID,
+      titulo: 'Página inicial',
+      slug: LANDING_SLUG,
+      menuId: DEFAULT_MENU_ID,
+      ordem: -1,
+    })
     .onConflictDoNothing()
     .run();
 

@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDb, type Db } from '../db/client.js';
 import { runMigrations } from '../db/migrate.js';
-import { memberships, users } from '../db/schema.js';
+import { DEFAULT_MENU_ID, memberships, users } from '../db/schema.js';
 import { appRouter } from './router.js';
 import type { AuthUser } from './context.js';
 
@@ -47,9 +47,9 @@ describe('matriz de permissões (TASK-24)', () => {
   it('editor executa o CRUD completo de sections, pages e tabs', async () => {
     const caller = callerFor(db, editor);
 
-    const section = await caller.sections.create({ titulo: 'Componentes' });
+    const section = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'Componentes' });
     await caller.sections.rename({ id: section.id, titulo: 'Fundamentos' });
-    await caller.sections.reorder({ orderedIds: [section.id] });
+    await caller.sections.reorder({ menuId: DEFAULT_MENU_ID, orderedIds: [section.id] });
 
     const page = await caller.pages.create({
       sectionId: section.id,

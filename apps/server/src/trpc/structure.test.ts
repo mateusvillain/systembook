@@ -6,7 +6,7 @@ import { and, eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDb, type Db } from '../db/client.js';
 import { runMigrations } from '../db/migrate.js';
-import { memberships, pages, sections, tabs, users } from '../db/schema.js';
+import { DEFAULT_MENU_ID, memberships, pages, sections, tabs, users } from '../db/schema.js';
 import { appRouter } from './router.js';
 import type { AuthUser } from './context.js';
 
@@ -47,8 +47,8 @@ describe('estrutura de navegação (sections/pages/tabs)', () => {
   describe('sections (TASK-17/18)', () => {
     it('create atribui ordem incremental e list retorna ordenado', async () => {
       const caller = callerFor(db, editor);
-      const a = await caller.sections.create({ titulo: 'Fundamentos' });
-      const b = await caller.sections.create({ titulo: 'Componentes' });
+      const a = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'Fundamentos' });
+      const b = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'Componentes' });
       expect(a.ordem).toBe(0);
       expect(b.ordem).toBe(1);
 
@@ -58,7 +58,7 @@ describe('estrutura de navegação (sections/pages/tabs)', () => {
 
     it('rename atualiza o título e falha com NOT_FOUND para id inexistente', async () => {
       const caller = callerFor(db, editor);
-      const section = await caller.sections.create({ titulo: 'Fundações' });
+      const section = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'Fundações' });
       const renamed = await caller.sections.rename({ id: section.id, titulo: 'Fundamentos' });
       expect(renamed.titulo).toBe('Fundamentos');
 
@@ -69,11 +69,11 @@ describe('estrutura de navegação (sections/pages/tabs)', () => {
 
     it('reorder aplica a nova ordem atomicamente', async () => {
       const caller = callerFor(db, editor);
-      const a = await caller.sections.create({ titulo: 'A' });
-      const b = await caller.sections.create({ titulo: 'B' });
-      const c = await caller.sections.create({ titulo: 'C' });
+      const a = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'A' });
+      const b = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'B' });
+      const c = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'C' });
 
-      await caller.sections.reorder({ orderedIds: [c.id, a.id, b.id] });
+      await caller.sections.reorder({ menuId: DEFAULT_MENU_ID, orderedIds: [c.id, a.id, b.id] });
       const list = await caller.sections.list();
       expect(list.map((s) => s.titulo)).toEqual(['C', 'A', 'B']);
       expect(list.map((s) => s.ordem)).toEqual([0, 1, 2]);
@@ -81,26 +81,67 @@ describe('estrutura de navegação (sections/pages/tabs)', () => {
 
     it('reorder rejeita lista parcial, com id estranho ou repetido', async () => {
       const caller = callerFor(db, editor);
-      const a = await caller.sections.create({ titulo: 'A' });
-      const b = await caller.sections.create({ titulo: 'B' });
+      const a = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'A' });
+      const b = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'B' });
 
-      await expect(caller.sections.reorder({ orderedIds: [a.id] })).rejects.toMatchObject({
-        code: 'BAD_REQUEST',
-      });
       await expect(
-        caller.sections.reorder({ orderedIds: [a.id, 'intruso'] }),
+        caller.sections.reorder({ menuId: DEFAULT_MENU_ID, orderedIds: [a.id] }),
       ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
-      await expect(caller.sections.reorder({ orderedIds: [a.id, a.id] })).rejects.toMatchObject({
-        code: 'BAD_REQUEST',
-      });
+      await expect(
+        caller.sections.reorder({ menuId: DEFAULT_MENU_ID, orderedIds: [a.id, 'intruso'] }),
+      ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+      await expect(
+        caller.sections.reorder({ menuId: DEFAULT_MENU_ID, orderedIds: [a.id, a.id] }),
+      ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
       // nada mudou
       const list = await caller.sections.list();
       expect(list.map((s) => s.id)).toEqual([a.id, b.id]);
     });
 
+    it('reorder é escopado ao menu: só exige os ids do próprio menu (TASK-86)', async () => {
+      const caller = callerFor(db, editor);
+      const outroMenu = await caller.menus.create({ titulo: 'Componentes' });
+      const a = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'A' });
+      const b = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'B' });
+      // Uma seção em outro menu não deve entrar na conta de completude.
+      await caller.sections.create({ menuId: outroMenu.id, titulo: 'Isolada' });
+
+      await caller.sections.reorder({ menuId: DEFAULT_MENU_ID, orderedIds: [b.id, a.id] });
+      const list = await caller.sections.listByMenu({ menuId: DEFAULT_MENU_ID });
+      expect(list.map((s) => s.id)).toEqual([b.id, a.id]);
+    });
+
+    it('menuOf resolve o menu de uma página; 404 se a página não existe', async () => {
+      const caller = callerFor(db, editor);
+      const menu = await caller.menus.create({ titulo: 'Foundation' });
+      const section = await caller.sections.create({ menuId: menu.id, titulo: 'Cores' });
+      const page = await caller.pages.create({ sectionId: section.id, titulo: 'Tokens', slug: 'tokens' });
+
+      expect(await caller.pages.menuOf({ pageId: page.id })).toEqual({ menuId: menu.id });
+      await expect(caller.pages.menuOf({ pageId: 'nao-existe' })).rejects.toMatchObject({
+        code: 'NOT_FOUND',
+      });
+    });
+
+    it('header retorna página + seção + menu para breadcrumb/section header (TASK-87)', async () => {
+      const caller = callerFor(db, editor);
+      const menu = await caller.menus.create({ titulo: 'Foundation' });
+      const section = await caller.sections.create({ menuId: menu.id, titulo: 'Cores' });
+      const page = await caller.pages.create({ sectionId: section.id, titulo: 'Tokens', slug: 'tokens' });
+
+      expect(await caller.pages.header({ pageId: page.id })).toEqual({
+        page: { id: page.id, titulo: 'Tokens' },
+        section: { id: section.id, titulo: 'Cores' },
+        menu: { id: menu.id, titulo: 'Foundation' },
+      });
+      await expect(caller.pages.header({ pageId: 'nao-existe' })).rejects.toMatchObject({
+        code: 'NOT_FOUND',
+      });
+    });
+
     it('delete remove a seção e cascateia para pages e tabs', async () => {
       const caller = callerFor(db, editor);
-      const section = await caller.sections.create({ titulo: 'Componentes' });
+      const section = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'Componentes' });
       const page = await caller.pages.create({
         sectionId: section.id,
         titulo: 'Button',
@@ -120,11 +161,11 @@ describe('estrutura de navegação (sections/pages/tabs)', () => {
         code: 'UNAUTHORIZED',
       });
       await expect(
-        callerFor(db, null).sections.create({ titulo: 'X' }),
+        callerFor(db, null).sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'X' }),
       ).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
 
-      await expect(callerFor(db, admin).sections.create({ titulo: 'Via admin' })).resolves.toBeDefined();
-      await expect(callerFor(db, editor).sections.create({ titulo: 'Via editor' })).resolves.toBeDefined();
+      await expect(callerFor(db, admin).sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'Via admin' })).resolves.toBeDefined();
+      await expect(callerFor(db, editor).sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'Via editor' })).resolves.toBeDefined();
     });
   });
 
@@ -132,7 +173,7 @@ describe('estrutura de navegação (sections/pages/tabs)', () => {
     let sectionId: string;
 
     beforeEach(async () => {
-      sectionId = (await callerFor(db, editor).sections.create({ titulo: 'Componentes' })).id;
+      sectionId = (await callerFor(db, editor).sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'Componentes' })).id;
     });
 
     it('create valida formato do slug', async () => {
@@ -224,7 +265,7 @@ describe('estrutura de navegação (sections/pages/tabs)', () => {
         caller.pages.create({ sectionId, titulo: 'Outra', slug: 'overview' }),
       ).rejects.toMatchObject({ code: 'CONFLICT' });
 
-      const outraSection = await caller.sections.create({ titulo: 'Padrões' });
+      const outraSection = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'Padrões' });
       await expect(
         caller.pages.create({ sectionId: outraSection.id, titulo: 'Overview', slug: 'overview' }),
       ).resolves.toMatchObject({ slug: 'overview' });
@@ -256,7 +297,7 @@ describe('estrutura de navegação (sections/pages/tabs)', () => {
       const caller = callerFor(db, editor);
       const a = await caller.pages.create({ sectionId, titulo: 'A', slug: 'a' });
       const b = await caller.pages.create({ sectionId, titulo: 'B', slug: 'b' });
-      const outra = await caller.sections.create({ titulo: 'Outra' });
+      const outra = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'Outra' });
       const c = await caller.pages.create({ sectionId: outra.id, titulo: 'C', slug: 'c' });
 
       await caller.pages.reorder({ sectionId, orderedIds: [b.id, a.id] });
@@ -287,7 +328,7 @@ describe('estrutura de navegação (sections/pages/tabs)', () => {
 
     beforeEach(async () => {
       const caller = callerFor(db, editor);
-      const section = await caller.sections.create({ titulo: 'Componentes' });
+      const section = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'Componentes' });
       pageId = (await caller.pages.create({ sectionId: section.id, titulo: 'Button', slug: 'button' })).id;
     });
 
