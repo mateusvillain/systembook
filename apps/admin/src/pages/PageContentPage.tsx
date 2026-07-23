@@ -1,13 +1,11 @@
 import { useRef, useState, type FormEvent } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Link, NavLink, useNavigate, useOutletContext, useParams } from 'react-router-dom';
+import { Link, NavLink, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Check, Plus, X } from 'lucide-react';
 import { queryClient, useTRPC } from '../lib/trpc.js';
 import { ContentEditor, type ContentEditorHandle } from '../features/editor/ContentEditor.js';
-import { Breadcrumbs, type Crumb } from '../features/editor/Breadcrumbs.js';
 import { SectionHeader } from '../features/editor/SectionHeader.js';
-import type { AdminOutletContext } from '../components/AdminLayout.js';
 import { Button } from '@/components/ui/button';
 import { RowActionsMenu } from '@/components/RowActionsMenu';
 import { createLinkClass } from '@/lib/styles';
@@ -28,7 +26,6 @@ export function PageContentPage() {
   const { pageId, tabId } = useParams<{ pageId: string; tabId?: string }>();
   const trpc = useTRPC();
   const navigate = useNavigate();
-  const { setActiveMenuId } = useOutletContext<AdminOutletContext>();
   const primary = useQuery(trpc.tabs.getPrimary.queryOptions({ pageId: pageId! }));
   const userTabs = useQuery(trpc.tabs.listByPage.queryOptions({ pageId: pageId! }));
   // Cabeçalho (Menu › Seção › Página) e metadados de publicação (última revisão).
@@ -75,29 +72,11 @@ export function PageContentPage() {
   const activeUserTab = tabId ? tabs.find((t) => t.id === tabId) : undefined;
   if (tabId && !activeUserTab) return <p role="alert">Tab não encontrada.</p>;
 
-  const { menu, section, page } = header.data;
+  const { section, page } = header.data;
   // Metadados de publicação: a última revisão (listByPage vem em ordem desc).
   const revs = revisions.data ?? [];
   const published = revs.length > 0;
   const latest = revs[0];
-
-  // Menu › Seção › Página › (Aba). O Menu seleciona-se como ativo (TASK-85) e
-  // leva à raiz; a Seção não tem rota própria (texto quieto); a Página vira link
-  // quando há uma aba aberta, senão é o item atual.
-  const crumbs: Crumb[] = [
-    {
-      label: menu.titulo,
-      onClick: () => {
-        setActiveMenuId(menu.id);
-        navigate('/');
-      },
-    },
-    { label: section.titulo },
-    activeUserTab
-      ? { label: page.titulo, to: `/pages/${pageId}` }
-      : { label: page.titulo, current: true },
-  ];
-  if (activeUserTab) crumbs.push({ label: activeUserTab.titulo, current: true });
 
   async function handleCreateTab(titulo: string) {
     const tab = await createTab.mutateAsync({ pageId: pageId!, titulo });
@@ -126,25 +105,22 @@ export function PageContentPage() {
 
   return (
     <section className="grid gap-8">
-      <div className="grid gap-4">
-        <Breadcrumbs items={crumbs} />
-        <SectionHeader
-          eyebrow={section.titulo}
-          title={page.titulo}
-          published={published}
-          meta={{ updatedAt: latest?.criadoEm ?? null, author: latest?.autorEmail ?? null }}
-          actions={
-            <>
-              <Button asChild variant="ghost">
-                <Link to={`/pages/${pageId}/history`}>Histórico</Link>
-              </Button>
-              <Button type="button" onClick={handlePublish} disabled={publish.isPending}>
-                {publish.isPending ? 'Publicando…' : 'Publicar'}
-              </Button>
-            </>
-          }
-        />
-      </div>
+      <SectionHeader
+        eyebrow={section.titulo}
+        title={page.titulo}
+        published={published}
+        meta={{ updatedAt: latest?.criadoEm ?? null, author: latest?.autorEmail ?? null }}
+        actions={
+          <>
+            <Button asChild variant="ghost">
+              <Link to={`/pages/${pageId}/history`}>Histórico</Link>
+            </Button>
+            <Button type="button" onClick={handlePublish} disabled={publish.isPending}>
+              {publish.isPending ? 'Publicando…' : 'Publicar'}
+            </Button>
+          </>
+        }
+      />
 
       {/* Tab bar: Corpo + tabs de usuário. Com 0 tabs, só o gatilho "+ Aba". */}
       {tabs.length > 0 ? (

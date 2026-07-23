@@ -155,6 +155,27 @@
       ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   }
 
+  /*
+   * Reset de âncora ESCOPADO (TASK-98). Sem o preflight do Tailwind (ver topo),
+   * todo `<a>`/`<Link>` cru herda o estilo nativo do navegador: azul + sublinhado
+   * (roxo quando visitado) — o que fazia o botão 'Histórico' (que embrulha um
+   * `<Link>`) parecer link e os itens do menu do usuário aparecerem azuis
+   * sublinhados (`dropdown-usuario.png`). Zerar aqui deixa a âncora herdar a cor
+   * e ficar sem sublinhado por padrão; um link intencional opta pelo acento via
+   * utilities (`text-primary`/`hover:underline` do `createLinkClass` e do
+   * `variant="link"`), que vivem acima do `base` e continuam vencendo.
+   *
+   * O conteúdo de dropdown/popover do Radix é portado para o `<body>` (fora de
+   * `.sb-admin`) dentro de `[data-radix-popper-content-wrapper]` — NÃO existe um
+   * `[data-radix-portal]` no DOM desta versão do Radix; é este o seletor que
+   * alcança os `<Link>` dos itens de menu.
+   */
+  .sb-admin a,
+  [data-radix-popper-content-wrapper] a {
+    color: inherit;
+    text-decoration: none;
+  }
+
   .sb-admin button {
     cursor: pointer;
     /*

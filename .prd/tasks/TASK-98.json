@@ -14,25 +14,25 @@
       "step": 1,
       "description": "Remove redundant Settings gear icon button",
       "details": "In AppHeader.tsx, remove the standalone Settings gear button so only the UserMenu chip triggers user settings and navigation options.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Remove top breadcrumb component from section header",
       "details": "In SectionHeader.tsx / PageContentPage.tsx, remove the <Breadcrumbs /> rendering above the section category title.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Restyle the Histórico action button",
       "details": "In SectionHeader.tsx, remove hover:underline / underline styles from the Histórico button and style it as a secondary ghost button.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Verify in browser",
       "details": "Rebuild and inspect the admin shell to confirm header simplification, breadcrumb removal, and clean Histórico button styling.",
-      "pass": false
+      "pass": true
     }
   ],
   "dependencies": ["TASK-96"],
@@ -41,5 +41,5 @@
     "Addresses items 4, 5, and 6 from avaliacao-interface.md.",
     "Removing Breadcrumbs cleans up vertical margin in SectionHeader.tsx, aligning with Zeroheight's clean document title header."
   ],
-  "passes": false
+  "passes": true
 }

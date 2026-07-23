@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Check, ChevronDown, LogOut, PanelLeft, Plus, Settings, X } from 'lucide-react';
+import { Check, ChevronDown, LogOut, PanelLeft, Plus, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { queryClient, useTRPC } from '../../lib/trpc.js';
 import { AdminSearch } from './AdminSearch.js';
@@ -271,11 +271,11 @@ function AddMenu({ onCreate }: { onCreate: (titulo: string) => Promise<unknown> 
 }
 
 /**
- * Configurações + usuário (direita): concentra tudo que antes era nav plana
- * no `AdminLayout` (Usuários/Tokens/Histórico/Página inicial/Sair). O ícone
- * de engrenagem e o chip do usuário abrem o mesmo menu — dois pontos de
- * entrada para a mesma superfície, como no plano (`busca · configurações ·
- * usuário`).
+ * Menu do usuário (direita): concentra tudo que antes era nav plana no
+ * `AdminLayout` (Usuários/Tokens/Histórico/Página inicial/Sair). O chip do
+ * usuário é o **único** ponto de entrada — a antiga engrenagem de
+ * "configurações" abria exatamente este mesmo menu e foi removida por
+ * redundância (TASK-98, `dropdown-usuario.png`).
  */
 function UserMenu({
   role,
@@ -286,22 +286,10 @@ function UserMenu({
   onLogout: () => void;
   logoutPending: boolean;
 }) {
-  const [open, setOpen] = useState(false);
   const isAdmin = role === 'admin';
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
-      {/* Engrenagem é atalho redundante do mesmo menu — escondida no mobile,
-          onde o toque no chip do usuário basta e o espaço é escasso. */}
-      <button
-        type="button"
-        aria-label="Configurações"
-        title="Configurações"
-        onClick={() => setOpen(true)}
-        className="text-muted-foreground hover:text-foreground hover:bg-accent hidden size-8 items-center justify-center rounded-editorial-sm sm:inline-flex"
-      >
-        <Settings className="size-4" />
-      </button>
+    <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
           type="button"

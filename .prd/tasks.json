@@ -683,7 +683,7 @@
     "title": "Simplify header user navigation, remove top section breadcrumbs, and restyle History action button",
     "category": "ui-ux",
     "specFilePath": ".prd/tasks/TASK-98.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-99",
