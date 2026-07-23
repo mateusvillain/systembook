@@ -1,52 +1,47 @@
 {
   "id": "TASK-96",
-  "title": "Publish @systembook/connector (and its workspace deps) to npm with a working CLI bin",
-  "category": "setup",
-  "description": "Make the component-preview toolchain installable by external teams from npm. Today `@systembook/connector` is `private: true`, version `0.0.0`, has no `bin` field, and depends on two other unpublished workspace packages (`@systembook/schema`, `@systembook/preview-kit`) via `workspace:*` — so the setup doc's `pnpm add -D @systembook/connector` / `npx systembook-connector build` steps (TASK-60) cannot actually work yet. Publish the three packages so a design system repo can install and run the connector without cloning this monorepo.",
+  "title": "Standardize dropdown popover styling and polish editor block insertion palette",
+  "category": "ui-ux",
+  "description": "Address feedback from avaliacao-interface.md (items 1 and 2): dropdown popovers currently use inconsistent font styling, harsh black outer borders, and unstandardized padding/shadows (dropdown.png), while the editor block handles insertion menu lacks visual refinement (dropdown-conteudo.png). Standardize Radix DropdownMenuContent, SelectContent, and PopoverContent components across the admin application to use standard font-sans typography, subtle borders (border-border / border-zinc-200/80 instead of harsh black borders), soft shadows (shadow-md/shadow-lg), and clean item hover states. Polish the editor block insertion palette in BlockHandles.tsx and blockInsert.ts to present structured block options with clean typography, icon alignment, and elegant category headings matching the editorial design system.",
   "acceptanceCriteria": [
-    "`@systembook/schema`, `@systembook/preview-kit`, and `@systembook/connector` are published to npm (public access) with a real semver version, `private` removed, and `license` already set (MIT, from TASK-63)",
-    "`@systembook/connector` exposes a `bin` named `systembook-connector` that runs the CLI (`discover`/`generate`/`build`), so `npx systembook-connector build --root .` works from an installed package — not only `pnpm --filter ... cli`",
-    "The published packages resolve their inter-dependencies via real semver ranges (not `workspace:*`) — the publish tooling must rewrite `workspace:*` to the published versions (e.g. pnpm publish's workspace-protocol replacement), and `@systembook/schema` / `@systembook/preview-kit` are declared as runtime `dependencies` of the connector, not devDependencies",
-    "The published connector actually works: in a scratch repo OUTSIDE this monorepo, `pnpm add -D @systembook/connector`, add a `*.preview.tsx`, and `npx systembook-connector build --root .` produces the `.systembook/dist/` artifact + `manifest.json` (the TASK-60 example, verified end-to-end against the published tarball, e.g. via `npm pack` before a real publish)",
-    "Docs are updated to drop the pre-release caveats now that the package is real: the 'Pré-lançamento' note in `docs/setup.md` and the 'enquanto o pacote não está publicado' note in `docs/ci-example.md` are removed or adjusted to reference the published package"
+    "Radix DropdownMenuContent, SelectContent, and PopoverContent components inherit font-sans and standard admin typography without font family mismatches",
+    "Harsh black outer borders around popovers and dropdown menus are replaced with subtle, elegant border styling (border-border or border-zinc-200/80) and soft shadows",
+    "The editor block insertion palette in BlockHandles.tsx (grouped TEXTO/TÍTULOS/LISTAS/BLOCOS) is polished visually with clean item spacing, icon alignment, refined hover states, and subtle border/background styling",
+    "Dropdown menu items across the header, sidebar context actions, editor tabs, and block handles maintain consistent visual hierarchy, padding, and hover/active states",
+    "Keyboard navigation, focus rings, and screen-reader accessibility inside dropdowns and popovers remain fully functional"
   ],
   "steps": [
     {
       "step": 1,
-      "description": "Decide versioning and confirm npm org access",
-      "details": "Confirm the `@systembook` npm scope/org exists and the publisher has access. Pick an initial published version (recommend `0.1.0` to match the Docker image release line from TASK-58) and whether to keep the three packages version-locked together.",
+      "description": "Audit and update global dropdown and popover styles",
+      "details": "Update apps/admin/src/index.css and shadcn UI primitives to ensure font-sans is explicitly inherited, outer borders use border-border or subtle zinc tokens instead of solid black, and popovers carry consistent shadow-md/lg shadow styling.",
       "pass": false
     },
     {
       "step": 2,
-      "description": "Make the packages publishable",
-      "details": "In `packages/schema`, `packages/preview-kit`, and `packages/connector`: remove `private: true`, set the chosen version, ensure `files`/`exports`/`types` are correct for consumers (schema and connector currently point `exports` at TS source under `src/` — decide whether to ship source-only or add a build; the connector's CLI must be runnable via the `bin`). Confirm `license: \"MIT\"` is present (from TASK-63).",
+      "description": "Standardize dropdown menu items across the admin shell",
+      "details": "Refine item spacing, hover states, and typography for dropdown menus across AppHeader.tsx, SidebarTree.tsx, and RowActionsMenu.tsx.",
       "pass": false
     },
     {
       "step": 3,
-      "description": "Add the CLI bin and validate it",
-      "details": "Add a `bin` entry `{ \"systembook-connector\": \"<entry>\" }` to the connector pointing at the CLI (`src/cli.ts` today runs via tsx; a published bin likely needs a Node-runnable entry — either a shebang'd built file or a bin shim, resolving the tsx-only dev setup). Verify `systembook-connector --help` and `build --root` run from an installed context.",
+      "description": "Polish the content editor block insertion palette",
+      "details": "Update BlockHandles.tsx and blockInsert.ts to format grouped block choices cleanly with consistent icons, uppercase group titles, and elegant hover effects.",
       "pass": false
     },
     {
       "step": 4,
-      "description": "Handle workspace-protocol dependency rewriting",
-      "details": "Ensure `@systembook/schema` and `@systembook/preview-kit` are `dependencies` (runtime) of the connector, and that publishing rewrites `workspace:*` to the published semver (pnpm does this on `pnpm publish`). Publish the dependency graph in order (schema → preview-kit → connector).",
-      "pass": false
-    },
-    {
-      "step": 5,
-      "description": "Verify end-to-end from outside the monorepo, then update docs",
-      "details": "Using `npm pack` tarballs (or a dry-run registry), install the connector into a scratch repo outside this monorepo, run the TASK-60 `button.preview.tsx` example through `npx systembook-connector build --root .`, and confirm the artifact + manifest are produced. Then remove the pre-release caveats in `docs/setup.md` and `docs/ci-example.md`.",
+      "description": "Verify in browser against reference screenshots",
+      "details": "Build and load the admin app, opening dropdowns in header, sidebar, and editor to verify typography consistency, elegant borders, and clean block insertion palette.",
       "pass": false
     }
   ],
-  "dependencies": ["TASK-41", "TASK-58", "TASK-60", "TASK-63"],
-  "estimatedComplexity": "medium",
+  "dependencies": ["TASK-95"],
+  "estimatedComplexity": "low",
   "technicalNotes": [
-    "Surfaced during TASK-60: the setup doc documents `pnpm add -D @systembook/connector` / `npx systembook-connector build` but the package is unpublishable as-is (private, 0.0.0, no bin, workspace:* deps). This task closes that gap.",
-    "Key decision: ship TS source or add a build step. `@systembook/schema` is intentionally types-only (source exports); `@systembook/preview-kit` is bundled by the connector into the artifact; the connector itself needs a Node-executable bin. The current `exports.default` pointing at `src/*.ts` works for bundlers/tsx but NOT for `node` invoking the bin directly — resolve this deliberately.",
-    "Publish order matters because of the workspace dependency chain: schema → preview-kit → connector."
-  ]
+    "Addresses items 1 and 2 from avaliacao-interface.md.",
+    "Ensure font-sans is explicitly set or inherited on Radix portals so popovers don't fall back to browser default fonts.",
+    "Keep border colors subtle using theme variables (border-border or border-neutral-200) instead of raw black borders."
+  ],
+  "passes": false
 }

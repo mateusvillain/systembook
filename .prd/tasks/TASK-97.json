@@ -1,0 +1,38 @@
+{
+  "id": "TASK-97",
+  "title": "Prevent page layout shift and scrollbar hiding when opening dropdown menus",
+  "category": "ui-ux",
+  "description": "Address feedback from avaliacao-interface.md (item 3): when Radix UI DropdownMenu or Popover components open, body scroll locking or portal overlay logic hides the browser scrollbar, causing a minor horizontal layout shift (elements jump slightly in width). Fix this by configuring Radix UI components (or setting modal={false} / preventScroll={false} / CSS scrollbar-gutter: stable / Radix scroll lock overrides) so that opening dropdown menus and popovers in the admin shell does not hide the page scrollbar or shift elements on screen.",
+  "acceptanceCriteria": [
+    "Opening any DropdownMenu (header user menu, sidebar actions, tab bar menu, editor block handles) does not hide the browser scrollbar on document.body",
+    "The width of the header, sidebar, and main content area remains completely stable without horizontal jumping/shifting when dropdowns or popovers open",
+    "Clicking outside a dropdown, pressing Escape, or navigating with arrow keys continues to dismiss and interact with popovers as expected"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Identify Radix UI scrollbar lock behavior",
+      "details": "Analyze Radix UI DropdownMenu and Popover portal triggers causing document.body overflow: hidden or padding adjustments on trigger open.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Configure Radix primitives or CSS rules to preserve scrollbar",
+      "details": "Set modal={false} on non-blocking dropdown menus or enforce CSS scrollbar-gutter: stable / body scroll lock overrides so the page scrollbar remains visible.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Verify layout stability in browser",
+      "details": "Open and close all dropdown menus while viewing a page with a visible scrollbar and verify that zero horizontal shift or scrollbar flickering occurs.",
+      "pass": false
+    }
+  ],
+  "dependencies": ["TASK-96"],
+  "estimatedComplexity": "low",
+  "technicalNotes": [
+    "Addresses item 3 from avaliacao-interface.md.",
+    "Radix UI primitives default modal={true} which adds body scroll lock and padding adjustments. For dropdown menus that don't block the viewport, modal={false} or custom container configuration preserves scrollbar layout."
+  ],
+  "passes": false
+}

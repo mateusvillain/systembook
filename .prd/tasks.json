@@ -666,9 +666,30 @@
   },
   {
     "id": "TASK-96",
+    "title": "Standardize dropdown popover styling and polish editor block insertion palette",
+    "category": "ui-ux",
+    "specFilePath": ".prd/tasks/TASK-96.json",
+    "passes": false
+  },
+  {
+    "id": "TASK-97",
+    "title": "Prevent page layout shift and scrollbar hiding when opening dropdown menus",
+    "category": "ui-ux",
+    "specFilePath": ".prd/tasks/TASK-97.json",
+    "passes": false
+  },
+  {
+    "id": "TASK-98",
+    "title": "Simplify header user navigation, remove top section breadcrumbs, and restyle History action button",
+    "category": "ui-ux",
+    "specFilePath": ".prd/tasks/TASK-98.json",
+    "passes": false
+  },
+  {
+    "id": "TASK-99",
     "title": "Publish @systembook/connector (and its workspace deps) to npm with a working CLI bin",
     "category": "setup",
-    "specFilePath": ".prd/tasks/TASK-96.json",
+    "specFilePath": ".prd/tasks/TASK-99.json",
     "passes": false
   }
 ]
