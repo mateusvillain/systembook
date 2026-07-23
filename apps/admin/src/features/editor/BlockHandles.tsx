@@ -113,22 +113,26 @@ export function BlockHandles({
               type="button"
               aria-label="Adicionar bloco abaixo"
               title="Adicionar bloco"
-              className="text-muted-foreground hover:text-foreground hover:bg-accent inline-flex size-6 items-center justify-center rounded-editorial-sm"
+              className="text-muted-foreground hover:text-foreground hover:bg-accent inline-flex size-6 items-center justify-center rounded-editorial-sm transition-colors"
             >
               <Plus className="size-4" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-60">
+          <DropdownMenuContent align="start" className="w-64 p-1.5 border-border/80 shadow-editorial-md rounded-editorial-md">
             {BLOCK_GROUPS.map((group, gi) => (
               <div key={group.label}>
-                {gi > 0 && <DropdownMenuSeparator />}
-                <DropdownMenuLabel className="text-muted-foreground text-xs font-medium uppercase tracking-[0.08em]">
+                {gi > 0 && <DropdownMenuSeparator className="my-1" />}
+                <DropdownMenuLabel className="px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">
                   {group.label}
                 </DropdownMenuLabel>
                 {group.items.map((item) => (
-                  <DropdownMenuItem key={item.id} onSelect={() => runInsert(item)}>
-                    <item.icon className="size-4" />
-                    {item.label}
+                  <DropdownMenuItem
+                    key={item.id}
+                    onSelect={() => runInsert(item)}
+                    className="group flex items-center gap-2.5 rounded-editorial-sm px-2.5 py-1.5 text-sm font-medium text-foreground/90 hover:bg-accent hover:text-foreground cursor-pointer transition-colors"
+                  >
+                    <item.icon className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground group-focus:text-foreground" />
+                    <span>{item.label}</span>
                   </DropdownMenuItem>
                 ))}
               </div>

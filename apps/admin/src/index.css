@@ -129,17 +129,26 @@
  * quando renderizado dentro do painel): só box-sizing e borda.
  */
 @layer base {
+  html {
+    scrollbar-gutter: stable;
+  }
+
   .sb-admin,
   .sb-admin *,
   .sb-admin *::before,
-  .sb-admin *::after {
+  .sb-admin *::after,
+  [data-radix-portal],
+  [data-radix-portal] *,
+  [data-radix-portal] *::before,
+  [data-radix-portal] *::after {
     box-sizing: border-box;
     border-width: 0;
     border-style: solid;
     border-color: var(--border);
   }
 
-  .sb-admin {
+  .sb-admin,
+  [data-radix-portal] {
     background-color: var(--background);
     color: var(--foreground);
     font-family:

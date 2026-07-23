@@ -669,14 +669,14 @@
     "title": "Standardize dropdown popover styling and polish editor block insertion palette",
     "category": "ui-ux",
     "specFilePath": ".prd/tasks/TASK-96.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-97",
     "title": "Prevent page layout shift and scrollbar hiding when opening dropdown menus",
     "category": "ui-ux",
     "specFilePath": ".prd/tasks/TASK-97.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-98",

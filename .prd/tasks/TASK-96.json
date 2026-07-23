@@ -15,25 +15,25 @@
       "step": 1,
       "description": "Audit and update global dropdown and popover styles",
       "details": "Update apps/admin/src/index.css and shadcn UI primitives to ensure font-sans is explicitly inherited, outer borders use border-border or subtle zinc tokens instead of solid black, and popovers carry consistent shadow-md/lg shadow styling.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Standardize dropdown menu items across the admin shell",
       "details": "Refine item spacing, hover states, and typography for dropdown menus across AppHeader.tsx, SidebarTree.tsx, and RowActionsMenu.tsx.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Polish the content editor block insertion palette",
       "details": "Update BlockHandles.tsx and blockInsert.ts to format grouped block choices cleanly with consistent icons, uppercase group titles, and elegant hover effects.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Verify in browser against reference screenshots",
       "details": "Build and load the admin app, opening dropdowns in header, sidebar, and editor to verify typography consistency, elegant borders, and clean block insertion palette.",
-      "pass": false
+      "pass": true
     }
   ],
   "dependencies": ["TASK-95"],
@@ -43,5 +43,5 @@
     "Ensure font-sans is explicitly set or inherited on Radix portals so popovers don't fall back to browser default fonts.",
     "Keep border colors subtle using theme variables (border-border or border-neutral-200) instead of raw black borders."
   ],
-  "passes": false
+  "passes": true
 }

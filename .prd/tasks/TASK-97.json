@@ -13,19 +13,19 @@
       "step": 1,
       "description": "Identify Radix UI scrollbar lock behavior",
       "details": "Analyze Radix UI DropdownMenu and Popover portal triggers causing document.body overflow: hidden or padding adjustments on trigger open.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Configure Radix primitives or CSS rules to preserve scrollbar",
       "details": "Set modal={false} on non-blocking dropdown menus or enforce CSS scrollbar-gutter: stable / body scroll lock overrides so the page scrollbar remains visible.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Verify layout stability in browser",
       "details": "Open and close all dropdown menus while viewing a page with a visible scrollbar and verify that zero horizontal shift or scrollbar flickering occurs.",
-      "pass": false
+      "pass": true
     }
   ],
   "dependencies": ["TASK-96"],
@@ -34,5 +34,5 @@
     "Addresses item 3 from avaliacao-interface.md.",
     "Radix UI primitives default modal={true} which adds body scroll lock and padding adjustments. For dropdown menus that don't block the viewport, modal={false} or custom container configuration preserves scrollbar layout."
   ],
-  "passes": false
+  "passes": true
 }
