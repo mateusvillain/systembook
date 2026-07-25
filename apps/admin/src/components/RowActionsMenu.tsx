@@ -27,6 +27,11 @@ import { cn } from '@/lib/utils';
  * o call site passa `undefined` na primeira/última posição, espelhando o antigo
  * comportamento `invisible`. Acessível por teclado por padrão (shadcn
  * `DropdownMenu`).
+ *
+ * TASK-108: a nav de menus do header e a árvore de seções/páginas migraram a
+ * reordenação para drag-and-drop (grip no hover, `useDragReorder`) e não passam
+ * mais `onMovePrev`/`onMoveNext`. Os props seguem aqui para os call sites ainda
+ * baseados em mover-para-cima/baixo — o tab bar do editor e as status tags.
  */
 export function RowActionsMenu({
   triggerLabel,

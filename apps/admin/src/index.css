@@ -198,3 +198,49 @@
     vertical-align: middle;
   }
 }
+
+/*
+ * Indicador de inserção do drag-and-drop de navegação (TASK-108). A linha em
+ * `--primary` marca onde o item cairá; `[data-drop-edge]` e `[data-sortable]`
+ * são setados pelo `useDragReorder`. `@layer components` fica abaixo das
+ * utilities, então nunca sobrepõe estados de foco/hover das linhas.
+ */
+@layer components {
+  .sb-admin [data-drop-edge] {
+    position: relative;
+  }
+  .sb-admin [data-drop-edge]::after {
+    content: '';
+    position: absolute;
+    z-index: 1;
+    pointer-events: none;
+    border-radius: 9999px;
+    background: var(--primary);
+  }
+  .sb-admin [data-sortable='vertical'][data-drop-edge]::after {
+    left: 0;
+    right: 0;
+    height: 2px;
+  }
+  .sb-admin [data-sortable='vertical'][data-drop-edge='before']::after {
+    top: -1px;
+  }
+  .sb-admin [data-sortable='vertical'][data-drop-edge='after']::after {
+    bottom: -1px;
+  }
+  .sb-admin [data-sortable='horizontal'][data-drop-edge]::after {
+    top: 0;
+    bottom: 0;
+    width: 2px;
+  }
+  .sb-admin [data-sortable='horizontal'][data-drop-edge='before']::after {
+    left: -1px;
+  }
+  .sb-admin [data-sortable='horizontal'][data-drop-edge='after']::after {
+    right: -1px;
+  }
+  /* Item em trânsito: atenuado, para o indicador de destino ficar em foco. */
+  .sb-admin [data-dragging] {
+    opacity: 0.4;
+  }
+}

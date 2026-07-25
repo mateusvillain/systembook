@@ -753,7 +753,7 @@
     "title": "Replace move-up/down reordering with drag-and-drop for header menus and section/page navigation tree, with hover-only drag handle",
     "category": "ui-ux",
     "specFilePath": ".prd/tasks/TASK-108.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-109",
