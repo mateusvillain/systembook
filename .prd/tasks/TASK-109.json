@@ -16,25 +16,25 @@
       "step": 1,
       "description": "Copy link action",
       "details": "Add a 'Copiar link' `DropdownMenuItem` to `RowActionsMenu.tsx`'s usage in `SidebarTree.tsx` (section pages) and `AppHeader.tsx` (menu items), resolving the target public URL for each case and writing it via `navigator.clipboard.writeText`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Backend mutation for moving a page",
       "details": "Add a `pages.move` (or similar) tRPC procedure that updates a page's `sectionId` to a new target section, using `protectedProcedure` consistent with other structural mutations.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Move-to-menu picker UI",
       "details": "Add a 'Mover para outro menu' `DropdownMenuItem` (conditionally rendered when 2+ menus exist) to `SidebarTree.tsx`'s page row dropdown, opening a small picker (menu → section) that calls the new mutation on confirm.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Verify in browser",
       "details": "Copy a link for a section page and for a header menu item and confirm the clipboard contents resolve to the correct public page; move a page to a different menu/section and confirm it relocates correctly with tabs/content intact.",
-      "pass": false
+      "pass": true
     }
   ],
   "dependencies": [],
@@ -45,5 +45,5 @@
     "`RowActionsMenu.tsx`'s own doc comment previously stated 'Mover entre seções' was intentionally excluded because no backend mutation existed for it — this task is what adds that mutation.",
     "Header menu 'Copiar link' target resolved to the first section/page per explicit user decision, since menus have no dedicated public page of their own."
   ],
-  "passes": false
+  "passes": true
 }

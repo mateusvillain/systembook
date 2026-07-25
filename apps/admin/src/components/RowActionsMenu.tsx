@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +28,11 @@ import { cn } from '@/lib/utils';
  * o call site passa `undefined` na primeira/última posição, espelhando o antigo
  * comportamento `invisible`. Acessível por teclado por padrão (shadcn
  * `DropdownMenu`).
+ *
+ * TASK-108: a nav de menus do header e a árvore de seções/páginas migraram a
+ * reordenação para drag-and-drop (grip no hover, `useDragReorder`) e não passam
+ * mais `onMovePrev`/`onMoveNext`. Os props seguem aqui para os call sites ainda
+ * baseados em mover-para-cima/baixo — o tab bar do editor e as status tags.
  */
 export function RowActionsMenu({
   triggerLabel,
@@ -38,10 +44,17 @@ export function RowActionsMenu({
   onDelete,
   align = 'start',
   triggerClassName,
+  extraItems,
 }: {
   /** aria-label completo do gatilho (ex.: "Mais ações da seção X"). */
   triggerLabel: string;
   onRename: () => void;
+  /**
+   * Itens extra do contexto (TASK-109: "Copiar link", "Mover para outro menu"),
+   * renderizados após "Renomear" e antes de mover/excluir. O call site monta os
+   * `DropdownMenuItem`/`DropdownMenuSub` — o componente segue agnóstico.
+   */
+  extraItems?: ReactNode;
   /** Omitir esconde "Mover para cima" (item já está na primeira posição). */
   onMovePrev?: () => void;
   /** Omitir esconde "Mover para baixo" (item já está na última posição). */
@@ -69,6 +82,7 @@ export function RowActionsMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent align={align}>
         <DropdownMenuItem onSelect={onRename}>Renomear</DropdownMenuItem>
+        {extraItems}
         {onMovePrev && <DropdownMenuItem onSelect={onMovePrev}>{movePrevLabel}</DropdownMenuItem>}
         {onMoveNext && <DropdownMenuItem onSelect={onMoveNext}>{moveNextLabel}</DropdownMenuItem>}
         <DropdownMenuSeparator />
