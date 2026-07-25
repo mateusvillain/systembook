@@ -90,6 +90,23 @@ export const sections = sqliteTable(
   (t) => [uniqueIndex('sections_slug_unique').on(t.slug)],
 );
 
+/**
+ * Tags de status por página (TASK-105): substituem o selo automático
+ * "Rascunho"/"Publicado" por rótulos livres e gerenciáveis (To do, In progress,
+ * Deprecated, Beta por padrão). `cor` guarda um hex (`#RRGGBB`) escolhido no
+ * painel; `ordem` controla a exibição na lista de gestão e no seletor.
+ * Gerenciável por admin E editor (protectedProcedure), como o resto da
+ * estrutura de navegação.
+ */
+export const statusTags = sqliteTable('status_tags', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  titulo: text('titulo').notNull(),
+  cor: text('cor').notNull(),
+  ordem: integer('ordem').notNull(),
+});
+
 // Slug único por section (não global): duas sections podem ter "overview".
 export const pages = sqliteTable(
   'pages',
@@ -103,6 +120,9 @@ export const pages = sqliteTable(
     titulo: text('titulo').notNull(),
     slug: text('slug').notNull(),
     ordem: integer('ordem').notNull(),
+    // Tag de status opcional (TASK-105). ON DELETE SET NULL: excluir uma tag
+    // que está em uso não apaga páginas — só zera o vínculo delas.
+    statusTagId: text('status_tag_id').references(() => statusTags.id, { onDelete: 'set null' }),
   },
   (table) => [uniqueIndex('pages_section_slug_unique').on(table.sectionId, table.slug)],
 );

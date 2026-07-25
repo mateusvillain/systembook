@@ -71,6 +71,15 @@ describe('matriz de permissões (TASK-24)', () => {
     expect(await caller.sections.list()).toHaveLength(0);
   });
 
+  it('editor executa o CRUD completo de status tags (TASK-105)', async () => {
+    const caller = callerFor(db, editor);
+    const tag = await caller.statusTags.create({ titulo: 'Draft', cor: '#64748b' });
+    await caller.statusTags.update({ id: tag.id, titulo: 'Rascunho', cor: '#2563eb' });
+    await caller.statusTags.reorder({ orderedIds: [tag.id] });
+    await caller.statusTags.delete({ id: tag.id });
+    expect(await caller.statusTags.list()).toHaveLength(0);
+  });
+
   it('editor recebe FORBIDDEN em todas as procedures de users.*', async () => {
     const caller = callerFor(db, editor);
     const forbidden = { code: 'FORBIDDEN' };
