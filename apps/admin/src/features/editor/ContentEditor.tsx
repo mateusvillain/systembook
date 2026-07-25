@@ -4,7 +4,7 @@ import type { Editor, JSONContent } from '@tiptap/core';
 import { EditorContent, useEditor, useEditorState } from '@tiptap/react';
 import { useTRPC } from '../../lib/trpc.js';
 import { editorExtensions as extensions } from './extensions.js';
-import { EditorToolbar } from './EditorToolbar.js';
+import { BubbleFormatMenu } from './BubbleFormatMenu.js';
 import { BlockHandles } from './BlockHandles.js';
 import { TableControls } from './TableControls.js';
 import { EditorEmptyState } from './EditorEmptyState.js';
@@ -148,10 +148,7 @@ const EditorInner = forwardRef<ContentEditorHandle, { tabId: string; initialDoc:
 
     return (
       <div className="sb-editor">
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <EditorToolbar editor={editor} />
-          </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <span
             aria-live="polite"
             data-save-status={status}
@@ -159,7 +156,7 @@ const EditorInner = forwardRef<ContentEditorHandle, { tabId: string; initialDoc:
               fontSize: '0.8rem',
               color: status === 'error' ? '#b00020' : '#666',
               whiteSpace: 'nowrap',
-              paddingTop: '0.35rem',
+              paddingBottom: '0.35rem',
             }}
           >
             {status === 'saving' && 'Salvando…'}
@@ -170,6 +167,7 @@ const EditorInner = forwardRef<ContentEditorHandle, { tabId: string; initialDoc:
         <div ref={canvasRef} className="sb-editor-canvas relative">
           {editor && <BlockHandles editor={editor} canvasRef={canvasRef} />}
           {editor && <TableControls editor={editor} canvasRef={canvasRef} />}
+          {editor && <BubbleFormatMenu editor={editor} />}
           <EditorContent editor={editor} />
           {editor && isEmpty && <EditorEmptyState editor={editor} />}
         </div>

@@ -9,8 +9,6 @@
 .sb-editor .ProseMirror {
   min-height: 40vh;
   padding: 0.75rem 1rem 0.75rem 3.5rem;
-  border: 1px solid #ddd;
-  border-radius: 6px;
   outline: none;
   line-height: 1.6;
 }
@@ -26,10 +24,6 @@
 /* O handle vive na canaleta (esquerda), acima do texto, revelado no hover. */
 .sb-block-handle {
   padding-left: 0.4rem;
-}
-
-.sb-editor .ProseMirror:focus {
-  border-color: #888;
 }
 
 .sb-editor .ProseMirror pre {

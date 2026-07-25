@@ -16,31 +16,31 @@
       "step": 1,
       "description": "Remove border styling",
       "details": "In `editor.css`, remove the `border`/`border-radius`/focus `border-color` rules from `.sb-editor .ProseMirror`, keeping padding/min-height.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Add BubbleMenu extension",
       "details": "Add Tiptap's `BubbleMenu` (or `@tiptap/extension-bubble-menu`) to `extensions.ts`/`ContentEditor.tsx`, building a new floating menu component with the formatting controls previously in `EditorToolbar.tsx`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Verify/extend markdown input rules",
       "details": "Confirm StarterKit's default input rules cover heading (`#`/`##`/`###`), bold (`**`), italic (`_`), lists (`-`/`1.`), and code (`` ` ``); add custom input rules for any gaps.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Remove fixed toolbar",
       "details": "Delete `EditorToolbar.tsx`'s rendering from `ContentEditor.tsx` (file removal or emptying, depending on whether any piece is still needed elsewhere).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 5,
       "description": "Verify in browser",
       "details": "Confirm borderless content area, bubble menu appears on selection and applies formatting, shortcuts and markdown rules work, and no regressions in table editing (hover controls from TASK-101 must already be in place).",
-      "pass": false
+      "pass": true
     }
   ],
   "dependencies": [
@@ -50,7 +50,8 @@
   "technicalNotes": [
     "Addresses item 2 of `novas-tasks.md`.",
     "Depends on TASK-101 because the toolbar's contextual table row/column buttons must already be replaced by hover controls before the toolbar itself is removed.",
-    "Reference `referencia-4.png` for the exact floating menu composition: 'Improve with AI' + B/I/U/superscript/code/quote/H2/H3/H4/bullet/ordered/checklist/link — adapt to SystemBook's actual supported marks/nodes, dropping anything not implemented (e.g. no AI features exist in this product)."
+    "Reference `referencia-4.png` for the exact floating menu composition: 'Improve with AI' + B/I/U/superscript/code/quote/H2/H3/H4/bullet/ordered/checklist/link — adapt to SystemBook's actual supported marks/nodes, dropping anything not implemented (e.g. no AI features exist in this product).",
+    "Implemented as `BubbleFormatMenu.tsx` using `BubbleMenu` imported from `@tiptap/react/menus` (Tiptap v3 moved it out of the old `@tiptap/extension-bubble-menu` React wrapper) — no new direct dependency needed, `@tiptap/extension-bubble-menu` resolves transitively through `@tiptap/react` and typechecks cleanly. Reused the exact button set from the deleted `EditorToolbar.tsx` (H1/H2/H3, Bold/Italic, bullet/ordered list, code block) rather than inventing underline/link/superscript/quote — none of those marks/nodes exist in `extensions.ts`, and adding them was explicitly out of scope. `EditorToolbar.tsx` deleted (`git rm`, no other consumers). Verified via Playwright/Chromium against the real dev app: computed `border-width` on `.sb-editor .ProseMirror` is `0px`, no `[role=toolbar][aria-label=Formação]` renders before a selection exists, selecting text reveals `.sb-bubble-menu`, clicking its Bold button and pressing Cmd/Ctrl+I both toggle marks correctly, and the `# `/`- `/`**bold**` input rules all fire (each extension — Heading/Bold/List — ships its own `addInputRules()` independent of StarterKit, so no gaps existed to fill). Table hover controls (TASK-100) sanity-checked with zero regression. Zero console/page errors."
   ],
-  "passes": false
+  "passes": true
 }

@@ -711,7 +711,7 @@
     "title": "Remove bordered/toolbar editor chrome in favor of a borderless content area with a selection-based floating format menu",
     "category": "ui-ux",
     "specFilePath": ".prd/tasks/TASK-102.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-103",
