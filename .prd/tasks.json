@@ -697,7 +697,7 @@
     "title": "Replace toolbar table controls with hover-based column/row controls, resize, and header-row toggle",
     "category": "ui-ux",
     "specFilePath": ".prd/tasks/TASK-100.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-101",

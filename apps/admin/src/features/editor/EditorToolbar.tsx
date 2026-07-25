@@ -37,9 +37,12 @@ function ToolbarButton({
  * Divisão de responsabilidades após a TASK-88: **inserir** blocos novos é papel
  * do controle inline "+" por bloco (`BlockHandles`) — caminho único de inserção.
  * Esta toolbar guarda só o que age sobre a **linha atual**: marcas (negrito/
- * itálico), toggles de tipo de bloco (títulos, listas, código) e os controles
- * contextuais de tabela (linhas/colunas). Os botões de inserir tabela/callout/
- * dos-donts/embed foram removidos daqui para não haver dois caminhos de inserção.
+ * itálico) e toggles de tipo de bloco (títulos, listas, código). Os botões de
+ * inserir tabela/callout/dos-donts/embed foram removidos daqui para não haver
+ * dois caminhos de inserção. O grupo contextual de linhas/colunas de tabela
+ * (TASK-79) foi substituído por controles de hover diretamente sobre a tabela
+ * (TASK-100, `TableControls.tsx`), já que agir sobre uma posição arbitrária de
+ * linha/coluna exige contexto visual que a toolbar fixa não dava.
  *
  * Os estados ativos vêm de useEditorState — no Tiptap v3 o useEditor não
  * re-renderiza a cada transação por padrão.
@@ -57,7 +60,6 @@ export function EditorToolbar({ editor }: { editor: Editor | null }) {
         bulletList: e.isActive('bulletList'),
         orderedList: e.isActive('orderedList'),
         codeBlock: e.isActive('codeBlock'),
-        inTable: e.isActive('table'),
       },
   });
 
@@ -115,26 +117,6 @@ export function EditorToolbar({ editor }: { editor: Editor | null }) {
         active={state.codeBlock}
         onClick={() => chain().toggleCodeBlock().run()}
       />
-      {state.inTable && (
-        <span role="group" aria-label="Tabela" className="flex gap-1.5 border-l pl-2">
-          <ToolbarButton
-            label="+Linha"
-            title="Adicionar linha abaixo"
-            onClick={() => chain().addRowAfter().run()}
-          />
-          <ToolbarButton label="−Linha" title="Remover linha" onClick={() => chain().deleteRow().run()} />
-          <ToolbarButton
-            label="+Coluna"
-            title="Adicionar coluna à direita"
-            onClick={() => chain().addColumnAfter().run()}
-          />
-          <ToolbarButton
-            label="−Coluna"
-            title="Remover coluna"
-            onClick={() => chain().deleteColumn().run()}
-          />
-        </span>
-      )}
     </div>
   );
 }

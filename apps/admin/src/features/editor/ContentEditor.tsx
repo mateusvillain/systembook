@@ -6,6 +6,7 @@ import { useTRPC } from '../../lib/trpc.js';
 import { editorExtensions as extensions } from './extensions.js';
 import { EditorToolbar } from './EditorToolbar.js';
 import { BlockHandles } from './BlockHandles.js';
+import { TableControls } from './TableControls.js';
 import { EditorEmptyState } from './EditorEmptyState.js';
 import './editor.css';
 
@@ -168,6 +169,7 @@ const EditorInner = forwardRef<ContentEditorHandle, { tabId: string; initialDoc:
         </div>
         <div ref={canvasRef} className="sb-editor-canvas relative">
           {editor && <BlockHandles editor={editor} canvasRef={canvasRef} />}
+          {editor && <TableControls editor={editor} canvasRef={canvasRef} />}
           <EditorContent editor={editor} />
           {editor && isEmpty && <EditorEmptyState editor={editor} />}
         </div>
