@@ -760,7 +760,7 @@
     "title": "Add 'Copiar link' and 'Mover para outro menu' actions to the page/menu three-dot dropdown",
     "category": "functional",
     "specFilePath": ".prd/tasks/TASK-109.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-110",
