@@ -1,0 +1,47 @@
+{
+  "id": "TASK-101",
+  "title": "Restrict table/callout nesting: no tables inside tables or callouts, no callouts inside tables",
+  "category": "functional",
+  "description": "Address items 6 and 9 of `novas-tasks.md`: today nothing in the Tiptap schema prevents nesting. `Callout.tsx` (`apps/admin/src/features/editor/nodes/Callout.tsx`) is defined with `content: 'block+'`, which allows any block node — including `table` — inside a callout. Likewise, the default Tiptap `TableCell`/`TableHeader` content schema (`'block+'`, unconfigured in `extensions.ts`) allows a `table` node inside a table cell (nested tables) and allows a `callout` node inside a table cell. Restrict both: `callout` content must exclude `table`, and table cell content must exclude both `table` and `callout`. Update the insertion UI (`BlockHandles.tsx` dropdown, `blockInsert.ts` registry consumers, and the upcoming slash menu from TASK-104) so 'Table' and 'Alerta informativo/de aviso/de dica' options are hidden/disabled when the cursor is inside a table cell or inside a callout, respectively, rather than only relying on the schema to silently reject the insertion.",
+  "acceptanceCriteria": [
+    "Inserting a table while the cursor is inside a callout is not possible (no dropdown option and no schema path succeeds)",
+    "Inserting a callout while the cursor is inside a table cell is not possible",
+    "Inserting a table while the cursor is inside a table cell (nested table) is not possible",
+    "Existing valid nesting (e.g. lists, headings, code blocks inside callouts; text/lists inside table cells) continues to work unaffected",
+    "The contextual insertion dropdown reflects these restrictions by omitting/disabling the relevant options rather than failing silently after selection"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Restrict callout content schema",
+      "details": "In `Callout.tsx`, change `content: 'block+'` to a content expression that excludes `table` (e.g. a custom group excluding the table node), keeping other block types allowed.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Restrict table cell content schema",
+      "details": "In `extensions.ts`, configure `TableCell`/`TableHeader` content to exclude `table` and `callout` nodes.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Context-aware insertion menu",
+      "details": "In `BlockHandles.tsx` (and `blockInsert.ts` consumers), detect the current node context (`editor.isActive('callout')`, inside a table cell via `editor.isActive('tableCell')`/`'tableHeader'`) and hide/disable 'Tabela' inside callouts/tables and 'Alerta...' inside tables accordingly.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Verify in browser",
+      "details": "Attempt each forbidden nesting via the insertion UI and confirm it's unavailable; confirm allowed nesting (lists/headings in callouts, text in table cells) still works; run editor test suite if one exists.",
+      "pass": false
+    }
+  ],
+  "dependencies": [],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "Addresses items 6 and 9 of `novas-tasks.md`.",
+    "`DosDonts.tsx` (`apps/admin/src/features/editor/nodes/DosDonts.tsx`) has the same unrestricted `content: 'block+'` pattern as `Callout.tsx` — out of scope for this task since it wasn't named in the feedback, but worth a quick look for schema consistency.",
+    "TASK-104 (slash command menu) depends on this task so the new suggestion-based insertion UI is built with the same context-awareness from the start, instead of retrofitting it later."
+  ],
+  "passes": false
+}

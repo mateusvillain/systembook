@@ -1,0 +1,41 @@
+{
+  "id": "TASK-104",
+  "title": "Simplify the editor empty state to a plain hint, dropping the icon/card treatment",
+  "category": "ui-ux",
+  "description": "Address item 4 of `novas-tasks.md` (`referencia-5.png`): replace `EditorEmptyState.tsx`'s current card-style empty state (`FilePlus2` icon, 'Página em branco' title, description, and an 'Adicionar conteúdo' button that opens the `BLOCK_GROUPS` dropdown) with a single, unobtrusive line of muted placeholder text telling the user to start typing and that markdown works — matching the plain 'Type something or type / for commands' style shown in `referencia-5.png`. No icon, no card/border, no button.",
+  "acceptanceCriteria": [
+    "`EditorEmptyState.tsx` no longer renders the `EmptyState` icon/card/button treatment",
+    "An empty page shows a single muted line of placeholder-style text prompting the user to start typing and mentioning markdown support (and, once TASK-104 lands, that '/' opens the block menu)",
+    "The placeholder disappears as soon as the user starts typing, same as before",
+    "No dead imports remain (`EmptyState` wrapper usage, `FilePlus2` icon) if fully unused after this change"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Replace empty state markup",
+      "details": "In `EditorEmptyState.tsx`, remove the icon/card/button and render simple muted placeholder text instead, styled consistently with the rest of the editor typography.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Clean up unused imports",
+      "details": "Remove now-unused imports (`EmptyState` wrapper, `FilePlus2`, `BLOCK_GROUPS` dropdown trigger) if nothing else in the file references them.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Verify in browser",
+      "details": "Open a blank page, confirm the simplified placeholder renders and disappears on typing, and that visual style matches `referencia-5.png`.",
+      "pass": false
+    }
+  ],
+  "dependencies": [
+    "TASK-102"
+  ],
+  "estimatedComplexity": "low",
+  "technicalNotes": [
+    "Addresses item 4 of `novas-tasks.md`.",
+    "Depends on TASK-103 so the placeholder copy and surrounding chrome are consistent with the borderless, toolbar-free content area landed there."
+  ],
+  "passes": false
+}

@@ -1,0 +1,47 @@
+{
+  "id": "TASK-107",
+  "title": "Replace content block move-up/move-down actions with drag-and-drop reordering",
+  "category": "ui-ux",
+  "description": "Address item 3 of `novas-tasks.md`: today, reordering content blocks in the editor works only via 'Mover para cima'/'Mover para baixo' items in `BlockHandles.tsx`'s per-block dropdown (a delete+reinsert transaction, `moveBlock(editor, pos, dir)`). No drag-and-drop exists anywhere in the admin app (confirmed: no dnd/sortable dependency installed). Add a drag-and-drop library (e.g. `@dnd-kit/core` — evaluate compatibility with Tiptap's ProseMirror-based block structure; Tiptap's own `NodeView` drag handles or a dedicated `@tiptap/extension-drag-handle`-style approach are also acceptable) and make each block draggable via its existing grip icon (`GripVertical` in `BlockHandles.tsx`, already `cursor-grab` styled but currently just a dropdown trigger). Remove the 'Mover para cima'/'Mover para baixo' dropdown items once drag works.",
+  "acceptanceCriteria": [
+    "Each content block can be reordered by dragging its grip handle to a new position, with a visible drop indicator",
+    "'Mover para cima'/'Mover para baixo' items are removed from `BlockHandles.tsx`'s dropdown; 'Duplicar bloco' and 'Excluir bloco' remain",
+    "Reordering via drag persists correctly in the underlying Tiptap/ProseMirror document (autosave picks it up like any other edit)",
+    "Dragging works with mouse; keyboard-accessible fallback (e.g. arrow-key reorder while a block is focused) is documented as a known gap if not implemented, but must not silently disappear without an alternative",
+    "No regression to existing block actions (duplicate, delete) or to the block-insertion '+' control"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Choose and add a DnD approach",
+      "details": "Evaluate `@dnd-kit/core` (or an equivalent) against Tiptap/ProseMirror's block model; add the dependency and a minimal reorder proof-of-concept in `ContentEditor.tsx`.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Wire drag handles to blocks",
+      "details": "Make the existing `GripVertical` handle in `BlockHandles.tsx` a real drag source; implement the drop logic to move the corresponding ProseMirror node to the new position (transaction-based, similar in spirit to the existing `moveBlock` helper but driven by drop position instead of a fixed direction).",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Remove move up/down items",
+      "details": "Delete 'Mover para cima'/'Mover para baixo' `DropdownMenuItem`s from `BlockHandles.tsx` now that drag covers the same capability.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Verify in browser",
+      "details": "Drag several blocks (paragraphs, headings, a table, a callout) into new positions, confirm content and autosave are correct after reload, and confirm duplicate/delete still work.",
+      "pass": false
+    }
+  ],
+  "dependencies": [],
+  "estimatedComplexity": "high",
+  "technicalNotes": [
+    "Addresses item 3 of `novas-tasks.md`.",
+    "This introduces the admin app's first drag-and-drop dependency — TASK-109 (nav tree reordering) should reuse whatever library is chosen here rather than adding a second one.",
+    "`BlockHandles.tsx`'s `moveBlock(editor, pos, dir)` (delete+reinsert transaction) is the current reference implementation for programmatic block moves and can likely be adapted to take an arbitrary target position instead of a fixed direction."
+  ],
+  "passes": false
+}

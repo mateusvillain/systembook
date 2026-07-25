@@ -1,0 +1,56 @@
+{
+  "id": "TASK-102",
+  "title": "Remove bordered/toolbar editor chrome in favor of a borderless content area with a selection-based floating format menu",
+  "category": "ui-ux",
+  "description": "Address item 2 of `novas-tasks.md` (`referencia.png`, `referencia-4.png`): the editable content area currently has a visible border (`.sb-editor .ProseMirror { border: 1px solid #ddd; border-radius: 6px; }` in `editor.css`, darkening to `#888` on focus) and a permanently visible `EditorToolbar.tsx` with Bold/Italic/H1/H2/H3/list/code buttons above the content. Remove the border entirely so the content area reads as plain page content (matching `referencia.png`'s borderless Zeroheight layout). Remove the fixed toolbar. Formatting becomes available exclusively via: (a) keyboard shortcuts (Cmd+B, Cmd+I, etc. — StarterKit already binds these, just no longer needs a visible button), (b) markdown input rules (e.g. `**bold**`, `# heading`, already partly supported by StarterKit's input rules — verify/extend coverage), and (c) a new Tiptap `BubbleMenu` that appears above the current text selection with style controls (Bold, Italic, Underline, headings, lists, code, link) matching the floating toolbar shown in `referencia-4.png`.",
+  "acceptanceCriteria": [
+    "`.sb-editor .ProseMirror` no longer renders a visible border or focus border-color change",
+    "`EditorToolbar.tsx`'s fixed, always-visible toolbar is removed from `ContentEditor.tsx`",
+    "Selecting text reveals a floating `BubbleMenu` positioned above the selection with Bold/Italic/Underline/heading-level/list/code/link controls, styled per the editorial design system",
+    "Keyboard shortcuts (Cmd/Ctrl+B, +I, etc.) continue to work for all formatting previously exposed by toolbar buttons",
+    "Markdown-style input rules (e.g. `# ` for H1, `**text**` for bold) work for the formatting options that had toolbar buttons",
+    "No functionality is lost: every action previously reachable via the fixed toolbar remains reachable via shortcut, markdown, or the bubble menu"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Remove border styling",
+      "details": "In `editor.css`, remove the `border`/`border-radius`/focus `border-color` rules from `.sb-editor .ProseMirror`, keeping padding/min-height.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Add BubbleMenu extension",
+      "details": "Add Tiptap's `BubbleMenu` (or `@tiptap/extension-bubble-menu`) to `extensions.ts`/`ContentEditor.tsx`, building a new floating menu component with the formatting controls previously in `EditorToolbar.tsx`.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Verify/extend markdown input rules",
+      "details": "Confirm StarterKit's default input rules cover heading (`#`/`##`/`###`), bold (`**`), italic (`_`), lists (`-`/`1.`), and code (`` ` ``); add custom input rules for any gaps.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Remove fixed toolbar",
+      "details": "Delete `EditorToolbar.tsx`'s rendering from `ContentEditor.tsx` (file removal or emptying, depending on whether any piece is still needed elsewhere).",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Verify in browser",
+      "details": "Confirm borderless content area, bubble menu appears on selection and applies formatting, shortcuts and markdown rules work, and no regressions in table editing (hover controls from TASK-101 must already be in place).",
+      "pass": false
+    }
+  ],
+  "dependencies": [
+    "TASK-100"
+  ],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "Addresses item 2 of `novas-tasks.md`.",
+    "Depends on TASK-101 because the toolbar's contextual table row/column buttons must already be replaced by hover controls before the toolbar itself is removed.",
+    "Reference `referencia-4.png` for the exact floating menu composition: 'Improve with AI' + B/I/U/superscript/code/quote/H2/H3/H4/bullet/ordered/checklist/link — adapt to SystemBook's actual supported marks/nodes, dropping anything not implemented (e.g. no AI features exist in this product)."
+  ],
+  "passes": false
+}

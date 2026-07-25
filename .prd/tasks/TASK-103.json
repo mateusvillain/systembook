@@ -1,0 +1,51 @@
+{
+  "id": "TASK-103",
+  "title": "Add filterable '/' slash-command menu for block insertion, with block names in English",
+  "category": "ui-ux",
+  "description": "Address item 7 of `novas-tasks.md`: typing '/' at the start of a line (or anywhere in an empty block) should open the same block-insertion palette already used by `BlockHandles.tsx`'s '+' control and `EditorEmptyState.tsx` (sourced from the `BLOCK_GROUPS` registry in `blockInsert.ts`), but as a Tiptap `Suggestion`-based menu anchored to the cursor, filterable by continuing to type after '/' (e.g. typing '/table' narrows the list to the Table option). Rename every block name in `BLOCK_GROUPS` from Portuguese to English (e.g. 'Parágrafo' → 'Paragraph', 'Bloco de código' → 'Code block', 'Título 1/2/3' → 'Heading 1/2/3', 'Lista com marcadores' → 'Bulleted list', 'Lista numerada' → 'Numbered list', 'Tabela' → 'Table', 'Alerta informativo/de aviso/de dica' → 'Info/Warning/Tip callout', 'Bloco Do (recomendado)'/'Bloco Don't (evitar)' → 'Do block'/'Don't block', 'Embed de componente' → 'Component embed') — this is scoped narrowly to this registry, independent of the broader product-wide translation in TASK-111.",
+  "acceptanceCriteria": [
+    "Typing '/' opens a dropdown menu anchored below the cursor, sourced from `BLOCK_GROUPS`",
+    "Continuing to type after '/' filters the visible options by name (case-insensitive substring match), e.g. '/table' shows only 'Table'",
+    "Arrow keys navigate the filtered list and Enter/click inserts the selected block, removing the typed '/query' text",
+    "Escape or clicking away closes the menu without inserting anything",
+    "All block names in `BLOCK_GROUPS` (and therefore in `BlockHandles.tsx`'s dropdown and `EditorEmptyState.tsx`'s picker) are in English",
+    "The menu respects the nesting restrictions from TASK-102 (e.g. no 'Table' option while inside a callout)"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Translate BLOCK_GROUPS to English",
+      "details": "Rename all block labels/group headings in `apps/admin/src/features/editor/blockInsert.ts` from Portuguese to English, per the mapping in the description.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Build the slash suggestion extension",
+      "details": "Add a Tiptap `Suggestion` utility configured for the '/' trigger character, rendering a new dropdown component sourced from `BLOCK_GROUPS`, with typed-text filtering and keyboard navigation.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Wire nesting-aware filtering",
+      "details": "Reuse the context-detection logic added in TASK-102 (inside callout / inside table cell) to filter the slash menu's available options the same way `BlockHandles.tsx`'s dropdown does.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Verify in browser",
+      "details": "Type '/' at various cursor positions (empty line, inside callout, inside table cell), type partial names to filter, navigate with arrows, insert with Enter, and confirm Escape/click-away cancels cleanly.",
+      "pass": false
+    }
+  ],
+  "dependencies": [
+    "TASK-101"
+  ],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "Addresses item 7 of `novas-tasks.md`.",
+    "No `Suggestion`/slash-command implementation exists yet — this is new, not a refactor of existing code.",
+    "`blockInsert.ts` is the single source of truth already consumed by both `BlockHandles.tsx` and `EditorEmptyState.tsx`; translating it here automatically updates those surfaces too.",
+    "Depends on TASK-102 so nesting-restriction context detection is reused rather than duplicated."
+  ],
+  "passes": false
+}
