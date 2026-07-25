@@ -732,7 +732,7 @@
     "title": "Add manageable status tags (data model, CRUD API, and a management page in the user menu)",
     "category": "functional",
     "specFilePath": ".prd/tasks/TASK-105.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-106",

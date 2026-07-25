@@ -7,6 +7,7 @@ import { runMigrations } from './db/migrate.js';
 import { ensureLandingPage } from './db/landing.js';
 import { backfillMenuSlugs, ensureDefaultMenu } from './db/menus.js';
 import { backfillSectionSlugs } from './db/sections.js';
+import { ensureDefaultStatusTags } from './db/statusTags.js';
 import { seedBootstrapAdmin } from './db/seed.js';
 import { appRouter } from './trpc/router.js';
 import { createContext } from './trpc/context.js';
@@ -29,6 +30,8 @@ backfillMenuSlugs(db);
 // Preenche o slug de sections legadas (pré-migration 0008, TASK-52); idempotente.
 backfillSectionSlugs(db);
 ensureLandingPage(db);
+// Semeia as quatro tags de status padrão (TASK-105); idempotente por id.
+ensureDefaultStatusTags(db);
 await seedBootstrapAdmin(db);
 
 const adminDist = resolveAdminDist();

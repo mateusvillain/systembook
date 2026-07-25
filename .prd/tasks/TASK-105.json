@@ -16,31 +16,31 @@
       "step": 1,
       "description": "Schema migration",
       "details": "Add `status_tags` table and nullable `pages.statusTagId` FK (`ON DELETE SET NULL`) to `apps/server/src/db/schema.ts`; run `db:generate`; seed the four defaults (idempotently, following the existing `db:seed` pattern).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "tRPC CRUD router",
       "details": "New router (e.g. `statusTags.ts`) with `list`/`create`/`update`/`delete`/`reorder` procedures using `protectedProcedure`, following the existing sections/pages router conventions (UNIQUE violations → CONFLICT, etc.).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Management page UI",
       "details": "New admin route/page listing status tags with inline rename, delete (with confirm), and reorder controls, matching the editorial design system used elsewhere in the panel.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Link from user menu",
       "details": "Add a new item to `UserMenu`'s dropdown in `AppHeader.tsx` pointing to the new management page.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 5,
       "description": "Verify in browser",
       "details": "Create, rename, reorder, and delete a status tag; confirm defaults are seeded on a fresh database; confirm the management page is reachable from the user menu.",
-      "pass": false
+      "pass": true
     }
   ],
   "dependencies": [],
@@ -48,7 +48,10 @@
   "technicalNotes": [
     "Addresses the backend/management half of item 5 of `novas-tasks.md`; per-page tag selection UI (replacing the 'Rascunho' pill) is TASK-107.",
     "User confirmed status tags should fully replace the auto-computed 'Publicado'/'Rascunho' pill currently in `SectionHeader.tsx`'s inline `StatusTag` function — TASK-107 removes that computed pill.",
-    "Domain naming stays Portuguese for DB fields (`titulo`, `ordem`) per `CLAUDE.md` convention; only user-facing status tag *values* (To do, In progress, Deprecated, Beta) are in English, since the feedback specified them that way explicitly."
+    "Domain naming stays Portuguese for DB fields (`titulo`, `ordem`) per `CLAUDE.md` convention; only user-facing status tag *values* (To do, In progress, Deprecated, Beta) are in English, since the feedback specified them that way explicitly.",
+    "TASK note correction: the spec's technicalNotes said 'per-page tag selection UI ... is TASK-107' and 'TASK-107 removes that computed pill' — that is a typo. Per the backlog mapping in `.prd/memory.md`, the per-page selector replacing the 'Rascunho'/'Publicado' pill is **TASK-106**; TASK-107 was the (already-merged) content-block drag-and-drop task. So the `SectionHeader` pill removal is TASK-106's scope, done next in this same branch.",
+    "Implementation: new `status_tags` table (`id`/`titulo`/`cor` hex/`ordem`) + nullable `pages.status_tag_id` FK in `schema.ts`; migration 0014. **Drizzle-kit gotcha (hand-edit required, documented):** `db:generate` emitted the `ALTER TABLE pages ADD status_tag_id ... REFERENCES status_tags(id)` **without** the `ON DELETE SET NULL` action (a known drizzle-kit limitation for SQLite ADD COLUMN — it drops FK actions in the ADD COLUMN form even though the meta snapshot records `onDelete: 'set null'` correctly). Verified empirically with better-sqlite3 (foreign_keys=ON): the as-generated SQL makes deleting a referenced tag **fail** with 'FOREIGN KEY constraint failed', violating the acceptance criterion; adding `ON DELETE SET NULL` makes the delete succeed and null the page's FK. So I hand-edited that one line to append `ON DELETE SET NULL` — this makes the migration MATCH schema.ts + the meta snapshot (fixes drift rather than causing it), and a future `db:generate` sees no diff. Defaults seeded idempotently via `ensureDefaultStatusTags` (fixed sentinel ids like `__sb_status_todo__` + `onConflictDoNothing`, same pattern as `ensureDefaultMenu`/`ensureLandingPage`), wired into the boot sequence in `index.ts` after `ensureLandingPage`. New `statusTags` tRPC router (`list`/`create`/`update`/`reorder`/`delete`, all `protectedProcedure` so admin+editor manage) following sections/menus conventions (incremental `ordem`, `assertCompleteReorder`, NOT_FOUND on missing id, hex-color zod validation). New admin page at `/admin/settings/status-tags` (`StatusTagsPage` → `StatusTags` feature) with create form (color picker + title), inline rename, native color-input recolor, up/down reorder via the shared `RowActionsMenu`, and delete-with-confirm — same editorial layout as `UploadTokens`. New reusable `StatusTagPill` component (luminance-based black/white text over the arbitrary hex bg) that TASK-106 will reuse in `SectionHeader`. User-menu link added to `UserMenu` in `AppHeader.tsx` alongside 'Página inicial' (available to both roles, not admin-gated, since editors manage tags too).",
+    "Verified: 8 new unit tests in `statusTags.test.ts` (seed idempotency + doesn't overwrite user edits, CRUD, hex/empty-update validation, complete-reorder enforcement, **ON DELETE SET NULL end-to-end** — create page with tag, delete tag, assert page.statusTagId becomes null, UNAUTHORIZED for anon) + a permissions.test.ts case locking editor-can-CRUD-status-tags; full server suite 174 passing. Browser-verified via Playwright against the real dev app: link reachable from the user menu, four defaults seeded on the (migrated) dev DB, and create → rename → reorder(move up) → delete all persist correctly with zero console errors. (Test-selector gotcha noted for future runs: `button:has-text(\"Adicionar\")` / `getByRole('button', {name:'Adicionar'})` collides with the sidebar's 'Adicionar página' / header 'Adicionar menu' — scope to the page's form or use `{exact:true}` on the submit button.)"
   ],
-  "passes": false
+  "passes": true
 }
