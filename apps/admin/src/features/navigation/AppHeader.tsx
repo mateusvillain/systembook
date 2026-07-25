@@ -13,6 +13,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { RowActionsMenu } from '@/components/RowActionsMenu';
+import { DragHandle, useDragReorder, type DragHandleProps, type DragRowProps } from './dragReorder.js';
+import { CopyLinkItem } from './RowActionItems.js';
 import { createLinkClass } from '@/lib/styles';
 import { cn } from '@/lib/utils';
 
@@ -104,12 +106,11 @@ function MenuNav({
 
   const menuList = menusQuery.data ?? [];
 
-  function move(index: number, delta: -1 | 1) {
-    const ids = menuList.map((m) => m.id);
-    const [id] = ids.splice(index, 1);
-    ids.splice(index + delta, 0, id!);
-    reorder.mutate({ orderedIds: ids });
-  }
+  const dnd = useDragReorder({
+    items: menuList,
+    onReorder: (orderedIds) => reorder.mutate({ orderedIds }),
+    orientation: 'horizontal',
+  });
 
   return (
     <nav aria-label="Menus" className={cn('min-w-0 flex-1 items-center gap-1', className)}>
@@ -119,6 +120,8 @@ function MenuNav({
           menu={menu}
           active={menu.id === activeMenuId}
           onSelect={() => onSelectMenu(menu.id)}
+          dragRow={dnd.getRowProps(menu.id)}
+          dragHandle={dnd.getHandleProps(menu.id, i)}
           onRename={(titulo) => rename.mutate({ id: menu.id, titulo })}
           onDelete={() => {
             if (
@@ -129,8 +132,6 @@ function MenuNav({
               remove.mutate({ id: menu.id });
             }
           }}
-          onMoveUp={i > 0 ? () => move(i, -1) : undefined}
-          onMoveDown={i < menuList.length - 1 ? () => move(i, 1) : undefined}
         />
       ))}
       <AddMenu onCreate={(titulo) => create.mutateAsync({ titulo })} />
@@ -144,19 +145,22 @@ function MenuNavItem({
   onSelect,
   onRename,
   onDelete,
-  onMoveUp,
-  onMoveDown,
+  dragRow,
+  dragHandle,
 }: {
   menu: MenuRow;
   active: boolean;
   onSelect: () => void;
   onRename: (titulo: string) => void;
   onDelete: () => void;
-  onMoveUp?: () => void;
-  onMoveDown?: () => void;
+  dragRow: DragRowProps;
+  dragHandle: DragHandleProps;
 }) {
+  const trpc = useTRPC();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(menu.titulo);
+  // Path público do menu (1ª seção/1ª página) para o "Copiar link" (TASK-109).
+  const pathQuery = useQuery(trpc.menus.firstPagePath.queryOptions({ menuId: menu.id }));
 
   if (editing) {
     return (
@@ -191,7 +195,12 @@ function MenuNavItem({
   }
 
   return (
-    <div className="group flex shrink-0 items-center">
+    <div {...dragRow} className="group flex shrink-0 items-center">
+      <DragHandle
+        {...dragHandle}
+        label={`Reordenar o menu ${menu.titulo}`}
+        className="-mr-1 size-5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+      />
       <button
         type="button"
         onClick={onSelect}
@@ -210,8 +219,13 @@ function MenuNavItem({
           setEditing(true);
         }}
         onDelete={onDelete}
-        onMovePrev={onMoveUp}
-        onMoveNext={onMoveDown}
+        extraItems={
+          <CopyLinkItem
+            sectionSlug={pathQuery.data?.sectionSlug}
+            pageSlug={pathQuery.data?.pageSlug}
+            disabledReason="Este menu ainda não tem páginas"
+          />
+        }
         triggerClassName="-ml-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
       />
     </div>

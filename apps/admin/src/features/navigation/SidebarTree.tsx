@@ -5,6 +5,8 @@ import { NavLink } from 'react-router-dom';
 import { Check, ChevronDown, Plus, X } from 'lucide-react';
 import { queryClient, useTRPC } from '../../lib/trpc.js';
 import { RowActionsMenu } from '@/components/RowActionsMenu';
+import { DragHandle, useDragReorder, type DragHandleProps, type DragRowProps } from './dragReorder.js';
+import { CopyLinkItem, MoveToMenuSub, invalidateNavAfterMove } from './RowActionItems.js';
 import { createLinkClass } from '@/lib/styles';
 import { cn } from '@/lib/utils';
 
@@ -55,13 +57,10 @@ export function SidebarTree({
 
   const sections = sectionsQuery.data ?? [];
 
-  function move(index: number, delta: -1 | 1) {
-    if (!activeMenuId) return;
-    const ids = sections.map((s) => s.id);
-    const [id] = ids.splice(index, 1);
-    ids.splice(index + delta, 0, id!);
-    reorder.mutate({ menuId: activeMenuId, orderedIds: ids });
-  }
+  const dnd = useDragReorder({
+    items: sections,
+    onReorder: (orderedIds) => activeMenuId && reorder.mutate({ menuId: activeMenuId, orderedIds }),
+  });
 
   if (!activeMenuId) {
     // O header ainda está resolvendo qual menu está ativo (menus.list).
@@ -79,6 +78,8 @@ export function SidebarTree({
         <SectionGroup
           key={section.id}
           section={section}
+          dragRow={dnd.getRowProps(section.id)}
+          dragHandle={dnd.getHandleProps(section.id, i)}
           onRename={(titulo) => rename.mutate({ id: section.id, titulo })}
           onDelete={() => {
             if (
@@ -89,8 +90,6 @@ export function SidebarTree({
               remove.mutate({ id: section.id });
             }
           }}
-          onMoveUp={i > 0 ? () => move(i, -1) : undefined}
-          onMoveDown={i < sections.length - 1 ? () => move(i, 1) : undefined}
         />
       ))}
       <InlineCreate
@@ -105,6 +104,8 @@ export function SidebarTree({
 interface NodeShape {
   id: string;
   titulo: string;
+  // slug: sections é nullable no DB; pages é notNull. Usado no "Copiar link".
+  slug?: string | null;
 }
 
 /**
@@ -115,14 +116,14 @@ function SectionGroup({
   section,
   onRename,
   onDelete,
-  onMoveUp,
-  onMoveDown,
+  dragRow,
+  dragHandle,
 }: {
   section: NodeShape;
   onRename: (titulo: string) => void;
   onDelete: () => void;
-  onMoveUp?: () => void;
-  onMoveDown?: () => void;
+  dragRow: DragRowProps;
+  dragHandle: DragHandleProps;
 }) {
   const [expanded, setExpanded] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -143,10 +144,15 @@ function SectionGroup({
           onCancel={() => setEditing(false)}
         />
       ) : (
-        <div className="group/section flex items-center gap-1 pr-1">
+        <div {...dragRow} className="group/section flex items-center gap-1 pr-1">
+          <DragHandle
+            {...dragHandle}
+            label={`Reordenar a seção ${section.titulo}`}
+            className="-ml-1 opacity-0 group-hover/section:opacity-100 group-focus-within/section:opacity-100"
+          />
           <button
             type="button"
-            className="text-muted-foreground hover:text-foreground -ml-1 flex min-h-11 min-w-0 flex-1 items-center gap-1 rounded-editorial-sm px-1 py-0.5 text-left text-xs font-semibold uppercase tracking-[0.1em] transition-colors md:min-h-0"
+            className="text-muted-foreground hover:text-foreground flex min-h-11 min-w-0 flex-1 items-center gap-1 rounded-editorial-sm px-1 py-0.5 text-left text-xs font-semibold uppercase tracking-[0.1em] transition-colors md:min-h-0"
             aria-expanded={expanded}
             aria-label={`${expanded ? 'Recolher' : 'Expandir'} seção ${section.titulo}`}
             onClick={() => setExpanded((v) => !v)}
@@ -163,18 +169,16 @@ function SectionGroup({
               setEditing(true);
             }}
             onDelete={onDelete}
-            onMovePrev={onMoveUp}
-            onMoveNext={onMoveDown}
             triggerClassName="opacity-0 group-hover/section:opacity-100 group-focus-within/section:opacity-100"
           />
         </div>
       )}
-      {expanded && <PagesList sectionId={section.id} />}
+      {expanded && <PagesList sectionId={section.id} sectionSlug={section.slug} />}
     </div>
   );
 }
 
-function PagesList({ sectionId }: { sectionId: string }) {
+function PagesList({ sectionId, sectionSlug }: { sectionId: string; sectionSlug?: string | null }) {
   const trpc = useTRPC();
   const pagesQuery = useQuery(trpc.pages.listBySection.queryOptions({ sectionId }));
   const invalidate = () =>
@@ -187,12 +191,10 @@ function PagesList({ sectionId }: { sectionId: string }) {
 
   const pages = pagesQuery.data ?? [];
 
-  function move(index: number, delta: -1 | 1) {
-    const ids = pages.map((p) => p.id);
-    const [id] = ids.splice(index, 1);
-    ids.splice(index + delta, 0, id!);
-    reorder.mutate({ sectionId, orderedIds: ids });
-  }
+  const dnd = useDragReorder({
+    items: pages,
+    onReorder: (orderedIds) => reorder.mutate({ sectionId, orderedIds }),
+  });
 
   return (
     <div className="grid gap-0.5 pl-2">
@@ -201,14 +203,16 @@ function PagesList({ sectionId }: { sectionId: string }) {
         <PageRow
           key={page.id}
           page={page}
+          sectionId={sectionId}
+          sectionSlug={sectionSlug}
+          dragRow={dnd.getRowProps(page.id)}
+          dragHandle={dnd.getHandleProps(page.id, i)}
           onRename={(titulo) => rename.mutate({ id: page.id, titulo })}
           onDelete={() => {
             if (window.confirm(`Excluir a página "${page.titulo}" e todo o seu conteúdo?`)) {
               remove.mutate({ id: page.id });
             }
           }}
-          onMoveUp={i > 0 ? () => move(i, -1) : undefined}
-          onMoveDown={i < pages.length - 1 ? () => move(i, 1) : undefined}
         />
       ))}
       <CreatePageForm onCreate={(titulo, slug) => create.mutateAsync({ sectionId, titulo, slug })} />
@@ -219,17 +223,22 @@ function PagesList({ sectionId }: { sectionId: string }) {
 /** Página: link de navegação (sem chevron de tabs — TASK-86). Selecionada = fundo sutil. */
 function PageRow({
   page,
+  sectionId,
+  sectionSlug,
   onRename,
   onDelete,
-  onMoveUp,
-  onMoveDown,
+  dragRow,
+  dragHandle,
 }: {
   page: NodeShape;
+  sectionId: string;
+  sectionSlug?: string | null;
   onRename: (titulo: string) => void;
   onDelete: () => void;
-  onMoveUp?: () => void;
-  onMoveDown?: () => void;
+  dragRow: DragRowProps;
+  dragHandle: DragHandleProps;
 }) {
+  const trpc = useTRPC();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(page.titulo);
   const onNavigate = useContext(OnNavigateContext);
@@ -251,7 +260,12 @@ function PageRow({
   }
 
   return (
-    <div className="group/page flex items-center gap-1">
+    <div {...dragRow} className="group/page flex items-center gap-1">
+      <DragHandle
+        {...dragHandle}
+        label={`Reordenar a página ${page.titulo}`}
+        className="opacity-0 group-hover/page:opacity-100 group-focus-within/page:opacity-100"
+      />
       <NavLink
         to={`/pages/${page.id}`}
         end
@@ -275,8 +289,20 @@ function PageRow({
           setEditing(true);
         }}
         onDelete={onDelete}
-        onMovePrev={onMoveUp}
-        onMoveNext={onMoveDown}
+        extraItems={
+          <>
+            <CopyLinkItem
+              sectionSlug={sectionSlug}
+              pageSlug={page.slug}
+              disabledReason="Esta página ainda não tem slug"
+            />
+            <MoveToMenuSub
+              pageId={page.id}
+              currentSectionId={sectionId}
+              onMoved={() => invalidateNavAfterMove(trpc)}
+            />
+          </>
+        }
         triggerClassName="opacity-0 group-hover/page:opacity-100 group-focus-within/page:opacity-100"
       />
     </div>

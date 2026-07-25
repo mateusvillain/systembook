@@ -753,14 +753,14 @@
     "title": "Replace move-up/down reordering with drag-and-drop for header menus and section/page navigation tree, with hover-only drag handle",
     "category": "ui-ux",
     "specFilePath": ".prd/tasks/TASK-108.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-109",
     "title": "Add 'Copiar link' and 'Mover para outro menu' actions to the page/menu three-dot dropdown",
     "category": "functional",
     "specFilePath": ".prd/tasks/TASK-109.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-110",
