@@ -739,7 +739,7 @@
     "title": "Replace the auto-computed 'Rascunho'/'Publicado' pill with a per-page status tag selector",
     "category": "ui-ux",
     "specFilePath": ".prd/tasks/TASK-106.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-107",

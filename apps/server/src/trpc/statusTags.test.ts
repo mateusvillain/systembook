@@ -136,6 +136,40 @@ describe('tags de status (TASK-105)', () => {
     });
   });
 
+  describe('pages.setStatusTag (TASK-106)', () => {
+    it('atribui, troca e limpa a tag de status da página', async () => {
+      const caller = callerFor(db, editor);
+      const a = await caller.statusTags.create({ titulo: 'A', cor: '#111111' });
+      const b = await caller.statusTags.create({ titulo: 'B', cor: '#222222' });
+      const section = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'S' });
+      const page = await caller.pages.create({ sectionId: section.id, titulo: 'P', slug: 'p' });
+
+      await expect(caller.pages.setStatusTag({ pageId: page.id, statusTagId: a.id })).resolves.toMatchObject(
+        { statusTagId: a.id },
+      );
+      expect((await caller.pages.header({ pageId: page.id })).page.statusTagId).toBe(a.id);
+
+      await caller.pages.setStatusTag({ pageId: page.id, statusTagId: b.id });
+      expect((await caller.pages.header({ pageId: page.id })).page.statusTagId).toBe(b.id);
+
+      await caller.pages.setStatusTag({ pageId: page.id, statusTagId: null });
+      expect((await caller.pages.header({ pageId: page.id })).page.statusTagId).toBeNull();
+    });
+
+    it('NOT_FOUND para tag ou página inexistente', async () => {
+      const caller = callerFor(db, editor);
+      const section = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'S' });
+      const page = await caller.pages.create({ sectionId: section.id, titulo: 'P', slug: 'p' });
+
+      await expect(
+        caller.pages.setStatusTag({ pageId: page.id, statusTagId: 'ausente' }),
+      ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+      await expect(
+        caller.pages.setStatusTag({ pageId: 'ausente', statusTagId: null }),
+      ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    });
+  });
+
   it('bloqueia acesso não autenticado', async () => {
     const anon = callerFor(db, null);
     await expect(anon.statusTags.list()).rejects.toMatchObject({ code: 'UNAUTHORIZED' });

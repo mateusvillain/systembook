@@ -4,7 +4,7 @@ import { z } from 'zod';
 import type { PageSnapshot } from '@systembook/schema';
 import { isUniqueViolation } from '../../db/errors.js';
 import { createRevision, restoreRevision } from '../../db/revisions.js';
-import { menus, pages, revisions, sections, tabs } from '../../db/schema.js';
+import { menus, pages, revisions, sections, statusTags, tabs } from '../../db/schema.js';
 import { protectedProcedure, publicProcedure, router } from '../init.js';
 import { assertCompleteReorder } from './reorder.js';
 
@@ -75,6 +75,7 @@ export const pagesRouter = router({
       .select({
         pageId: pages.id,
         pageTitulo: pages.titulo,
+        pageStatusTagId: pages.statusTagId,
         sectionId: sections.id,
         sectionTitulo: sections.titulo,
         menuId: menus.id,
@@ -87,7 +88,7 @@ export const pagesRouter = router({
       .get();
     if (!row) throw pageNotFound();
     return {
-      page: { id: row.pageId, titulo: row.pageTitulo },
+      page: { id: row.pageId, titulo: row.pageTitulo, statusTagId: row.pageStatusTagId },
       section: { id: row.sectionId, titulo: row.sectionTitulo },
       menu: { id: row.menuId, titulo: row.menuTitulo },
     };
@@ -177,6 +178,30 @@ export const pagesRouter = router({
         .update(pages)
         .set({ titulo: input.titulo })
         .where(eq(pages.id, input.id))
+        .returning()
+        .get();
+      if (!updated) throw pageNotFound();
+      return updated;
+    }),
+
+  // Atribui/limpa a tag de status da página (TASK-106). `statusTagId: null`
+  // desvincula. Valida a existência da tag (a FK já garante integridade, mas
+  // um NOT_FOUND explícito dá mensagem melhor que o erro cru da constraint).
+  setStatusTag: protectedProcedure
+    .input(z.object({ pageId: z.string(), statusTagId: z.string().nullable() }))
+    .mutation(({ ctx, input }) => {
+      if (input.statusTagId !== null) {
+        const tag = ctx.db
+          .select({ id: statusTags.id })
+          .from(statusTags)
+          .where(eq(statusTags.id, input.statusTagId))
+          .get();
+        if (!tag) throw new TRPCError({ code: 'NOT_FOUND', message: 'Tag de status não encontrada' });
+      }
+      const updated = ctx.db
+        .update(pages)
+        .set({ statusTagId: input.statusTagId })
+        .where(eq(pages.id, input.pageId))
         .returning()
         .get();
       if (!updated) throw pageNotFound();
