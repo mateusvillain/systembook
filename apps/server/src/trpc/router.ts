@@ -27,7 +27,8 @@ import { usersRouter } from './routers/users.js';
  * | sections | list, listByMenu, create, rename, reorder, delete | protectedProcedure (admin + editor)  |
  * | sections | listPublic                                        | publicProcedure (doc pública)        |
  * | pages     | listBySection, create, rename, updateSlug,       | protectedProcedure (admin + editor)  |
- * |           | reorder, delete, publish, restoreRevision        |                                       |
+ * |           | setStatusTag, reorder, delete, publish,          |                                       |
+ * |           | restoreRevision                                  |                                       |
  * | pages     | getPublishedBySlug                                | publicProcedure (doc pública)        |
  * | tabs      | listByPage, getPrimary, create, rename,          | protectedProcedure (admin + editor)  |
  * |           | reorder, delete                                  |                                       |
