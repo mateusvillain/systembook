@@ -1,0 +1,54 @@
+{
+  "id": "TASK-105",
+  "title": "Add manageable status tags (data model, CRUD API, and a management page in the user menu)",
+  "category": "functional",
+  "description": "Address the backend/management half of item 5 of `novas-tasks.md`: introduce a `status_tags` table (`id`, `titulo`, `cor` or similar, `ordem`) seeded with the four defaults (To do, In progress, Deprecated, Beta), fully manageable (create/rename/recolor/reorder/delete) by admins and editors — same `protectedProcedure` pattern used for navigation structure per `CLAUDE.md`. Add a nullable `statusTagId` FK (`ON DELETE SET NULL`) to `pages`. Build a new admin page for managing these tags (list, create, edit, delete, reorder) and link it from the user menu (`dropdown-usuario.png`'s list: Histórico global / Página inicial / Usuários / Tokens / Sair — add a new entry there, e.g. 'Status tags').",
+  "acceptanceCriteria": [
+    "New `status_tags` table exists via drizzle migration (`db:generate`), with a nullable `pages.statusTagId` FK set to null on delete",
+    "Seed/migration creates the four default tags: To do, In progress, Deprecated, Beta",
+    "tRPC router exposes create/update/delete/reorder for status tags, using `protectedProcedure` (both admin and editor roles can manage them, consistent with other navigation-adjacent CRUD)",
+    "A new admin page lists all status tags with create/rename/delete/reorder controls",
+    "The new management page is linked from the user menu dropdown (`UserMenu` in `AppHeader.tsx`), alongside Histórico global / Página inicial / Usuários / Tokens",
+    "Deleting a status tag that is currently assigned to pages does not error — affected pages' `statusTagId` becomes null (handled by the FK's `ON DELETE SET NULL`)"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Schema migration",
+      "details": "Add `status_tags` table and nullable `pages.statusTagId` FK (`ON DELETE SET NULL`) to `apps/server/src/db/schema.ts`; run `db:generate`; seed the four defaults (idempotently, following the existing `db:seed` pattern).",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "tRPC CRUD router",
+      "details": "New router (e.g. `statusTags.ts`) with `list`/`create`/`update`/`delete`/`reorder` procedures using `protectedProcedure`, following the existing sections/pages router conventions (UNIQUE violations → CONFLICT, etc.).",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Management page UI",
+      "details": "New admin route/page listing status tags with inline rename, delete (with confirm), and reorder controls, matching the editorial design system used elsewhere in the panel.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Link from user menu",
+      "details": "Add a new item to `UserMenu`'s dropdown in `AppHeader.tsx` pointing to the new management page.",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Verify in browser",
+      "details": "Create, rename, reorder, and delete a status tag; confirm defaults are seeded on a fresh database; confirm the management page is reachable from the user menu.",
+      "pass": false
+    }
+  ],
+  "dependencies": [],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "Addresses the backend/management half of item 5 of `novas-tasks.md`; per-page tag selection UI (replacing the 'Rascunho' pill) is TASK-107.",
+    "User confirmed status tags should fully replace the auto-computed 'Publicado'/'Rascunho' pill currently in `SectionHeader.tsx`'s inline `StatusTag` function — TASK-107 removes that computed pill.",
+    "Domain naming stays Portuguese for DB fields (`titulo`, `ordem`) per `CLAUDE.md` convention; only user-facing status tag *values* (To do, In progress, Deprecated, Beta) are in English, since the feedback specified them that way explicitly."
+  ],
+  "passes": false
+}

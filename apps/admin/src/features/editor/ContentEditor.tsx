@@ -1,12 +1,16 @@
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import type { Editor, JSONContent } from '@tiptap/core';
 import { EditorContent, useEditor, useEditorState } from '@tiptap/react';
 import { useTRPC } from '../../lib/trpc.js';
-import { editorExtensions as extensions } from './extensions.js';
-import { EditorToolbar } from './EditorToolbar.js';
+import { editorExtensions as sharedExtensions } from './extensions.js';
+import { createSlashCommandExtension } from './SlashCommand.js';
+import { BubbleFormatMenu } from './BubbleFormatMenu.js';
 import { BlockHandles } from './BlockHandles.js';
+import { TableControls } from './TableControls.js';
 import { EditorEmptyState } from './EditorEmptyState.js';
+import { ComponentEmbedPicker, type ComponentEmbedSelection } from './ComponentEmbedPicker.js';
+import { insertComponentEmbed } from './blockInsert.js';
 import './editor.css';
 
 declare global {
@@ -60,6 +64,15 @@ const EditorInner = forwardRef<ContentEditorHandle, { tabId: string; initialDoc:
     const savedLabelRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const pendingDocRef = useRef<JSONContent | null>(null);
     const canvasRef = useRef<HTMLDivElement>(null);
+    const [slashEmbedAtPos, setSlashEmbedAtPos] = useState<number | null>(null);
+
+    // Extensão do menu "/" (TASK-103): só no editor editável, não no preview
+    // read-only (`PageRenderer.tsx` usa `editorExtensions` puro). `setState` é
+    // estável entre renders, então este `useMemo` nunca precisa recriar.
+    const extensions = useMemo(
+      () => [...sharedExtensions, createSlashCommandExtension({ onRequestEmbed: setSlashEmbedAtPos })],
+      [],
+    );
 
     const flush = useCallback(async () => {
       if (debounceRef.current) {
@@ -147,10 +160,7 @@ const EditorInner = forwardRef<ContentEditorHandle, { tabId: string; initialDoc:
 
     return (
       <div className="sb-editor">
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <EditorToolbar editor={editor} />
-          </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <span
             aria-live="polite"
             data-save-status={status}
@@ -158,7 +168,7 @@ const EditorInner = forwardRef<ContentEditorHandle, { tabId: string; initialDoc:
               fontSize: '0.8rem',
               color: status === 'error' ? '#b00020' : '#666',
               whiteSpace: 'nowrap',
-              paddingTop: '0.35rem',
+              paddingBottom: '0.35rem',
             }}
           >
             {status === 'saving' && 'Salvando…'}
@@ -167,10 +177,21 @@ const EditorInner = forwardRef<ContentEditorHandle, { tabId: string; initialDoc:
           </span>
         </div>
         <div ref={canvasRef} className="sb-editor-canvas relative">
-          {editor && <BlockHandles editor={editor} canvasRef={canvasRef} />}
+          {editor && <BlockHandles editor={editor} />}
+          {editor && <TableControls editor={editor} canvasRef={canvasRef} />}
+          {editor && <BubbleFormatMenu editor={editor} />}
           <EditorContent editor={editor} />
-          {editor && isEmpty && <EditorEmptyState editor={editor} />}
+          {isEmpty && <EditorEmptyState />}
         </div>
+        {editor && slashEmbedAtPos !== null && (
+          <ComponentEmbedPicker
+            onConfirm={(selection: ComponentEmbedSelection) => {
+              insertComponentEmbed(editor, slashEmbedAtPos, selection);
+              setSlashEmbedAtPos(null);
+            }}
+            onCancel={() => setSlashEmbedAtPos(null)}
+          />
+        )}
       </div>
     );
   },

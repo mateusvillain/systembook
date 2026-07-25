@@ -1,0 +1,52 @@
+{
+  "id": "TASK-107",
+  "title": "Replace content block move-up/move-down actions with drag-and-drop reordering",
+  "category": "ui-ux",
+  "description": "Address item 3 of `novas-tasks.md`: today, reordering content blocks in the editor works only via 'Mover para cima'/'Mover para baixo' items in `BlockHandles.tsx`'s per-block dropdown (a delete+reinsert transaction, `moveBlock(editor, pos, dir)`). No drag-and-drop exists anywhere in the admin app (confirmed: no dnd/sortable dependency installed). Add a drag-and-drop library (e.g. `@dnd-kit/core` — evaluate compatibility with Tiptap's ProseMirror-based block structure; Tiptap's own `NodeView` drag handles or a dedicated `@tiptap/extension-drag-handle`-style approach are also acceptable) and make each block draggable via its existing grip icon (`GripVertical` in `BlockHandles.tsx`, already `cursor-grab` styled but currently just a dropdown trigger). Remove the 'Mover para cima'/'Mover para baixo' dropdown items once drag works.",
+  "acceptanceCriteria": [
+    "Each content block can be reordered by dragging its grip handle to a new position, with a visible drop indicator",
+    "'Mover para cima'/'Mover para baixo' items are removed from `BlockHandles.tsx`'s dropdown; 'Duplicar bloco' and 'Excluir bloco' remain",
+    "Reordering via drag persists correctly in the underlying Tiptap/ProseMirror document (autosave picks it up like any other edit)",
+    "Dragging works with mouse; keyboard-accessible fallback (e.g. arrow-key reorder while a block is focused) is documented as a known gap if not implemented, but must not silently disappear without an alternative",
+    "No regression to existing block actions (duplicate, delete) or to the block-insertion '+' control"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Choose and add a DnD approach",
+      "details": "Evaluate `@dnd-kit/core` (or an equivalent) against Tiptap/ProseMirror's block model; add the dependency and a minimal reorder proof-of-concept in `ContentEditor.tsx`.",
+      "pass": true
+    },
+    {
+      "step": 2,
+      "description": "Wire drag handles to blocks",
+      "details": "Make the existing `GripVertical` handle in `BlockHandles.tsx` a real drag source; implement the drop logic to move the corresponding ProseMirror node to the new position (transaction-based, similar in spirit to the existing `moveBlock` helper but driven by drop position instead of a fixed direction).",
+      "pass": true
+    },
+    {
+      "step": 3,
+      "description": "Remove move up/down items",
+      "details": "Delete 'Mover para cima'/'Mover para baixo' `DropdownMenuItem`s from `BlockHandles.tsx` now that drag covers the same capability.",
+      "pass": true
+    },
+    {
+      "step": 4,
+      "description": "Verify in browser",
+      "details": "Drag several blocks (paragraphs, headings, a table, a callout) into new positions, confirm content and autosave are correct after reload, and confirm duplicate/delete still work.",
+      "pass": true
+    }
+  ],
+  "dependencies": [],
+  "estimatedComplexity": "high",
+  "technicalNotes": [
+    "Addresses item 3 of `novas-tasks.md`.",
+    "This introduces the admin app's first drag-and-drop dependency — TASK-108 (nav tree reordering; the task's own technicalNotes says 'TASK-109' but TASK-109 is actually the 'Copiar link'/'Mover para outro menu' dropdown-actions task per the backlog mapping in `.prd/memory.md` — TASK-108 is the real nav/menu drag-and-drop task) should reuse `@tiptap/extension-drag-handle`'s underlying approach or, if the nav tree isn't ProseMirror-backed, a plain native HTML5 drag-and-drop implementation matching the pattern established here, rather than adding a second DnD library like `@dnd-kit/core`.",
+    "`BlockHandles.tsx`'s `moveBlock(editor, pos, dir)` (delete+reinsert transaction) is the current reference implementation for programmatic block moves and can likely be adapted to take an arbitrary target position instead of a fixed direction.",
+    "Implementation: used the official `@tiptap/extension-drag-handle-react@3.28.0` (+ its peer `@tiptap/extension-drag-handle`, resolved transitively) instead of `@dnd-kit/core` — dnd-kit manages its own DOM and doesn't reconcile well with ProseMirror's own DOM ownership of the contentEditable region, whereas this extension is purpose-built for exactly this (native HTML5 drag-and-drop wired directly into ProseMirror's transaction/decoration system, including the drop-position indicator via the already-installed `Dropcursor` extension). `<DragHandle>` fully self-registers its own ProseMirror plugin on mount (`editor.registerPlugin`, same pattern as `BubbleMenu` from `@tiptap/react/menus` in TASK-102) — no changes to `extensions.ts` needed. `BlockHandles.tsx`'s manual `posAtCoords`/`mousemove`/`canvasRef` hover-tracking (TASK-88) was removed entirely in favor of `<DragHandle>`'s own `onNodeChange` callback, which gives the same top-level-block granularity. The 'Mais ações' dropdown trigger button IS the drag grip (`GripVertical`, same element) — a native browser click (mousedown+mouseup, no movement) opens the dropdown normally while a drag gesture reorders, no conflict. The '+' button got `draggable={false}` to opt out of the `<DragHandle>` root's `draggable=true` (native HTML5 dnd: the nearest explicit `draggable` attribute up the tree wins for a given event target, so a plain descendant with no explicit value would otherwise inherit the root's draggability).",
+    "**Bug found and fixed during implementation (root cause, not a library defect):** the handle rendered in the DOM (positioned correctly per `<DragHandle>`'s own floating-ui logic) stayed permanently `visibility:hidden` and never responded to hover. Root cause: the `onNodeChange` prop was an inline arrow function (`({node,pos}) => setCurrent(...)`), a NEW function reference on every React render; `<DragHandle>`'s internal `useEffect` lists `onNodeChange` as a dependency, so every hover-triggered state update caused the effect to tear down and re-register a brand-new ProseMirror plugin instance — which resets `element.style.visibility = 'hidden'` on (re)mount — fighting the `showHandle()` call that had just fired inside the same event, net result: permanently hidden. Fixed by wrapping the callback in `useCallback(..., [])` for a stable identity across renders. Also required `editor.commands.setMeta('lockDragHandle', menuOpen)` (a bare Tiptap `setMeta` core command — no need to register the base `DragHandle` Extension just for its `lockDragHandle`/`unlockDragHandle` commands, since those are themselves just thin `setMeta` wrappers) to pin the handle visible/positioned while either dropdown is open, since Radix portals dropdown content outside the `<DragHandle>`-owned wrapper and the plugin's own `mouseleave` handler would otherwise hide it mid-interaction.",
+    "**Automation gotcha (not a product bug):** Playwright's `locator.dragTo()` and raw `page.mouse` down/move/up do NOT trigger genuine native HTML5 drag-and-drop (no real `dragstart`/`dragover`/`drop` fire) — this is a known Playwright limitation for `draggable=true` elements, which rely on OS-level drag gesture recognition that mouse-event simulation doesn't reproduce. Verified real reordering by manually constructing and dispatching `DragEvent`s with a `DataTransfer` via `page.evaluate` (dragstart on the grip → dragenter/dragover/drop on the target → dragend) — this reproduced a real user's drag exactly and confirmed the feature works (table dragged from position 3 to position 1 in a 4-block doc: `[heading, callout, table, paragraph]` → `[table, heading, callout, paragraph]`, persisted correctly through autosave + page reload).",
+    "**Known gap, per the acceptance criteria's explicit allowance:** no keyboard-accessible reorder fallback was implemented (e.g. arrow-key move while a block is focused) — dragging is mouse-only. This is a real regression in keyboard-only accessibility versus the removed 'Mover para cima/baixo' menu items (which were both mouse- and keyboard-operable via the dropdown). Flagged here as the task's own criteria requires, rather than silently dropped; a future task should either restore a keyboard-operable move action (e.g. Cmd/Ctrl+Shift+Up/Down while a block has focus) or confirm `@tiptap/extension-drag-handle` grows first-class keyboard support.",
+    "Verified via Playwright/Chromium against the real dev app (both the Vite dev server and a production build, to rule out the bug being a React StrictMode dev-only artifact before finding the real cause above): duplicate/delete continue to work (block count +1 after duplicate; block removed cleanly after delete), the 'Mover para cima/baixo' items are gone (`['Duplicar bloco', 'Excluir bloco']` only), and reordering across block types (paragraph/heading/table/callout) persists through autosave and a full page reload. Zero console/page errors."
+  ],
+  "passes": true
+}
