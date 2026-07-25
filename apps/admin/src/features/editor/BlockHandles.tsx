@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState, type RefObject } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { Editor } from '@tiptap/react';
-import { Copy, GripVertical, Plus, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
+import type { Node as PMNode } from '@tiptap/pm/model';
+import { DragHandle } from '@tiptap/extension-drag-handle-react';
+import { Copy, GripVertical, Plus, Trash2 } from 'lucide-react';
 import {
   BLOCK_GROUPS,
   filterBlockGroupsForContext,
@@ -19,77 +21,48 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 /**
- * Controle inline por bloco (TASK-88, plano `# Inline Toolbar`): ao passar o
- * mouse sobre um bloco, revela na canaleta esquerda um "+" (Adicionar bloco →
- * abre o picker estilo lista da `referencia-2.png`) e um "⋮" (Mais ações →
- * duplicar / mover / excluir). Nada é sempre visível — a régua fica quieta até
- * o hover, para o conteúdo seguir sendo o protagonista.
+ * Controle inline por bloco (TASK-88, plano `# Inline Toolbar`; drag-and-drop
+ * na TASK-107): ao passar o mouse sobre um bloco, revela na canaleta esquerda
+ * um "+" (Adicionar bloco → abre o picker estilo lista da `referencia-2.png`)
+ * e um "⋮" que agora é ao mesmo tempo grip de arrastar (reordena o bloco,
+ * `@tiptap/extension-drag-handle-react`) e trigger do menu "Mais ações"
+ * (duplicar/excluir — mover para cima/baixo saiu, o drag cobre o mesmo caso).
  *
- * Rastreia o bloco **top-level** sob o cursor via `posAtCoords` → `$pos.before(1)`;
- * assim, ao passar sobre um parágrafo dentro de um callout/tabela, o controle se
- * alinha ao bloco inteiro (o "+" insere depois dele, o "Excluir" remove-o todo),
- * sem colidir com os controles internos do NodeView (ex.: o switcher do callout).
+ * O `<DragHandle>` oficial do Tiptap assume o rastreamento de hover e o
+ * posicionamento (substitui o `posAtCoords`/`canvasRef` manual que este
+ * componente usava desde a TASK-88) e já entrega `node`/`pos` do bloco **top-level** sob o
+ * cursor via `onNodeChange` — mesma granularidade de bloco inteiro que a
+ * versão anterior tinha (o "+" insere depois dele, o "Excluir" remove-o
+ * todo), sem colidir com os controles internos do NodeView (ex.: o switcher
+ * do callout).
  */
-export function BlockHandles({
-  editor,
-  canvasRef,
-}: {
-  editor: Editor;
-  canvasRef: RefObject<HTMLDivElement | null>;
-}) {
-  const [hovered, setHovered] = useState<{ pos: number; top: number } | null>(null);
+export function BlockHandles({ editor }: { editor: Editor }) {
+  const [current, setCurrent] = useState<{ node: PMNode | null; pos: number }>({ node: null, pos: -1 });
   const [addOpen, setAddOpen] = useState(false);
   const [actionsOpen, setActionsOpen] = useState(false);
   const [embedAtPos, setEmbedAtPos] = useState<number | null>(null);
-  const controlRef = useRef<HTMLDivElement>(null);
 
   const menuOpen = addOpen || actionsOpen || embedAtPos !== null;
-  const menuOpenRef = useRef(menuOpen);
-  menuOpenRef.current = menuOpen;
 
+  // Identidade estável: o `useEffect` interno do `<DragHandle>` depende desta
+  // prop — uma arrow function inline recriada a cada render faria o efeito
+  // desmontar/remontar o plugin a cada hover (resetando `visibility:hidden`
+  // logo depois do handle aparecer, escondendo-o de novo silenciosamente).
+  const onNodeChange = useCallback(
+    ({ node: n, pos: p }: { node: PMNode | null; editor: Editor; pos: number }) => setCurrent({ node: n, pos: p }),
+    [],
+  );
+
+  // Trava o handle (sem isso, mover o mouse do grip pro conteúdo do dropdown
+  // — que o Radix porta pra fora do wrapper do DragHandle — dispara o
+  // `mouseleave` interno do plugin e esconde/reposiciona o handle enquanto o
+  // menu ainda está aberto).
   useEffect(() => {
-    const dom = editor.view.dom as HTMLElement;
+    editor.commands.setMeta('lockDragHandle', menuOpen);
+  }, [editor, menuOpen]);
 
-    function onMove(e: MouseEvent) {
-      if (menuOpenRef.current) return;
-      if (controlRef.current?.contains(e.target as Node)) return;
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const info = editor.view.posAtCoords({ left: e.clientX, top: e.clientY });
-      if (!info) return;
-      const clamped = Math.min(info.pos, editor.state.doc.content.size);
-      const $pos = editor.state.doc.resolve(clamped);
-      if ($pos.depth === 0) return; // gap/entre blocos — mantém o último estado
-      const blockPos = $pos.before(1);
-      const nodeDom = editor.view.nodeDOM(blockPos);
-      const el =
-        nodeDom instanceof HTMLElement ? nodeDom : (nodeDom?.parentElement ?? null);
-      if (!el) return;
-      const cRect = canvas.getBoundingClientRect();
-      const bRect = el.getBoundingClientRect();
-      setHovered({ pos: blockPos, top: bRect.top - cRect.top });
-    }
-
-    function onLeave(e: MouseEvent) {
-      if (menuOpenRef.current) return;
-      if (controlRef.current?.contains(e.relatedTarget as Node)) return;
-      setHovered(null);
-    }
-
-    dom.addEventListener('mousemove', onMove);
-    dom.addEventListener('mouseleave', onLeave);
-    return () => {
-      dom.removeEventListener('mousemove', onMove);
-      dom.removeEventListener('mouseleave', onLeave);
-    };
-  }, [editor, canvasRef]);
-
-  if (!hovered) return null;
-
-  const node = editor.state.doc.nodeAt(hovered.pos);
-  const insertAt = node ? hovered.pos + node.nodeSize : hovered.pos;
-  const index = editor.state.doc.resolve(hovered.pos).index(0);
-  const count = editor.state.doc.childCount;
+  const { node, pos } = current;
+  const insertAt = node ? pos + node.nodeSize : 0;
   // TASK-101: filtra o registro pelo contexto da posição de inserção (dentro
   // de um callout/célula de tabela não permite tabela/callout aninhados).
   const insertableGroups = filterBlockGroupsForContext(BLOCK_GROUPS, getBlockInsertContext(editor, insertAt));
@@ -104,20 +77,19 @@ export function BlockHandles({
 
   return (
     <>
-      <div
-        ref={controlRef}
-        className="sb-block-handle absolute z-10 flex items-center gap-0.5"
-        style={{ top: hovered.top, left: 0 }}
-        contentEditable={false}
-        // Evita que o mousedown roube a seleção/foco do editor.
-        onMouseDown={(e) => e.preventDefault()}
+      <DragHandle
+        editor={editor}
+        onNodeChange={onNodeChange}
+        className="sb-block-handle flex items-center gap-0.5"
       >
         <DropdownMenu open={addOpen} onOpenChange={setAddOpen}>
           <DropdownMenuTrigger asChild>
             <button
               type="button"
+              draggable={false}
               aria-label="Adicionar bloco abaixo"
               title="Adicionar bloco"
+              onMouseDown={(e) => e.preventDefault()}
               className="text-muted-foreground hover:text-foreground hover:bg-accent inline-flex size-6 items-center justify-center rounded-editorial-sm transition-colors"
             >
               <Plus className="size-4" />
@@ -149,9 +121,13 @@ export function BlockHandles({
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              aria-label="Mais ações do bloco"
-              title="Mais ações"
-              className="text-muted-foreground hover:text-foreground hover:bg-accent inline-flex size-6 cursor-grab items-center justify-center rounded-editorial-sm"
+              // Explícito (em vez de confiar só na herança do `draggable=true`
+              // que o `<DragHandle>` aplica no container pai) — sem isto o
+              // arrastar a partir deste botão especificamente não iniciava.
+              draggable
+              aria-label="Arrastar para reordenar; clique para mais ações"
+              title="Arrastar para reordenar · clique para mais ações"
+              className="text-muted-foreground hover:text-foreground hover:bg-accent inline-flex size-6 cursor-grab items-center justify-center rounded-editorial-sm active:cursor-grabbing"
             >
               <GripVertical className="size-4" />
             </button>
@@ -165,28 +141,11 @@ export function BlockHandles({
               <Copy className="size-4" />
               Duplicar bloco
             </DropdownMenuItem>
-            <DropdownMenuItem disabled={index <= 0} onSelect={() => moveBlock(editor, hovered.pos, -1)}>
-              <ArrowUp className="size-4" />
-              Mover para cima
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              disabled={index >= count - 1}
-              onSelect={() => moveBlock(editor, hovered.pos, 1)}
-            >
-              <ArrowDown className="size-4" />
-              Mover para baixo
-            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               variant="destructive"
               onSelect={() => {
-                if (node)
-                  editor
-                    .chain()
-                    .focus()
-                    .deleteRange({ from: hovered.pos, to: hovered.pos + node.nodeSize })
-                    .run();
-                setHovered(null);
+                if (node) editor.chain().focus().deleteRange({ from: pos, to: pos + node.nodeSize }).run();
               }}
             >
               <Trash2 className="size-4" />
@@ -194,7 +153,7 @@ export function BlockHandles({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      </div>
+      </DragHandle>
 
       {embedAtPos !== null && (
         <ComponentEmbedPicker
@@ -207,27 +166,4 @@ export function BlockHandles({
       )}
     </>
   );
-}
-
-/**
- * Move o bloco top-level em `pos` uma posição para cima/baixo, trocando com o
- * irmão. Feito com uma transação delete+insert (o node do ProseMirror é
- * reinserido íntegro), já que o Tiptap não tem um comando "mover bloco" nativo.
- */
-function moveBlock(editor: Editor, pos: number, dir: -1 | 1) {
-  const { doc } = editor.state;
-  const node = doc.nodeAt(pos);
-  if (!node) return;
-  const index = doc.resolve(pos).index(0);
-  const target = index + dir;
-  if (target < 0 || target >= doc.childCount) return;
-
-  const from = pos;
-  const to = pos + node.nodeSize;
-  let tr = editor.state.tr.delete(from, to);
-  const insertPos =
-    dir === -1 ? from - doc.child(index - 1).nodeSize : from + doc.child(index + 1).nodeSize;
-  tr = tr.insert(insertPos, node);
-  editor.view.dispatch(tr.scrollIntoView());
-  editor.view.focus();
 }

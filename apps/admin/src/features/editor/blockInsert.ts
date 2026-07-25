@@ -137,7 +137,7 @@ export interface BlockInsertContext {
 }
 
 export function getBlockInsertContext(editor: Editor, pos: number): BlockInsertContext {
-  const $pos = editor.state.doc.resolve(Math.min(pos, editor.state.doc.content.size));
+  const $pos = editor.state.doc.resolve(Math.max(0, Math.min(pos, editor.state.doc.content.size)));
   let insideCallout = false;
   let insideTableCell = false;
   for (let depth = $pos.depth; depth > 0; depth--) {
