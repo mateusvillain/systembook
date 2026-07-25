@@ -14,6 +14,7 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { RowActionsMenu } from '@/components/RowActionsMenu';
 import { DragHandle, useDragReorder, type DragHandleProps, type DragRowProps } from './dragReorder.js';
+import { CopyLinkItem } from './RowActionItems.js';
 import { createLinkClass } from '@/lib/styles';
 import { cn } from '@/lib/utils';
 
@@ -155,8 +156,11 @@ function MenuNavItem({
   dragRow: DragRowProps;
   dragHandle: DragHandleProps;
 }) {
+  const trpc = useTRPC();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(menu.titulo);
+  // Path público do menu (1ª seção/1ª página) para o "Copiar link" (TASK-109).
+  const pathQuery = useQuery(trpc.menus.firstPagePath.queryOptions({ menuId: menu.id }));
 
   if (editing) {
     return (
@@ -215,6 +219,13 @@ function MenuNavItem({
           setEditing(true);
         }}
         onDelete={onDelete}
+        extraItems={
+          <CopyLinkItem
+            sectionSlug={pathQuery.data?.sectionSlug}
+            pageSlug={pathQuery.data?.pageSlug}
+            disabledReason="Este menu ainda não tem páginas"
+          />
+        }
         triggerClassName="-ml-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
       />
     </div>

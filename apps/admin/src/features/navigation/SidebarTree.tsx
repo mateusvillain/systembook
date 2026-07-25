@@ -6,6 +6,7 @@ import { Check, ChevronDown, Plus, X } from 'lucide-react';
 import { queryClient, useTRPC } from '../../lib/trpc.js';
 import { RowActionsMenu } from '@/components/RowActionsMenu';
 import { DragHandle, useDragReorder, type DragHandleProps, type DragRowProps } from './dragReorder.js';
+import { CopyLinkItem, MoveToMenuSub, invalidateNavAfterMove } from './RowActionItems.js';
 import { createLinkClass } from '@/lib/styles';
 import { cn } from '@/lib/utils';
 
@@ -103,6 +104,8 @@ export function SidebarTree({
 interface NodeShape {
   id: string;
   titulo: string;
+  // slug: sections é nullable no DB; pages é notNull. Usado no "Copiar link".
+  slug?: string | null;
 }
 
 /**
@@ -170,12 +173,12 @@ function SectionGroup({
           />
         </div>
       )}
-      {expanded && <PagesList sectionId={section.id} />}
+      {expanded && <PagesList sectionId={section.id} sectionSlug={section.slug} />}
     </div>
   );
 }
 
-function PagesList({ sectionId }: { sectionId: string }) {
+function PagesList({ sectionId, sectionSlug }: { sectionId: string; sectionSlug?: string | null }) {
   const trpc = useTRPC();
   const pagesQuery = useQuery(trpc.pages.listBySection.queryOptions({ sectionId }));
   const invalidate = () =>
@@ -200,6 +203,8 @@ function PagesList({ sectionId }: { sectionId: string }) {
         <PageRow
           key={page.id}
           page={page}
+          sectionId={sectionId}
+          sectionSlug={sectionSlug}
           dragRow={dnd.getRowProps(page.id)}
           dragHandle={dnd.getHandleProps(page.id, i)}
           onRename={(titulo) => rename.mutate({ id: page.id, titulo })}
@@ -218,17 +223,22 @@ function PagesList({ sectionId }: { sectionId: string }) {
 /** Página: link de navegação (sem chevron de tabs — TASK-86). Selecionada = fundo sutil. */
 function PageRow({
   page,
+  sectionId,
+  sectionSlug,
   onRename,
   onDelete,
   dragRow,
   dragHandle,
 }: {
   page: NodeShape;
+  sectionId: string;
+  sectionSlug?: string | null;
   onRename: (titulo: string) => void;
   onDelete: () => void;
   dragRow: DragRowProps;
   dragHandle: DragHandleProps;
 }) {
+  const trpc = useTRPC();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(page.titulo);
   const onNavigate = useContext(OnNavigateContext);
@@ -279,6 +289,20 @@ function PageRow({
           setEditing(true);
         }}
         onDelete={onDelete}
+        extraItems={
+          <>
+            <CopyLinkItem
+              sectionSlug={sectionSlug}
+              pageSlug={page.slug}
+              disabledReason="Esta página ainda não tem slug"
+            />
+            <MoveToMenuSub
+              pageId={page.id}
+              currentSectionId={sectionId}
+              onMoved={() => invalidateNavAfterMove(trpc)}
+            />
+          </>
+        }
         triggerClassName="opacity-0 group-hover/page:opacity-100 group-focus-within/page:opacity-100"
       />
     </div>

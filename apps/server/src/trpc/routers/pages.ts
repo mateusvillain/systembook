@@ -249,6 +249,59 @@ export const pagesRouter = router({
       return { ok: true };
     }),
 
+  // Move uma página para outra seção (TASK-109) — a única forma de trocar o
+  // `sectionId` de uma página (o `reorder` só reordena dentro do mesmo pai).
+  // Tabs/blocks/revisions seguem via `pageId` (inalterado). A ordem vira o fim
+  // da seção destino; o slug é resolvido contra o unique (sectionId, slug) do
+  // destino — se colidir, sufixa -2, -3, … como o `create` derivado.
+  move: protectedProcedure
+    .input(z.object({ pageId: z.string(), targetSectionId: z.string() }))
+    .mutation(({ ctx, input }) => {
+      const page = ctx.db
+        .select({ id: pages.id, sectionId: pages.sectionId, slug: pages.slug })
+        .from(pages)
+        .where(eq(pages.id, input.pageId))
+        .get();
+      if (!page) throw pageNotFound();
+
+      const target = ctx.db
+        .select({ id: sections.id })
+        .from(sections)
+        .where(eq(sections.id, input.targetSectionId))
+        .get();
+      if (!target) throw new TRPCError({ code: 'NOT_FOUND', message: 'Seção destino não encontrada' });
+
+      // Mover para a própria seção não faz nada (evita renumerar à toa).
+      if (page.sectionId === input.targetSectionId) return { ok: true };
+
+      return ctx.db.transaction((tx) => {
+        const taken = new Set(
+          tx
+            .select({ slug: pages.slug })
+            .from(pages)
+            .where(eq(pages.sectionId, input.targetSectionId))
+            .all()
+            .map((p) => p.slug),
+        );
+        let slug = page.slug;
+        if (taken.has(slug)) {
+          let n = 2;
+          while (taken.has(`${page.slug}-${n}`)) n++;
+          slug = `${page.slug}-${n}`;
+        }
+        const row = tx
+          .select({ maxOrdem: max(pages.ordem) })
+          .from(pages)
+          .where(eq(pages.sectionId, input.targetSectionId))
+          .get();
+        tx.update(pages)
+          .set({ sectionId: input.targetSectionId, slug, ordem: (row?.maxOrdem ?? -1) + 1 })
+          .where(eq(pages.id, input.pageId))
+          .run();
+        return { ok: true };
+      });
+    }),
+
   // Mesmo cascade das sections: tabs (e blocks/revisions) caem via FK.
   delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(({ ctx, input }) => {
     const deleted = ctx.db

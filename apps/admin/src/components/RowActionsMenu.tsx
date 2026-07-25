@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,10 +44,17 @@ export function RowActionsMenu({
   onDelete,
   align = 'start',
   triggerClassName,
+  extraItems,
 }: {
   /** aria-label completo do gatilho (ex.: "Mais ações da seção X"). */
   triggerLabel: string;
   onRename: () => void;
+  /**
+   * Itens extra do contexto (TASK-109: "Copiar link", "Mover para outro menu"),
+   * renderizados após "Renomear" e antes de mover/excluir. O call site monta os
+   * `DropdownMenuItem`/`DropdownMenuSub` — o componente segue agnóstico.
+   */
+  extraItems?: ReactNode;
   /** Omitir esconde "Mover para cima" (item já está na primeira posição). */
   onMovePrev?: () => void;
   /** Omitir esconde "Mover para baixo" (item já está na última posição). */
@@ -74,6 +82,7 @@ export function RowActionsMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent align={align}>
         <DropdownMenuItem onSelect={onRename}>Renomear</DropdownMenuItem>
+        {extraItems}
         {onMovePrev && <DropdownMenuItem onSelect={onMovePrev}>{movePrevLabel}</DropdownMenuItem>}
         {onMoveNext && <DropdownMenuItem onSelect={onMoveNext}>{moveNextLabel}</DropdownMenuItem>}
         <DropdownMenuSeparator />
