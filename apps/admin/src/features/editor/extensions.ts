@@ -13,6 +13,15 @@ import { ComponentEmbed } from './nodes/ComponentEmbed.js';
 import { DosDonts } from './nodes/DosDonts.js';
 
 /**
+ * Conteúdo de célula de tabela (TASK-101): enumera os blocos permitidos em vez
+ * do `'block+'` padrão do `@tiptap/extension-table` — exclui `table` (tabela
+ * aninhada) e `callout` (o `TableControls`/estilo de borda do callout não
+ * combinam com o layout de célula), mantendo texto, listas, código, dos-donts
+ * e embed de componente.
+ */
+const TABLE_CELL_CONTENT = '(paragraph | heading | bulletList | orderedList | codeBlock | dosDonts | componentEmbed)+';
+
+/**
  * Conjunto intencional de extensões do MVP (TASK-25/26/27) — sem StarterKit de
  * propósito: o set de nodes/marks espelha os tipos de bloco do PRD (heading,
  * paragraph, bold/italic, listas, code block, table). Strike, blockquote,
@@ -34,8 +43,8 @@ export const editorExtensions = [
   CodeBlock,
   Table.configure({ resizable: true }),
   TableRow,
-  TableHeader,
-  TableCell,
+  TableHeader.extend({ content: TABLE_CELL_CONTENT }),
+  TableCell.extend({ content: TABLE_CELL_CONTENT }),
   Callout,
   ComponentEmbed,
   DosDonts,
