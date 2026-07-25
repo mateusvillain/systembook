@@ -6,6 +6,7 @@ import { Check, Plus, X } from 'lucide-react';
 import { queryClient, useTRPC } from '../lib/trpc.js';
 import { ContentEditor, type ContentEditorHandle } from '../features/editor/ContentEditor.js';
 import { SectionHeader } from '../features/editor/SectionHeader.js';
+import { StatusTagSelector } from '../features/editor/StatusTagSelector.js';
 import { Button } from '@/components/ui/button';
 import { RowActionsMenu } from '@/components/RowActionsMenu';
 import { createLinkClass } from '@/lib/styles';
@@ -110,6 +111,7 @@ export function PageContentPage() {
         title={page.titulo}
         published={published}
         meta={{ updatedAt: latest?.criadoEm ?? null, author: latest?.autorEmail ?? null }}
+        statusSlot={<StatusTagSelector pageId={page.id} statusTagId={page.statusTagId} />}
         actions={
           <>
             <Button asChild variant="ghost">

@@ -31,6 +31,7 @@ export function SectionHeader({
   published,
   meta,
   actions,
+  statusSlot,
 }: {
   eyebrow: string;
   title: string;
@@ -38,6 +39,12 @@ export function SectionHeader({
   published: boolean;
   meta: SectionHeaderMeta;
   actions?: ReactNode;
+  /**
+   * Controle de status ao lado do título (TASK-106): o seletor de tag de status
+   * por página. Substituiu o antigo selo automático "Rascunho"/"Publicado" — o
+   * estado de publicação segue implícito no botão "Publicar" e na MetaRow.
+   */
+  statusSlot?: ReactNode;
 }) {
   return (
     <header className="grid gap-3">
@@ -46,7 +53,7 @@ export function SectionHeader({
       <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
         <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
           <h1 className={cn(adminTypography.title, 'mt-0 min-w-0 break-words')}>{title}</h1>
-          <StatusTag published={published} />
+          {statusSlot}
         </div>
         {actions && <div className="flex shrink-0 items-center gap-2 pt-1">{actions}</div>}
       </div>
@@ -55,22 +62,6 @@ export function SectionHeader({
 
       <MetaRow published={published} meta={meta} />
     </header>
-  );
-}
-
-/** Pílula de status: ponto colorido + rótulo, quieta (sem bloco de cor pesado). */
-function StatusTag({ published }: { published: boolean }) {
-  return (
-    <span
-      className="border-border text-muted-foreground inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium"
-      title={published ? 'Publicada ao menos uma vez' : 'Ainda não publicada'}
-    >
-      <span
-        className={cn('size-1.5 rounded-full', published ? 'bg-emerald-500' : 'bg-amber-500')}
-        aria-hidden
-      />
-      {published ? 'Publicado' : 'Rascunho'}
-    </span>
   );
 }
 

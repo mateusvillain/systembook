@@ -312,6 +312,10 @@ function UserMenu({
         <DropdownMenuItem asChild>
           <Link to="/admin/settings/landing-page">Página inicial</Link>
         </DropdownMenuItem>
+        {/* Status tags: gerenciável por admin e editor (protectedProcedure). */}
+        <DropdownMenuItem asChild>
+          <Link to="/admin/settings/status-tags">Status tags</Link>
+        </DropdownMenuItem>
         {isAdmin && (
           <DropdownMenuItem asChild>
             <Link to="/admin/users">Usuários</Link>
