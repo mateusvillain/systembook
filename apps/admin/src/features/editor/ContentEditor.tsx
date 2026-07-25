@@ -177,7 +177,7 @@ const EditorInner = forwardRef<ContentEditorHandle, { tabId: string; initialDoc:
           </span>
         </div>
         <div ref={canvasRef} className="sb-editor-canvas relative">
-          {editor && <BlockHandles editor={editor} canvasRef={canvasRef} />}
+          {editor && <BlockHandles editor={editor} />}
           {editor && <TableControls editor={editor} canvasRef={canvasRef} />}
           {editor && <BubbleFormatMenu editor={editor} />}
           <EditorContent editor={editor} />

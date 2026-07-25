@@ -746,7 +746,7 @@
     "title": "Replace content block move-up/move-down actions with drag-and-drop reordering",
     "category": "ui-ux",
     "specFilePath": ".prd/tasks/TASK-107.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-108",
