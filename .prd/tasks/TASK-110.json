@@ -1,0 +1,66 @@
+{
+  "id": "TASK-110",
+  "title": "Translate all hardcoded Portuguese UI strings to English (admin panel + public docs)",
+  "category": "ui-ux",
+  "description": "Address item 13 of `novas-tasks.md`, explicitly scheduled as the last task of this batch since earlier tasks (TASK-100..110) add or change UI copy that would otherwise need retranslating. Per user decision, this is a direct literal translation of hardcoded strings, not a new i18n framework — the product becomes English-only with no language switcher. No i18n abstraction currently exists (confirmed: no `i18next`/`react-intl`/`next-intl`, no `strings.ts`/locale files); roughly 37 of 46 `.tsx` files under `apps/admin/src` contain inline Portuguese text (labels, button text, toasts, confirm dialogs, placeholders, aria-labels, empty states). Translate all user-facing strings in the admin panel and the public documentation views to English. Do NOT rename database/domain fields (`titulo`, `ordem`, `senha_hash`, etc.) — `CLAUDE.md` documents these Portuguese domain names as an intentional convention; only user-visible copy changes. Server-side user-facing error messages that surface in the UI (e.g. tRPC error messages shown in toasts) are in scope; internal code comments and variable names are not.",
+  "acceptanceCriteria": [
+    "No hardcoded Portuguese string remains in any user-visible admin panel UI (buttons, labels, headings, empty states, confirm dialogs, toasts, tooltips, aria-labels)",
+    "No hardcoded Portuguese string remains in the public documentation views (`/docs/*` routes)",
+    "Server-side error messages that are displayed to the user in the UI are in English; internal/log-only messages are out of scope",
+    "Database schema field names, migration file contents, and code identifiers are unchanged — only literal UI copy is translated",
+    "`CLAUDE.md`'s documented Portuguese domain-naming convention is left intact and not contradicted by this task"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Inventory Portuguese strings",
+      "details": "Grep across `apps/admin/src` (and any user-facing server error strings) for accented/Portuguese-word patterns to build a complete file list beyond the ~26-37 files already identified.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Translate admin panel strings",
+      "details": "Go file by file translating literal JSX text, button labels, toast/alert messages, confirm dialogs, and placeholders to English.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Translate public documentation strings",
+      "details": "Translate any hardcoded Portuguese copy in the public `/docs/*` view components (chrome around the rendered content, not user-authored documentation content itself, which is out of scope).",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Translate user-facing server error messages",
+      "details": "Update tRPC error messages that are shown directly to the user (e.g. CONFLICT/FORBIDDEN messages surfaced in toasts) to English, leaving internal-only error text untouched.",
+      "pass": false
+    },
+    {
+      "step": 5,
+      "description": "Verify in browser",
+      "details": "Click through every admin screen and the public docs, confirming all visible text is in English; run `pnpm typecheck`/`lint`/`test` across affected packages.",
+      "pass": false
+    }
+  ],
+  "dependencies": [
+    "TASK-99",
+    "TASK-100",
+    "TASK-101",
+    "TASK-102",
+    "TASK-103",
+    "TASK-104",
+    "TASK-105",
+    "TASK-106",
+    "TASK-107",
+    "TASK-108",
+    "TASK-109"
+  ],
+  "estimatedComplexity": "high",
+  "technicalNotes": [
+    "Addresses item 13 of `novas-tasks.md` — user explicitly requested this run last, after the other items in this batch, since they change/add UI copy that would need retranslating otherwise.",
+    "Per user decision: literal translation only, no i18n framework, no language switcher.",
+    "Status tag values (To do, In progress, Deprecated, Beta, from TASK-106) and slash-command block names (from TASK-104) are already in English from their respective tasks — no rework needed here.",
+    "Large surface area (~37/46 admin `.tsx` files) — consider splitting execution by area (navigation, editor, auth/users, public docs) if a single pass proves too large, but keep it one task/PR per the user's 'last task' framing unless it becomes unwieldy."
+  ],
+  "passes": false
+}

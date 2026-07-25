@@ -1,0 +1,49 @@
+{
+  "id": "TASK-109",
+  "title": "Add 'Copiar link' and 'Mover para outro menu' actions to the page/menu three-dot dropdown",
+  "category": "functional",
+  "description": "Address items 11 and 12 of `novas-tasks.md`. All three-dot dropdowns share `RowActionsMenu.tsx` (used by `AppHeader.tsx`'s header menu items, `SidebarTree.tsx`'s section pages, and `PageContentPage.tsx`'s tab bar). (11) Add a 'Copiar link' action to the header menu items and the section pages dropdowns, copying the public documentation URL to the clipboard — NOT the CMS edit URL. For a section page, this is `/docs/:sectionSlug/:pageSlug` (from `sections.slug`/`pages.slug`). For a header menu item, per user decision, this links to the first page of the first section under that menu (same `/docs/:sectionSlug/:pageSlug` pattern, resolved from the menu's first section/page). (12) Add a 'Mover para outro menu' action to the section pages dropdown only (not header menus, not tabs), which opens a small picker to move that page (and its tabs) to a different section/menu — only shown when 2+ menus exist. This requires a new backend mutation, since none currently supports moving a page across its parent section (existing `pages.reorder` only reorders within the same `sectionId`).",
+  "acceptanceCriteria": [
+    "'Copiar link' appears in the three-dot dropdown for header menu items and section pages (not for tabs)",
+    "Clicking 'Copiar link' on a section page copies `/docs/:sectionSlug/:pageSlug` (full origin URL) to the clipboard, with a toast confirmation",
+    "Clicking 'Copiar link' on a header menu item copies the public URL of that menu's first section's first page; if the menu has no sections/pages yet, the action is disabled with an explanatory tooltip or hidden",
+    "'Mover para outro menu' appears only in the section pages dropdown, and only when 2 or more menus exist in the workspace",
+    "Selecting a target section/menu in the move picker relocates the page (updating its `sectionId`) via a new tRPC mutation, and the page disappears from its old section's list and appears in the new one immediately",
+    "Moving a page preserves its tabs and content unchanged"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Copy link action",
+      "details": "Add a 'Copiar link' `DropdownMenuItem` to `RowActionsMenu.tsx`'s usage in `SidebarTree.tsx` (section pages) and `AppHeader.tsx` (menu items), resolving the target public URL for each case and writing it via `navigator.clipboard.writeText`.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Backend mutation for moving a page",
+      "details": "Add a `pages.move` (or similar) tRPC procedure that updates a page's `sectionId` to a new target section, using `protectedProcedure` consistent with other structural mutations.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Move-to-menu picker UI",
+      "details": "Add a 'Mover para outro menu' `DropdownMenuItem` (conditionally rendered when 2+ menus exist) to `SidebarTree.tsx`'s page row dropdown, opening a small picker (menu → section) that calls the new mutation on confirm.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Verify in browser",
+      "details": "Copy a link for a section page and for a header menu item and confirm the clipboard contents resolve to the correct public page; move a page to a different menu/section and confirm it relocates correctly with tabs/content intact.",
+      "pass": false
+    }
+  ],
+  "dependencies": [],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "Addresses items 11 and 12 of `novas-tasks.md`.",
+    "Public URL structure: `apps/admin/src/main.tsx` defines `/docs/:sectionSlug/:pageSlug` (and `/docs/:sectionSlug/:pageSlug/:tabId`) as the public routes, distinct from the CMS edit routes `/pages/:pageId`.",
+    "`RowActionsMenu.tsx`'s own doc comment previously stated 'Mover entre seções' was intentionally excluded because no backend mutation existed for it — this task is what adds that mutation.",
+    "Header menu 'Copiar link' target resolved to the first section/page per explicit user decision, since menus have no dedicated public page of their own."
+  ],
+  "passes": false
+}
