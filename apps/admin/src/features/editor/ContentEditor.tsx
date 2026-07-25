@@ -1,13 +1,16 @@
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import type { Editor, JSONContent } from '@tiptap/core';
 import { EditorContent, useEditor, useEditorState } from '@tiptap/react';
 import { useTRPC } from '../../lib/trpc.js';
-import { editorExtensions as extensions } from './extensions.js';
+import { editorExtensions as sharedExtensions } from './extensions.js';
+import { createSlashCommandExtension } from './SlashCommand.js';
 import { BubbleFormatMenu } from './BubbleFormatMenu.js';
 import { BlockHandles } from './BlockHandles.js';
 import { TableControls } from './TableControls.js';
 import { EditorEmptyState } from './EditorEmptyState.js';
+import { ComponentEmbedPicker, type ComponentEmbedSelection } from './ComponentEmbedPicker.js';
+import { insertComponentEmbed } from './blockInsert.js';
 import './editor.css';
 
 declare global {
@@ -61,6 +64,15 @@ const EditorInner = forwardRef<ContentEditorHandle, { tabId: string; initialDoc:
     const savedLabelRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const pendingDocRef = useRef<JSONContent | null>(null);
     const canvasRef = useRef<HTMLDivElement>(null);
+    const [slashEmbedAtPos, setSlashEmbedAtPos] = useState<number | null>(null);
+
+    // Extensão do menu "/" (TASK-103): só no editor editável, não no preview
+    // read-only (`PageRenderer.tsx` usa `editorExtensions` puro). `setState` é
+    // estável entre renders, então este `useMemo` nunca precisa recriar.
+    const extensions = useMemo(
+      () => [...sharedExtensions, createSlashCommandExtension({ onRequestEmbed: setSlashEmbedAtPos })],
+      [],
+    );
 
     const flush = useCallback(async () => {
       if (debounceRef.current) {
@@ -171,6 +183,15 @@ const EditorInner = forwardRef<ContentEditorHandle, { tabId: string; initialDoc:
           <EditorContent editor={editor} />
           {editor && isEmpty && <EditorEmptyState editor={editor} />}
         </div>
+        {editor && slashEmbedAtPos !== null && (
+          <ComponentEmbedPicker
+            onConfirm={(selection: ComponentEmbedSelection) => {
+              insertComponentEmbed(editor, slashEmbedAtPos, selection);
+              setSlashEmbedAtPos(null);
+            }}
+            onCancel={() => setSlashEmbedAtPos(null)}
+          />
+        )}
       </div>
     );
   },

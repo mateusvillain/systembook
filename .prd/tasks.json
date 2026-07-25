@@ -718,7 +718,7 @@
     "title": "Add filterable '/' slash-command menu for block insertion, with block names in English",
     "category": "ui-ux",
     "specFilePath": ".prd/tasks/TASK-103.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-104",

@@ -114,14 +114,14 @@ function tableContent(rows: number, cols: number) {
 }
 
 const CALLOUT_VARIANT_META: Record<CalloutVariant, { label: string; icon: LucideIcon }> = {
-  info: { label: 'Alerta informativo', icon: Info },
-  warning: { label: 'Alerta de aviso', icon: TriangleAlert },
-  tip: { label: 'Alerta de dica', icon: Lightbulb },
+  info: { label: 'Info callout', icon: Info },
+  warning: { label: 'Warning callout', icon: TriangleAlert },
+  tip: { label: 'Tip callout', icon: Lightbulb },
 };
 
 const DOS_DONTS_VARIANT_META: Record<DosDontsVariant, { label: string; icon: LucideIcon }> = {
-  do: { label: 'Bloco Do (recomendado)', icon: ThumbsUp },
-  dont: { label: "Bloco Don't (evitar)", icon: ThumbsDown },
+  do: { label: 'Do block', icon: ThumbsUp },
+  dont: { label: "Don't block", icon: ThumbsDown },
 };
 
 /**
@@ -170,51 +170,51 @@ export function filterBlockGroupsForContext(
 
 export const BLOCK_GROUPS: BlockGroup[] = [
   {
-    label: 'Texto',
+    label: 'Text',
     items: [
       {
         id: 'paragraph',
-        label: 'Parágrafo',
+        label: 'Paragraph',
         icon: Pilcrow,
         insert: (editor, atPos) => insertSimple(editor, atPos, { type: 'paragraph' }),
       },
       {
         id: 'codeBlock',
-        label: 'Bloco de código',
+        label: 'Code block',
         icon: Code,
         insert: (editor, atPos) => insertSimple(editor, atPos, { type: 'codeBlock' }),
       },
     ],
   },
   {
-    label: 'Títulos',
+    label: 'Headings',
     items: [
       {
         id: 'h1',
-        label: 'Título 1',
+        label: 'Heading 1',
         icon: Heading1,
         insert: (editor, atPos) => insertSimple(editor, atPos, { type: 'heading', attrs: { level: 1 } }),
       },
       {
         id: 'h2',
-        label: 'Título 2',
+        label: 'Heading 2',
         icon: Heading2,
         insert: (editor, atPos) => insertSimple(editor, atPos, { type: 'heading', attrs: { level: 2 } }),
       },
       {
         id: 'h3',
-        label: 'Título 3',
+        label: 'Heading 3',
         icon: Heading3,
         insert: (editor, atPos) => insertSimple(editor, atPos, { type: 'heading', attrs: { level: 3 } }),
       },
     ],
   },
   {
-    label: 'Listas',
+    label: 'Lists',
     items: [
       {
         id: 'bulletList',
-        label: 'Lista com marcadores',
+        label: 'Bulleted list',
         icon: List,
         insert: (editor, atPos) =>
           insertSimple(editor, atPos, {
@@ -224,7 +224,7 @@ export const BLOCK_GROUPS: BlockGroup[] = [
       },
       {
         id: 'orderedList',
-        label: 'Lista numerada',
+        label: 'Numbered list',
         icon: ListOrdered,
         insert: (editor, atPos) =>
           insertSimple(editor, atPos, {
@@ -235,11 +235,11 @@ export const BLOCK_GROUPS: BlockGroup[] = [
     ],
   },
   {
-    label: 'Blocos',
+    label: 'Blocks',
     items: [
       {
         id: 'table',
-        label: 'Tabela',
+        label: 'Table',
         icon: TableIcon,
         insert: (editor, atPos) => insertSimple(editor, atPos, tableContent(3, 3)),
       },
@@ -269,7 +269,7 @@ export const BLOCK_GROUPS: BlockGroup[] = [
       ),
       {
         id: 'componentEmbed',
-        label: 'Embed de componente',
+        label: 'Component embed',
         icon: Puzzle,
         kind: 'embed',
       },
