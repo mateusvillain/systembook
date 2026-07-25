@@ -16,25 +16,25 @@
       "step": 1,
       "description": "Translate BLOCK_GROUPS to English",
       "details": "Rename all block labels/group headings in `apps/admin/src/features/editor/blockInsert.ts` from Portuguese to English, per the mapping in the description.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Build the slash suggestion extension",
       "details": "Add a Tiptap `Suggestion` utility configured for the '/' trigger character, rendering a new dropdown component sourced from `BLOCK_GROUPS`, with typed-text filtering and keyboard navigation.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Wire nesting-aware filtering",
       "details": "Reuse the context-detection logic added in TASK-102 (inside callout / inside table cell) to filter the slash menu's available options the same way `BlockHandles.tsx`'s dropdown does.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Verify in browser",
       "details": "Type '/' at various cursor positions (empty line, inside callout, inside table cell), type partial names to filter, navigate with arrows, insert with Enter, and confirm Escape/click-away cancels cleanly.",
-      "pass": false
+      "pass": true
     }
   ],
   "dependencies": [
@@ -45,7 +45,8 @@
     "Addresses item 7 of `novas-tasks.md`.",
     "No `Suggestion`/slash-command implementation exists yet — this is new, not a refactor of existing code.",
     "`blockInsert.ts` is the single source of truth already consumed by both `BlockHandles.tsx` and `EditorEmptyState.tsx`; translating it here automatically updates those surfaces too.",
-    "Depends on TASK-102 so nesting-restriction context detection is reused rather than duplicated."
+    "Depends on TASK-102 so nesting-restriction context detection is reused rather than duplicated.",
+    "Implementation: added `@tiptap/suggestion@3.28.0` (exact-pinned to match the rest of the Tiptap v3.28.0 set — `^3.28.0` resolved 3.29.0 and broke the peer-dependency match). `SlashCommand.ts` is a factory (`createSlashCommandExtension({ onRequestEmbed })`, not a static shared extension) because the 'Component embed' item needs a callback into React state to open `ComponentEmbedPicker` — built per-instance in `ContentEditor.tsx` via `useMemo(() => [...sharedExtensions, createSlashCommandExtension(...)], [])`, so the read-only preview (`PageRenderer.tsx`, which imports `editorExtensions` directly) never gets the slash command. `SlashMenu.tsx` renders the popup (grouped like the '+' dropdown, flattened for keyboard indexing) and is mounted via `ReactRenderer` + `props.mount()` (Tiptap v3's newer Suggestion API, no tippy.js dependency). `items()` derives nesting context from `editor.state.selection.from` at call time (unlike `BlockHandles`, which only ever inserts as a top-level sibling, the slash menu inserts at the real cursor position, so it can genuinely be inside a callout/table cell and the TASK-101 filter actually removes options here). Escape is handled automatically by the `Suggestion` plugin itself (calls our `onKeyDown` then force-exits) — no manual Escape handling needed. **Gotcha hit and fixed:** the popup renders via `props.mount()` straight into `<body>`, outside `.sb-admin` — the existing `.sb-admin button { background-color: transparent }` reset (TASK-95, for the no-preflight-Tailwind setup) doesn't reach it, so raw `<button>`s initially showed the native `ButtonFace` grey box on every option. Fixed by replicating the same minimal `@layer base` reset scoped to `.sb-slash-menu` in `editor.css` (box-sizing/border-color/background/font-family/button background), same principle as the `.sb-admin`/`[data-radix-popper-content-wrapper]` resets elsewhere — kept inside `@layer base` specifically so Tailwind's `@layer utilities` classes (`border`, `bg-accent`, etc.) still win. Verified via Playwright/Chromium against the real dev app: '/' opens the menu with all 14 English-labeled options grouped by section; '/table' filters to just 'Table'; Enter inserts the table node and leaves no '/table' text behind; arrow keys move the highlighted option; Escape closes with zero doc mutation; clicking away closes without inserting; inside a callout the menu has no 'Table' option (13 items); inside a table cell it has neither 'Table' nor any callout option (10 items); choosing 'Component embed' via '/component'+Enter opens `ComponentEmbedPicker` without inserting a node first; the '+' dropdown (`BlockHandles`) now shows the same English labels (single-source-of-truth confirmed). Zero console/page errors."
   ],
-  "passes": false
+  "passes": true
 }

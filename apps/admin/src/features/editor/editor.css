@@ -6,6 +6,46 @@
   position: relative;
 }
 
+/*
+ * Reset do menu "/" (TASK-103) — o `Suggestion` do Tiptap monta o popup via
+ * `props.mount()` direto no `<body>`, fora de `.sb-admin`, então o reset
+ * escopado em `index.css` (`.sb-admin button { background-color: transparent }`
+ * etc., ver nota da TASK-95) não alcança este popup: sem ele, todo `<button>`
+ * cru herdaria o `ButtonFace` nativo do navegador (mesma "caixa cinza" do
+ * `referencia-3.png`). Replica aqui o mínimo necessário, com o mesmo
+ * princípio de escopo autocontido. Em `@layer base` (como o reset de
+ * `.sb-admin`) para que as utilities do Tailwind (`border`, `bg-*` aplicadas
+ * via className no próprio componente) continuem vencendo por cima.
+ */
+@layer base {
+  .sb-slash-menu,
+  .sb-slash-menu *,
+  .sb-slash-menu *::before,
+  .sb-slash-menu *::after {
+    box-sizing: border-box;
+    border-width: 0;
+    border-style: solid;
+    border-color: var(--border);
+  }
+
+  .sb-slash-menu {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family:
+      ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  .sb-slash-menu button {
+    cursor: pointer;
+    background-color: transparent;
+  }
+
+  .sb-slash-menu svg {
+    display: inline-block;
+    vertical-align: middle;
+  }
+}
+
 .sb-editor .ProseMirror {
   min-height: 40vh;
   padding: 0.75rem 1rem 0.75rem 3.5rem;
