@@ -732,14 +732,14 @@
     "title": "Add manageable status tags (data model, CRUD API, and a management page in the user menu)",
     "category": "functional",
     "specFilePath": ".prd/tasks/TASK-105.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-106",
     "title": "Replace the auto-computed 'Rascunho'/'Publicado' pill with a per-page status tag selector",
     "category": "ui-ux",
     "specFilePath": ".prd/tasks/TASK-106.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-107",

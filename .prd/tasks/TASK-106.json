@@ -15,25 +15,25 @@
       "step": 1,
       "description": "Remove computed pill",
       "details": "Delete the inline `StatusTag` function and its 'Publicado'/'Rascunho' rendering from `SectionHeader.tsx`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Build the status tag selector",
       "details": "New small component rendering the current tag (or an add affordance) next to the title, opening a dropdown of available tags from TASK-106's `list` procedure on click.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Wire persistence",
       "details": "On selection/clear, call the page update mutation to set/unset `statusTagId`, using the existing autosave/mutation patterns in `PageContentPage.tsx`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Verify in browser",
       "details": "Assign a tag, reload and confirm it persists, change it, clear it, and confirm the selector position matches `referencia.png`.",
-      "pass": false
+      "pass": true
     }
   ],
   "dependencies": [
@@ -43,7 +43,8 @@
   "technicalNotes": [
     "Addresses the per-page half of item 5 of `novas-tasks.md`.",
     "Depends on TASK-106 for the underlying `status_tags` table, `statusTagId` FK, and CRUD API.",
-    "Publish state (draft vs. published) remains implicit in the 'Publicar' button's behavior — this task only removes its visual pill representation, not the underlying `revisions`-based publish logic."
+    "Publish state (draft vs. published) remains implicit in the 'Publicar' button's behavior — this task only removes its visual pill representation, not the underlying `revisions`-based publish logic.",
+    "Correção de nota: o spec dizia 'TASK-106' nas dependências/notas ao se referir a si mesmo (ex.: 'status tags introduced in TASK-106', 'TASK-106 tRPC mutation', 'depends on TASK-106') — é typo; a base (tabela/FK/CRUD) é a TASK-105, e este spec É a TASK-106. Implementado: `pages.header` passou a retornar `page.statusTagId`; nova mutation `pages.setStatusTag({pageId, statusTagId|null})` (protectedProcedure, valida existência da tag com NOT_FOUND antes de gravar; `null` desvincula). `SectionHeader.tsx` perdeu a função `StatusTag` computada e o prop de pílula; ganhou um slot genérico `statusSlot?: ReactNode` ao lado do título (o `published` continua só para a `MetaRow`/'Nunca publicado', estado de publicação segue implícito no botão Publicar). Novo `StatusTagSelector.tsx` (feature/editor): mostra `StatusTagPill` da tag atual ou affordance azul '+ Status tag' quando vazia; dropdown lista as tags de `statusTags.list` na ordem gerenciada (com dot de cor + check na atual) + 'Sem status' para limpar; persiste via `setStatusTag` e invalida `pages.header`. `PageContentPage.tsx` passa `statusSlot={<StatusTagSelector pageId statusTagId/>}`. Reusa o `StatusTagPill` criado na TASK-105. Verificado: 2 testes novos (`pages.setStatusTag`: atribui/troca/limpa + NOT_FOUND tag/página) no `statusTags.test.ts`; ajustado `structure.test.ts` (o `header` agora inclui `statusTagId:null` no shape esperado); suíte server 176 passando. Browser (Playwright, app real, page 'Design'): selo antigo Rascunho/Publicado ausente, affordance '+ Status tag' na posição do `referencia.png`, escolher In progress persiste após reload, trocar para Deprecated e limpar de volta ao vazio — zero erros de console. Gotcha de teste: `text=Publicado` casa substring em 'Nunca publicado' (MetaRow) — usar seletor exato/role."
   ],
-  "passes": false
+  "passes": true
 }
