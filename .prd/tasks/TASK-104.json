@@ -14,19 +14,19 @@
       "step": 1,
       "description": "Replace empty state markup",
       "details": "In `EditorEmptyState.tsx`, remove the icon/card/button and render simple muted placeholder text instead, styled consistently with the rest of the editor typography.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Clean up unused imports",
       "details": "Remove now-unused imports (`EmptyState` wrapper, `FilePlus2`, `BLOCK_GROUPS` dropdown trigger) if nothing else in the file references them.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Verify in browser",
       "details": "Open a blank page, confirm the simplified placeholder renders and disappears on typing, and that visual style matches `referencia-5.png`.",
-      "pass": false
+      "pass": true
     }
   ],
   "dependencies": [
@@ -35,7 +35,11 @@
   "estimatedComplexity": "low",
   "technicalNotes": [
     "Addresses item 4 of `novas-tasks.md`.",
-    "Depends on TASK-103 so the placeholder copy and surrounding chrome are consistent with the borderless, toolbar-free content area landed there."
+    "Depends on TASK-103 so the placeholder copy and surrounding chrome are consistent with the borderless, toolbar-free content area landed there.",
+    "`EditorEmptyState.tsx` no longer needs an `editor` prop at all — with the button/dropdown/embed-picker gone, nothing in the component touches the editor instance anymore (first-block insertion is fully covered by `BlockHandles`' hover '+' and the TASK-103 '/' menu, both of which already work on an empty first paragraph). Call site in `ContentEditor.tsx` updated to `<EditorEmptyState />` (no props) and the `editor &&` guard dropped from that render line since the component has nothing left to null-check.",
+    "New `.sb-editor-empty-hint` CSS class in `editor.css` deliberately duplicates `.sb-editor .ProseMirror`'s exact padding (incl. the TASK-92 mobile breakpoint) rather than reusing a shared Tailwind utility, so the hint line lands precisely over the empty first line instead of floating detached — single source of truth for that one magic-number set.",
+    "Copy is in Portuguese (matching the rest of the still-untranslated product pre-TASK-110), not the literal English 'Type something or type / for commands' from `referencia-5.png` — that string was cited in the task description as the *style* reference (plain, single-line, mentions '/'), not a mandate to pre-translate this one string ahead of the dedicated translation task.",
+    "Verified via Playwright/Chromium against the real dev app: old 'Página em branco' card and 'Adicionar conteúdo' button are gone (0 matches), the new single muted line renders with the expected copy, `BlockHandles`' hover '+' still appears correctly positioned next to it, and the hint disappears the instant a character is typed. Zero console/page errors. `@/components/EmptyState` (the shared wrapper) is still used elsewhere (`AdminSearch.tsx`, `DashboardPage.tsx`) so it was left untouched, only its usage here was removed."
   ],
-  "passes": false
+  "passes": true
 }

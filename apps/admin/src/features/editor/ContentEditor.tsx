@@ -181,7 +181,7 @@ const EditorInner = forwardRef<ContentEditorHandle, { tabId: string; initialDoc:
           {editor && <TableControls editor={editor} canvasRef={canvasRef} />}
           {editor && <BubbleFormatMenu editor={editor} />}
           <EditorContent editor={editor} />
-          {editor && isEmpty && <EditorEmptyState editor={editor} />}
+          {isEmpty && <EditorEmptyState />}
         </div>
         {editor && slashEmbedAtPos !== null && (
           <ComponentEmbedPicker

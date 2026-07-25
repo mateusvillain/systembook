@@ -66,6 +66,19 @@
   padding-left: 0.4rem;
 }
 
+/* Hint do editor vazio (TASK-104): mesmo padding do `.sb-editor .ProseMirror`
+   (incl. o breakpoint mobile abaixo), pra a linha de placeholder cair
+   exatamente sobre a primeira linha vazia em vez de flutuar descolada. */
+.sb-editor-empty-hint {
+  padding: 0.75rem 1rem 0.75rem 3.5rem;
+}
+
+@media (max-width: 767px) {
+  .sb-editor-empty-hint {
+    padding-left: 2.5rem;
+  }
+}
+
 .sb-editor .ProseMirror pre {
   /* Tokens com fallback claro: o admin (sem data-theme) usa o fallback; a doc
      pública (TASK-55) redefine as variáveis por tema. */

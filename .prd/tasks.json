@@ -725,7 +725,7 @@
     "title": "Simplify the editor empty state to a plain hint, dropping the icon/card treatment",
     "category": "ui-ux",
     "specFilePath": ".prd/tasks/TASK-104.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-105",
