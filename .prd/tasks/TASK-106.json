@@ -1,0 +1,49 @@
+{
+  "id": "TASK-106",
+  "title": "Replace the auto-computed 'Rascunho'/'Publicado' pill with a per-page status tag selector",
+  "category": "ui-ux",
+  "description": "Address the per-page half of item 5 of `novas-tasks.md`: in `SectionHeader.tsx`, the inline `StatusTag` function currently renders a computed pill ('Publicado'/'Rascunho', derived from `revisions.length > 0`) next to the page title. Replace it with a selector for the manageable status tags introduced in TASK-106: clicking it opens a small dropdown/combobox listing all status tags (To do, In progress, Deprecated, Beta, plus any custom ones), lets the user pick one (or clear it), and persists the choice on the page's `statusTagId`. Position matches where the pill sits today, next to the title (`referencia.png`'s '+ Status tag' affordance).",
+  "acceptanceCriteria": [
+    "The computed 'Publicado'/'Rascunho' pill and its `StatusTag` function are removed from `SectionHeader.tsx`",
+    "A status tag selector renders in the same position next to the page title, showing the current tag's label/color or an '+ Status tag' add affordance when none is set",
+    "Selecting a tag from the dropdown persists it to the page via the TASK-106 tRPC mutation and re-renders immediately",
+    "Clearing the tag (setting it back to none) is possible from the same control",
+    "The dropdown lists tags in the order managed on the TASK-106 management page"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Remove computed pill",
+      "details": "Delete the inline `StatusTag` function and its 'Publicado'/'Rascunho' rendering from `SectionHeader.tsx`.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Build the status tag selector",
+      "details": "New small component rendering the current tag (or an add affordance) next to the title, opening a dropdown of available tags from TASK-106's `list` procedure on click.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Wire persistence",
+      "details": "On selection/clear, call the page update mutation to set/unset `statusTagId`, using the existing autosave/mutation patterns in `PageContentPage.tsx`.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Verify in browser",
+      "details": "Assign a tag, reload and confirm it persists, change it, clear it, and confirm the selector position matches `referencia.png`.",
+      "pass": false
+    }
+  ],
+  "dependencies": [
+    "TASK-105"
+  ],
+  "estimatedComplexity": "low",
+  "technicalNotes": [
+    "Addresses the per-page half of item 5 of `novas-tasks.md`.",
+    "Depends on TASK-106 for the underlying `status_tags` table, `statusTagId` FK, and CRUD API.",
+    "Publish state (draft vs. published) remains implicit in the 'Publicar' button's behavior — this task only removes its visual pill representation, not the underlying `revisions`-based publish logic."
+  ],
+  "passes": false
+}

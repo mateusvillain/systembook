@@ -1,0 +1,49 @@
+{
+  "id": "TASK-108",
+  "title": "Replace move-up/down reordering with drag-and-drop for header menus and section/page navigation tree, with hover-only drag handle",
+  "category": "ui-ux",
+  "description": "Address item 10 of `novas-tasks.md`: today, both `AppHeader.tsx`'s top-nav menu items (`MenuNavItem`) and `SidebarTree.tsx`'s sections/pages reorder exclusively via 'Mover para cima/anterior' / 'Mover para baixo/próximo' items in the shared `RowActionsMenu.tsx` dropdown, calling `menus.reorder` / `sections`/`pages` `reorder` mutations with `orderedIds`. Replace this with drag-and-drop in both trees, using the same DnD library chosen in TASK-108 for consistency. A drag handle icon appears only on hover (not permanently visible), consistent with `RowActionsMenu.tsx`'s existing hover-reveal pattern (`opacity-0 group-hover:opacity-100`) for the '...' trigger. Reordering is still scoped within the same parent (menu-item order within the header nav; page order within a section; section order within a menu) — this task does not add cross-parent moves (that's TASK-110's 'move to another menu').",
+  "acceptanceCriteria": [
+    "Header top-nav menu items (`MenuNavItem` in `AppHeader.tsx`) can be reordered by dragging a handle that appears only on hover",
+    "Sidebar sections and pages (`SidebarTree.tsx`) can be reordered by dragging a handle that appears only on hover, both sections-within-menu and pages-within-section",
+    "Existing 'Mover para cima/anterior' / 'Mover para baixo/próximo' items are removed from `RowActionsMenu.tsx` once drag covers the same capability",
+    "Dropping in a new position calls the existing `reorder` mutations (`menus.reorder`, `sections.reorder`, `pages.reorder`) with the recomputed `orderedIds`, same as the current move-up/down handlers do",
+    "Drag is constrained to reordering within the same parent; no cross-section/cross-menu drop is implemented here"
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "Add drag handles to header menu items",
+      "details": "In `AppHeader.tsx`'s `MenuNavItem`, add a hover-revealed drag handle using the DnD library from TASK-108; wire drop to call `menus.reorder` with the new `orderedIds`.",
+      "pass": false
+    },
+    {
+      "step": 2,
+      "description": "Add drag handles to sidebar tree",
+      "details": "In `SidebarTree.tsx`'s `SectionGroup` and `PageRow`, add hover-revealed drag handles; wire drop to call `sections.reorder`/`pages.reorder` respectively.",
+      "pass": false
+    },
+    {
+      "step": 3,
+      "description": "Remove move up/down actions",
+      "details": "Delete the now-redundant move-up/move-down `DropdownMenuItem`s from `RowActionsMenu.tsx`'s call sites where drag now covers reordering (menu items, sections, pages) — leave 'Renomear'/'Excluir' intact.",
+      "pass": false
+    },
+    {
+      "step": 4,
+      "description": "Verify in browser",
+      "details": "Reorder header menus, sections, and pages via drag; confirm persistence after reload; confirm drag handles are invisible until hover and don't shift layout when appearing (reuse `scrollbar-gutter`/hover patterns already established in TASK-97).",
+      "pass": false
+    }
+  ],
+  "dependencies": [
+    "TASK-107"
+  ],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "Addresses item 10 of `novas-tasks.md`.",
+    "Depends on TASK-108 to reuse the same DnD library rather than introducing a second one for a different tree.",
+    "`RowActionsMenu.tsx` is shared by three call sites (`AppHeader.tsx` menu items, `SidebarTree.tsx` sections/pages, `PageContentPage.tsx` tab bar) — tabs are not mentioned in `novas-tasks.md` item 10 and are out of scope for drag conversion here, but keep `RowActionsMenu.tsx` usable for the tab bar's own move actions if not migrated."
+  ],
+  "passes": false
+}

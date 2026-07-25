@@ -114,63 +114,107 @@ function tableContent(rows: number, cols: number) {
 }
 
 const CALLOUT_VARIANT_META: Record<CalloutVariant, { label: string; icon: LucideIcon }> = {
-  info: { label: 'Alerta informativo', icon: Info },
-  warning: { label: 'Alerta de aviso', icon: TriangleAlert },
-  tip: { label: 'Alerta de dica', icon: Lightbulb },
+  info: { label: 'Info callout', icon: Info },
+  warning: { label: 'Warning callout', icon: TriangleAlert },
+  tip: { label: 'Tip callout', icon: Lightbulb },
 };
 
 const DOS_DONTS_VARIANT_META: Record<DosDontsVariant, { label: string; icon: LucideIcon }> = {
-  do: { label: 'Bloco Do (recomendado)', icon: ThumbsUp },
-  dont: { label: "Bloco Don't (evitar)", icon: ThumbsDown },
+  do: { label: 'Do block', icon: ThumbsUp },
+  dont: { label: "Don't block", icon: ThumbsDown },
 };
+
+/**
+ * Contexto de nesting numa posição do documento (TASK-101): quais dos
+ * ancestrais "restritos" contêm essa posição. Usado para filtrar o registro
+ * de blocos inseríveis — tabela não pode aninhar em tabela/callout, e callout
+ * não pode aninhar em tabela (`Callout.tsx`/`extensions.ts` já recusam isso no
+ * schema; isto evita que a UI ofereça uma opção que falharia silenciosamente).
+ */
+export interface BlockInsertContext {
+  insideCallout: boolean;
+  insideTableCell: boolean;
+}
+
+export function getBlockInsertContext(editor: Editor, pos: number): BlockInsertContext {
+  const $pos = editor.state.doc.resolve(Math.max(0, Math.min(pos, editor.state.doc.content.size)));
+  let insideCallout = false;
+  let insideTableCell = false;
+  for (let depth = $pos.depth; depth > 0; depth--) {
+    const name = $pos.node(depth).type.name;
+    if (name === 'callout') insideCallout = true;
+    if (name === 'tableCell' || name === 'tableHeader') insideTableCell = true;
+  }
+  return { insideCallout, insideTableCell };
+}
+
+/**
+ * Filtra `BLOCK_GROUPS` (ou uma cópia) removendo itens que não podem ser
+ * inseridos no `context` dado — reaproveitado pelo picker "+" (`BlockHandles`)
+ * e, no futuro, pelo menu "/" (TASK-104), que insere na posição real do
+ * cursor e por isso pode de fato estar dentro de um callout/célula de tabela.
+ */
+export function filterBlockGroupsForContext(
+  groups: BlockGroup[],
+  context: BlockInsertContext,
+): BlockGroup[] {
+  const isAllowed = (item: BlockItem) => {
+    if (item.id === 'table' && (context.insideCallout || context.insideTableCell)) return false;
+    if (item.id.startsWith('callout-') && context.insideTableCell) return false;
+    return true;
+  };
+  return groups
+    .map((group) => ({ ...group, items: group.items.filter(isAllowed) }))
+    .filter((group) => group.items.length > 0);
+}
 
 export const BLOCK_GROUPS: BlockGroup[] = [
   {
-    label: 'Texto',
+    label: 'Text',
     items: [
       {
         id: 'paragraph',
-        label: 'Parágrafo',
+        label: 'Paragraph',
         icon: Pilcrow,
         insert: (editor, atPos) => insertSimple(editor, atPos, { type: 'paragraph' }),
       },
       {
         id: 'codeBlock',
-        label: 'Bloco de código',
+        label: 'Code block',
         icon: Code,
         insert: (editor, atPos) => insertSimple(editor, atPos, { type: 'codeBlock' }),
       },
     ],
   },
   {
-    label: 'Títulos',
+    label: 'Headings',
     items: [
       {
         id: 'h1',
-        label: 'Título 1',
+        label: 'Heading 1',
         icon: Heading1,
         insert: (editor, atPos) => insertSimple(editor, atPos, { type: 'heading', attrs: { level: 1 } }),
       },
       {
         id: 'h2',
-        label: 'Título 2',
+        label: 'Heading 2',
         icon: Heading2,
         insert: (editor, atPos) => insertSimple(editor, atPos, { type: 'heading', attrs: { level: 2 } }),
       },
       {
         id: 'h3',
-        label: 'Título 3',
+        label: 'Heading 3',
         icon: Heading3,
         insert: (editor, atPos) => insertSimple(editor, atPos, { type: 'heading', attrs: { level: 3 } }),
       },
     ],
   },
   {
-    label: 'Listas',
+    label: 'Lists',
     items: [
       {
         id: 'bulletList',
-        label: 'Lista com marcadores',
+        label: 'Bulleted list',
         icon: List,
         insert: (editor, atPos) =>
           insertSimple(editor, atPos, {
@@ -180,7 +224,7 @@ export const BLOCK_GROUPS: BlockGroup[] = [
       },
       {
         id: 'orderedList',
-        label: 'Lista numerada',
+        label: 'Numbered list',
         icon: ListOrdered,
         insert: (editor, atPos) =>
           insertSimple(editor, atPos, {
@@ -191,11 +235,11 @@ export const BLOCK_GROUPS: BlockGroup[] = [
     ],
   },
   {
-    label: 'Blocos',
+    label: 'Blocks',
     items: [
       {
         id: 'table',
-        label: 'Tabela',
+        label: 'Table',
         icon: TableIcon,
         insert: (editor, atPos) => insertSimple(editor, atPos, tableContent(3, 3)),
       },
@@ -225,7 +269,7 @@ export const BLOCK_GROUPS: BlockGroup[] = [
       ),
       {
         id: 'componentEmbed',
-        label: 'Embed de componente',
+        label: 'Component embed',
         icon: Puzzle,
         kind: 'embed',
       },
