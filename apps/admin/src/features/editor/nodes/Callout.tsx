@@ -56,10 +56,20 @@ function CalloutView({ node, updateAttributes, editor }: NodeViewProps) {
   );
 }
 
+/**
+ * Conteúdo do callout (TASK-101): enumera explicitamente os blocos permitidos
+ * em vez do `'block+'` original — exclui `table` (uma tabela dentro de um
+ * alerta não faz sentido no design system e o `TableControls`/toolbar não têm
+ * como agir dentro dele), mantendo tudo o mais que já funcionava, incluindo
+ * callout/dos-donts/embed aninhados.
+ */
+const CALLOUT_CONTENT =
+  '(paragraph | heading | bulletList | orderedList | codeBlock | callout | dosDonts | componentEmbed)+';
+
 export const Callout = Node.create({
   name: 'callout',
   group: 'block',
-  content: 'block+',
+  content: CALLOUT_CONTENT,
   defining: true,
 
   addAttributes() {

@@ -3,6 +3,8 @@ import type { Editor } from '@tiptap/react';
 import { Copy, GripVertical, Plus, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
 import {
   BLOCK_GROUPS,
+  filterBlockGroupsForContext,
+  getBlockInsertContext,
   insertComponentEmbed,
   type BlockItem,
 } from './blockInsert.js';
@@ -88,6 +90,9 @@ export function BlockHandles({
   const insertAt = node ? hovered.pos + node.nodeSize : hovered.pos;
   const index = editor.state.doc.resolve(hovered.pos).index(0);
   const count = editor.state.doc.childCount;
+  // TASK-101: filtra o registro pelo contexto da posição de inserção (dentro
+  // de um callout/célula de tabela não permite tabela/callout aninhados).
+  const insertableGroups = filterBlockGroupsForContext(BLOCK_GROUPS, getBlockInsertContext(editor, insertAt));
 
   const runInsert = (item: BlockItem) => {
     if (item.kind === 'embed') {
@@ -119,7 +124,7 @@ export function BlockHandles({
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-64 p-1.5 border-border/80 shadow-editorial-md rounded-editorial-md">
-            {BLOCK_GROUPS.map((group, gi) => (
+            {insertableGroups.map((group, gi) => (
               <div key={group.label}>
                 {gi > 0 && <DropdownMenuSeparator className="my-1" />}
                 <DropdownMenuLabel className="px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">

@@ -124,6 +124,50 @@ const DOS_DONTS_VARIANT_META: Record<DosDontsVariant, { label: string; icon: Luc
   dont: { label: "Bloco Don't (evitar)", icon: ThumbsDown },
 };
 
+/**
+ * Contexto de nesting numa posição do documento (TASK-101): quais dos
+ * ancestrais "restritos" contêm essa posição. Usado para filtrar o registro
+ * de blocos inseríveis — tabela não pode aninhar em tabela/callout, e callout
+ * não pode aninhar em tabela (`Callout.tsx`/`extensions.ts` já recusam isso no
+ * schema; isto evita que a UI ofereça uma opção que falharia silenciosamente).
+ */
+export interface BlockInsertContext {
+  insideCallout: boolean;
+  insideTableCell: boolean;
+}
+
+export function getBlockInsertContext(editor: Editor, pos: number): BlockInsertContext {
+  const $pos = editor.state.doc.resolve(Math.min(pos, editor.state.doc.content.size));
+  let insideCallout = false;
+  let insideTableCell = false;
+  for (let depth = $pos.depth; depth > 0; depth--) {
+    const name = $pos.node(depth).type.name;
+    if (name === 'callout') insideCallout = true;
+    if (name === 'tableCell' || name === 'tableHeader') insideTableCell = true;
+  }
+  return { insideCallout, insideTableCell };
+}
+
+/**
+ * Filtra `BLOCK_GROUPS` (ou uma cópia) removendo itens que não podem ser
+ * inseridos no `context` dado — reaproveitado pelo picker "+" (`BlockHandles`)
+ * e, no futuro, pelo menu "/" (TASK-104), que insere na posição real do
+ * cursor e por isso pode de fato estar dentro de um callout/célula de tabela.
+ */
+export function filterBlockGroupsForContext(
+  groups: BlockGroup[],
+  context: BlockInsertContext,
+): BlockGroup[] {
+  const isAllowed = (item: BlockItem) => {
+    if (item.id === 'table' && (context.insideCallout || context.insideTableCell)) return false;
+    if (item.id.startsWith('callout-') && context.insideTableCell) return false;
+    return true;
+  };
+  return groups
+    .map((group) => ({ ...group, items: group.items.filter(isAllowed) }))
+    .filter((group) => group.items.length > 0);
+}
+
 export const BLOCK_GROUPS: BlockGroup[] = [
   {
     label: 'Texto',

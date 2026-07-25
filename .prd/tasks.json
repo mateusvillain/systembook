@@ -704,7 +704,7 @@
     "title": "Restrict table/callout nesting: no tables inside tables or callouts, no callouts inside tables",
     "category": "functional",
     "specFilePath": ".prd/tasks/TASK-101.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-102",
