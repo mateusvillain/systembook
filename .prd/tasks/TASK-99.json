@@ -15,25 +15,25 @@
       "step": 1,
       "description": "Schema migration",
       "details": "Add nullable `subtitulo` text column to `pages` in `apps/server/src/db/schema.ts`; run `pnpm --filter @systembook/server db:generate`.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "tRPC plumbing",
       "details": "Include `subtitulo` in the relevant page router input/output (read + update mutation) and shared types in `packages/schema` if applicable.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Inline-editable subtitle UI",
       "details": "In `PageContentPage.tsx`, add the subtitle input below the title, pass its value into `SectionHeader`'s `description` prop, and wire debounced save on change.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Verify in browser",
       "details": "Confirm placeholder, typing, persistence after reload, and that pages without a subtitle render the muted placeholder like `referencia.png`.",
-      "pass": false
+      "pass": true
     }
   ],
   "dependencies": [],
@@ -42,5 +42,5 @@
     "Addresses item 1 of `novas-tasks.md`.",
     "`SectionHeader.tsx` already has the `description` prop and typography wired — this task only needs to supply real data, not build new presentation."
   ],
-  "passes": false
+  "passes": true
 }

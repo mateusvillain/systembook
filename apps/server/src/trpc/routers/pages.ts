@@ -75,6 +75,7 @@ export const pagesRouter = router({
       .select({
         pageId: pages.id,
         pageTitulo: pages.titulo,
+        pageSubtitulo: pages.subtitulo,
         pageStatusTagId: pages.statusTagId,
         sectionId: sections.id,
         sectionTitulo: sections.titulo,
@@ -88,7 +89,12 @@ export const pagesRouter = router({
       .get();
     if (!row) throw pageNotFound();
     return {
-      page: { id: row.pageId, titulo: row.pageTitulo, statusTagId: row.pageStatusTagId },
+      page: {
+        id: row.pageId,
+        titulo: row.pageTitulo,
+        subtitulo: row.pageSubtitulo,
+        statusTagId: row.pageStatusTagId,
+      },
       section: { id: row.sectionId, titulo: row.sectionTitulo },
       menu: { id: row.menuId, titulo: row.menuTitulo },
     };
@@ -177,6 +183,22 @@ export const pagesRouter = router({
       const updated = ctx.db
         .update(pages)
         .set({ titulo: input.titulo })
+        .where(eq(pages.id, input.id))
+        .returning()
+        .get();
+      if (!updated) throw pageNotFound();
+      return updated;
+    }),
+
+  // Subtítulo/introdução opcional da página (TASK-99). String vazia → null,
+  // para a UI voltar ao placeholder "Add an introduction (optional)".
+  setSubtitulo: protectedProcedure
+    .input(z.object({ id: z.string(), subtitulo: z.string() }))
+    .mutation(({ ctx, input }) => {
+      const subtitulo = input.subtitulo.trim() || null;
+      const updated = ctx.db
+        .update(pages)
+        .set({ subtitulo })
         .where(eq(pages.id, input.id))
         .returning()
         .get();

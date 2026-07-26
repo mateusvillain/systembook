@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import { Clock } from 'lucide-react';
 import { adminTypography } from '../../lib/typography.js';
 import { formatAbsolute, formatRelative } from '../../lib/dates.js';
@@ -28,6 +28,8 @@ export function SectionHeader({
   eyebrow,
   title,
   description,
+  onDescriptionChange,
+  descriptionPlaceholder,
   published,
   meta,
   actions,
@@ -36,6 +38,14 @@ export function SectionHeader({
   eyebrow: string;
   title: string;
   description?: string;
+  /**
+   * Quando fornecido, a descrição vira um campo editável inline (TASK-99) no
+   * lugar do `<p>` read-only, reusando `adminTypography.description` — a mesma
+   * apresentação, sem duplicá-la. O call site debita/salva (debounce).
+   */
+  onDescriptionChange?: (value: string) => void;
+  /** Placeholder do campo editável quando vazio (ex.: "Add an introduction…"). */
+  descriptionPlaceholder?: string;
   published: boolean;
   meta: SectionHeaderMeta;
   actions?: ReactNode;
@@ -58,10 +68,56 @@ export function SectionHeader({
         {actions && <div className="flex shrink-0 items-center gap-2 pt-1">{actions}</div>}
       </div>
 
-      {description && <p className={cn(adminTypography.description, 'mt-0 max-w-3xl')}>{description}</p>}
+      {onDescriptionChange ? (
+        <DescriptionField
+          value={description ?? ''}
+          onChange={onDescriptionChange}
+          placeholder={descriptionPlaceholder}
+        />
+      ) : (
+        description && <p className={cn(adminTypography.description, 'mt-0 max-w-3xl')}>{description}</p>
+      )}
 
       <MetaRow published={published} meta={meta} />
     </header>
+  );
+}
+
+/**
+ * Campo editável da introdução (TASK-99): `textarea` sem chrome que lê como o
+ * `<p>` de descrição (mesma `adminTypography.description`), auto-cresce com o
+ * conteúdo e mostra o placeholder atenuado quando vazio.
+ */
+function DescriptionField({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, [value]);
+
+  return (
+    <textarea
+      ref={ref}
+      rows={1}
+      value={value}
+      placeholder={placeholder}
+      aria-label="Introdução da página (opcional)"
+      onChange={(e) => onChange(e.target.value)}
+      className={cn(
+        adminTypography.description,
+        'mt-0 w-full max-w-3xl resize-none overflow-hidden border-0 bg-transparent p-0 outline-none placeholder:text-muted-foreground/50 focus-visible:ring-0',
+      )}
+    />
   );
 }
 
