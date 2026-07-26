@@ -118,6 +118,9 @@ export const pages = sqliteTable(
       .notNull()
       .references(() => sections.id, { onDelete: 'cascade' }),
     titulo: text('titulo').notNull(),
+    // Subtítulo/introdução opcional exibido sob o título (TASK-99, item 1 de
+    // novas-tasks / referencia.png). Nullable: a maioria das páginas não tem.
+    subtitulo: text('subtitulo'),
     slug: text('slug').notNull(),
     ordem: integer('ordem').notNull(),
     // Tag de status opcional (TASK-105). ON DELETE SET NULL: excluir uma tag

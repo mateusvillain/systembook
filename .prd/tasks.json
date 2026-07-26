@@ -690,7 +690,7 @@
     "title": "Add optional page subtitle/introduction field",
     "category": "functional",
     "specFilePath": ".prd/tasks/TASK-99.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-100",
