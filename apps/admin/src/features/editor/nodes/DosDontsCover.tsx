@@ -66,7 +66,7 @@ function EmbedCoverPreview({
       className="sb-dos-donts-cover-embed-frame"
       data-preview-state="live"
       src={previewQuery.data.url}
-      title={`Cover de ${componentName} (${variantId})`}
+      title={`Cover of ${componentName} (${variantId})`}
       loading="lazy"
       // Mesma política de sandbox do component-embed top-level (TASK-47):
       // allow-scripts sem allow-same-origin (artefato de terceiros opaco ao
@@ -91,7 +91,7 @@ export function DosDontsCoverField({
     if (!editable) return null;
     return (
       <div className="sb-dos-donts-cover sb-dos-donts-cover--empty" contentEditable={false}>
-        <div role="group" aria-label="Adicionar cover" className="flex gap-1.5">
+        <div role="group" aria-label="Add cover" className="flex gap-1.5">
           <Button
             type="button"
             variant="outline"
@@ -99,7 +99,7 @@ export function DosDontsCoverField({
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => onChange({ kind: 'image', src: '', alt: '' })}
           >
-            <ImageIcon /> Adicionar cover de imagem
+            <ImageIcon /> Add image cover
           </Button>
           <Button
             type="button"
@@ -108,7 +108,7 @@ export function DosDontsCoverField({
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => setPickerOpen(true)}
           >
-            <Puzzle /> Adicionar cover de componente
+            <Puzzle /> Add component cover
           </Button>
         </div>
         {pickerOpen && (
@@ -136,15 +136,15 @@ export function DosDontsCoverField({
             <div className="sb-dos-donts-cover-image-form">
               <Input
                 type="text"
-                placeholder="URL da imagem"
-                aria-label="URL da imagem do cover"
+                placeholder="Image URL"
+                aria-label="Cover image URL"
                 value={cover.src}
                 onChange={(e) => onChange({ ...cover, src: e.target.value })}
               />
               <Input
                 type="text"
-                placeholder="Texto alternativo"
-                aria-label="Texto alternativo do cover"
+                placeholder="Alt text"
+                aria-label="Cover alt text"
                 value={cover.alt}
                 onChange={(e) => onChange({ ...cover, alt: e.target.value })}
               />
@@ -162,7 +162,7 @@ export function DosDontsCoverField({
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => setPickerOpen(true)}
             >
-              {cover.componentName ? 'Trocar componente' : 'Selecionar componente'}
+              {cover.componentName ? 'Replace component' : 'Select component'}
             </Button>
           )}
           {pickerOpen && (

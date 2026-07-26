@@ -48,8 +48,8 @@ export const ContentEditor = forwardRef<ContentEditorHandle, { tabId: string }>(
     gcTime: 0,
   });
 
-  if (query.isPending) return <p>Carregando conteúdo…</p>;
-  if (query.isError) return <p role="alert">Erro ao carregar o conteúdo da tab.</p>;
+  if (query.isPending) return <p>Loading content…</p>;
+  if (query.isError) return <p role="alert">Failed to load the tab content.</p>;
 
   return <EditorInner ref={ref} tabId={tabId} initialDoc={query.data.doc as JSONContent | null} />;
 });
@@ -110,7 +110,7 @@ const EditorInner = forwardRef<ContentEditorHandle, { tabId: string; initialDoc:
         extensions,
         content: initialDoc ?? '',
         editorProps: {
-          attributes: { 'aria-label': 'Conteúdo da tab', 'data-tab-id': tabId },
+          attributes: { 'aria-label': 'Tab content', 'data-tab-id': tabId },
         },
         onUpdate: ({ editor: e }) => {
           pendingDocRef.current = e.getJSON();
@@ -171,9 +171,9 @@ const EditorInner = forwardRef<ContentEditorHandle, { tabId: string; initialDoc:
               paddingBottom: '0.35rem',
             }}
           >
-            {status === 'saving' && 'Salvando…'}
-            {status === 'saved' && 'Salvo'}
-            {status === 'error' && 'Erro ao salvar'}
+            {status === 'saving' && 'Saving…'}
+            {status === 'saved' && 'Saved'}
+            {status === 'error' && 'Error saving'}
           </span>
         </div>
         <div ref={canvasRef} className="sb-editor-canvas relative">

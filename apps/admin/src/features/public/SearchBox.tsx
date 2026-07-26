@@ -129,7 +129,7 @@ export function SearchBox() {
       <button
         type="button"
         className="sb-search-trigger"
-        aria-label="Buscar na documentação"
+        aria-label="Search the documentation"
         onClick={openMobile}
         data-testid="search-trigger"
       >
@@ -155,8 +155,8 @@ export function SearchBox() {
             }}
             onFocus={() => setOpen(true)}
             onKeyDown={onKeyDown}
-            placeholder="Buscar na documentação…"
-            aria-label="Buscar na documentação"
+            placeholder="Search the documentation…"
+            aria-label="Search the documentation"
             role="combobox"
             aria-expanded={showDropdown}
             aria-controls={listboxId}
@@ -167,7 +167,7 @@ export function SearchBox() {
           <button
             type="button"
             className="sb-search-close"
-            aria-label="Fechar busca"
+            aria-label="Close search"
             onClick={closeMobile}
             data-testid="search-close"
           >
@@ -178,10 +178,10 @@ export function SearchBox() {
         {showDropdown && (
         <div className="sb-searchbox-dropdown" id={listboxId} role="listbox" data-testid="search-dropdown">
           {searchQuery.isLoading ? (
-            <p className="sb-searchbox-hint">Buscando…</p>
+            <p className="sb-searchbox-hint">Searching…</p>
           ) : showNoResults ? (
             <p className="sb-searchbox-hint" data-testid="search-no-results">
-              Nenhum resultado encontrado.
+              No results found.
             </p>
           ) : (
             <ul className="sb-searchbox-results" data-testid="search-results">

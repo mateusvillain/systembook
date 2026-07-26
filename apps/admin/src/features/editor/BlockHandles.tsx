@@ -87,8 +87,8 @@ export function BlockHandles({ editor }: { editor: Editor }) {
             <button
               type="button"
               draggable={false}
-              aria-label="Adicionar bloco abaixo"
-              title="Adicionar bloco"
+              aria-label="Add block below"
+              title="Add block"
               onMouseDown={(e) => e.preventDefault()}
               className="text-muted-foreground hover:text-foreground hover:bg-accent inline-flex size-6 items-center justify-center rounded-editorial-sm transition-colors"
             >
@@ -125,8 +125,8 @@ export function BlockHandles({ editor }: { editor: Editor }) {
               // que o `<DragHandle>` aplica no container pai) — sem isto o
               // arrastar a partir deste botão especificamente não iniciava.
               draggable
-              aria-label="Arrastar para reordenar; clique para mais ações"
-              title="Arrastar para reordenar · clique para mais ações"
+              aria-label="Drag to reorder; click for more actions"
+              title="Drag to reorder · click for more actions"
               className="text-muted-foreground hover:text-foreground hover:bg-accent inline-flex size-6 cursor-grab items-center justify-center rounded-editorial-sm active:cursor-grabbing"
             >
               <GripVertical className="size-4" />
@@ -139,7 +139,7 @@ export function BlockHandles({ editor }: { editor: Editor }) {
               }}
             >
               <Copy className="size-4" />
-              Duplicar bloco
+              Duplicate block
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -149,7 +149,7 @@ export function BlockHandles({ editor }: { editor: Editor }) {
               }}
             >
               <Trash2 className="size-4" />
-              Excluir bloco
+              Delete block
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

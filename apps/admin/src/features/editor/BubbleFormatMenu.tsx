@@ -70,56 +70,56 @@ export function BubbleFormatMenu({ editor }: { editor: Editor | null }) {
       editor={editor}
       options={{ placement: 'top', offset: 8 }}
       role="toolbar"
-      aria-label="Formatação"
+      aria-label="Formatting"
       className="sb-bubble-menu flex items-center gap-0.5 rounded-editorial-md border border-border/80 bg-background p-1 shadow-editorial-md"
     >
       <BubbleButton
         label={<Heading1 />}
-        title="Título 1"
+        title="Heading 1"
         active={state.h1}
         onClick={() => chain().toggleHeading({ level: 1 }).run()}
       />
       <BubbleButton
         label={<Heading2 />}
-        title="Título 2"
+        title="Heading 2"
         active={state.h2}
         onClick={() => chain().toggleHeading({ level: 2 }).run()}
       />
       <BubbleButton
         label={<Heading3 />}
-        title="Título 3"
+        title="Heading 3"
         active={state.h3}
         onClick={() => chain().toggleHeading({ level: 3 }).run()}
       />
       <span className="mx-0.5 h-4 w-px bg-border" aria-hidden />
       <BubbleButton
         label={<Bold />}
-        title="Negrito (Cmd/Ctrl+B)"
+        title="Bold (Cmd/Ctrl+B)"
         active={state.bold}
         onClick={() => chain().toggleBold().run()}
       />
       <BubbleButton
         label={<Italic />}
-        title="Itálico (Cmd/Ctrl+I)"
+        title="Italic (Cmd/Ctrl+I)"
         active={state.italic}
         onClick={() => chain().toggleItalic().run()}
       />
       <span className="mx-0.5 h-4 w-px bg-border" aria-hidden />
       <BubbleButton
         label={<List />}
-        title="Lista com marcadores"
+        title="Bulleted list"
         active={state.bulletList}
         onClick={() => chain().toggleBulletList().run()}
       />
       <BubbleButton
         label={<ListOrdered />}
-        title="Lista numerada"
+        title="Numbered list"
         active={state.orderedList}
         onClick={() => chain().toggleOrderedList().run()}
       />
       <BubbleButton
         label={<Code />}
-        title="Bloco de código"
+        title="Code block"
         active={state.codeBlock}
         onClick={() => chain().toggleCodeBlock().run()}
       />

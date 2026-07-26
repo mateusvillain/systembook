@@ -33,7 +33,7 @@ export function StatusTags() {
     trpc.statusTags.delete.mutationOptions({
       onSuccess: () => {
         invalidate();
-        toast.success('Tag de status excluída.');
+        toast.success('Status tag deleted.');
       },
     }),
   );
@@ -60,15 +60,15 @@ export function StatusTags() {
       <CreateTagForm
         onCreated={() => {
           void invalidate();
-          toast.success('Tag de status criada.');
+          toast.success('Status tag created.');
         }}
       />
 
       <Card>
         <CardContent className="pt-6">
-          {tags.isPending && <p className="text-muted-foreground">Carregando tags…</p>}
+          {tags.isPending && <p className="text-muted-foreground">Loading tags…</p>}
           {tags.data?.length === 0 && (
-            <p className="text-muted-foreground">Nenhuma tag de status ainda.</p>
+            <p className="text-muted-foreground">No status tags yet.</p>
           )}
           <ul className="grid gap-1">
             {list.map((tag, i) => (
@@ -82,7 +82,7 @@ export function StatusTags() {
                 onDelete={() => {
                   if (
                     window.confirm(
-                      `Excluir a tag "${tag.titulo}"? As páginas que a usam ficarão sem status.`,
+                      `Delete the tag "${tag.titulo}"? Pages using it will have no status.`,
                     )
                   ) {
                     remove.mutate({ id: tag.id });
@@ -128,7 +128,7 @@ function StatusTagRowItem({
           type="color"
           value={tag.cor}
           onChange={(e) => onRecolor(e.target.value)}
-          aria-label={`Cor da tag ${tag.titulo}`}
+          aria-label={`Color for tag ${tag.titulo}`}
           className="absolute inset-0 cursor-pointer opacity-0"
         />
       </label>
@@ -146,15 +146,15 @@ function StatusTagRowItem({
             autoFocus
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            aria-label={`Novo título da tag ${tag.titulo}`}
+            aria-label={`New title for tag ${tag.titulo}`}
             className="h-8 max-w-xs"
           />
-          <button type="submit" aria-label="Salvar" className="text-muted-foreground hover:text-foreground p-1">
+          <button type="submit" aria-label="Save" className="text-muted-foreground hover:text-foreground p-1">
             <Check className="size-3.5" />
           </button>
           <button
             type="button"
-            aria-label="Cancelar"
+            aria-label="Cancel"
             className="text-muted-foreground hover:text-foreground p-1"
             onClick={() => setEditing(false)}
           >
@@ -165,7 +165,7 @@ function StatusTagRowItem({
         <>
           <StatusTagPill titulo={tag.titulo} cor={tag.cor} />
           <RowActionsMenu
-            triggerLabel={`Mais ações da tag ${tag.titulo}`}
+            triggerLabel={`More actions for tag ${tag.titulo}`}
             onRename={() => {
               setDraft(tag.titulo);
               setEditing(true);
@@ -203,18 +203,18 @@ function CreateTagForm({ onCreated }: { onCreated: () => void }) {
   return (
     <form onSubmit={submit} className="flex flex-wrap items-end gap-3">
       <div className="grid gap-2">
-        <Label htmlFor="new-tag-color">Cor</Label>
+        <Label htmlFor="new-tag-color">Color</Label>
         <input
           id="new-tag-color"
           type="color"
           value={cor}
           onChange={(e) => setCor(e.target.value)}
-          aria-label="Cor da nova tag"
+          aria-label="New tag color"
           className="h-9 w-12 cursor-pointer rounded-editorial-sm border border-input bg-transparent"
         />
       </div>
       <div className="grid flex-1 gap-2" style={{ maxWidth: 320 }}>
-        <Label htmlFor="new-tag-title">Nova tag de status</Label>
+        <Label htmlFor="new-tag-title">New status tag</Label>
         <Input
           id="new-tag-title"
           value={titulo}
@@ -224,7 +224,7 @@ function CreateTagForm({ onCreated }: { onCreated: () => void }) {
       </div>
       <Button type="submit" disabled={create.isPending || !titulo.trim()} className={cn('shrink-0')}>
         <Plus className="size-4" />
-        Adicionar
+        Add
       </Button>
     </form>
   );

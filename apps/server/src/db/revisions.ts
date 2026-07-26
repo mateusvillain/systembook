@@ -123,7 +123,7 @@ export function restoreRevision(
         pageId: params.pageId,
         snapshotJson: JSON.stringify(restoredSnapshot),
         autorId: params.autorId,
-        mensagem: `Restaurado da revisão de ${params.targetRevision.criadoEm.toISOString()}`,
+        mensagem: `Restored from the revision of ${params.targetRevision.criadoEm.toISOString()}`,
       })
       .returning()
       .get();

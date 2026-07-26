@@ -12,7 +12,7 @@ import { assertCompleteReorder } from './reorder.js';
 // podem divergir com o tempo (nota da TASK-20).
 export const slugSchema = z
   .string()
-  .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, 'Slug deve ser minúsculo e hifenizado (ex.: meu-slug)');
+  .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, 'Slug must be lowercase and hyphenated (e.g. my-slug)');
 
 /**
  * Deriva um slug a partir de um título (TASK-70): remove acentos (NFD + tira as
@@ -31,11 +31,11 @@ export function slugify(titulo: string): string {
 }
 
 function slugConflict(): TRPCError {
-  return new TRPCError({ code: 'CONFLICT', message: 'Já existe uma página com este slug na seção' });
+  return new TRPCError({ code: 'CONFLICT', message: 'A page with this slug already exists in the section' });
 }
 
 function pageNotFound(): TRPCError {
-  return new TRPCError({ code: 'NOT_FOUND', message: 'Página não encontrada' });
+  return new TRPCError({ code: 'NOT_FOUND', message: 'Page not found' });
 }
 
 export const pagesRouter = router({
@@ -111,7 +111,7 @@ export const pagesRouter = router({
         .from(sections)
         .where(eq(sections.id, input.sectionId))
         .get();
-      if (!section) throw new TRPCError({ code: 'NOT_FOUND', message: 'Seção não encontrada' });
+      if (!section) throw new TRPCError({ code: 'NOT_FOUND', message: 'Section not found' });
 
       const isDerived = input.slug === undefined;
       let slug = input.slug;
@@ -120,7 +120,7 @@ export const pagesRouter = router({
         if (!base) {
           throw new TRPCError({
             code: 'BAD_REQUEST',
-            message: 'O título não gera um slug válido — informe um slug manualmente.',
+            message: 'The title does not produce a valid slug — provide one manually.',
           });
         }
         slug = base;
@@ -218,7 +218,7 @@ export const pagesRouter = router({
           .from(statusTags)
           .where(eq(statusTags.id, input.statusTagId))
           .get();
-        if (!tag) throw new TRPCError({ code: 'NOT_FOUND', message: 'Tag de status não encontrada' });
+        if (!tag) throw new TRPCError({ code: 'NOT_FOUND', message: 'Status tag not found' });
       }
       const updated = ctx.db
         .update(pages)
@@ -291,7 +291,7 @@ export const pagesRouter = router({
         .from(sections)
         .where(eq(sections.id, input.targetSectionId))
         .get();
-      if (!target) throw new TRPCError({ code: 'NOT_FOUND', message: 'Seção destino não encontrada' });
+      if (!target) throw new TRPCError({ code: 'NOT_FOUND', message: 'Target section not found' });
 
       // Mover para a própria seção não faz nada (evita renumerar à toa).
       if (page.sectionId === input.targetSectionId) return { ok: true };
@@ -368,7 +368,7 @@ export const pagesRouter = router({
         .where(and(eq(revisions.id, input.revisionId), eq(revisions.pageId, input.pageId)))
         .get();
       if (!targetRevision) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Revisão não encontrada nesta página' });
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Revision not found on this page' });
       }
 
       return restoreRevision(ctx.db, {

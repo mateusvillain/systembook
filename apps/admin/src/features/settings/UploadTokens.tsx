@@ -29,7 +29,7 @@ export function UploadTokens() {
     trpc.uploadTokens.revoke.mutationOptions({
       onSuccess: () => {
         invalidate();
-        toast.success('Token revogado.');
+        toast.success('Token revoked.');
       },
     }),
   );
@@ -37,10 +37,10 @@ export function UploadTokens() {
   return (
     <section className="grid gap-6">
       <div className="grid gap-1">
-        <h1 className="text-2xl font-semibold">Tokens de upload</h1>
+        <h1 className="text-2xl font-semibold">Upload tokens</h1>
         <p className="text-muted-foreground text-sm">
-          Tokens autenticam o CI do time no envio de artefatos de preview (
-          <code>POST /api/previews</code>). Gere um por pipeline e revogue-o se vazar.
+          Tokens authenticate the team CI when uploading preview artifacts (
+          <code>POST /api/previews</code>). Generate one per pipeline and revoke it if it leaks.
         </p>
       </div>
 
@@ -56,7 +56,7 @@ export function UploadTokens() {
         onCreated={(created) => {
           setRevealed(created);
           void invalidate();
-          toast.success('Token gerado — copie-o agora.');
+          toast.success('Token generated — copy it now.');
         }}
       />
 
@@ -66,9 +66,9 @@ export function UploadTokens() {
             <TableHeader>
               <TableRow>
                 <TableHead>Label</TableHead>
-                <TableHead>Criado em</TableHead>
+                <TableHead>Created at</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Ações</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -79,7 +79,7 @@ export function UploadTokens() {
                   onRevoke={() => {
                     if (
                       window.confirm(
-                        `Revogar o token "${token.label}"? O CI que o usa vai parar de conseguir publicar previews.`,
+                        `Revoke the token "${token.label}"? The CI using it will no longer be able to publish previews.`,
                       )
                     ) {
                       revoke.mutate({ tokenId: token.id });
@@ -89,9 +89,9 @@ export function UploadTokens() {
               ))}
             </TableBody>
           </Table>
-          {tokens.isPending && <p className="text-muted-foreground mt-2">Carregando tokens…</p>}
+          {tokens.isPending && <p className="text-muted-foreground mt-2">Loading tokens…</p>}
           {tokens.data?.length === 0 && (
-            <p className="text-muted-foreground mt-2">Nenhum token gerado ainda.</p>
+            <p className="text-muted-foreground mt-2">No tokens generated yet.</p>
           )}
         </CardContent>
       </Card>
@@ -104,20 +104,20 @@ function TokenTableRow({ token, onRevoke }: { token: TokenRow; onRevoke: () => v
   return (
     <TableRow className={revogado ? 'opacity-60' : undefined}>
       <TableCell>{token.label}</TableCell>
-      <TableCell>{new Date(token.criadoEm).toLocaleString('pt-BR')}</TableCell>
+      <TableCell>{new Date(token.criadoEm).toLocaleString('en-US')}</TableCell>
       <TableCell>
         {revogado ? (
           <Badge variant="secondary">
-            Revogado em {new Date(token.revogadoEm!).toLocaleString('pt-BR')}
+            Revoked on {new Date(token.revogadoEm!).toLocaleString('en-US')}
           </Badge>
         ) : (
-          <Badge>Ativo</Badge>
+          <Badge>Active</Badge>
         )}
       </TableCell>
       <TableCell>
         {!revogado && (
           <Button type="button" size="sm" variant="outline" onClick={onRevoke}>
-            Revogar
+            Revoke
           </Button>
         )}
       </TableCell>
@@ -141,9 +141,9 @@ function TokenReveal({
       data-token-reveal
       className="grid gap-2 rounded-md border border-amber-300 bg-amber-50 p-4"
     >
-      <strong>Token &quot;{label}&quot; gerado — copie agora.</strong>
+      <strong>Token &quot;{label}&quot; generated — copy it now.</strong>
       <span className="text-sm">
-        Este valor <strong>não será mostrado de novo</strong>: só o hash fica armazenado.
+        This value <strong>will not be shown again</strong>: only the hash is stored.
       </span>
       <code
         data-token-value
@@ -159,10 +159,10 @@ function TokenReveal({
             void navigator.clipboard.writeText(token).then(() => setCopied(true));
           }}
         >
-          {copied ? 'Copiado ✓' : 'Copiar'}
+          {copied ? 'Copied ✓' : 'Copy'}
         </Button>
         <Button type="button" size="sm" variant="ghost" onClick={onDismiss}>
-          Fechar
+          Close
         </Button>
       </div>
     </div>
@@ -189,16 +189,16 @@ function CreateTokenForm({ onCreated }: { onCreated: (r: { label: string; token:
   return (
     <form onSubmit={submit} className="flex flex-wrap items-end gap-2">
       <div className="grid flex-1 gap-2" style={{ maxWidth: 360 }}>
-        <Label htmlFor="token-label">Novo token</Label>
+        <Label htmlFor="token-label">New token</Label>
         <Input
           id="token-label"
           value={label}
           onChange={(event) => setLabel(event.target.value)}
-          placeholder="ex.: GitHub Actions do design system"
+          placeholder="e.g. design system GitHub Actions"
         />
       </div>
       <Button type="submit" disabled={create.isPending || !label.trim()}>
-        Gerar token
+        Generate token
       </Button>
     </form>
   );

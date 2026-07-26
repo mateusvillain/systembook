@@ -12,7 +12,7 @@ export function UploadTokensPage() {
   if (me.role !== 'admin') {
     return (
       <p role="alert" style={{ color: '#b00020' }}>
-        Acesso negado — esta área é exclusiva de administradores.
+        Access denied — this area is admin-only.
       </p>
     );
   }

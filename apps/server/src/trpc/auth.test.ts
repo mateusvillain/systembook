@@ -102,7 +102,7 @@ describe('auth + autorização', () => {
         .catch((e: TRPCError) => ({ code: e.code, message: e.message }));
 
       const [a, b] = await Promise.all([wrongPassword, unknownEmail]);
-      expect(a).toEqual({ code: 'UNAUTHORIZED', message: 'Credenciais inválidas' });
+      expect(a).toEqual({ code: 'UNAUTHORIZED', message: 'Invalid credentials' });
       expect(b).toEqual(a);
     });
 

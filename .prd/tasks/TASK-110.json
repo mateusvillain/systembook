@@ -15,31 +15,31 @@
       "step": 1,
       "description": "Inventory Portuguese strings",
       "details": "Grep across `apps/admin/src` (and any user-facing server error strings) for accented/Portuguese-word patterns to build a complete file list beyond the ~26-37 files already identified.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 2,
       "description": "Translate admin panel strings",
       "details": "Go file by file translating literal JSX text, button labels, toast/alert messages, confirm dialogs, and placeholders to English.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 3,
       "description": "Translate public documentation strings",
       "details": "Translate any hardcoded Portuguese copy in the public `/docs/*` view components (chrome around the rendered content, not user-authored documentation content itself, which is out of scope).",
-      "pass": false
+      "pass": true
     },
     {
       "step": 4,
       "description": "Translate user-facing server error messages",
       "details": "Update tRPC error messages that are shown directly to the user (e.g. CONFLICT/FORBIDDEN messages surfaced in toasts) to English, leaving internal-only error text untouched.",
-      "pass": false
+      "pass": true
     },
     {
       "step": 5,
       "description": "Verify in browser",
       "details": "Click through every admin screen and the public docs, confirming all visible text is in English; run `pnpm typecheck`/`lint`/`test` across affected packages.",
-      "pass": false
+      "pass": true
     }
   ],
   "dependencies": [
@@ -62,5 +62,5 @@
     "Status tag values (To do, In progress, Deprecated, Beta, from TASK-106) and slash-command block names (from TASK-104) are already in English from their respective tasks — no rework needed here.",
     "Large surface area (~37/46 admin `.tsx` files) — consider splitting execution by area (navigation, editor, auth/users, public docs) if a single pass proves too large, but keep it one task/PR per the user's 'last task' framing unless it becomes unwieldy."
   ],
-  "passes": false
+  "passes": true
 }

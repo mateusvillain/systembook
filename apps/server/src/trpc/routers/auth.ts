@@ -8,7 +8,7 @@ import { protectedProcedure, publicProcedure, router } from '../init.js';
 
 // Mesma mensagem para email desconhecido e senha errada — evita enumeração de usuários.
 const invalidCredentials = () =>
-  new TRPCError({ code: 'UNAUTHORIZED', message: 'Credenciais inválidas' });
+  new TRPCError({ code: 'UNAUTHORIZED', message: 'Invalid credentials' });
 
 export const authRouter = router({
   login: publicProcedure

@@ -24,7 +24,7 @@ export function LoginPage() {
       },
       onError: () => {
         // Mensagem genérica — o server não distingue email de senha (anti-enumeração)
-        setError('Email ou senha inválidos');
+        setError('Invalid email or password');
       },
     }),
   );
@@ -45,7 +45,7 @@ export function LoginPage() {
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="text-2xl">SystemBook</CardTitle>
-          <CardDescription>Entre para gerenciar a documentação.</CardDescription>
+          <CardDescription>Sign in to manage the documentation.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="grid gap-4">
@@ -63,7 +63,7 @@ export function LoginPage() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="login-password">Senha</Label>
+              <Label htmlFor="login-password">Password</Label>
               <Input
                 id="login-password"
                 type="password"
@@ -76,7 +76,7 @@ export function LoginPage() {
               />
             </div>
             <Button type="submit" disabled={login.isPending} className="w-full">
-              {login.isPending ? 'Entrando…' : 'Entrar'}
+              {login.isPending ? 'Signing in…' : 'Sign in'}
             </Button>
             {/* Erro de login é de campo/formulário → inline (convenção TASK-76),
                 não toast. Mensagem genérica anti-enumeração (TASK-10). */}

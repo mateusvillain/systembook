@@ -182,7 +182,7 @@ describe('revisions router (TASK-35) + pages.restoreRevision (TASK-36)', () => {
     const result = await caller.pages.restoreRevision({ pageId, revisionId: r1.id });
     expect(result.skippedTabIds).toEqual([]);
     expect(result.revision.autorId).toBe(editor.userId);
-    expect(result.revision.mensagem).toMatch(/^Restaurado da revisão de /);
+    expect(result.revision.mensagem).toMatch(/^Restored from the revision of /);
 
     // blocks (rascunho ao vivo) agora refletem a v1 restaurada
     const draft = await caller.blocks.getByTab({ tabId });

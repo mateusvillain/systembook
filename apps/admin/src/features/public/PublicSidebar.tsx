@@ -25,9 +25,9 @@ export function PublicSidebar({
       <nav
         className="sb-public-sidebar"
         data-open={open || undefined}
-        aria-label="Navegação da documentação"
+        aria-label="Documentation navigation"
       >
-        <p className="sb-public-empty">Nenhuma página publicada ainda.</p>
+        <p className="sb-public-empty">No pages published yet.</p>
       </nav>
     );
   }
@@ -36,7 +36,7 @@ export function PublicSidebar({
     <nav
       className="sb-public-sidebar"
       data-open={open || undefined}
-      aria-label="Navegação da documentação"
+      aria-label="Documentation navigation"
     >
       {tree.map((section) => (
         <div key={section.id} className="sb-public-section">
