@@ -130,7 +130,7 @@ describe('estrutura de navegação (sections/pages/tabs)', () => {
       const page = await caller.pages.create({ sectionId: section.id, titulo: 'Tokens', slug: 'tokens' });
 
       expect(await caller.pages.header({ pageId: page.id })).toEqual({
-        page: { id: page.id, titulo: 'Tokens', statusTagId: null },
+        page: { id: page.id, titulo: 'Tokens', subtitulo: null, statusTagId: null },
         section: { id: section.id, titulo: 'Cores' },
         menu: { id: menu.id, titulo: 'Foundation' },
       });

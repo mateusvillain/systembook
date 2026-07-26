@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, NavLink, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -40,6 +40,23 @@ export function PageContentPage() {
   const renameTab = useMutation(trpc.tabs.rename.mutationOptions({ onSuccess: invalidateTabs }));
   const reorderTab = useMutation(trpc.tabs.reorder.mutationOptions({ onSuccess: invalidateTabs }));
   const deleteTab = useMutation(trpc.tabs.delete.mutationOptions({ onSuccess: invalidateTabs }));
+
+  // Subtítulo/introdução (TASK-99): estado controlado + autosave debounced,
+  // espelhando o padrão de rascunho do editor. Re-sincroniza só ao trocar de
+  // página (deps no id) para não sobrescrever a digitação num refetch.
+  const [subtitle, setSubtitle] = useState('');
+  const subtitleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const setSubtitulo = useMutation(trpc.pages.setSubtitulo.mutationOptions());
+  useEffect(() => {
+    setSubtitle(header.data?.page.subtitulo ?? '');
+  }, [header.data?.page.id]);
+  function handleSubtitleChange(value: string) {
+    setSubtitle(value);
+    if (subtitleTimer.current) clearTimeout(subtitleTimer.current);
+    subtitleTimer.current = setTimeout(() => {
+      if (pageId) setSubtitulo.mutate({ id: pageId, subtitulo: value });
+    }, 600);
+  }
 
   const editorRef = useRef<ContentEditorHandle>(null);
   // Publicar é um evento transiente → toast (convenção TASK-76). O indicador
@@ -109,6 +126,9 @@ export function PageContentPage() {
       <SectionHeader
         eyebrow={section.titulo}
         title={page.titulo}
+        description={subtitle}
+        onDescriptionChange={handleSubtitleChange}
+        descriptionPlaceholder="Add an introduction (optional)"
         published={published}
         meta={{ updatedAt: latest?.criadoEm ?? null, author: latest?.autorEmail ?? null }}
         statusSlot={<StatusTagSelector pageId={page.id} statusTagId={page.statusTagId} />}
