@@ -77,9 +77,9 @@ const STRUCTURE_ICON: Record<StructureResult['type'], LucideIcon> = {
 
 const STRUCTURE_KIND_LABEL: Record<StructureResult['type'], string> = {
   menu: 'Menu',
-  section: 'Seção',
-  page: 'Página',
-  tab: 'Aba',
+  section: 'Section',
+  page: 'Page',
+  tab: 'Tab',
 };
 
 /**
@@ -211,7 +211,7 @@ export function AdminSearch({ onSelectMenu }: { onSelectMenu: (menuId: string) =
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label="Buscar"
+        aria-label="Search"
         aria-keyshortcuts="Meta+K Control+K"
         // Borderless (estilo Zeroheight): ícone + rótulo, feedback só no hover —
         // sem a caixa com `border` que fazia o gatilho parecer um chip (TASK-95).
@@ -219,7 +219,7 @@ export function AdminSearch({ onSelectMenu }: { onSelectMenu: (menuId: string) =
         data-testid="admin-search-trigger"
       >
         <Search className="size-4" />
-        <span className="hidden sm:inline">Buscar</span>
+        <span className="hidden sm:inline">Search</span>
         <kbd className="bg-muted text-muted-foreground ml-1 hidden rounded px-1.5 py-0.5 text-[0.6875rem] font-medium sm:inline-block">
           ⌘K
         </kbd>
@@ -230,7 +230,7 @@ export function AdminSearch({ onSelectMenu }: { onSelectMenu: (menuId: string) =
           className="fixed inset-0 z-50 flex items-start justify-center px-4 pt-[12vh]"
           role="dialog"
           aria-modal="true"
-          aria-label="Buscar no painel"
+          aria-label="Search the panel"
           data-testid="admin-search-dialog"
         >
           {/* Backdrop: fecha ao clicar fora. */}
@@ -251,8 +251,8 @@ export function AdminSearch({ onSelectMenu }: { onSelectMenu: (menuId: string) =
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={onKeyDown}
-                placeholder="Buscar menus, páginas, conteúdo…"
-                aria-label="Buscar no painel"
+                placeholder="Search menus, pages, content…"
+                aria-label="Search the panel"
                 role="combobox"
                 aria-expanded={showResults}
                 aria-controls={listboxId}
@@ -266,21 +266,21 @@ export function AdminSearch({ onSelectMenu }: { onSelectMenu: (menuId: string) =
             <div ref={listRef} className="min-h-0 flex-1 overflow-y-auto py-2" id={listboxId} role="listbox">
               {!showResults ? (
                 <p className={cn(adminTypography.metadata, 'px-4 py-6 text-center')} data-testid="admin-search-hint">
-                  Digite para buscar na estrutura e no conteúdo publicado.
+                  Type to search the structure and published content.
                 </p>
               ) : isLoading ? (
-                <p className={cn(adminTypography.metadata, 'px-4 py-6 text-center')}>Buscando…</p>
+                <p className={cn(adminTypography.metadata, 'px-4 py-6 text-center')}>Searching…</p>
               ) : noResults ? (
                 <EmptyState
                   size="sm"
                   icon={Search}
-                  title="Nenhum resultado"
-                  description={`Nada corresponde a “${debounced}”. Tente outro termo.`}
+                  title="No results"
+                  description={`Nothing matches “${debounced}”. Try another term.`}
                 />
               ) : (
                 <>
                   {structureCount > 0 && (
-                    <Group label="Estrutura">
+                    <Group label="Structure">
                       {structure.map((r, i) => (
                         <ResultRow
                           key={`s-${r.type}-${r.id}`}
@@ -297,7 +297,7 @@ export function AdminSearch({ onSelectMenu }: { onSelectMenu: (menuId: string) =
                     </Group>
                   )}
                   {content.length > 0 && (
-                    <Group label="Conteúdo publicado">
+                    <Group label="Published content">
                       {content.map((r, ci) => {
                         const i = structureCount + ci;
                         return (

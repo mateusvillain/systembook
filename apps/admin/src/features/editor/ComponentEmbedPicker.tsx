@@ -69,14 +69,14 @@ export function ComponentEmbedPicker({
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Selecionar componente para embed"
+        aria-label="Select component to embed"
         data-testid="component-embed-picker"
         onMouseDown={(e) => e.stopPropagation()}
         className="bg-background flex max-h-[80vh] w-[min(440px,92vw)] flex-col overflow-hidden rounded-lg border shadow-lg"
       >
         <header className="flex items-center justify-between border-b px-4 py-3">
-          <strong>{component === null ? 'Escolha um componente' : `Variante de ${component}`}</strong>
-          <Button type="button" variant="ghost" size="icon" aria-label="Fechar" onClick={onCancel}>
+          <strong>{component === null ? 'Choose a component' : `Variant of ${component}`}</strong>
+          <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onCancel}>
             <X />
           </Button>
         </header>
@@ -123,17 +123,17 @@ function ComponentStep({
       <Input
         type="search"
         autoFocus
-        placeholder="Filtrar componentes…"
+        placeholder="Filter components…"
         value={filter}
         onChange={(e) => setFilter(e.target.value)}
-        aria-label="Filtrar componentes"
+        aria-label="Filter components"
         className="mb-2"
       />
-      {query.isLoading && <p className="text-muted-foreground text-sm">Carregando…</p>}
-      {query.isError && <p className="text-destructive text-sm">Erro ao carregar componentes.</p>}
+      {query.isLoading && <p className="text-muted-foreground text-sm">Loading…</p>}
+      {query.isError && <p className="text-destructive text-sm">Failed to load components.</p>}
       {!query.isLoading && !query.isError && (query.data?.length ?? 0) === 0 && (
         <p className="text-muted-foreground text-sm">
-          Nenhum componente publicado ainda — rode o conector no repositório do design system.
+          No components published yet — run the connector in the design system repository.
         </p>
       )}
       {components.length > 0 && (
@@ -172,12 +172,12 @@ function VariantStep({
   return (
     <>
       <Button type="button" variant="link" className="mb-2 h-auto gap-1 px-0" onClick={onBack}>
-        <ChevronLeft className="size-4" /> Trocar componente
+        <ChevronLeft className="size-4" /> Change component
       </Button>
-      {query.isLoading && <p className="text-muted-foreground text-sm">Carregando variantes…</p>}
-      {query.isError && <p className="text-destructive text-sm">Erro ao carregar variantes.</p>}
+      {query.isLoading && <p className="text-muted-foreground text-sm">Loading variants…</p>}
+      {query.isError && <p className="text-destructive text-sm">Failed to load variants.</p>}
       {!query.isLoading && (query.data?.length ?? 0) === 0 && (
-        <p className="text-muted-foreground text-sm">Nenhuma variante publicada para {component}.</p>
+        <p className="text-muted-foreground text-sm">No variants published for {component}.</p>
       )}
       {(query.data?.length ?? 0) > 0 && (
         <ul className="grid list-none gap-1 p-0">
@@ -191,7 +191,7 @@ function VariantStep({
               >
                 {variantId}
                 {variantId === currentVariant && (
-                  <span className="text-muted-foreground font-normal"> (atual)</span>
+                  <span className="text-muted-foreground font-normal"> (current)</span>
                 )}
               </button>
             </li>

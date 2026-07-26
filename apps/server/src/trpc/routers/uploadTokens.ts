@@ -48,7 +48,7 @@ export const uploadTokensRouter = router({
         .where(eq(uploadTokens.id, input.tokenId))
         .get();
       if (!existing) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Token não encontrado' });
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Token not found' });
       }
       // Idempotente: revogar de novo não move o timestamp original.
       if (existing.revogadoEm) {

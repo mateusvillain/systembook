@@ -17,7 +17,7 @@ export function PublicHome() {
   const trpc = useTRPC();
   const landing = useQuery(trpc.landing.get.queryOptions());
 
-  if (isLoading || landing.isPending) return <p>Carregando…</p>;
+  if (isLoading || landing.isPending) return <p>Loading…</p>;
 
   const snapshot = landing.data?.snapshot;
   const hasContent = snapshot && snapshot.tabs.some((t) => t.blocks.length > 0);
@@ -36,7 +36,7 @@ export function PublicHome() {
 
   return (
     <div data-testid="landing-default">
-      <h1 className="sb-public-title">Documentação</h1>
+      <h1 className="sb-public-title">Documentation</h1>
       {firstSection && firstPage ? (
         <p>
           Bem-vindo à documentação. Comece por{' '}

@@ -14,10 +14,10 @@ export function PageHistoryPage() {
   return (
     <section className="grid gap-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Histórico de revisões</h1>
+        <h1 className="text-2xl font-semibold">Revision history</h1>
         {firstTabId && (
           <Button asChild variant="link" className="px-0">
-            <Link to={`/pages/${pageId}/tabs/${firstTabId}`}>Voltar ao editor</Link>
+            <Link to={`/pages/${pageId}/tabs/${firstTabId}`}>Back to editor</Link>
           </Button>
         )}
       </div>

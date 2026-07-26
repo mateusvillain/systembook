@@ -26,15 +26,15 @@ export function PublicPageView() {
     enabled: !!sectionSlug && !!pageSlug,
   });
 
-  if (query.isLoading) return <p>Carregando…</p>;
-  if (query.isError) return <p role="alert">Erro ao carregar a página.</p>;
+  if (query.isLoading) return <p>Loading…</p>;
+  if (query.isError) return <p role="alert">Failed to load the page.</p>;
 
   // Seção/página inexistente → 404.
   if (!query.data) {
     return (
       <div data-testid="public-not-found">
-        <h1 className="sb-public-title">Página não encontrada</h1>
-        <p style={{ color: '#666' }}>Esta página não existe ou o endereço mudou.</p>
+        <h1 className="sb-public-title">Page not found</h1>
+        <p style={{ color: '#666' }}>This page does not exist or the address has changed.</p>
       </div>
     );
   }
@@ -61,7 +61,7 @@ export function PublicPageView() {
         />
       ) : (
         <div data-testid="not-published" style={{ color: '#666' }}>
-          <p>Esta página ainda não foi publicada.</p>
+          <p>This page has not been published yet.</p>
         </div>
       )}
     </article>

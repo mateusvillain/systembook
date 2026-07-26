@@ -111,7 +111,7 @@ function DescriptionField({
       rows={1}
       value={value}
       placeholder={placeholder}
-      aria-label="Introdução da página (opcional)"
+      aria-label="Page introduction (optional)"
       onChange={(e) => onChange(e.target.value)}
       className={cn(
         adminTypography.description,
@@ -127,14 +127,14 @@ function MetaRow({ published, meta }: { published: boolean; meta: SectionHeaderM
       <Clock className="size-3.5 shrink-0 opacity-70" aria-hidden />
       {published && meta.updatedAt != null ? (
         <span>
-          Atualizado{' '}
+          Updated{' '}
           <time dateTime={new Date(meta.updatedAt).toISOString()} title={formatAbsolute(meta.updatedAt)}>
             {formatRelative(meta.updatedAt)}
           </time>{' '}
-          por {meta.author ?? 'usuário removido'}
+          by {meta.author ?? 'removed user'}
         </span>
       ) : (
-        <span>Nunca publicado</span>
+        <span>Never published</span>
       )}
     </p>
   );

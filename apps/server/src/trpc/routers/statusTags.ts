@@ -8,7 +8,7 @@ import { assertCompleteReorder } from './reorder.js';
 // Cor no formato hex `#RRGGBB` — o seletor do painel e o seed usam esse formato.
 const HEX_COLOR = z
   .string()
-  .regex(/^#[0-9a-fA-F]{6}$/, 'Cor deve ser um hex #RRGGBB');
+  .regex(/^#[0-9a-fA-F]{6}$/, 'Color must be a hex #RRGGBB');
 
 /**
  * CRUD das tags de status (TASK-105). Admin E editor gerenciam (protectedProcedure),
@@ -42,7 +42,7 @@ export const statusTagsRouter = router({
           cor: HEX_COLOR.optional(),
         })
         .refine((v) => v.titulo !== undefined || v.cor !== undefined, {
-          message: 'Informe título e/ou cor',
+          message: 'Provide a title and/or color',
         }),
     )
     .mutation(({ ctx, input }) => {
@@ -55,7 +55,7 @@ export const statusTagsRouter = router({
         .where(eq(statusTags.id, input.id))
         .returning()
         .get();
-      if (!updated) throw new TRPCError({ code: 'NOT_FOUND', message: 'Tag de status não encontrada' });
+      if (!updated) throw new TRPCError({ code: 'NOT_FOUND', message: 'Status tag not found' });
       return updated;
     }),
 
@@ -83,7 +83,7 @@ export const statusTagsRouter = router({
       .where(eq(statusTags.id, input.id))
       .returning({ id: statusTags.id })
       .get();
-    if (!deleted) throw new TRPCError({ code: 'NOT_FOUND', message: 'Tag de status não encontrada' });
+    if (!deleted) throw new TRPCError({ code: 'NOT_FOUND', message: 'Status tag not found' });
     return { ok: true };
   }),
 });

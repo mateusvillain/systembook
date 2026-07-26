@@ -45,12 +45,12 @@ export function CopyLinkItem({
         if (disabled) return;
         void navigator.clipboard
           .writeText(publicPageUrl(sectionSlug, pageSlug))
-          .then(() => toast.success('Link copiado'))
-          .catch(() => toast.error('Não foi possível copiar o link'));
+          .then(() => toast.success('Link copied'))
+          .catch(() => toast.error('Could not copy the link'));
       }}
     >
       <Link2 className="size-4" />
-      Copiar link
+      Copy link
     </DropdownMenuItem>
   );
 }
@@ -75,9 +75,9 @@ export function MoveToMenuSub({
     trpc.pages.move.mutationOptions({
       onSuccess: () => {
         onMoved();
-        toast.success('Página movida');
+        toast.success('Page moved');
       },
-      onError: () => toast.error('Não foi possível mover a página'),
+      onError: () => toast.error('Could not move the page'),
     }),
   );
 
@@ -86,7 +86,7 @@ export function MoveToMenuSub({
 
   return (
     <DropdownMenuSub>
-      <DropdownMenuSubTrigger>Mover para outro menu</DropdownMenuSubTrigger>
+      <DropdownMenuSubTrigger>Move to another menu</DropdownMenuSubTrigger>
       <DropdownMenuSubContent>
         {menus.map((menu) => (
           <MenuSectionsSub
@@ -124,10 +124,10 @@ function MenuSectionsSub({
       <DropdownMenuSubTrigger>{menuTitulo}</DropdownMenuSubTrigger>
       <DropdownMenuSubContent>
         {sectionsQuery.isPending && (
-          <DropdownMenuItem disabled>Carregando…</DropdownMenuItem>
+          <DropdownMenuItem disabled>Loading…</DropdownMenuItem>
         )}
         {!sectionsQuery.isPending && sections.length === 0 && (
-          <DropdownMenuItem disabled>Nenhuma outra seção</DropdownMenuItem>
+          <DropdownMenuItem disabled>No other section</DropdownMenuItem>
         )}
         {sections.map((section) => (
           <DropdownMenuItem key={section.id} onSelect={() => onPick(section.id)}>

@@ -39,7 +39,7 @@ export const componentPreviewsRouter = router({
         // Não deve ocorrer em produção (index.ts sempre injeta env.PREVIEWS_PATH).
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: 'previewsRoot não configurado no contexto',
+          message: 'previewsRoot not configured in context',
         });
       }
 

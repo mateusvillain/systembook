@@ -9,11 +9,11 @@ import { protectedProcedure, router } from '../init.js';
 import { assertCompleteReorder } from './reorder.js';
 
 function menuNotFound(): TRPCError {
-  return new TRPCError({ code: 'NOT_FOUND', message: 'Menu não encontrado' });
+  return new TRPCError({ code: 'NOT_FOUND', message: 'Menu not found' });
 }
 
 function menuSlugConflict(): TRPCError {
-  return new TRPCError({ code: 'CONFLICT', message: 'Já existe um menu com este slug' });
+  return new TRPCError({ code: 'CONFLICT', message: 'A menu with this slug already exists' });
 }
 
 // Estrutura de navegação: admin e editor têm o mesmo CRUD (TASK-24).

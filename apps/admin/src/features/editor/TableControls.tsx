@@ -202,8 +202,8 @@ export function TableControls({
         type="button"
         className={controlButtonClass}
         style={{ left: rect.left - railOffset, top: rect.top - railOffset }}
-        title="Alternar linha de cabeçalho"
-        aria-label="Alternar linha de cabeçalho"
+        title="Toggle header row"
+        aria-label="Toggle header row"
         onClick={toggleHeaderRow}
       >
         <Rows2 className="size-3" />
@@ -215,8 +215,8 @@ export function TableControls({
           type="button"
           className={controlButtonClass}
           style={{ left: x, top: rect.top - railOffset }}
-          title="Adicionar coluna"
-          aria-label={`Adicionar coluna na posição ${i + 1}`}
+          title="Add column"
+          aria-label={`Add column at position ${i + 1}`}
           onClick={() => insertColumnAt(i)}
         >
           <Plus className="size-3" />
@@ -228,8 +228,8 @@ export function TableControls({
           type="button"
           className={controlButtonClass}
           style={{ left: cx, top: rect.top - railOffset }}
-          title="Remover coluna"
-          aria-label={`Remover coluna ${i + 1}`}
+          title="Remove column"
+          aria-label={`Remove column ${i + 1}`}
           disabled={numCols <= 1}
           onClick={() => removeColumn(i)}
         >
@@ -243,8 +243,8 @@ export function TableControls({
           type="button"
           className={controlButtonClass}
           style={{ left: rect.left - railOffset, top: y }}
-          title="Adicionar linha"
-          aria-label={`Adicionar linha na posição ${i + 1}`}
+          title="Add row"
+          aria-label={`Add row at position ${i + 1}`}
           onClick={() => insertRowAt(i)}
         >
           <Plus className="size-3" />
@@ -256,8 +256,8 @@ export function TableControls({
           type="button"
           className={controlButtonClass}
           style={{ left: rect.left - railOffset, top: cy }}
-          title="Remover linha"
-          aria-label={`Remover linha ${i + 1}`}
+          title="Remove row"
+          aria-label={`Remove row ${i + 1}`}
           disabled={numRows <= 1}
           onClick={() => removeRow(i)}
         >

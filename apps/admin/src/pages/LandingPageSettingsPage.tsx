@@ -19,13 +19,13 @@ export function LandingPageSettingsPage() {
   const editorRef = useRef<ContentEditorHandle>(null);
   const publish = useMutation(
     trpc.pages.publish.mutationOptions({
-      onSuccess: () => toast.success('Página inicial publicada.'),
-      onError: () => toast.error('Falha ao publicar. Tente novamente.'),
+      onSuccess: () => toast.success('Landing page published.'),
+      onError: () => toast.error('Failed to publish. Try again.'),
     }),
   );
 
-  if (target.isPending) return <p className="text-muted-foreground">Carregando…</p>;
-  if (!target.data) return <p role="alert" className="text-destructive">Não foi possível carregar a página inicial.</p>;
+  if (target.isPending) return <p className="text-muted-foreground">Loading…</p>;
+  if (!target.data) return <p role="alert" className="text-destructive">Could not load the landing page.</p>;
 
   const { pageId, tabId } = target.data;
 
@@ -37,14 +37,14 @@ export function LandingPageSettingsPage() {
   return (
     <section>
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Página inicial</h1>
+        <h1 className="text-2xl font-semibold">Landing page</h1>
         <Button type="button" onClick={handlePublish} disabled={publish.isPending}>
-          {publish.isPending ? 'Publicando…' : 'Publicar'}
+          {publish.isPending ? 'Publishing…' : 'Publish'}
         </Button>
       </div>
       <p className="text-muted-foreground mt-1 mb-4 text-sm">
-        Este é o conteúdo mostrado na raiz da documentação pública. Publique para que os visitantes
-        vejam a nova versão.
+        This is the content shown at the root of the public documentation. Publish so visitors
+        see the new version.
       </p>
       <ContentEditor key={tabId} ref={editorRef} tabId={tabId} />
     </section>

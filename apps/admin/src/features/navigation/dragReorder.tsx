@@ -143,7 +143,7 @@ export function DragHandle({
     <button
       type="button"
       aria-label={label}
-      title="Arraste (ou use as setas) para reordenar"
+      title="Drag (or use the arrow keys) to reorder"
       className={cn(
         'text-muted-foreground hover:text-foreground hover:bg-accent inline-flex size-6 shrink-0 cursor-grab touch-none items-center justify-center rounded-editorial-sm transition-colors active:cursor-grabbing',
         className,

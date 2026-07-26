@@ -767,7 +767,7 @@
     "title": "Translate all hardcoded Portuguese UI strings to English (admin panel + public docs)",
     "category": "ui-ux",
     "specFilePath": ".prd/tasks/TASK-110.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-111",
