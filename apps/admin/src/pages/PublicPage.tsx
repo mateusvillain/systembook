@@ -27,14 +27,14 @@ export function PublicPage() {
     </main>
   );
 
-  if (query.isLoading) return container(<p>Carregando…</p>);
-  if (query.isError) return container(<p role="alert">Erro ao carregar a página.</p>);
+  if (query.isLoading) return container(<p>Loading…</p>);
+  if (query.isError) return container(<p role="alert">Failed to load the page.</p>);
 
   if (!query.data) {
     return container(
       <div data-testid="not-published" style={{ color: '#666' }}>
-        <h1 style={{ fontSize: '1.25rem' }}>Esta página ainda não foi publicada</h1>
-        <p>Assim que for publicada no painel, o conteúdo aparecerá aqui.</p>
+        <h1 style={{ fontSize: '1.25rem' }}>This page has not been published yet</h1>
+        <p>Once it is published in the panel, the content will appear here.</p>
       </div>,
     );
   }

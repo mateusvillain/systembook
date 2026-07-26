@@ -34,7 +34,7 @@ export function PublicLayout() {
         <button
           type="button"
           className="sb-nav-toggle"
-          aria-label="Abrir navegação"
+          aria-label="Open navigation"
           aria-expanded={navOpen}
           onClick={() => setNavOpen((o) => !o)}
           data-testid="nav-toggle"
@@ -42,14 +42,14 @@ export function PublicLayout() {
           <span aria-hidden>☰</span>
         </button>
         <span aria-hidden>📘</span>
-        <span className="sb-public-brand">Documentação</span>
+        <span className="sb-public-brand">Documentation</span>
         <SearchBox />
         <button
           type="button"
           className="sb-theme-toggle"
           onClick={toggle}
-          aria-label={theme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
-          title={theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
+          aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+          title={theme === 'dark' ? 'Light theme' : 'Dark theme'}
           data-testid="theme-toggle"
         >
           <span aria-hidden>{theme === 'dark' ? '☀️' : '🌙'}</span>

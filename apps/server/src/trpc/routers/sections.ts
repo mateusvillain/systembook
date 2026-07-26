@@ -86,7 +86,7 @@ export const sectionsRouter = router({
     .input(z.object({ menuId: z.string(), titulo: z.string().min(1) }))
     .mutation(({ ctx, input }) => {
       const menu = ctx.db.select({ id: menus.id }).from(menus).where(eq(menus.id, input.menuId)).get();
-      if (!menu) throw new TRPCError({ code: 'NOT_FOUND', message: 'Menu não encontrado' });
+      if (!menu) throw new TRPCError({ code: 'NOT_FOUND', message: 'Menu not found' });
 
       const row = ctx.db
         .select({ maxOrdem: max(sections.ordem) })
@@ -115,7 +115,7 @@ export const sectionsRouter = router({
         .where(eq(sections.id, input.id))
         .returning()
         .get();
-      if (!updated) throw new TRPCError({ code: 'NOT_FOUND', message: 'Seção não encontrada' });
+      if (!updated) throw new TRPCError({ code: 'NOT_FOUND', message: 'Section not found' });
       return updated;
     }),
 
@@ -153,7 +153,7 @@ export const sectionsRouter = router({
       .where(eq(sections.id, input.id))
       .returning({ id: sections.id })
       .get();
-    if (!deleted) throw new TRPCError({ code: 'NOT_FOUND', message: 'Seção não encontrada' });
+    if (!deleted) throw new TRPCError({ code: 'NOT_FOUND', message: 'Section not found' });
     return { ok: true };
   }),
 });

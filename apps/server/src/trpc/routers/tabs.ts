@@ -6,7 +6,7 @@ import { protectedProcedure, router } from '../init.js';
 import { assertCompleteReorder } from './reorder.js';
 
 function tabNotFound(): TRPCError {
-  return new TRPCError({ code: 'NOT_FOUND', message: 'Tab não encontrada' });
+  return new TRPCError({ code: 'NOT_FOUND', message: 'Tab not found' });
 }
 
 // Estruturalmente idêntico a pages.ts, menos slug (nota da TASK-22).
@@ -34,7 +34,7 @@ export const tabsRouter = router({
       .from(tabs)
       .where(and(eq(tabs.pageId, input.pageId), eq(tabs.isPrimary, true)))
       .get();
-    if (!primary) throw new TRPCError({ code: 'NOT_FOUND', message: 'Página não encontrada' });
+    if (!primary) throw new TRPCError({ code: 'NOT_FOUND', message: 'Page not found' });
     return primary;
   }),
 
@@ -46,7 +46,7 @@ export const tabsRouter = router({
         .from(pages)
         .where(eq(pages.id, input.pageId))
         .get();
-      if (!page) throw new TRPCError({ code: 'NOT_FOUND', message: 'Página não encontrada' });
+      if (!page) throw new TRPCError({ code: 'NOT_FOUND', message: 'Page not found' });
 
       const row = ctx.db
         .select({ maxOrdem: max(tabs.ordem) })

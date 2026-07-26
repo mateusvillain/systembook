@@ -7,7 +7,7 @@
  * expor a data completa no hover (o relativo é a leitura rápida; o absoluto é
  * a precisão sob demanda).
  */
-const rtf = new Intl.RelativeTimeFormat('pt-BR', { numeric: 'auto' });
+const rtf = new Intl.RelativeTimeFormat('en-US', { numeric: 'auto' });
 
 const STEPS: [Intl.RelativeTimeFormatUnit, number][] = [
   ['year', 60 * 60 * 24 * 365],
@@ -22,15 +22,15 @@ export function formatRelative(date: Date | number | string): string {
   const then = new Date(date).getTime();
   const seconds = Math.round((then - Date.now()) / 1000); // negativo = passado
   const abs = Math.abs(seconds);
-  if (abs < 60) return 'agora mesmo';
+  if (abs < 60) return 'just now';
   for (const [unit, secondsPerUnit] of STEPS) {
     if (abs >= secondsPerUnit) {
       return rtf.format(Math.round(seconds / secondsPerUnit), unit);
     }
   }
-  return 'agora mesmo';
+  return 'just now';
 }
 
 export function formatAbsolute(date: Date | number | string): string {
-  return new Date(date).toLocaleString('pt-BR');
+  return new Date(date).toLocaleString('en-US');
 }

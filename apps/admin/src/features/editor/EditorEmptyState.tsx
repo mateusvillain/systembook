@@ -16,8 +16,8 @@ export function EditorEmptyState() {
     // editor.css) pra a linha cair exatamente sobre a primeira linha vazia.
     <div contentEditable={false} className="sb-editor-empty-hint pointer-events-none absolute inset-0">
       <p className={cn(adminTypography.body, 'text-muted-foreground/70')}>
-        Comece a digitar, ou digite &quot;/&quot; para abrir o menu de blocos. Markdown funciona
-        (**negrito**, # título, - lista).
+        Start typing, or type &quot;/&quot; to open the block menu. Markdown works
+        (**bold**, # heading, - list).
       </p>
     </div>
   );

@@ -64,11 +64,11 @@ export function PageContentPage() {
   const publish = useMutation(
     trpc.pages.publish.mutationOptions({
       onSuccess: () => {
-        toast.success('Página publicada.');
+        toast.success('Page published.');
         // Atualiza status/metadados do Section Header (nova revisão publicada).
         queryClient.invalidateQueries(trpc.revisions.listByPage.queryFilter({ pageId: pageId! }));
       },
-      onError: () => toast.error('Falha ao publicar. Tente novamente.'),
+      onError: () => toast.error('Failed to publish. Try again.'),
     }),
   );
 
@@ -80,15 +80,15 @@ export function PageContentPage() {
   }
 
   if (primary.isPending || userTabs.isPending || header.isPending || revisions.isPending)
-    return <p className="text-muted-foreground">Carregando…</p>;
+    return <p className="text-muted-foreground">Loading…</p>;
   if (primary.isError || !primary.data || header.isError || !header.data)
-    return <p role="alert">Página não encontrada.</p>;
+    return <p role="alert">Page not found.</p>;
 
   const tabs = userTabs.data ?? [];
   // Sem tabId na URL = editando o corpo (tab primária).
   const activeTabId = tabId ?? primary.data.id;
   const activeUserTab = tabId ? tabs.find((t) => t.id === tabId) : undefined;
-  if (tabId && !activeUserTab) return <p role="alert">Tab não encontrada.</p>;
+  if (tabId && !activeUserTab) return <p role="alert">Tab not found.</p>;
 
   const { section, page } = header.data;
   // Metadados de publicação: a última revisão (listByPage vem em ordem desc).
@@ -109,7 +109,7 @@ export function PageContentPage() {
   }
 
   function handleDeleteTab(tab: { id: string; titulo: string }) {
-    if (!window.confirm(`Excluir a aba "${tab.titulo}" e seu conteúdo?`)) return;
+    if (!window.confirm(`Delete the tab "${tab.titulo}" and its content?`)) return;
     deleteTab.mutate(
       { id: tab.id },
       {
@@ -135,10 +135,10 @@ export function PageContentPage() {
         actions={
           <>
             <Button asChild variant="ghost">
-              <Link to={`/pages/${pageId}/history`}>Histórico</Link>
+              <Link to={`/pages/${pageId}/history`}>History</Link>
             </Button>
             <Button type="button" onClick={handlePublish} disabled={publish.isPending}>
-              {publish.isPending ? 'Publicando…' : 'Publicar'}
+              {publish.isPending ? 'Publishing…' : 'Publish'}
             </Button>
           </>
         }
@@ -146,9 +146,9 @@ export function PageContentPage() {
 
       {/* Tab bar: Corpo + tabs de usuário. Com 0 tabs, só o gatilho "+ Aba". */}
       {tabs.length > 0 ? (
-        <nav aria-label="Visões da página" className="-mt-2 flex flex-wrap items-center gap-1 border-b">
+        <nav aria-label="Page views" className="-mt-2 flex flex-wrap items-center gap-1 border-b">
           <PageViewLink to={`/pages/${pageId}`} end>
-            Corpo
+            Body
           </PageViewLink>
           {tabs.map((tab, i) => (
             <TabItem
@@ -227,16 +227,16 @@ function TabItem({
           autoFocus
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          aria-label={`Novo título da aba ${tab.titulo}`}
+          aria-label={`New title for tab ${tab.titulo}`}
           className="border-input min-w-0 rounded-editorial-sm border bg-transparent px-2 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
         />
-        <button type="submit" className="text-muted-foreground hover:text-foreground p-1" aria-label="Salvar">
+        <button type="submit" className="text-muted-foreground hover:text-foreground p-1" aria-label="Save">
           <Check className="size-3.5" />
         </button>
         <button
           type="button"
           className="text-muted-foreground hover:text-foreground p-1"
-          aria-label="Cancelar"
+          aria-label="Cancel"
           onClick={() => setEditing(false)}
         >
           <X className="size-3.5" />
@@ -249,7 +249,7 @@ function TabItem({
     <span className="group/tab -mb-px flex items-center">
       <PageViewLink to={to}>{tab.titulo}</PageViewLink>
       <RowActionsMenu
-        triggerLabel={`Mais ações da aba ${tab.titulo}`}
+        triggerLabel={`More actions for tab ${tab.titulo}`}
         onRename={() => {
           setDraft(tab.titulo);
           setEditing(true);
@@ -257,8 +257,8 @@ function TabItem({
         onDelete={onDelete}
         onMovePrev={onMoveLeft}
         onMoveNext={onMoveRight}
-        movePrevLabel="Mover para a esquerda"
-        moveNextLabel="Mover para a direita"
+        movePrevLabel="Move left"
+        moveNextLabel="Move right"
         triggerClassName="-ml-2 mb-1 opacity-0 transition-opacity group-hover/tab:opacity-100 group-focus-within/tab:opacity-100"
       />
     </span>
@@ -291,7 +291,7 @@ function AddTab({
         onClick={() => setOpen(true)}
         className={cn(createLinkClass, 'px-2 py-1', !standalone && '-mb-px')}
       >
-        <Plus className="size-3.5" /> Aba
+        <Plus className="size-3.5" /> Tab
       </button>
     );
   }
@@ -300,19 +300,19 @@ function AddTab({
     <form onSubmit={handleSubmit} className={cn('flex items-center gap-1 px-2 py-1', !standalone && '-mb-px')}>
       <input
         autoFocus
-        placeholder="Nome da aba"
+        placeholder="Tab name"
         value={titulo}
         onChange={(e) => setTitulo(e.target.value)}
-        aria-label="Nome da nova aba"
+        aria-label="New tab name"
         className="border-input w-32 min-w-0 rounded-editorial-sm border bg-transparent px-2 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
       />
-      <button type="submit" className="text-muted-foreground hover:text-foreground p-1" aria-label="Criar aba">
+      <button type="submit" className="text-muted-foreground hover:text-foreground p-1" aria-label="Create tab">
         <Check className="size-3.5" />
       </button>
       <button
         type="button"
         className="text-muted-foreground hover:text-foreground p-1"
-        aria-label="Cancelar"
+        aria-label="Cancel"
         onClick={() => setOpen(false)}
       >
         <X className="size-3.5" />

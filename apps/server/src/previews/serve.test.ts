@@ -106,7 +106,7 @@ describe('GET /previews/* (TASK-46)', () => {
     expect(res.status).toBe(404);
     expect(res.headers.get('content-type')).toContain('application/json');
     await expect(res.json()).resolves.toEqual({
-      error: 'artefato de preview não encontrado',
+      error: 'preview artifact not found',
     });
   });
 

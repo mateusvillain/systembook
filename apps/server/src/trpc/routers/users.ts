@@ -41,7 +41,7 @@ export const usersRouter = router({
         });
       } catch (error) {
         if (isUniqueViolation(error)) {
-          throw new TRPCError({ code: 'CONFLICT', message: 'Já existe um usuário com este email' });
+          throw new TRPCError({ code: 'CONFLICT', message: 'A user with this email already exists' });
         }
         throw error;
       }
@@ -57,7 +57,7 @@ export const usersRouter = router({
         .returning({ userId: memberships.userId, role: memberships.role })
         .get();
       if (!updated) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Usuário não encontrado' });
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' });
       }
       return updated;
     }),
@@ -70,7 +70,7 @@ export const usersRouter = router({
       if (input.userId === ctx.user.userId) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message: 'Você não pode desativar a própria conta',
+          message: 'You cannot deactivate your own account',
         });
       }
       const deleted = ctx.db
@@ -79,7 +79,7 @@ export const usersRouter = router({
         .returning({ id: users.id })
         .get();
       if (!deleted) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Usuário não encontrado' });
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' });
       }
       return { ok: true };
     }),
@@ -95,7 +95,7 @@ export const usersRouter = router({
         .returning({ id: users.id })
         .get();
       if (!updated) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Usuário não encontrado' });
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' });
       }
       // Invalida todas as sessões do usuário — força re-login com a nova senha
       ctx.db.delete(sessions).where(eq(sessions.userId, input.userId)).run();

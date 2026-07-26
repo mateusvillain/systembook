@@ -41,7 +41,7 @@ export function StatusTagSelector({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          aria-label={current ? `Status: ${current.titulo}. Alterar` : 'Definir status'}
+          aria-label={current ? `Status: ${current.titulo}. Change` : 'Set status'}
           className="inline-flex shrink-0 items-center rounded-full transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-ring/50 focus-visible:ring-[3px]"
         >
           {current ? (
@@ -77,7 +77,7 @@ export function StatusTagSelector({
           className={cn('flex items-center gap-2 text-muted-foreground')}
         >
           <X className="size-3.5" />
-          Sem status
+          No status
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

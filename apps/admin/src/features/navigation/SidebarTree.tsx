@@ -64,15 +64,15 @@ export function SidebarTree({
 
   if (!activeMenuId) {
     // O header ainda está resolvendo qual menu está ativo (menus.list).
-    return <p className="text-muted-foreground px-2 py-1 text-sm">Carregando menu…</p>;
+    return <p className="text-muted-foreground px-2 py-1 text-sm">Loading menu…</p>;
   }
 
   return (
     <OnNavigateContext.Provider value={onNavigate}>
-    <nav aria-label="Estrutura da documentação" className="grid content-start gap-6 text-sm">
-      {sectionsQuery.isPending && <span className="text-muted-foreground px-2 text-sm">Carregando…</span>}
+    <nav aria-label="Documentation structure" className="grid content-start gap-6 text-sm">
+      {sectionsQuery.isPending && <span className="text-muted-foreground px-2 text-sm">Loading…</span>}
       {!sectionsQuery.isPending && sections.length === 0 && (
-        <p className="text-muted-foreground px-2 text-sm">Nenhuma seção neste menu ainda.</p>
+        <p className="text-muted-foreground px-2 text-sm">No sections in this menu yet.</p>
       )}
       {sections.map((section, i) => (
         <SectionGroup
@@ -84,7 +84,7 @@ export function SidebarTree({
           onDelete={() => {
             if (
               window.confirm(
-                `Excluir a seção "${section.titulo}"? Todas as páginas dentro dela também serão removidas.`,
+                `Delete the section "${section.titulo}"? All pages inside it will also be removed.`,
               )
             ) {
               remove.mutate({ id: section.id });
@@ -93,7 +93,7 @@ export function SidebarTree({
         />
       ))}
       <InlineCreate
-        label="Nova seção"
+        label="New section"
         onCreate={(titulo) => create.mutateAsync({ menuId: activeMenuId, titulo })}
       />
     </nav>
@@ -133,7 +133,7 @@ function SectionGroup({
     <div className="grid gap-0.5">
       {editing ? (
         <RenameForm
-          label={`seção ${section.titulo}`}
+          label={`section ${section.titulo}`}
           initial={section.titulo}
           draft={draft}
           setDraft={setDraft}
@@ -147,14 +147,14 @@ function SectionGroup({
         <div {...dragRow} className="group/section flex items-center gap-1 pr-1">
           <DragHandle
             {...dragHandle}
-            label={`Reordenar a seção ${section.titulo}`}
+            label={`Reorder section ${section.titulo}`}
             className="-ml-1 opacity-0 group-hover/section:opacity-100 group-focus-within/section:opacity-100"
           />
           <button
             type="button"
             className="text-muted-foreground hover:text-foreground flex min-h-11 min-w-0 flex-1 items-center gap-1 rounded-editorial-sm px-1 py-0.5 text-left text-xs font-semibold uppercase tracking-[0.1em] transition-colors md:min-h-0"
             aria-expanded={expanded}
-            aria-label={`${expanded ? 'Recolher' : 'Expandir'} seção ${section.titulo}`}
+            aria-label={`${expanded ? 'Collapse' : 'Expand'} section ${section.titulo}`}
             onClick={() => setExpanded((v) => !v)}
           >
             <ChevronDown
@@ -163,7 +163,7 @@ function SectionGroup({
             <span className="truncate">{section.titulo}</span>
           </button>
           <RowActionsMenu
-            triggerLabel={`Mais ações da seção ${section.titulo}`}
+            triggerLabel={`More actions for section ${section.titulo}`}
             onRename={() => {
               setDraft(section.titulo);
               setEditing(true);
@@ -198,7 +198,7 @@ function PagesList({ sectionId, sectionSlug }: { sectionId: string; sectionSlug?
 
   return (
     <div className="grid gap-0.5 pl-2">
-      {pagesQuery.isPending && <span className="text-muted-foreground px-2 text-sm">Carregando…</span>}
+      {pagesQuery.isPending && <span className="text-muted-foreground px-2 text-sm">Loading…</span>}
       {pages.map((page, i) => (
         <PageRow
           key={page.id}
@@ -209,7 +209,7 @@ function PagesList({ sectionId, sectionSlug }: { sectionId: string; sectionSlug?
           dragHandle={dnd.getHandleProps(page.id, i)}
           onRename={(titulo) => rename.mutate({ id: page.id, titulo })}
           onDelete={() => {
-            if (window.confirm(`Excluir a página "${page.titulo}" e todo o seu conteúdo?`)) {
+            if (window.confirm(`Delete the page "${page.titulo}" and all of its content?`)) {
               remove.mutate({ id: page.id });
             }
           }}
@@ -246,7 +246,7 @@ function PageRow({
   if (editing) {
     return (
       <RenameForm
-        label={`página ${page.titulo}`}
+        label={`page ${page.titulo}`}
         initial={page.titulo}
         draft={draft}
         setDraft={setDraft}
@@ -263,7 +263,7 @@ function PageRow({
     <div {...dragRow} className="group/page flex items-center gap-1">
       <DragHandle
         {...dragHandle}
-        label={`Reordenar a página ${page.titulo}`}
+        label={`Reorder page ${page.titulo}`}
         className="opacity-0 group-hover/page:opacity-100 group-focus-within/page:opacity-100"
       />
       <NavLink
@@ -283,7 +283,7 @@ function PageRow({
         {page.titulo}
       </NavLink>
       <RowActionsMenu
-        triggerLabel={`Mais ações da página ${page.titulo}`}
+        triggerLabel={`More actions for page ${page.titulo}`}
         onRename={() => {
           setDraft(page.titulo);
           setEditing(true);
@@ -294,7 +294,7 @@ function PageRow({
             <CopyLinkItem
               sectionSlug={sectionSlug}
               pageSlug={page.slug}
-              disabledReason="Esta página ainda não tem slug"
+              disabledReason="This page has no slug yet"
             />
             <MoveToMenuSub
               pageId={page.id}
@@ -336,13 +336,13 @@ function RenameForm({
         autoFocus
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
-        aria-label={`Novo título de ${label}`}
+        aria-label={`New title for ${label}`}
         className={treeInputClass}
       />
-      <button type="submit" className={iconBtnClass} aria-label={`Salvar título de ${label}`}>
+      <button type="submit" className={iconBtnClass} aria-label={`Save title for ${label}`}>
         <Check className="size-4" />
       </button>
-      <button type="button" className={iconBtnClass} aria-label="Cancelar" onClick={onCancel}>
+      <button type="button" className={iconBtnClass} aria-label="Cancel" onClick={onCancel}>
         <X className="size-4" />
       </button>
     </form>
@@ -386,10 +386,10 @@ function InlineCreate({
         aria-label={label}
         className={treeInputClass}
       />
-      <button type="submit" className={iconBtnClass} aria-label={`Criar ${label.toLowerCase()}`}>
+      <button type="submit" className={iconBtnClass} aria-label={`Create ${label.toLowerCase()}`}>
         <Check className="size-4" />
       </button>
-      <button type="button" className={iconBtnClass} aria-label="Cancelar" onClick={() => setOpen(false)}>
+      <button type="button" className={iconBtnClass} aria-label="Cancel" onClick={() => setOpen(false)}>
         <X className="size-4" />
       </button>
     </form>
@@ -417,14 +417,14 @@ function CreatePageForm({
       setSlug('');
       setOpen(false);
     } catch (err) {
-      setError(err instanceof TRPCClientError ? err.message : 'Erro ao criar página');
+      setError(err instanceof TRPCClientError ? err.message : 'Error creating page');
     }
   }
 
   if (!open) {
     return (
       <button className={cn(createLinkClass, 'px-2 py-1')} onClick={() => setOpen(true)}>
-        <Plus className="size-3.5" /> Adicionar página
+        <Plus className="size-3.5" /> Add page
       </button>
     );
   }
@@ -433,27 +433,27 @@ function CreatePageForm({
     <form onSubmit={handleSubmit} className="flex flex-wrap items-center gap-1 py-0.5">
       <input
         autoFocus
-        placeholder="Título da página"
+        placeholder="Page title"
         value={titulo}
         onChange={(e) => setTitulo(e.target.value)}
-        aria-label="Título da nova página"
+        aria-label="New page title"
         className={treeInputClass}
       />
       <input
-        placeholder="slug (opcional)"
+        placeholder="slug (optional)"
         value={slug}
         onChange={(e) => setSlug(e.target.value)}
-        aria-label="Slug da nova página (opcional)"
+        aria-label="New page slug (optional)"
         className={treeInputClass}
       />
-      <button type="submit" className={iconBtnClass} aria-label="Criar página">
+      <button type="submit" className={iconBtnClass} aria-label="Create page">
         <Check className="size-4" />
       </button>
-      <button type="button" className={iconBtnClass} aria-label="Cancelar" onClick={() => setOpen(false)}>
+      <button type="button" className={iconBtnClass} aria-label="Cancel" onClick={() => setOpen(false)}>
         <X className="size-4" />
       </button>
       <span className="text-muted-foreground w-full text-xs">
-        Deixe o slug em branco para gerá-lo a partir do título.
+        Leave the slug blank to generate it from the title.
       </span>
       {error && (
         <span role="alert" className="text-destructive w-full text-xs">

@@ -58,7 +58,7 @@ function DosDontsView({ node, updateAttributes, editor }: NodeViewProps) {
               <button
                 key={v}
                 type="button"
-                title={`Mudar para ${DOS_DONTS_META[v].label}`}
+                title={`Change to ${DOS_DONTS_META[v].label}`}
                 aria-pressed={v === variant}
                 className="sb-dos-donts-switch"
                 data-active={v === variant || undefined}
@@ -73,9 +73,9 @@ function DosDontsView({ node, updateAttributes, editor }: NodeViewProps) {
           <input
             type="text"
             className="sb-dos-donts-title-input"
-            placeholder="Título"
+            placeholder="Title"
             value={titulo}
-            aria-label="Título do bloco Do/Don't"
+            aria-label="Do/Don't block title"
             onChange={(e) => updateAttributes({ titulo: e.target.value })}
           />
         ) : (

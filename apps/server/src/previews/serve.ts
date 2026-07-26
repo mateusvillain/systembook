@@ -97,7 +97,7 @@ export async function handlePreviewRequest(
     }
     if (!stats.isFile()) throw new Error('não é arquivo');
   } catch {
-    sendError(res, 404, 'artefato de preview não encontrado');
+    sendError(res, 404, 'preview artifact not found');
     return;
   }
 

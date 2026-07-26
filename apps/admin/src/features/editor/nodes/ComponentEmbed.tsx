@@ -87,7 +87,7 @@ function ComponentEmbedView({ node, updateAttributes, editor }: NodeViewProps) {
         onClick={() => setPickerOpen(true)}
         style={emptyActionStyle}
       >
-        {hasSelection ? 'Trocar componente' : 'Selecionar componente'}
+        {hasSelection ? 'Replace component' : 'Select component'}
       </button>
       {pickerOpen && (
         <ComponentEmbedPicker
@@ -115,10 +115,10 @@ function ComponentEmbedView({ node, updateAttributes, editor }: NodeViewProps) {
         message={
           componentName ? (
             <>
-              Preview de <strong>{componentName}</strong> — selecione uma variante
+              Preview of <strong>{componentName}</strong> — select a variant
             </>
           ) : (
-            'Nenhum componente selecionado'
+            'No component selected'
           )
         }
       />
@@ -134,7 +134,7 @@ function ComponentEmbedView({ node, updateAttributes, editor }: NodeViewProps) {
         control={control}
         message={
           <>
-            Carregando preview de <strong>{componentName}</strong>…
+            Loading preview of <strong>{componentName}</strong>…
           </>
         }
       />
@@ -156,12 +156,12 @@ function ComponentEmbedView({ node, updateAttributes, editor }: NodeViewProps) {
           ⚠️
         </span>
         <span style={{ flex: 1 }}>
-          Nenhum preview publicado para{' '}
+          No preview published for{' '}
           <strong>
             {componentName} / {variantId}
           </strong>{' '}
-          ainda.
-          {editor.isEditable && ' Publique-o pelo conector no repositório do componente.'}
+          yet.
+          {editor.isEditable && ' Publish it via the connector in the component repository.'}
         </span>
         {editor.isEditable && (
           <button
@@ -172,7 +172,7 @@ function ComponentEmbedView({ node, updateAttributes, editor }: NodeViewProps) {
             onClick={() => void previewQuery.refetch()}
             style={emptyActionStyle}
           >
-            {previewQuery.isFetching ? 'Verificando…' : 'Tentar novamente'}
+            {previewQuery.isFetching ? 'Checking…' : 'Try again'}
           </button>
         )}
         {control}
@@ -202,7 +202,7 @@ function ComponentEmbedView({ node, updateAttributes, editor }: NodeViewProps) {
         ref={iframeRef}
         className="sb-component-embed-frame"
         src={preview.url}
-        title={`Preview de ${componentName} (${variantId})`}
+        title={`Preview of ${componentName} (${variantId})`}
         loading="lazy"
         /*
          * Política de sandbox (acceptance criteria da TASK-47):
