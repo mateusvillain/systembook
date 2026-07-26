@@ -15,7 +15,7 @@ export function assertCompleteReorder(existingIds: string[], orderedIds: string[
   if (!valid) {
     throw new TRPCError({
       code: 'BAD_REQUEST',
-      message: 'A lista de reordenação deve conter exatamente os itens existentes, sem repetições',
+      message: 'The reorder list must contain exactly the existing items, without repetitions',
     });
   }
 }

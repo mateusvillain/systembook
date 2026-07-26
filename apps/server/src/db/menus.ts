@@ -2,7 +2,7 @@ import { eq, isNull } from 'drizzle-orm';
 import type { Db } from './client.js';
 import { DEFAULT_MENU_ID, menus } from './schema.js';
 
-export const DEFAULT_MENU_TITLE = 'Documentação';
+export const DEFAULT_MENU_TITLE = 'Documentation';
 const DEFAULT_MENU_SLUG = 'documentacao';
 
 /**

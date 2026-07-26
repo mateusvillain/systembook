@@ -6,7 +6,7 @@ import { pages, revisions, users } from '../../db/schema.js';
 import { protectedProcedure, publicProcedure, router } from '../init.js';
 
 function revisionNotFound(): TRPCError {
-  return new TRPCError({ code: 'NOT_FOUND', message: 'Revisão não encontrada' });
+  return new TRPCError({ code: 'NOT_FOUND', message: 'Revision not found' });
 }
 
 export const revisionsRouter = router({

@@ -39,8 +39,8 @@ export function RowActionsMenu({
   onRename,
   onMovePrev,
   onMoveNext,
-  movePrevLabel = 'Mover para cima',
-  moveNextLabel = 'Mover para baixo',
+  movePrevLabel = 'Move up',
+  moveNextLabel = 'Move down',
   onDelete,
   align = 'start',
   triggerClassName,
@@ -81,13 +81,13 @@ export function RowActionsMenu({
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align={align}>
-        <DropdownMenuItem onSelect={onRename}>Renomear</DropdownMenuItem>
+        <DropdownMenuItem onSelect={onRename}>Rename</DropdownMenuItem>
         {extraItems}
         {onMovePrev && <DropdownMenuItem onSelect={onMovePrev}>{movePrevLabel}</DropdownMenuItem>}
         {onMoveNext && <DropdownMenuItem onSelect={onMoveNext}>{moveNextLabel}</DropdownMenuItem>}
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" onSelect={onDelete}>
-          Excluir
+          Delete
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

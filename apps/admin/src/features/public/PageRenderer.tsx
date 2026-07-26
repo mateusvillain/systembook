@@ -25,7 +25,7 @@ export interface RenderableSnapshot {
 }
 
 /** Rótulo da "visão" do corpo da página (a tab primária) no tab bar público. */
-export const BODY_VIEW_LABEL = 'Visão geral';
+export const BODY_VIEW_LABEL = 'Overview';
 
 function TabContent({ blocks }: { blocks: unknown[] }) {
   const editor = useEditor(
@@ -74,7 +74,7 @@ export function PageRenderer({
   const wantedTabId = controlled ? controlledTabId : internalTabId;
 
   const activeView = views.find((v) => v.tabId === wantedTabId) ?? views[0];
-  if (!activeView) return <p>Página sem conteúdo.</p>;
+  if (!activeView) return <p>Page has no content.</p>;
 
   const selectTab = (tabId: string) => {
     if (controlled) onSelectTab(tabId);

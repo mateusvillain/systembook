@@ -32,10 +32,10 @@ export function RevisionHistoryList({ pageId, firstTabId }: Props) {
     trpc.pages.restoreRevision.mutationOptions({
       onSuccess: () => {
         queryClient.invalidateQueries(trpc.revisions.listByPage.queryFilter());
-        toast.success('Revisão restaurada.');
+        toast.success('Revision restored.');
         if (firstTabId) navigate(`/pages/${pageId}/tabs/${firstTabId}`);
       },
-      onError: () => toast.error('Falha ao restaurar a revisão. Tente novamente.'),
+      onError: () => toast.error('Failed to restore the revision. Try again.'),
     }),
   );
 
@@ -43,15 +43,15 @@ export function RevisionHistoryList({ pageId, firstTabId }: Props) {
     // Confirmação obrigatória (mesmo padrão de window.confirm do SidebarTree,
     // TASK-23): restaurar sobrescreve o conteúdo ao vivo de cada tab.
     const ok = window.confirm(
-      'Restaurar esta revisão substitui o conteúdo atual (rascunho) de todas as tabs da página pelo snapshot escolhido. Continuar?',
+      'Restoring this revision replaces the current (draft) content of all page tabs with the chosen snapshot. Continue?',
     );
     if (!ok) return;
     restore.mutate({ pageId, revisionId });
   }
 
-  if (list.isPending) return <p className="text-muted-foreground">Carregando histórico…</p>;
-  if (list.isError) return <p role="alert" className="text-destructive">Erro ao carregar o histórico.</p>;
-  if (list.data.length === 0) return <p className="text-muted-foreground">Nenhuma revisão publicada ainda.</p>;
+  if (list.isPending) return <p className="text-muted-foreground">Loading history…</p>;
+  if (list.isError) return <p role="alert" className="text-destructive">Failed to load the history.</p>;
+  if (list.data.length === 0) return <p className="text-muted-foreground">No revisions published yet.</p>;
 
   return (
     <div className="grid gap-6 md:grid-cols-[minmax(260px,340px)_1fr]">
@@ -67,8 +67,8 @@ export function RevisionHistoryList({ pageId, firstTabId }: Props) {
                 rev.id === selectedId ? 'bg-accent' : 'hover:bg-muted/50',
               )}
             >
-              <strong>{new Date(rev.criadoEm).toLocaleString('pt-BR')}</strong>
-              <div className="text-muted-foreground text-xs">{rev.autorEmail ?? 'Autor removido'}</div>
+              <strong>{new Date(rev.criadoEm).toLocaleString('en-US')}</strong>
+              <div className="text-muted-foreground text-xs">{rev.autorEmail ?? 'Removed author'}</div>
               {rev.mensagem && <div className="mt-1 text-sm">{rev.mensagem}</div>}
             </button>
             <div className="px-3 pb-2">
@@ -79,7 +79,7 @@ export function RevisionHistoryList({ pageId, firstTabId }: Props) {
                 onClick={() => handleRestore(rev.id)}
                 disabled={restore.isPending}
               >
-                {restore.isPending ? 'Restaurando…' : 'Restaurar'}
+                {restore.isPending ? 'Restoring…' : 'Restore'}
               </Button>
             </div>
           </li>
@@ -88,10 +88,10 @@ export function RevisionHistoryList({ pageId, firstTabId }: Props) {
 
       <div>
         {selectedId === null && (
-          <p className="text-muted-foreground">Selecione uma revisão à esquerda para ver o conteúdo.</p>
+          <p className="text-muted-foreground">Select a revision on the left to view its content.</p>
         )}
-        {selectedId !== null && preview.isPending && <p className="text-muted-foreground">Carregando conteúdo…</p>}
-        {selectedId !== null && preview.isError && <p role="alert" className="text-destructive">Erro ao carregar o snapshot.</p>}
+        {selectedId !== null && preview.isPending && <p className="text-muted-foreground">Loading content…</p>}
+        {selectedId !== null && preview.isError && <p role="alert" className="text-destructive">Failed to load the snapshot.</p>}
         {preview.data && <RevisionSnapshotPreview snapshot={preview.data.snapshot} />}
       </div>
     </div>

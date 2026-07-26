@@ -45,7 +45,7 @@ function UsersAdmin({ meUserId }: { meUserId: string }) {
     trpc.users.update.mutationOptions({
       onSuccess: () => {
         invalidate();
-        toast.success('Papel atualizado.');
+        toast.success('Role updated.');
       },
     }),
   );
@@ -53,24 +53,24 @@ function UsersAdmin({ meUserId }: { meUserId: string }) {
     trpc.users.deactivate.mutationOptions({
       onSuccess: () => {
         invalidate();
-        toast.success('Usuário removido.');
+        toast.success('User removed.');
       },
     }),
   );
 
   return (
     <section className="grid gap-6">
-      <h1 className="text-2xl font-semibold">Usuários</h1>
+      <h1 className="text-2xl font-semibold">Users</h1>
 
       <Card>
         <CardContent className="pt-6">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nome</TableHead>
+                <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Papel</TableHead>
-                <TableHead>Ações</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -85,7 +85,7 @@ function UsersAdmin({ meUserId }: { meUserId: string }) {
               ))}
             </TableBody>
           </Table>
-          {users.isPending && <p className="text-muted-foreground mt-2">Carregando usuários…</p>}
+          {users.isPending && <p className="text-muted-foreground mt-2">Loading users…</p>}
         </CardContent>
       </Card>
 
@@ -112,7 +112,7 @@ function UserRow({ user, isSelf, onChangeRole, onDeactivate }: UserRowProps) {
         // Nunca ecoar a senha de volta — só confirmação (TASK-15)
         setResetting(false);
         setNewPassword('');
-        toast.success('Senha redefinida com sucesso.');
+        toast.success('Password reset successfully.');
       },
     }),
   );
@@ -127,7 +127,7 @@ function UserRow({ user, isSelf, onChangeRole, onDeactivate }: UserRowProps) {
           value={user.role}
           disabled={isSelf}
           onChange={(e) => onChangeRole(e.target.value as Role)}
-          aria-label={`Role de ${user.email}`}
+          aria-label={`Role for ${user.email}`}
         >
           <option value="admin">admin</option>
           <option value="editor">editor</option>
@@ -145,24 +145,24 @@ function UserRow({ user, isSelf, onChangeRole, onDeactivate }: UserRowProps) {
             <Input
               type="password"
               className="h-8 w-44"
-              placeholder="Nova senha (mín. 8)"
+              placeholder="New password (min. 8)"
               minLength={8}
               required
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              aria-label={`Nova senha de ${user.email}`}
+              aria-label={`New password for ${user.email}`}
             />
             <Button type="submit" size="sm" disabled={reset.isPending}>
-              Salvar
+              Save
             </Button>
             <Button type="button" size="sm" variant="ghost" onClick={() => setResetting(false)}>
-              Cancelar
+              Cancel
             </Button>
           </form>
         ) : (
           <div className="flex items-center gap-2">
             <Button size="sm" variant="outline" onClick={() => setResetting(true)}>
-              Redefinir senha
+              Reset password
             </Button>
             <Button
               size="sm"
@@ -170,9 +170,9 @@ function UserRow({ user, isSelf, onChangeRole, onDeactivate }: UserRowProps) {
               className={cn(!isSelf && 'text-destructive hover:text-destructive')}
               onClick={onDeactivate}
               disabled={isSelf}
-              title={isSelf ? 'Não é possível desativar a própria conta' : undefined}
+              title={isSelf ? 'You cannot deactivate your own account' : undefined}
             >
-              Remover
+              Remove
             </Button>
           </div>
         )}
@@ -197,14 +197,14 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
         setPassword('');
         setEmailError(null);
         onCreated();
-        toast.success('Usuário criado.');
+        toast.success('User created.');
       },
       onError: (error) => {
         // Erro de campo (email duplicado) → inline; convenção TASK-76.
         if (error instanceof TRPCClientError && error.data?.code === 'CONFLICT') {
           setEmailError(error.message);
         } else {
-          setEmailError('Erro ao criar usuário');
+          setEmailError('Error creating user');
         }
       },
     }),
@@ -219,12 +219,12 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
   return (
     <Card className="max-w-md">
       <CardHeader>
-        <CardTitle>Criar usuário</CardTitle>
+        <CardTitle>Create user</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="grid gap-4">
           <div className="grid gap-2">
-            <Label htmlFor="cu-nome">Nome</Label>
+            <Label htmlFor="cu-nome">Name</Label>
             <Input id="cu-nome" required value={nome} onChange={(e) => setNome(e.target.value)} name="nome" />
           </div>
           <div className="grid gap-2">
@@ -245,7 +245,7 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
             )}
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="cu-password">Senha inicial</Label>
+            <Label htmlFor="cu-password">Initial password</Label>
             <Input
               id="cu-password"
               type="password"
@@ -258,7 +258,7 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="cu-role">Papel</Label>
+            <Label htmlFor="cu-role">Role</Label>
             <select
               id="cu-role"
               className={selectClass}
@@ -271,7 +271,7 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
             </select>
           </div>
           <Button type="submit" disabled={create.isPending}>
-            {create.isPending ? 'Criando…' : 'Criar usuário'}
+            {create.isPending ? 'Creating…' : 'Create user'}
           </Button>
         </form>
       </CardContent>

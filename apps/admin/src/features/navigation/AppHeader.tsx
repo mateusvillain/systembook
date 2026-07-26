@@ -56,7 +56,7 @@ export function AppHeader({
         <button
           type="button"
           onClick={onToggleSidebar}
-          aria-label="Alternar navegação"
+          aria-label="Toggle navigation"
           aria-expanded={sidebarOpen}
           aria-controls="admin-sidebar"
           className="text-muted-foreground hover:text-foreground hover:bg-accent inline-flex size-11 shrink-0 items-center justify-center rounded-editorial-sm lg:hidden"
@@ -126,7 +126,7 @@ function MenuNav({
           onDelete={() => {
             if (
               window.confirm(
-                `Excluir o menu "${menu.titulo}"? Todas as seções, páginas e tabs dentro dele também serão removidas.`,
+                `Delete the menu "${menu.titulo}"? All sections, pages, and tabs inside it will also be removed.`,
               )
             ) {
               remove.mutate({ id: menu.id });
@@ -176,15 +176,15 @@ function MenuNavItem({
           autoFocus
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          aria-label={`Novo título do menu ${menu.titulo}`}
+          aria-label={`New title for menu ${menu.titulo}`}
           className="border-input min-w-0 rounded-editorial-sm border bg-transparent px-2 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
         />
-        <button type="submit" aria-label="Salvar" className="text-muted-foreground hover:text-foreground p-1">
+        <button type="submit" aria-label="Save" className="text-muted-foreground hover:text-foreground p-1">
           <Check className="size-3.5" />
         </button>
         <button
           type="button"
-          aria-label="Cancelar"
+          aria-label="Cancel"
           className="text-muted-foreground hover:text-foreground p-1"
           onClick={() => setEditing(false)}
         >
@@ -198,7 +198,7 @@ function MenuNavItem({
     <div {...dragRow} className="group flex shrink-0 items-center">
       <DragHandle
         {...dragHandle}
-        label={`Reordenar o menu ${menu.titulo}`}
+        label={`Reorder menu ${menu.titulo}`}
         className="-mr-1 size-5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
       />
       <button
@@ -213,7 +213,7 @@ function MenuNavItem({
         {menu.titulo}
       </button>
       <RowActionsMenu
-        triggerLabel={`Mais ações do menu ${menu.titulo}`}
+        triggerLabel={`More actions for menu ${menu.titulo}`}
         onRename={() => {
           setDraft(menu.titulo);
           setEditing(true);
@@ -223,7 +223,7 @@ function MenuNavItem({
           <CopyLinkItem
             sectionSlug={pathQuery.data?.sectionSlug}
             pageSlug={pathQuery.data?.pageSlug}
-            disabledReason="Este menu ainda não tem páginas"
+            disabledReason="This menu has no pages yet"
           />
         }
         triggerClassName="-ml-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
@@ -250,8 +250,8 @@ function AddMenu({ onCreate }: { onCreate: (titulo: string) => Promise<unknown> 
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label="Adicionar menu"
-        title="Adicionar menu"
+        aria-label="Add menu"
+        title="Add menu"
         className={cn(createLinkClass, 'shrink-0 p-1.5')}
       >
         <Plus className="size-4" />
@@ -263,18 +263,18 @@ function AddMenu({ onCreate }: { onCreate: (titulo: string) => Promise<unknown> 
     <form onSubmit={handleSubmit} className="flex shrink-0 items-center gap-1">
       <input
         autoFocus
-        placeholder="Nome do menu"
+        placeholder="Menu name"
         value={titulo}
         onChange={(e) => setTitulo(e.target.value)}
-        aria-label="Nome do novo menu"
+        aria-label="New menu name"
         className="border-input w-32 min-w-0 rounded-editorial-sm border bg-transparent px-2 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
       />
-      <button type="submit" aria-label="Criar menu" className="text-muted-foreground hover:text-foreground p-1">
+      <button type="submit" aria-label="Create menu" className="text-muted-foreground hover:text-foreground p-1">
         <Check className="size-3.5" />
       </button>
       <button
         type="button"
-        aria-label="Cancelar"
+        aria-label="Cancel"
         className="text-muted-foreground hover:text-foreground p-1"
         onClick={() => setOpen(false)}
       >
@@ -308,7 +308,7 @@ function UserMenu({
         <button
           type="button"
           className="hover:bg-accent flex min-h-11 items-center gap-2 rounded-editorial-sm py-1 pl-1 pr-2 sm:min-h-0"
-          aria-label="Menu do usuário"
+          aria-label="User menu"
         >
           <Avatar className="size-7">
             <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold uppercase">
@@ -321,10 +321,10 @@ function UserMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuItem asChild>
-          <Link to="/admin/history">Histórico global</Link>
+          <Link to="/admin/history">Global history</Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/admin/settings/landing-page">Página inicial</Link>
+          <Link to="/admin/settings/landing-page">Landing page</Link>
         </DropdownMenuItem>
         {/* Status tags: gerenciável por admin e editor (protectedProcedure). */}
         <DropdownMenuItem asChild>
@@ -332,7 +332,7 @@ function UserMenu({
         </DropdownMenuItem>
         {isAdmin && (
           <DropdownMenuItem asChild>
-            <Link to="/admin/users">Usuários</Link>
+            <Link to="/admin/users">Users</Link>
           </DropdownMenuItem>
         )}
         {isAdmin && (
@@ -343,7 +343,7 @@ function UserMenu({
         <DropdownMenuSeparator />
         <DropdownMenuItem disabled={logoutPending} onSelect={onLogout}>
           <LogOut className="size-4" />
-          Sair
+          Sign out
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

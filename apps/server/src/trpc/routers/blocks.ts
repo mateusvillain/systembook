@@ -23,7 +23,7 @@ export const blocksRouter = router({
     .input(z.object({ tabId: z.string() }))
     .query(({ ctx, input }) => {
       const tab = ctx.db.select({ id: tabs.id }).from(tabs).where(eq(tabs.id, input.tabId)).get();
-      if (!tab) throw new TRPCError({ code: 'NOT_FOUND', message: 'Tab não encontrada' });
+      if (!tab) throw new TRPCError({ code: 'NOT_FOUND', message: 'Tab not found' });
 
       const records = listBlocksByTab(ctx.db, input.tabId);
       // doc null = tab nunca salva; o editor abre vazio em vez de um doc
@@ -37,7 +37,7 @@ export const blocksRouter = router({
     .input(z.object({ tabId: z.string(), doc: tiptapDocSchema }))
     .mutation(({ ctx, input }) => {
       const tab = ctx.db.select({ id: tabs.id }).from(tabs).where(eq(tabs.id, input.tabId)).get();
-      if (!tab) throw new TRPCError({ code: 'NOT_FOUND', message: 'Tab não encontrada' });
+      if (!tab) throw new TRPCError({ code: 'NOT_FOUND', message: 'Tab not found' });
 
       let inserts;
       try {

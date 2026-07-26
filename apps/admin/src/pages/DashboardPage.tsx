@@ -36,7 +36,7 @@ export function DashboardPage() {
   const createSection = useMutation(trpc.sections.create.mutationOptions({ onSuccess: invalidate }));
 
   if (!activeMenuId || sectionsQuery.isPending) {
-    return <p className="text-muted-foreground">Carregando…</p>;
+    return <p className="text-muted-foreground">Loading…</p>;
   }
 
   const sections = sectionsQuery.data ?? [];
@@ -45,12 +45,12 @@ export function DashboardPage() {
     return (
       <EmptyState
         icon={FolderPlus}
-        title="Nenhuma seção ainda"
-        description="Seções agrupam as páginas deste menu. Crie a primeira para começar a montar a documentação."
+        title="No sections yet"
+        description="Sections group the pages in this menu. Create the first one to start building your documentation."
         action={
           <CreateFirstButton
-            label="Criar primeira seção"
-            placeholder="Nome da seção"
+            label="Create first section"
+            placeholder="Section name"
             onCreate={(titulo) => createSection.mutateAsync({ menuId: activeMenuId, titulo })}
           />
         }
@@ -61,9 +61,9 @@ export function DashboardPage() {
   return (
     <div className="grid gap-8">
       <header className="grid gap-2">
-        <h1 className={adminTypography.title}>Início</h1>
+        <h1 className={adminTypography.title}>Home</h1>
         <p className={adminTypography.metadata}>
-          Escolha uma página na lateral para editar, ou continue montando a estrutura abaixo.
+          Pick a page in the sidebar to edit, or keep building the structure below.
         </p>
       </header>
       <div className="grid gap-6">
@@ -90,17 +90,17 @@ function SectionOverview({ sectionId, titulo }: { sectionId: string; titulo: str
     <section className="grid gap-2">
       <h2 className={adminTypography.category}>{titulo}</h2>
       {pagesQuery.isPending ? (
-        <p className="text-muted-foreground text-sm">Carregando…</p>
+        <p className="text-muted-foreground text-sm">Loading…</p>
       ) : pages.length === 0 ? (
         <EmptyState
           size="sm"
           icon={FilePlus2}
-          title="Nenhuma página nesta seção"
-          description="Crie a primeira página para começar a escrever."
+          title="No pages in this section"
+          description="Create the first page to start writing."
           action={
             <CreateFirstButton
-              label="Criar primeira página"
-              placeholder="Título da página"
+              label="Create first page"
+              placeholder="Page title"
               onCreate={(titulo) => createPage.mutateAsync({ sectionId, titulo })}
             />
           }
@@ -175,14 +175,14 @@ function CreateFirstButton({
         aria-label={label}
         className="border-input min-w-0 rounded-editorial-sm border bg-transparent px-3 py-1.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
       />
-      <Button type="submit" size="icon" disabled={pending} aria-label="Confirmar">
+      <Button type="submit" size="icon" disabled={pending} aria-label="Confirm">
         <Check className="size-4" />
       </Button>
       <Button
         type="button"
         variant="ghost"
         size="icon"
-        aria-label="Cancelar"
+        aria-label="Cancel"
         onClick={() => setOpen(false)}
       >
         <X className="size-4" />

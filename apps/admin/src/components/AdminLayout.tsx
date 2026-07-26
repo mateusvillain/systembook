@@ -74,7 +74,7 @@ export function AdminLayout() {
   );
 
   if (me.isPending) {
-    return <p className="p-8 text-muted-foreground">Carregando…</p>;
+    return <p className="p-8 text-muted-foreground">Loading…</p>;
   }
   if (!me.data) {
     return <Navigate to="/login" replace />;

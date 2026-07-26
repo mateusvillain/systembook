@@ -17,8 +17,8 @@ export const CALLOUT_VARIANTS = ['info', 'warning', 'tip'] as const satisfies re
 
 export const CALLOUT_META: Record<CalloutVariant, { icon: string; label: string; border: string; bg: string }> = {
   info: { icon: 'ℹ️', label: 'Info', border: '#7aa7ff', bg: '#eef4ff' },
-  warning: { icon: '⚠️', label: 'Aviso', border: '#e8b04a', bg: '#fdf6e7' },
-  tip: { icon: '💡', label: 'Dica', border: '#5fbf7a', bg: '#ecf8f0' },
+  warning: { icon: '⚠️', label: 'Warning', border: '#e8b04a', bg: '#fdf6e7' },
+  tip: { icon: '💡', label: 'Tip', border: '#5fbf7a', bg: '#ecf8f0' },
 };
 
 function isVariant(value: unknown): value is CalloutVariant {
@@ -39,7 +39,7 @@ function CalloutView({ node, updateAttributes, editor }: NodeViewProps) {
               <button
                 key={v}
                 type="button"
-                title={`Mudar para ${CALLOUT_META[v].label.toLowerCase()}`}
+                title={`Change to ${CALLOUT_META[v].label.toLowerCase()}`}
                 aria-pressed={v === variant}
                 className="sb-callout-switch"
                 data-active={v === variant || undefined}
