@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTRPC } from '../../lib/trpc.js';
@@ -25,6 +25,17 @@ export function PublicLayout() {
   const tree = navQuery.data ?? [];
   const { theme, toggle } = useTheme();
   const [navOpen, setNavOpen] = useState(false);
+
+  // Fecha o drawer mobile com ESC (clique fora e item de navegação já fecham
+  // via onClick/onNavigate abaixo).
+  useEffect(() => {
+    if (!navOpen) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setNavOpen(false);
+    }
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [navOpen]);
 
   const context: PublicOutletContext = { tree, isLoading: navQuery.isLoading };
 
@@ -56,13 +67,12 @@ export function PublicLayout() {
         </button>
       </header>
       <div className="sb-public-body">
-        {navOpen && (
-          <div
-            className="sb-public-backdrop"
-            onClick={() => setNavOpen(false)}
-            data-testid="nav-backdrop"
-          />
-        )}
+        <div
+          className="sb-public-backdrop"
+          data-open={navOpen || undefined}
+          onClick={() => setNavOpen(false)}
+          data-testid="nav-backdrop"
+        />
         <PublicSidebar tree={tree} open={navOpen} onNavigate={() => setNavOpen(false)} />
         <main className="sb-public-content">
           <Outlet context={context} />
