@@ -6,19 +6,19 @@
 /* ---- Tokens: tema claro (padrão) ---- */
 .sb-public {
   --sb-bg: #ffffff;
-  --sb-surface: #fafbfc;
-  --sb-fg: #1c2024;
-  --sb-fg-muted: #6b7280;
-  --sb-border: #e5e7eb;
+  --sb-surface: #f8f9fb;
+  --sb-fg: #14181f;
+  --sb-fg-muted: #57606a;
+  --sb-border: #dfe3e8;
   --sb-accent: #1d4ed8;
   --sb-accent-soft: #eef4ff;
-  --sb-hover: #f3f4f6;
+  --sb-hover: #f1f3f6;
   --sb-code-bg: #f4f5f7;
-  --sb-code-fg: #1c2024;
+  --sb-code-fg: #14181f;
   --sb-th-bg: #f4f5f7;
   --sb-mark-bg: #fde68a;
   --sb-mark-fg: #3b2f00;
-  --sb-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+  --sb-shadow: 0 8px 28px rgba(15, 23, 31, 0.12);
 
   min-height: 100vh;
   display: flex;
@@ -32,80 +32,93 @@
 
 /* ---- Tokens: tema escuro ---- */
 .sb-public[data-theme='dark'] {
-  --sb-bg: #0f1419;
+  --sb-bg: #0d1117;
   --sb-surface: #161b22;
-  --sb-fg: #e6e8eb;
+  --sb-fg: #e6edf3;
   --sb-fg-muted: #9aa4b2;
-  --sb-border: #2a3038;
+  --sb-border: #2a313c;
   --sb-accent: #6ea8fe;
-  --sb-accent-soft: #1b2b4d;
+  --sb-accent-soft: #16233b;
   --sb-hover: #1c232c;
-  --sb-code-bg: #1a2028;
-  --sb-code-fg: #e6e8eb;
-  --sb-th-bg: #1a2028;
+  --sb-code-bg: #161b22;
+  --sb-code-fg: #e6edf3;
+  --sb-th-bg: #161b22;
   --sb-mark-bg: #6b5300;
   --sb-mark-fg: #ffe9a8;
   --sb-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
 }
 
-/* ---- Header ---- */
+/* ---- Header (1.2) ---- */
 .sb-public-header {
+  position: sticky;
+  top: 0;
+  z-index: 60;
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.9rem 1.5rem;
+  gap: 0.75rem;
+  padding: 0.75rem 1.5rem;
   border-bottom: 1px solid var(--sb-border);
   background: var(--sb-surface);
+  background: color-mix(in srgb, var(--sb-surface) 92%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   font-weight: 600;
 }
 
-.sb-theme-toggle {
+.sb-public-brand {
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--sb-fg);
+}
+
+/* Base compartilhada de todo botão-ícone do header (hambúrguer, busca,
+   fechar, toggle de tema): tamanho, forma e estados consistentes. */
+.sb-theme-toggle,
+.sb-nav-toggle,
+.sb-search-trigger,
+.sb-search-close {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.1rem;
-  height: 2.1rem;
+  width: 2.25rem;
+  height: 2.25rem;
   border: 1px solid var(--sb-border);
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--sb-bg);
-  color: var(--sb-fg);
+  color: var(--sb-fg-muted);
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 1.05rem;
   line-height: 1;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
 
-.sb-theme-toggle:hover {
-  background: var(--sb-hover);
-}
-
-.sb-theme-toggle:focus-visible {
-  outline: 2px solid var(--sb-accent);
-  outline-offset: 2px;
-}
-
-/* Botões-ícone responsivos (hambúrguer, gatilho e fechar da busca): escondidos
-   no desktop, revelados no mobile pela media query no fim do arquivo. */
+/* Só hambúrguer/busca/fechar ficam ocultos no desktop — o toggle de tema
+   é sempre visível, então recebe `display` à parte na regra acima. */
 .sb-nav-toggle,
 .sb-search-trigger,
 .sb-search-close {
   display: none;
-  align-items: center;
-  justify-content: center;
-  width: 2.4rem;
-  height: 2.4rem;
-  border: 1px solid var(--sb-border);
-  border-radius: 6px;
-  background: var(--sb-bg);
-  color: var(--sb-fg);
-  cursor: pointer;
-  font-size: 1.05rem;
-  line-height: 1;
 }
 
+.sb-theme-toggle:hover,
 .sb-nav-toggle:hover,
 .sb-search-trigger:hover,
 .sb-search-close:hover {
   background: var(--sb-hover);
+  border-color: var(--sb-border);
+  color: var(--sb-fg);
+}
+
+.sb-theme-toggle:focus-visible,
+.sb-nav-toggle:focus-visible,
+.sb-search-trigger:focus-visible,
+.sb-search-close:focus-visible {
+  outline: 2px solid var(--sb-accent);
+  outline-offset: 2px;
 }
 
 .sb-searchbox-field {
@@ -139,6 +152,12 @@
   line-height: 1.7;
 }
 
+/* O backdrop fica sempre no DOM (permite fade animado no open/close via
+   `data-open`) mas só existe visualmente no drawer mobile — ver media query. */
+.sb-public-backdrop {
+  display: none;
+}
+
 .sb-public-content h1.sb-public-title {
   margin: 0 0 1.5rem;
   font-size: 2rem;
@@ -146,18 +165,19 @@
   letter-spacing: -0.01em;
 }
 
-/* ---- Navegação ---- */
+/* ---- Navegação (1.3) ---- */
 .sb-public-section {
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
 }
 
 .sb-public-section-title {
   font-size: 0.72rem;
-  letter-spacing: 0.06em;
+  font-weight: 700;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
   color: var(--sb-fg-muted);
-  margin: 0 0 0.4rem;
-  padding: 0 0.5rem;
+  margin: 0 0 0.5rem;
+  padding: 0 0.6rem;
 }
 
 .sb-public-pagelist {
@@ -165,24 +185,38 @@
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 2px;
+  gap: 1px;
 }
 
 .sb-public-pagelink {
+  position: relative;
   display: block;
-  padding: 0.35rem 0.5rem;
-  border-radius: 5px;
-  color: var(--sb-fg);
+  padding: 0.4rem 0.6rem 0.4rem 0.75rem;
+  border-left: 2px solid transparent;
+  border-radius: 0 6px 6px 0;
+  color: var(--sb-fg-muted);
   text-decoration: none;
-  font-size: 0.92rem;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease,
+    border-color 0.12s ease;
 }
 
 .sb-public-pagelink:hover {
   background: var(--sb-hover);
+  color: var(--sb-fg);
+}
+
+.sb-public-pagelink:focus-visible {
+  outline: 2px solid var(--sb-accent);
+  outline-offset: -2px;
 }
 
 .sb-public-pagelink.active {
   background: var(--sb-accent-soft);
+  border-left-color: var(--sb-accent);
   color: var(--sb-accent);
   font-weight: 600;
 }
@@ -331,33 +365,46 @@
 
 .sb-searchbox-input {
   width: min(320px, 40vw);
-  padding: 0.45rem 0.7rem;
+  padding: 0.45rem 0.75rem;
   border: 1px solid var(--sb-border);
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 0.9rem;
-  background: var(--sb-bg);
+  background: var(--sb-surface);
   color: var(--sb-fg);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .sb-searchbox-input::placeholder {
   color: var(--sb-fg-muted);
 }
 
+.sb-searchbox-input:hover {
+  border-color: var(--sb-fg-muted);
+}
+
 .sb-searchbox-input:focus {
   outline: none;
   border-color: var(--sb-accent);
+  box-shadow: 0 0 0 3px var(--sb-accent-soft);
+}
+
+.sb-searchbox-input:focus-visible {
+  outline: 2px solid var(--sb-accent);
+  outline-offset: 2px;
 }
 
 .sb-searchbox-dropdown {
   position: absolute;
-  top: calc(100% + 6px);
+  top: calc(100% + 8px);
   right: 0;
   width: min(420px, 80vw);
   max-height: 60vh;
   overflow-y: auto;
   background: var(--sb-bg);
   border: 1px solid var(--sb-border);
-  border-radius: 8px;
+  border-radius: 10px;
   box-shadow: var(--sb-shadow);
   z-index: 50;
 }
@@ -390,10 +437,16 @@
   cursor: pointer;
   font: inherit;
   color: var(--sb-fg);
+  transition: background-color 0.1s ease;
 }
 
 .sb-searchbox-result.active {
   background: var(--sb-accent-soft);
+}
+
+.sb-searchbox-result:focus-visible {
+  outline: 2px solid var(--sb-accent);
+  outline-offset: -2px;
 }
 
 .sb-searchbox-result-section {
@@ -448,7 +501,7 @@
     bottom: 0;
     width: min(82vw, 300px);
     transform: translateX(-100%);
-    transition: transform 0.2s ease;
+    transition: transform 0.22s ease;
     z-index: 70;
   }
 
@@ -457,11 +510,23 @@
     box-shadow: var(--sb-shadow);
   }
 
+  /* Backdrop com fade suave: sempre no DOM, escondido por padrão (opacity +
+     pointer-events) e revelado via `[data-open]` — evita o "pop" instantâneo
+     da renderização condicional anterior. */
   .sb-public-backdrop {
+    display: block;
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.45);
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
     z-index: 65;
+  }
+
+  .sb-public-backdrop[data-open] {
+    opacity: 1;
+    pointer-events: auto;
   }
 
   .sb-public-content {
