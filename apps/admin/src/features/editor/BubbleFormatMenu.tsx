@@ -1,18 +1,35 @@
 import type { Editor } from '@tiptap/react';
 import { useEditorState } from '@tiptap/react';
 import { BubbleMenu } from '@tiptap/react/menus';
-import { Bold, Code, Heading1, Heading2, Heading3, Italic, List, ListOrdered } from 'lucide-react';
+import {
+  Bold,
+  Code,
+  Heading1,
+  Heading2,
+  Heading3,
+  Italic,
+  Link as LinkIcon,
+  List,
+  ListOrdered,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /**
  * Menu de formatação flutuante (TASK-102): substitui a toolbar fixa —
  * mesmas ações (títulos, negrito/itálico, listas, bloco de código), mas só
  * aparece sobre a seleção de texto, como o menu do `referencia-4.png`. Ícones
- * de "Improve with AI"/sublinhado/sobrescrito/citação/link do print de
- * referência ficaram de fora: nenhum desses marks/nodes existe no schema
+ * de "Improve with AI"/sublinhado/sobrescrito/citação do print de referência
+ * ficaram de fora: nenhum desses marks/nodes existe no schema
  * (`extensions.ts`) e não é escopo desta task inventá-los — só reaproveitar
- * exatamente o que a `EditorToolbar` já oferecia.
+ * exatamente o que a `EditorToolbar` já oferecia (link adicionado depois,
+ * SYS-29).
  */
+
+/** Prepende `https://` quando o usuário digita sem protocolo (ex.: "exemplo.com"). */
+function normalizeUrl(raw: string): string {
+  const trimmed = raw.trim();
+  return /^[a-z][a-z0-9+.-]*:/i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
 
 function BubbleButton({
   label,
@@ -58,12 +75,24 @@ export function BubbleFormatMenu({ editor }: { editor: Editor | null }) {
         bulletList: e.isActive('bulletList'),
         orderedList: e.isActive('orderedList'),
         codeBlock: e.isActive('codeBlock'),
+        link: e.isActive('link'),
       },
   });
 
   if (!editor || !state) return null;
 
   const chain = () => editor.chain().focus();
+  const isLinkActive = state.link;
+
+  function toggleLink() {
+    if (isLinkActive) {
+      chain().unsetLink().run();
+      return;
+    }
+    const url = window.prompt('Link URL');
+    if (!url || !url.trim()) return;
+    chain().setLink({ href: normalizeUrl(url) }).run();
+  }
 
   return (
     <BubbleMenu
@@ -103,6 +132,12 @@ export function BubbleFormatMenu({ editor }: { editor: Editor | null }) {
         title="Italic (Cmd/Ctrl+I)"
         active={state.italic}
         onClick={() => chain().toggleItalic().run()}
+      />
+      <BubbleButton
+        label={<LinkIcon />}
+        title={state.link ? 'Remove link' : 'Add link'}
+        active={state.link}
+        onClick={toggleLink}
       />
       <span className="mx-0.5 h-4 w-px bg-border" aria-hidden />
       <BubbleButton
