@@ -66,6 +66,24 @@
   padding-left: 0.4rem;
 }
 
+/* Link (SYS-29): sublinhado sempre visível (não só no hover, como no leitor
+   público) — na superfície de edição o objetivo é deixar óbvio que aquele
+   trecho é um link, já que o clique não navega (`openOnClick:
+   'whenNotEditable'`) e cor sozinha seria fácil de não notar entre o resto
+   do texto formatado. Usa `--primary` do design system do admin (não os
+   tokens `--sb-*`, que só existem no leitor público). */
+.sb-editor .ProseMirror a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklch, var(--primary) 40%, transparent);
+  text-underline-offset: 2px;
+  cursor: text;
+}
+
+.sb-editor .ProseMirror a:hover {
+  text-decoration-color: var(--primary);
+}
+
 /* Hint do editor vazio (TASK-104): mesmo padding do `.sb-editor .ProseMirror`
    (incl. o breakpoint mobile abaixo), pra a linha de placeholder cair
    exatamente sobre a primeira linha vazia em vez de flutuar descolada. */

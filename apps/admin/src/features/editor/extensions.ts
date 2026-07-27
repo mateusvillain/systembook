@@ -4,6 +4,7 @@ import { Text } from '@tiptap/extension-text';
 import { Heading } from '@tiptap/extension-heading';
 import { Bold } from '@tiptap/extension-bold';
 import { Italic } from '@tiptap/extension-italic';
+import { Link } from '@tiptap/extension-link';
 import { BulletList, ListItem, OrderedList } from '@tiptap/extension-list';
 import { CodeBlock } from '@tiptap/extension-code-block';
 import { Table, TableCell, TableHeader, TableRow } from '@tiptap/extension-table';
@@ -37,6 +38,10 @@ export const editorExtensions = [
   Heading.configure({ levels: [1, 2, 3] }),
   Bold,
   Italic,
+  // 'whenNotEditable': no editor o clique só posiciona o cursor (não navega
+  // por engano durante a edição); no leitor público (`editable: false`) o
+  // clique segue o link normalmente.
+  Link.configure({ openOnClick: 'whenNotEditable', autolink: true }),
   BulletList,
   OrderedList,
   ListItem,
