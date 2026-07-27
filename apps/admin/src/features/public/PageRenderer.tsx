@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import type { Block } from '@systembook/schema';
 import { editorExtensions } from '../editor/extensions.js';
@@ -74,6 +74,7 @@ export function PageRenderer({
   const wantedTabId = controlled ? controlledTabId : internalTabId;
 
   const activeView = views.find((v) => v.tabId === wantedTabId) ?? views[0];
+  const tablistRef = useRef<HTMLDivElement>(null);
   if (!activeView) return <p>Page has no content.</p>;
 
   const selectTab = (tabId: string) => {
@@ -81,32 +82,52 @@ export function PageRenderer({
     else setInternalTabId(tabId);
   };
 
+  // Padrão WAI-ARIA de tabs: setas movem o foco (com wrap) e já ativam a
+  // tab alvo; Home/End vão pros extremos. Tab/Shift+Tab saem da tablist
+  // normalmente (tabIndex em rodízio: só a tab ativa é focável via Tab).
+  function onTabKeyDown(e: React.KeyboardEvent<HTMLButtonElement>, index: number) {
+    let nextIndex: number;
+    if (e.key === 'ArrowLeft') nextIndex = (index - 1 + views.length) % views.length;
+    else if (e.key === 'ArrowRight') nextIndex = (index + 1) % views.length;
+    else if (e.key === 'Home') nextIndex = 0;
+    else if (e.key === 'End') nextIndex = views.length - 1;
+    else return;
+
+    e.preventDefault();
+    const nextView = views[nextIndex];
+    if (!nextView) return;
+    tablistRef.current
+      ?.querySelectorAll<HTMLButtonElement>('[role="tab"]')
+      [nextIndex]?.focus();
+    selectTab(nextView.tabId);
+  }
+
   return (
     <div>
       {/* Tab bar só quando há mais de uma visão (corpo + ≥1 tab de usuário, ou
           múltiplas tabs em snapshots antigos). Página só-corpo não mostra bar. */}
       {views.length > 1 && (
-        <div role="tablist" style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
-          {views.map((view) => (
+        <div className="sb-tabbar" role="tablist" aria-label="Page views" ref={tablistRef}>
+          {views.map((view, index) => (
             <button
               key={view.tabId}
               type="button"
               role="tab"
+              id={`sb-tab-${view.tabId}`}
               aria-selected={view.tabId === activeView.tabId}
+              tabIndex={view.tabId === activeView.tabId ? 0 : -1}
+              className={`sb-tab${view.tabId === activeView.tabId ? ' active' : ''}`}
               onClick={() => selectTab(view.tabId)}
-              style={{
-                padding: '0.35rem 0.75rem',
-                border: '1px solid #ccc',
-                background: view.tabId === activeView.tabId ? '#eef4ff' : 'white',
-                cursor: 'pointer',
-              }}
+              onKeyDown={(e) => onTabKeyDown(e, index)}
             >
               {view.titulo}
             </button>
           ))}
         </div>
       )}
-      <TabContent key={activeView.tabId} blocks={activeView.blocks} />
+      <div role="tabpanel" aria-labelledby={`sb-tab-${activeView.tabId}`}>
+        <TabContent key={activeView.tabId} blocks={activeView.blocks} />
+      </div>
     </div>
   );
 }
