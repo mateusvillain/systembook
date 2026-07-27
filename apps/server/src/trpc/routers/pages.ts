@@ -391,7 +391,7 @@ export const pagesRouter = router({
     .input(z.object({ sectionSlug: z.string(), pageSlug: z.string() }))
     .query(({ ctx, input }) => {
       const page = ctx.db
-        .select({ id: pages.id, titulo: pages.titulo })
+        .select({ id: pages.id, titulo: pages.titulo, subtitulo: pages.subtitulo })
         .from(pages)
         .innerJoin(sections, eq(sections.id, pages.sectionId))
         .where(and(eq(sections.slug, input.sectionSlug), eq(pages.slug, input.pageSlug)))
@@ -409,6 +409,7 @@ export const pagesRouter = router({
       return {
         pageId: page.id,
         titulo: page.titulo,
+        subtitulo: page.subtitulo,
         snapshot: rev ? (JSON.parse(rev.snapshotJson) as PageSnapshot) : null,
       };
     }),
