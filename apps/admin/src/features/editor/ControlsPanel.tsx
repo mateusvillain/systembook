@@ -81,11 +81,11 @@ export function ControlsPanel({
         ) : (
           <ChevronRight className="inline size-4 align-middle" />
         )}{' '}
-        Controles ({controls.length})
+        Controls ({controls.length})
       </button>
 
       {expanded && (
-        <div className="sb-controls-fields" role="group" aria-label="Controles do preview">
+        <div className="sb-controls-fields" role="group" aria-label="Preview controls">
           {controls.map((control) => {
             const label = control.label ?? control.propName;
             const value = values[control.propName];

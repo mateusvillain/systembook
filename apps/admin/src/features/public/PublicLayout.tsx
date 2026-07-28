@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { BookOpen, Menu, Moon, Sun } from 'lucide-react';
 import { useTRPC } from '../../lib/trpc.js';
 import { PublicSidebar, type PublicNavTree } from './PublicSidebar.js';
 import { SearchBox } from './SearchBox.js';
@@ -40,7 +41,11 @@ export function PublicLayout() {
   const context: PublicOutletContext = { tree, isLoading: navQuery.isLoading };
 
   return (
-    <div className="sb-public" data-theme={theme}>
+    // `dark` (classe do shadcn, independente do `--sb-*` de `.sb-public`): sem
+    // ela, componentes shadcn embutidos no conteúdo (Input/Switch do
+    // ControlsPanel de Component Embed) ficam sempre claros — o `data-theme`
+    // daqui não é o mecanismo que o shadcn entende.
+    <div className={`sb-public${theme === 'dark' ? ' dark' : ''}`} data-theme={theme}>
       <header className="sb-public-header">
         <button
           type="button"
@@ -50,9 +55,9 @@ export function PublicLayout() {
           onClick={() => setNavOpen((o) => !o)}
           data-testid="nav-toggle"
         >
-          <span aria-hidden>☰</span>
+          <Menu aria-hidden size={18} />
         </button>
-        <span aria-hidden>📘</span>
+        <BookOpen aria-hidden size={18} />
         <span className="sb-public-brand">Documentation</span>
         <SearchBox />
         <button
@@ -63,7 +68,7 @@ export function PublicLayout() {
           title={theme === 'dark' ? 'Light theme' : 'Dark theme'}
           data-testid="theme-toggle"
         >
-          <span aria-hidden>{theme === 'dark' ? '☀️' : '🌙'}</span>
+          {theme === 'dark' ? <Sun aria-hidden size={16} /> : <Moon aria-hidden size={16} />}
         </button>
       </header>
       <div className="sb-public-body">

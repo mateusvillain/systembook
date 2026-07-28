@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { Search, X } from 'lucide-react';
 import { useTRPC } from '../../lib/trpc.js';
 
 // Delimitadores STX/ETX que o `snippet()` do FTS5 coloca ao redor dos termos
@@ -133,7 +134,7 @@ export function SearchBox() {
         onClick={openMobile}
         data-testid="search-trigger"
       >
-        <span aria-hidden>🔍</span>
+        <Search aria-hidden size={16} />
       </button>
 
       <div
@@ -171,7 +172,7 @@ export function SearchBox() {
             onClick={closeMobile}
             data-testid="search-close"
           >
-            <span aria-hidden>✕</span>
+            <X aria-hidden size={16} />
           </button>
         </div>
 

@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { mergeAttributes, Node } from '@tiptap/core';
 import { NodeViewWrapper, ReactNodeViewRenderer, type NodeViewProps } from '@tiptap/react';
 import { useQuery } from '@tanstack/react-query';
+import { Puzzle, TriangleAlert } from 'lucide-react';
 import { useTRPC } from '../../../lib/trpc.js';
 import { ComponentEmbedPicker } from '../ComponentEmbedPicker.js';
 import { ControlsPanel } from '../ControlsPanel.js';
@@ -38,25 +39,12 @@ function Placeholder({
       data-variant-id={variantId ?? ''}
       data-preview-state={state}
     >
-      <span aria-hidden style={{ fontSize: '1.2rem' }}>
-        🧩
-      </span>
-      <span style={{ flex: 1 }}>{message}</span>
+      <Puzzle aria-hidden size={19} />
+      <span className="sb-component-embed-message">{message}</span>
       {control}
     </NodeViewWrapper>
   );
 }
-
-/** Botão de ação inline nos estados do embed (re-seleção, retry). */
-const emptyActionStyle: React.CSSProperties = {
-  border: '1px solid #ccc',
-  borderRadius: 4,
-  background: '#fff',
-  padding: '0.2rem 0.5rem',
-  fontSize: '0.8rem',
-  cursor: 'pointer',
-  whiteSpace: 'nowrap',
-};
 
 function ComponentEmbedView({ node, updateAttributes, editor }: NodeViewProps) {
   const componentName = node.attrs.componentName as string;
@@ -85,7 +73,7 @@ function ComponentEmbedView({ node, updateAttributes, editor }: NodeViewProps) {
         data-testid="component-embed-reselect"
         onMouseDown={(e) => e.preventDefault()}
         onClick={() => setPickerOpen(true)}
-        style={emptyActionStyle}
+        className="sb-embed-action-btn"
       >
         {hasSelection ? 'Replace component' : 'Select component'}
       </button>
@@ -152,10 +140,8 @@ function ComponentEmbedView({ node, updateAttributes, editor }: NodeViewProps) {
         data-variant-id={variantId ?? ''}
         data-preview-state="empty"
       >
-        <span aria-hidden style={{ fontSize: '1.2rem' }}>
-          ⚠️
-        </span>
-        <span style={{ flex: 1 }}>
+        <TriangleAlert aria-hidden size={19} />
+        <span className="sb-component-embed-message">
           No preview published for{' '}
           <strong>
             {componentName} / {variantId}
@@ -170,7 +156,7 @@ function ComponentEmbedView({ node, updateAttributes, editor }: NodeViewProps) {
             disabled={previewQuery.isFetching}
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => void previewQuery.refetch()}
-            style={emptyActionStyle}
+            className="sb-embed-action-btn"
           >
             {previewQuery.isFetching ? 'Checking…' : 'Try again'}
           </button>
@@ -193,8 +179,9 @@ function ComponentEmbedView({ node, updateAttributes, editor }: NodeViewProps) {
       data-preview-state="live"
     >
       <div className="sb-component-embed-bar">
-        <span style={{ color: '#666', fontSize: '0.8rem' }}>
-          🧩 {componentName} / {variantId}
+        <span className="sb-component-embed-meta">
+          <Puzzle aria-hidden size={13} />
+          {componentName} / {variantId}
         </span>
         {control}
       </div>
