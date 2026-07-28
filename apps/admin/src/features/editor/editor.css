@@ -97,16 +97,186 @@
   }
 }
 
-.sb-editor .ProseMirror pre {
-  /* Tokens com fallback claro: o admin (sem data-theme) usa o fallback; a doc
-     pública (TASK-55) redefine as variáveis por tema. */
+/* ---- Code block (SYS-27/28) ----
+   O bloco é um cartão único: borda hairline, o nome da linguagem gravado como
+   eyebrow no topo do próprio campo de código (sem barra de cor distinta) e o
+   botão de copiar alinhado à direita. Segue o tema da página — não é um bloco
+   escuro fixo — usando os mesmos tokens `--sb-code-*` da doc pública, com
+   fallback claro para o admin (que não define `data-theme`).
+
+   Tokens de sintaxe (`--sb-hl-*`): valores claros aqui, sobrescritos no tema
+   escuro em `public.css`. Todos verificados ≥4.5:1 sobre `--sb-code-bg`. */
+.sb-editor .ProseMirror .sb-code-block {
+  --sb-hl-keyword: #7c3aed;
+  --sb-hl-string: #0a6b3d;
+  --sb-hl-number: #8a3a00;
+  --sb-hl-comment: #59636e;
+  --sb-hl-function: #0550ae;
+  --sb-hl-attr: #9a1051;
+  --sb-hl-tag: #116329;
+
+  position: relative;
+  margin: 1.25rem 0;
+  border: 1px solid var(--sb-border, #e2e4e8);
+  border-radius: 8px;
   background: var(--sb-code-bg, #f4f4f4);
   color: var(--sb-code-fg, inherit);
-  border-radius: 6px;
-  padding: 0.75rem 1rem;
+  overflow: hidden;
+}
+
+.sb-editor .ProseMirror .sb-code-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.5rem 0 0.75rem;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.9rem;
+  font-size: 0.688rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sb-fg-muted, #59636e);
+  user-select: none;
+}
+
+.sb-editor .ProseMirror .sb-code-lang {
+  line-height: 1.6;
+}
+
+/* Seletor de linguagem (só no editor): sem chrome até o hover/foco, pra não
+   competir com o código. É um `select` nativo — teclado e mobile de graça. */
+.sb-editor .ProseMirror .sb-code-lang-select {
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 0.125rem 0.25rem;
+  cursor: pointer;
+}
+
+.sb-editor .ProseMirror .sb-code-lang-select:hover,
+.sb-editor .ProseMirror .sb-code-lang-select:focus-visible {
+  border-color: var(--sb-border, #d5d9df);
+  color: var(--sb-fg, inherit);
+}
+
+.sb-editor .ProseMirror .sb-code-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.5rem;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  /* Nunca dependente só de hover (fica legível parado), mas discreto. */
+  opacity: 0.7;
+  transition:
+    opacity 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease;
+}
+
+.sb-editor .ProseMirror .sb-code-copy:hover,
+.sb-editor .ProseMirror .sb-code-copy:focus-visible {
+  opacity: 1;
+  border-color: var(--sb-border, #d5d9df);
+  color: var(--sb-fg, inherit);
+}
+
+/* Sucesso comunicado por ícone + palavra, não só por cor. */
+.sb-editor .ProseMirror .sb-code-copy[data-copied] {
+  opacity: 1;
+  color: var(--sb-hl-string);
+  border-color: currentColor;
+}
+
+/* Alvo confortável onde não há mouse. */
+@media (pointer: coarse) {
+  .sb-editor .ProseMirror .sb-code-copy {
+    min-height: 44px;
+    padding-inline: 0.75rem;
+  }
+}
+
+.sb-editor .ProseMirror .sb-code-block pre {
+  margin: 0;
+  padding: 0.5rem 1rem 0.9rem;
+  background: none;
+  color: inherit;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.875rem;
+  line-height: 1.6;
   overflow-x: auto;
+  tab-size: 2;
+}
+
+/* Tokens de sintaxe (classes emitidas pelo lowlight/highlight.js). */
+.sb-editor .ProseMirror .sb-code-block .hljs-comment,
+.sb-editor .ProseMirror .sb-code-block .hljs-quote {
+  color: var(--sb-hl-comment);
+  font-style: italic;
+}
+
+.sb-editor .ProseMirror .sb-code-block .hljs-keyword,
+.sb-editor .ProseMirror .sb-code-block .hljs-selector-tag,
+.sb-editor .ProseMirror .sb-code-block .hljs-literal,
+.sb-editor .ProseMirror .sb-code-block .hljs-meta,
+.sb-editor .ProseMirror .sb-code-block .hljs-doctag {
+  color: var(--sb-hl-keyword);
+}
+
+.sb-editor .ProseMirror .sb-code-block .hljs-string,
+.sb-editor .ProseMirror .sb-code-block .hljs-regexp,
+.sb-editor .ProseMirror .sb-code-block .hljs-addition,
+.sb-editor .ProseMirror .sb-code-block .hljs-meta-string {
+  color: var(--sb-hl-string);
+}
+
+.sb-editor .ProseMirror .sb-code-block .hljs-number,
+.sb-editor .ProseMirror .sb-code-block .hljs-symbol,
+.sb-editor .ProseMirror .sb-code-block .hljs-bullet,
+.sb-editor .ProseMirror .sb-code-block .hljs-deletion,
+.sb-editor .ProseMirror .sb-code-block .hljs-variable,
+.sb-editor .ProseMirror .sb-code-block .hljs-template-variable {
+  color: var(--sb-hl-number);
+}
+
+.sb-editor .ProseMirror .sb-code-block .hljs-title,
+.sb-editor .ProseMirror .sb-code-block .hljs-function .hljs-title,
+.sb-editor .ProseMirror .sb-code-block .hljs-built_in,
+.sb-editor .ProseMirror .sb-code-block .hljs-type,
+.sb-editor .ProseMirror .sb-code-block .hljs-class .hljs-title {
+  color: var(--sb-hl-function);
+}
+
+.sb-editor .ProseMirror .sb-code-block .hljs-attr,
+.sb-editor .ProseMirror .sb-code-block .hljs-attribute,
+.sb-editor .ProseMirror .sb-code-block .hljs-property,
+.sb-editor .ProseMirror .sb-code-block .hljs-selector-attr,
+.sb-editor .ProseMirror .sb-code-block .hljs-selector-pseudo {
+  color: var(--sb-hl-attr);
+}
+
+.sb-editor .ProseMirror .sb-code-block .hljs-tag,
+.sb-editor .ProseMirror .sb-code-block .hljs-name,
+.sb-editor .ProseMirror .sb-code-block .hljs-selector-id,
+.sb-editor .ProseMirror .sb-code-block .hljs-selector-class {
+  color: var(--sb-hl-tag);
+}
+
+.sb-editor .ProseMirror .sb-code-block .hljs-emphasis {
+  font-style: italic;
+}
+
+.sb-editor .ProseMirror .sb-code-block .hljs-strong {
+  font-weight: 600;
 }
 
 /* Tabelas (TASK-27) — layout fixo e seleção de células visível */
