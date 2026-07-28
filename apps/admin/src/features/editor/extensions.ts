@@ -6,10 +6,10 @@ import { Bold } from '@tiptap/extension-bold';
 import { Italic } from '@tiptap/extension-italic';
 import { Link } from '@tiptap/extension-link';
 import { BulletList, ListItem, OrderedList } from '@tiptap/extension-list';
-import { CodeBlock } from '@tiptap/extension-code-block';
 import { Table, TableCell, TableHeader, TableRow } from '@tiptap/extension-table';
 import { Dropcursor, Gapcursor, UndoRedo } from '@tiptap/extensions';
 import { Callout } from './nodes/Callout.js';
+import { CodeBlock } from './nodes/CodeBlock.js';
 import { ComponentEmbed } from './nodes/ComponentEmbed.js';
 import { DosDonts } from './nodes/DosDonts.js';
 

@@ -506,6 +506,20 @@
   padding: 0;
 }
 
+/* Code block no tema escuro (SYS-28): só a paleta de sintaxe muda — a estrutura
+   do cartão vive em `editor.css` e já lê `--sb-code-bg`/`--sb-border` por tema,
+   como o callout (TASK-55). Valores conferidos ≥4.5:1 sobre `--sb-code-bg`
+   escuro (#161b22). */
+.sb-public[data-theme='dark'] .sb-editor .ProseMirror .sb-code-block {
+  --sb-hl-keyword: #d2a8ff;
+  --sb-hl-string: #7ee787;
+  --sb-hl-number: #ffab70;
+  --sb-hl-comment: #9aa4b2;
+  --sb-hl-function: #79c0ff;
+  --sb-hl-attr: #ff9bb3;
+  --sb-hl-tag: #7ee787;
+}
+
 /* Conteúdo largo rola dentro do próprio container — nunca força scroll
    horizontal da página (TASK-57). Tiptap envolve tabelas em `.tableWrapper`. */
 .sb-public .sb-editor .tableWrapper {
