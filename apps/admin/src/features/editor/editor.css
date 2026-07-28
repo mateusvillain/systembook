@@ -150,14 +150,19 @@
   pointer-events: none;
 }
 
-/* Callout (TASK-28) — ícone vem do NodeView; cor por variante vive em CSS
-   (TASK-55) via tokens com fallback claro, para poder ser tematizada na doc
-   pública sem `!important` (estilo inline vencia a folha). */
+/* Callout (TASK-28, redesenhado na 4.1) — ícone vem do NodeView; cor por
+   variante vive em CSS (TASK-55) via tokens com fallback claro, para poder
+   ser tematizada na doc pública sem `!important` (estilo inline vencia a
+   folha). */
 .sb-editor .sb-callout {
-  border-radius: 6px;
-  padding: 0.5rem 0.75rem;
-  margin: 0.75rem 0;
-  border-left: 4px solid var(--sb-callout-border, #7aa7ff);
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  border-radius: 8px;
+  padding: 0.75rem 0.9rem;
+  margin: 1rem 0;
+  border-left: 3px solid var(--sb-callout-border, #7aa7ff);
   background: var(--sb-callout-bg, #eef4ff);
 }
 
@@ -176,55 +181,107 @@
   --sb-callout-bg: #ecf8f0;
 }
 
-.sb-editor .sb-callout-header {
+/* Ícone + texto lado a lado (4.1): `.sb-callout` é flex-row, o ícone é o
+   único conteúdo da coluna esquerda (nada mais disputa largura/altura com
+   ele) e `.sb-callout-content` ocupa o resto. `color` tinge o SVG (usa
+   `currentColor`) na cor de acento da variante em vez de herdar o preto do
+   texto do corpo. `margin-top` no ícone é um ajuste óptico: o texto ao lado
+   usa `line-height` maior que o ícone (folga acima do glifo), sem o ajuste o
+   ícone fica visualmente "alto" em relação à 1ª linha. */
+.sb-editor .sb-callout-icon {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.25rem;
+  flex-shrink: 0;
+  margin-top: 0.2rem;
+  color: var(--sb-callout-border, #7aa7ff);
 }
 
-/* Sempre presente (o foco do contenteditable fica no host .ProseMirror, então
-   :focus-within não serve aqui); discreto por padrão, realce no hover. */
+.sb-editor .sb-callout-content {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.55;
+}
+
+/* O `gap` de fato vive no wrapper que o Tiptap insere (`.sb-callout-content
+   > *`, ver nota abaixo) — é ele que tem os blocos de conteúdo como filhos
+   quando há mais de um (block+). */
+.sb-editor .sb-callout-content > * {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Switcher de variante (só no editor admin): overlay no canto superior
+   direito em vez de disputar a linha do ícone — fica fora do fluxo do
+   texto, sem afetar o alinhamento ícone/conteúdo. Some por padrão, aparece
+   no hover do bloco. */
 .sb-editor .sb-callout-switcher {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
   display: inline-flex;
   gap: 0.25rem;
-  opacity: 0.35;
+  opacity: 0;
   transition: opacity 0.15s;
 }
 
-.sb-editor .sb-callout:hover .sb-callout-switcher {
+.sb-editor .sb-callout:hover .sb-callout-switcher,
+.sb-editor .sb-callout-switcher:focus-within {
   opacity: 1;
 }
 
 .sb-editor .sb-callout-switch {
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background: #fff;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border: 1px solid var(--sb-border, #ccc);
+  border-radius: 6px;
+  background: var(--sb-bg, #fff);
+  color: var(--sb-fg-muted, #666);
   cursor: pointer;
   font-size: 0.7rem;
-  padding: 0.1rem 0.35rem;
+  padding: 0.1rem 0.45rem;
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease;
+}
+
+.sb-editor .sb-callout-switch:hover {
+  color: var(--sb-fg, #1c2024);
+}
+
+.sb-editor .sb-callout-switch:focus-visible {
+  outline: 2px solid var(--sb-accent, #1d4ed8);
+  outline-offset: 2px;
 }
 
 .sb-editor .sb-callout-switch[data-active] {
-  border-color: #333;
+  border-color: var(--sb-accent, #1d4ed8);
+  background: var(--sb-accent-soft, #eef4ff);
+  color: var(--sb-accent, #1d4ed8);
   font-weight: 600;
 }
 
-.sb-editor .sb-callout-content > :first-child {
-  margin-top: 0;
-}
-
-.sb-editor .sb-callout-content > :last-child {
-  margin-bottom: 0;
+/* CAUSA RAIZ real do espaço extra (achada via DevTools, não só cálculo de
+   especificidade): o `NodeViewContent` do Tiptap/React insere um wrapper
+   interno (`data-node-view-content-react`) entre `.sb-callout-content` e o
+   nó de verdade — o parágrafo é NETO, não filho direto. Um seletor `>`
+   nunca bate nele; `.sb-callout-content > * > :is(...)` mira o neto direto.
+   Restrito à lista de tipos de texto (não `.sb-callout`/`.sb-dos-donts`/
+   `.sb-component-embed` aninhados — esses são NodeViews com margem própria
+   intencional; um `*` genérico mataria a margem deles também). */
+.sb-editor .sb-callout-content > * > :is(p, h1, h2, h3, ul, ol, pre) {
+  margin: 0 !important;
 }
 
 /* Dos and Don'ts (Fase 8, TASK-72) — mesmo padrão de tokens CSS por variante
    do callout (permite tematizar na doc pública sem !important). */
 .sb-editor .sb-dos-donts {
-  border-radius: 6px;
-  padding: 0.5rem 0.75rem;
-  margin: 0.75rem 0;
-  border-left: 4px solid var(--sb-dos-donts-border, #5fbf7a);
+  position: relative;
+  border-radius: 8px;
+  padding: 1rem 0.85rem;
+  margin: 0.85rem 0;
+  border-left: 3px solid var(--sb-dos-donts-border, #5fbf7a);
   background: var(--sb-dos-donts-bg, #ecf8f0);
 }
 
@@ -238,62 +295,138 @@
   --sb-dos-donts-bg: #fdecec;
 }
 
-.sb-editor .sb-dos-donts-header {
+/* Ícone e título+descrição no mesmo eixo (feedback: descrição precisa
+   alinhar com o título) — `.sb-dos-donts-body` é a linha (ícone + coluna de
+   texto), `.sb-dos-donts-text` é a coluna onde título e descrição vivem
+   juntos, sempre alinhados um com o outro por construção (sem padding
+   calculado à mão pra acompanhar a largura do ícone). */
+.sb-editor .sb-dos-donts-body {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.25rem;
+  align-items: flex-start;
+  gap: 0.55rem;
 }
 
+.sb-editor .sb-dos-donts-text {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+/* Ícone tingido na cor de acento da variante (SVG usa currentColor).
+   `margin-top` é um pequeno ajuste óptico pra alinhar com a 1ª linha do
+   título ao lado. */
+.sb-editor .sb-dos-donts-icon {
+  display: flex;
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+  color: var(--sb-dos-donts-border, #5fbf7a);
+}
+
+/* Overlay no canto superior direito (mesmo padrão do Callout, SYS-24) — só
+   no editor admin, fora do fluxo do header/conteúdo. Some por padrão,
+   aparece no hover do bloco ou quando um botão dentro recebe foco (senão
+   fica focável-mas-invisível pra quem navega só por teclado). */
 .sb-editor .sb-dos-donts-switcher {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
   display: inline-flex;
   gap: 0.25rem;
-  opacity: 0.35;
+  opacity: 0;
   transition: opacity 0.15s;
 }
 
-.sb-editor .sb-dos-donts:hover .sb-dos-donts-switcher {
+.sb-editor .sb-dos-donts:hover .sb-dos-donts-switcher,
+.sb-editor .sb-dos-donts-switcher:focus-within {
   opacity: 1;
 }
 
 .sb-editor .sb-dos-donts-switch {
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background: #fff;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border: 1px solid var(--sb-border, #ccc);
+  border-radius: 6px;
+  background: var(--sb-bg, #fff);
+  color: var(--sb-fg-muted, #666);
   cursor: pointer;
   font-size: 0.7rem;
-  padding: 0.1rem 0.35rem;
+  padding: 0.1rem 0.45rem;
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease;
+}
+
+.sb-editor .sb-dos-donts-switch:hover {
+  color: var(--sb-fg, #1c2024);
+}
+
+.sb-editor .sb-dos-donts-switch:focus-visible {
+  outline: 2px solid var(--sb-accent, #1d4ed8);
+  outline-offset: 2px;
 }
 
 .sb-editor .sb-dos-donts-switch[data-active] {
-  border-color: #333;
+  border-color: var(--sb-accent, #1d4ed8);
+  background: var(--sb-accent-soft, #eef4ff);
+  color: var(--sb-accent, #1d4ed8);
   font-weight: 600;
 }
 
+/* O título nunca teve `line-height` próprio — herdava o 1.6 (editor) / 1.7
+   (leitor público) ambiente, que cria uma folga grande (leading) acima/abaixo
+   de uma única linha de texto curto. Era a maior fonte do espaço "entre os
+   textos" reportado — reset explícito aqui e no `.sb-dos-donts-content`
+   abaixo, os dois no mesmo valor pra não haver salto entre título e corpo. */
 .sb-editor .sb-dos-donts-title-input {
-  flex: 1;
   border: none;
+  border-radius: 4px;
   background: transparent;
+  color: var(--sb-fg, inherit);
   font-weight: 600;
   font-size: 0.95rem;
+  line-height: 1.3;
   padding: 0.15rem 0.25rem;
+  margin: -0.15rem -0.25rem;
 }
 
 .sb-editor .sb-dos-donts-title-input:focus {
-  outline: 1px solid #ccc;
-  border-radius: 4px;
+  outline: 1px solid var(--sb-border, #ccc);
 }
 
 .sb-editor .sb-dos-donts-title {
   font-size: 0.95rem;
+  line-height: 1.3;
 }
 
-.sb-editor .sb-dos-donts-content > :first-child {
-  margin-top: 0;
+.sb-editor .sb-dos-donts-content {
+  /* Mais compacto que o 1.7 ambiente do leitor público — é um card de
+     comparação curto, não prosa longa. */
+  line-height: 1.3;
 }
 
-.sb-editor .sb-dos-donts-content > :last-child {
-  margin-bottom: 0;
+/* O Tiptap insere um wrapper interno (`data-node-view-content-react`) entre
+   `.sb-dos-donts-content` e os nós de conteúdo de verdade — é ele que tem
+   os blocos como filhos quando há mais de um (block+), por isso o `gap`
+   vive aqui, não em `.sb-dos-donts-content`. */
+.sb-editor .sb-dos-donts-content > * {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+/* CAUSA RAIZ do espaço extra reportado (achada via DevTools, não só cálculo
+   de especificidade): o parágrafo é NETO de `.sb-dos-donts-content` (por
+   causa do wrapper acima), não filho direto — um seletor `>` simples nunca
+   batia nele, então nenhuma regra de reset chegava lá. `> * > :is(...)`
+   mira o neto certo; restrito a tipos de texto — não `.sb-callout`/
+   `.sb-dos-donts`/`.sb-component-embed` aninhados, que têm margem própria
+   intencional. */
+.sb-editor .sb-dos-donts-content > * > :is(p, h1, h2, h3, ul, ol, pre) {
+  margin: 0 !important;
 }
 
 /* Cover do dos-donts (TASK-73) — opcional, imagem ou component-embed */
@@ -313,18 +446,15 @@
   gap: 0.35rem;
 }
 
-.sb-editor .sb-dos-donts-cover-image-form input {
-  flex: 1;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  padding: 0.2rem 0.4rem;
-  font-size: 0.8rem;
-}
+/* Sem `input` cru aqui: os campos de URL/alt já são o `<Input>` do design
+   system do admin (shadcn) — a regra antiga com `#ccc` só brigava com o
+   estilo dele. Layout (`display:flex; gap`) continua no elemento pai. */
 
 .sb-editor .sb-dos-donts-cover-image {
   max-width: 100%;
   max-height: 220px;
-  border-radius: 4px;
+  border: 1px solid var(--sb-border, #ccc);
+  border-radius: 8px;
   object-fit: cover;
 }
 
@@ -332,53 +462,64 @@
 .sb-editor .sb-dos-donts-cover-embed-frame {
   width: 100%;
   min-height: 160px;
-  border-radius: 4px;
+  border-radius: 8px;
 }
 
 .sb-editor .sb-dos-donts-cover-embed {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #666;
+  color: var(--sb-fg-muted, #666);
   font-size: 0.85rem;
-  background: #f6f6f6;
-  border: 1px dashed #ccc;
+  background: var(--sb-hover, #f6f6f6);
+  border: 1px dashed var(--sb-border, #ccc);
   text-align: center;
   padding: 0.5rem;
 }
 
 .sb-editor .sb-dos-donts-cover-embed-frame {
-  border: none;
+  border: 1px solid var(--sb-border, #ccc);
+  background: var(--sb-bg, #fff);
 }
 
-/* Component embed — placeholder (sem seleção / carregando / sem artefato) */
+/* Component embed (4.3) — placeholder (sem seleção / carregando / sem
+   artefato). Tokens com fallback claro: mesmo padrão do resto do arquivo —
+   tema escuro (`.sb-public[data-theme='dark']`) redefine as variáveis. */
 .sb-editor .sb-component-embed {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  border: 2px dashed #bbb;
-  border-radius: 6px;
+  border: 2px dashed var(--sb-border, #bbb);
+  border-radius: 8px;
   padding: 0.75rem 1rem;
   margin: 0.75rem 0;
-  color: #666;
-  background: #fafafa;
+  color: var(--sb-fg-muted, #666);
+  background: var(--sb-surface, #fafafa);
+}
+
+.sb-component-embed-message {
+  flex: 1;
 }
 
 .sb-editor .ProseMirror-selectednode.sb-component-embed {
-  border-color: #7aa7ff;
+  border-color: var(--sb-accent, #7aa7ff);
 }
 
-/* Estado "referenciado mas sem preview publicado" (TASK-51) — âmbar, distinto
-   do placeholder cinza de "não selecionado". */
+/* Estado "referenciado mas sem preview publicado" (TASK-51) — âmbar,
+   distinto do placeholder neutro de "não selecionado". Mesma dupla de cores
+   (light/dark) do Callout `warning` — não existe um token âmbar genérico
+   ainda, então reaproveita o par já validado em vez de inventar um novo. */
 .sb-editor .sb-component-embed--empty {
-  border-color: #e0b34d;
+  --sb-embed-warn-border: #e8b04a;
+  --sb-embed-warn-bg: #fdf6e7;
+  border-color: var(--sb-embed-warn-border);
   border-style: solid;
-  background: #fffaf0;
+  background: var(--sb-embed-warn-bg);
   color: #7a5a12;
 }
 
 .sb-editor .ProseMirror-selectednode.sb-component-embed--empty {
-  border-color: #c98a1a;
+  border-color: var(--sb-embed-warn-border, #c98a1a);
 }
 
 /* Component embed com preview real via iframe (TASK-47) — desfaz a caixa
@@ -392,9 +533,9 @@
 }
 
 .sb-editor .ProseMirror-selectednode.sb-component-embed--live {
-  outline: 2px solid #7aa7ff;
+  outline: 2px solid var(--sb-accent, #7aa7ff);
   outline-offset: 2px;
-  border-radius: 6px;
+  border-radius: 8px;
 }
 
 /* Barra de metadados + controle "Trocar componente" acima do iframe */
@@ -406,6 +547,42 @@
   margin-bottom: 0.35rem;
 }
 
+.sb-component-embed-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--sb-fg-muted, #666);
+  font-size: 0.8rem;
+}
+
+.sb-embed-action-btn {
+  border: 1px solid var(--sb-border, #ccc);
+  border-radius: 6px;
+  background: var(--sb-bg, #fff);
+  color: var(--sb-fg, inherit);
+  padding: 0.2rem 0.5rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.sb-embed-action-btn:hover {
+  background: var(--sb-hover, #f3f4f6);
+}
+
+.sb-embed-action-btn:focus-visible {
+  outline: 2px solid var(--sb-accent, #1d4ed8);
+  outline-offset: 2px;
+}
+
+.sb-embed-action-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 /* Altura padrão 240px, redimensionável verticalmente pelo autor
    (resize exige overflow != visible). */
 .sb-editor .sb-component-embed-frame {
@@ -413,9 +590,9 @@
   width: 100%;
   height: 240px;
   min-height: 120px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  background: #fff;
+  border: 1px solid var(--sb-border, #ddd);
+  border-radius: 8px;
+  background: var(--sb-bg, #fff);
   resize: vertical;
   overflow: auto;
 }
@@ -426,12 +603,27 @@
 }
 
 .sb-editor .sb-controls-toggle {
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background: #fff;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--sb-border, #ccc);
+  border-radius: 6px;
+  background: var(--sb-bg, #fff);
+  color: var(--sb-fg, inherit);
   padding: 0.2rem 0.5rem;
   font-size: 0.8rem;
   cursor: pointer;
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.sb-editor .sb-controls-toggle:hover {
+  background: var(--sb-hover, #f3f4f6);
+}
+
+.sb-editor .sb-controls-toggle:focus-visible {
+  outline: 2px solid var(--sb-accent, #1d4ed8);
+  outline-offset: 2px;
 }
 
 .sb-editor .sb-controls-fields {
@@ -439,9 +631,9 @@
   gap: 0.4rem;
   margin-top: 0.4rem;
   padding: 0.6rem;
-  border: 1px solid #eee;
-  border-radius: 6px;
-  background: #fafafa;
+  border: 1px solid var(--sb-border, #eee);
+  border-radius: 8px;
+  background: var(--sb-surface, #fafafa);
 }
 
 .sb-editor .sb-control-row {
@@ -453,15 +645,40 @@
 .sb-editor .sb-control-label {
   min-width: 120px;
   font-size: 0.85rem;
-  color: #444;
+  color: var(--sb-fg-muted, #444);
 }
 
-.sb-editor .sb-control-row input[type='text'],
+/* O `<Input>` do shadcn (campo "text" do ControlsPanel) não define `color`
+   própria — só `bg-transparent`. `<input>` é um dos poucos elementos que
+   não herda `color` do ancestral por padrão no UA stylesheet (fica com a
+   cor de sistema, tipicamente preta) — sem isso o texto digitado fica
+   ilegível no tema escuro. Confirmado via DevTools que esta é a regra que
+   vence (não é outra regra sobrepondo) — o fallback hardcoded `#1c2024`
+   (claro) usado antes travava escuro sempre que `--sb-fg` não resolvia
+   aqui dentro por algum motivo ainda não isolado; `inherit` como fallback
+   ao menos puxa a cor real do ambiente em vez de um valor errado fixo. */
+.sb-editor .sb-control-row input {
+  color: var(--sb-fg, inherit) !important;
+}
+
+/* Só o `<select>` cru precisa de reset completo — os campos de texto/boolean
+   do `ControlsPanel` já usam `<Input>`/`<Switch>` do shadcn (ver `dark` na
+   classe de `.sb-public` em `PublicLayout.tsx` — sem ela esses componentes
+   ficariam sempre claros na doc pública, já que o tema deles roda por
+   classe `.dark`, não pelo `data-theme` daqui). */
 .sb-editor .sb-control-row select {
   flex: 1;
   padding: 0.25rem 0.4rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  border: 1px solid var(--sb-border, #ccc);
+  border-radius: 6px;
+  background: var(--sb-bg, #fff);
+  color: var(--sb-fg, inherit);
+  font: inherit;
+}
+
+.sb-editor .sb-control-row select:focus-visible {
+  outline: 2px solid var(--sb-accent, #1d4ed8);
+  outline-offset: 1px;
 }
 
 .sb-editor .ProseMirror .column-resize-handle {

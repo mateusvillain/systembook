@@ -133,6 +133,17 @@
     scrollbar-gutter: stable;
   }
 
+  /* Sem o preflight do Tailwind (ver comentário acima), o margin padrão do
+     UA (~8px) no `body` nunca é zerado. Isso não quebra o layout do admin
+     (`.sb-admin` cobre a tela), mas em `/docs` sobra uma faixa do branco
+     padrão do navegador ao redor de `.sb-public` — visível principalmente
+     no tema escuro, onde o contraste com o fundo escuro fica óbvio. Reset
+     global e seguro: não é uma regra de tipografia (a preocupação do
+     comentário acima), é só o espaçamento que o navegador aplica à raiz. */
+  body {
+    margin: 0;
+  }
+
   .sb-admin,
   .sb-admin *,
   .sb-admin *::before,

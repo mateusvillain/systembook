@@ -3,6 +3,20 @@
    properties) definidos no root `.sb-public` por tema (`data-theme`), e o
    conteúdo Tiptap (editor.css) lê os mesmos tokens via `var(--…, fallback)`. */
 
+/* Sem o preflight do Tailwind (deliberado, ver `index.css`), `.sb-public`
+   nunca ganhou `box-sizing: border-box` — só `.sb-admin` tem esse reset.
+   Todo componente daqui que combina `width`/padding` (sidebar, dropdown de
+   busca, TOC, etc.) soma padding/borda por cima da largura declarada em vez
+   de descontar, inflando o tamanho real. Reset padrão, seguro (não é regra
+   de tipografia — não conflita com a decisão de não resetar margin/
+   font-size da prosa). */
+.sb-public,
+.sb-public *,
+.sb-public *::before,
+.sb-public *::after {
+  box-sizing: border-box;
+}
+
 /* ---- Tokens: tema claro (padrão) ---- */
 .sb-public {
   --sb-bg: #ffffff;
@@ -572,6 +586,7 @@
   padding: 0.45rem 0.75rem;
   border: 1px solid var(--sb-border);
   border-radius: 8px;
+  font: inherit;
   font-size: 0.9rem;
   background: var(--sb-surface);
   color: var(--sb-fg);
