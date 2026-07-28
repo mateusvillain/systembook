@@ -5,6 +5,7 @@ import {
   ReactNodeViewRenderer,
   type NodeViewProps,
 } from '@tiptap/react';
+import { AlertTriangle, Info, Lightbulb, type LucideIcon } from 'lucide-react';
 import type { CalloutVariant } from '@systembook/schema';
 
 /**
@@ -15,10 +16,10 @@ import type { CalloutVariant } from '@systembook/schema';
 
 export const CALLOUT_VARIANTS = ['info', 'warning', 'tip'] as const satisfies readonly CalloutVariant[];
 
-export const CALLOUT_META: Record<CalloutVariant, { icon: string; label: string; border: string; bg: string }> = {
-  info: { icon: 'ℹ️', label: 'Info', border: '#7aa7ff', bg: '#eef4ff' },
-  warning: { icon: '⚠️', label: 'Warning', border: '#e8b04a', bg: '#fdf6e7' },
-  tip: { icon: '💡', label: 'Tip', border: '#5fbf7a', bg: '#ecf8f0' },
+export const CALLOUT_META: Record<CalloutVariant, { icon: LucideIcon; label: string; border: string; bg: string }> = {
+  info: { icon: Info, label: 'Info', border: '#7aa7ff', bg: '#eef4ff' },
+  warning: { icon: AlertTriangle, label: 'Warning', border: '#e8b04a', bg: '#fdf6e7' },
+  tip: { icon: Lightbulb, label: 'Tip', border: '#5fbf7a', bg: '#ecf8f0' },
 };
 
 function isVariant(value: unknown): value is CalloutVariant {
@@ -28,14 +29,28 @@ function isVariant(value: unknown): value is CalloutVariant {
 function CalloutView({ node, updateAttributes, editor }: NodeViewProps) {
   const variant = node.attrs.variant as CalloutVariant;
   const meta = CALLOUT_META[variant];
+  const Icon = meta.icon;
 
   return (
     <NodeViewWrapper className="sb-callout" data-variant={variant}>
-      <div className="sb-callout-header" contentEditable={false}>
-        <span aria-hidden>{meta.icon}</span>
-        {editor.isEditable && (
-          <span role="group" aria-label="Variante do callout" className="sb-callout-switcher">
-            {CALLOUT_VARIANTS.map((v) => (
+      {/* Ícone puro na coluna esquerda — nada mais aqui, pra alinhar de forma
+          previsível com a 1ª linha do texto ao lado (o switcher de variante,
+          quando presente, vira um overlay à parte, não disputa espaço/altura
+          com o ícone). */}
+      <span className="sb-callout-icon" contentEditable={false}>
+        <Icon aria-hidden size={18} />
+      </span>
+      <NodeViewContent className="sb-callout-content" />
+      {editor.isEditable && (
+        <span
+          role="group"
+          aria-label="Variante do callout"
+          className="sb-callout-switcher"
+          contentEditable={false}
+        >
+          {CALLOUT_VARIANTS.map((v) => {
+            const SwitchIcon = CALLOUT_META[v].icon;
+            return (
               <button
                 key={v}
                 type="button"
@@ -45,13 +60,13 @@ function CalloutView({ node, updateAttributes, editor }: NodeViewProps) {
                 data-active={v === variant || undefined}
                 onClick={() => updateAttributes({ variant: v })}
               >
-                {CALLOUT_META[v].icon} {CALLOUT_META[v].label}
+                <SwitchIcon aria-hidden size={12} />
+                {CALLOUT_META[v].label}
               </button>
-            ))}
-          </span>
-        )}
-      </div>
-      <NodeViewContent className="sb-callout-content" />
+            );
+          })}
+        </span>
+      )}
     </NodeViewWrapper>
   );
 }

@@ -5,6 +5,7 @@ import {
   ReactNodeViewRenderer,
   type NodeViewProps,
 } from '@tiptap/react';
+import { Check, X, type LucideIcon } from 'lucide-react';
 import type { DosDontsCover, DosDontsVariant } from '@systembook/schema';
 import { DosDontsCoverField } from './DosDontsCover.js';
 
@@ -19,9 +20,12 @@ import { DosDontsCoverField } from './DosDontsCover.js';
 
 export const DOS_DONTS_VARIANTS = ['do', 'dont'] as const satisfies readonly DosDontsVariant[];
 
-export const DOS_DONTS_META: Record<DosDontsVariant, { icon: string; label: string; border: string; bg: string }> = {
-  do: { icon: '✅', label: 'Do', border: '#5fbf7a', bg: '#ecf8f0' },
-  dont: { icon: '🚫', label: "Don't", border: '#e05a5a', bg: '#fdecec' },
+export const DOS_DONTS_META: Record<
+  DosDontsVariant,
+  { icon: LucideIcon; label: string; border: string; bg: string }
+> = {
+  do: { icon: Check, label: 'Do', border: '#5fbf7a', bg: '#ecf8f0' },
+  dont: { icon: X, label: "Don't", border: '#e05a5a', bg: '#fdecec' },
 };
 
 function isVariant(value: unknown): value is DosDontsVariant {
@@ -42,6 +46,7 @@ function DosDontsView({ node, updateAttributes, editor }: NodeViewProps) {
   const titulo = node.attrs.titulo as string;
   const cover = node.attrs.cover as DosDontsCover | null;
   const meta = DOS_DONTS_META[variant];
+  const Icon = meta.icon;
 
   return (
     <NodeViewWrapper className="sb-dos-donts" data-variant={variant}>
@@ -50,11 +55,42 @@ function DosDontsView({ node, updateAttributes, editor }: NodeViewProps) {
         editable={editor.isEditable}
         onChange={(next) => updateAttributes({ cover: next })}
       />
-      <div className="sb-dos-donts-header" contentEditable={false}>
-        <span aria-hidden>{meta.icon}</span>
-        {editor.isEditable && (
-          <span role="group" aria-label="Variante do bloco Do/Don't" className="sb-dos-donts-switcher">
-            {DOS_DONTS_VARIANTS.map((v) => (
+      <div className="sb-dos-donts-body">
+        {/* Ícone e título+descrição no mesmo eixo horizontal: título e
+            descrição vivem juntos em `.sb-dos-donts-text` (coluna), então
+            ficam sempre alinhados um com o outro — não dependem de um
+            padding calculado à mão para acompanhar a largura do ícone. */}
+        <span className="sb-dos-donts-icon" contentEditable={false}>
+          <Icon aria-hidden size={17} />
+        </span>
+        <div className="sb-dos-donts-text">
+          {editor.isEditable ? (
+            <input
+              type="text"
+              className="sb-dos-donts-title-input"
+              placeholder="Title"
+              value={titulo}
+              aria-label="Do/Don't block title"
+              onChange={(e) => updateAttributes({ titulo: e.target.value })}
+            />
+          ) : (
+            titulo && <strong className="sb-dos-donts-title">{titulo}</strong>
+          )}
+          <NodeViewContent className="sb-dos-donts-content" />
+        </div>
+      </div>
+      {editor.isEditable && (
+        // Overlay no canto superior direito (mesmo padrão do Callout, SYS-24)
+        // — não disputa espaço com ícone/título na linha do header.
+        <span
+          role="group"
+          aria-label="Variante do bloco Do/Don't"
+          className="sb-dos-donts-switcher"
+          contentEditable={false}
+        >
+          {DOS_DONTS_VARIANTS.map((v) => {
+            const SwitchIcon = DOS_DONTS_META[v].icon;
+            return (
               <button
                 key={v}
                 type="button"
@@ -64,25 +100,13 @@ function DosDontsView({ node, updateAttributes, editor }: NodeViewProps) {
                 data-active={v === variant || undefined}
                 onClick={() => updateAttributes({ variant: v })}
               >
-                {DOS_DONTS_META[v].icon} {DOS_DONTS_META[v].label}
+                <SwitchIcon aria-hidden size={12} />
+                {DOS_DONTS_META[v].label}
               </button>
-            ))}
-          </span>
-        )}
-        {editor.isEditable ? (
-          <input
-            type="text"
-            className="sb-dos-donts-title-input"
-            placeholder="Title"
-            value={titulo}
-            aria-label="Do/Don't block title"
-            onChange={(e) => updateAttributes({ titulo: e.target.value })}
-          />
-        ) : (
-          titulo && <strong className="sb-dos-donts-title">{titulo}</strong>
-        )}
-      </div>
-      <NodeViewContent className="sb-dos-donts-content" />
+            );
+          })}
+        </span>
+      )}
     </NodeViewWrapper>
   );
 }
