@@ -16,6 +16,7 @@ import javascript from 'highlight.js/lib/languages/javascript';
 import json from 'highlight.js/lib/languages/json';
 import markdown from 'highlight.js/lib/languages/markdown';
 import php from 'highlight.js/lib/languages/php';
+import plaintext from 'highlight.js/lib/languages/plaintext';
 import python from 'highlight.js/lib/languages/python';
 import ruby from 'highlight.js/lib/languages/ruby';
 import scss from 'highlight.js/lib/languages/scss';
@@ -52,6 +53,7 @@ const lowlight = createLowlight({
   json,
   markdown,
   php,
+  plaintext,
   python,
   ruby,
   scss,
@@ -160,4 +162,11 @@ export const CodeBlock = CodeBlockLowlight.extend({
   addNodeView() {
     return ReactNodeViewRenderer(CodeBlockView);
   },
-}).configure({ lowlight });
+}).configure({
+  lowlight,
+  // Sem `defaultLanguage` o plugin cai em `lowlight.highlightAuto` para todo
+  // bloco sem linguagem — texto puro (saída de terminal, tabela ASCII) sai
+  // colorido ao acaso, e o bloco fica sem label explicando de onde veio a cor.
+  // `plaintext` mantém "Plain text" literalmente plano até o autor escolher.
+  defaultLanguage: 'plaintext',
+});
