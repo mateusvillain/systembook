@@ -30,17 +30,23 @@ export function PublicHome() {
     );
   }
 
-  // Estado padrão: landing não publicada. Oferece um caminho para dentro da doc.
-  const firstSection = tree[0];
+  // Estado padrão: landing não publicada. Oferece um caminho para dentro da doc
+  // — a 1ª página da 1ª seção do 1º menu (a árvore já vem ordenada e sem
+  // menus/seções vazios, SYS-37).
+  const firstMenu = tree[0];
+  const firstSection = firstMenu?.sections[0];
   const firstPage = firstSection?.pages[0];
 
   return (
     <div data-testid="landing-default">
       <h1 className="sb-public-title">Documentation</h1>
-      {firstSection && firstPage ? (
+      {firstMenu && firstSection && firstPage ? (
         <p>
           Bem-vindo à documentação. Comece por{' '}
-          <Link to={`/docs/${firstSection.slug}/${firstPage.slug}`}>{firstPage.titulo}</Link>.
+          <Link to={`/docs/${firstMenu.slug}/${firstSection.slug}/${firstPage.slug}`}>
+            {firstPage.titulo}
+          </Link>
+          .
         </p>
       ) : (
         <p className="sb-public-empty">

@@ -34,14 +34,17 @@ export const sectionsRouter = router({
     ),
 
   /**
-   * Árvore de navegação da doc pública (TASK-52), sem auth. Retorna só as
-   * seções que têm ao menos uma página **publicada** (com ≥1 revisão), cada
-   * uma já com suas páginas publicadas aninhadas — um round-trip, sem N+1.
-   * Nunca expõe rascunhos: uma página só aparece depois de publicada.
+   * Árvore de navegação da doc pública (TASK-52), sem auth. Nunca expõe
+   * rascunhos: uma página só aparece depois de publicada (≥1 revisão), e uma
+   * seção só aparece se tiver ao menos uma dessas.
    *
-   * Desvio deliberado do "sections.listPublic/pages.listPublicBySection" do
-   * spec: a versão aninhada é a estrutura que a sidebar precisa e evita o
-   * lazy-load por seção do painel admin.
+   * SYS-37: o retorno passou a ser agrupado por **menu** — o nível que o banco
+   * já modelava (tabela `menus`) mas que a doc pública achatava. A top
+   * navigation (SYS-38) consome esse agrupamento; a sidebar renderiza as
+   * seções do menu ativo.
+   *
+   * Continua sendo um número **constante** de queries (menus + sections +
+   * páginas publicadas), agrupadas em memória — sem N+1 por menu ou seção.
    */
   listPublic: publicProcedure.query(({ ctx }) => {
     const publishedPages = ctx.db
@@ -69,17 +72,30 @@ export const sectionsRouter = router({
       .orderBy(asc(sections.ordem), asc(sections.id))
       .all();
 
-    return secs
-      .map((s) => ({
-        id: s.id,
-        titulo: s.titulo,
+    const menuRows = ctx.db.select().from(menus).orderBy(asc(menus.ordem), asc(menus.id)).all();
+
+    return menuRows
+      .map((m) => ({
+        id: m.id,
+        titulo: m.titulo,
         // slug sempre presente pós-backfill; fallback defensivo ao id
-        slug: s.slug ?? s.id,
-        pages: publishedPages
-          .filter((p) => p.sectionId === s.id)
-          .map((p) => ({ id: p.id, titulo: p.titulo, slug: p.slug })),
+        slug: m.slug ?? m.id,
+        ordem: m.ordem,
+        sections: secs
+          .filter((s) => s.menuId === m.id)
+          .map((s) => ({
+            id: s.id,
+            titulo: s.titulo,
+            slug: s.slug ?? s.id,
+            pages: publishedPages
+              .filter((p) => p.sectionId === s.id)
+              .map((p) => ({ id: p.id, titulo: p.titulo, slug: p.slug })),
+          }))
+          .filter((s) => s.pages.length > 0),
       }))
-      .filter((s) => s.pages.length > 0);
+      // Um menu sem nenhuma seção publicada não tem o que navegar — some da
+      // top navigation em vez de virar uma aba vazia.
+      .filter((m) => m.sections.length > 0);
   }),
 
   create: protectedProcedure

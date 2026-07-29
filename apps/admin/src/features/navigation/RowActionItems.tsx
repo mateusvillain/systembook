@@ -15,22 +15,33 @@ import {
  * dependem de tRPC/clipboard — o `RowActionsMenu` segue puramente apresentável.
  */
 
-/** Monta a URL pública absoluta de uma página a partir dos slugs. */
-export function publicPageUrl(sectionSlug: string, pageSlug: string): string {
-  return `${window.location.origin}/docs/${sectionSlug}/${pageSlug}`;
+/**
+ * Monta a URL pública absoluta de uma página a partir dos slugs. `menuSlug`
+ * entrou no path na SYS-37; sem ele a URL sai na forma legada, que a doc
+ * pública ainda redireciona.
+ */
+export function publicPageUrl(
+  menuSlug: string | null | undefined,
+  sectionSlug: string,
+  pageSlug: string,
+): string {
+  const prefix = menuSlug ? `${menuSlug}/` : '';
+  return `${window.location.origin}/docs/${prefix}${sectionSlug}/${pageSlug}`;
 }
 
 /**
- * "Copiar link" — copia a URL PÚBLICA (`/docs/:sectionSlug/:pageSlug`), nunca a
- * de edição do CMS. Desabilitado (com tooltip) quando o alvo não tem página
- * pública ainda — ex.: um menu sem seções/páginas. Recebe os slugs já
+ * "Copiar link" — copia a URL PÚBLICA (`/docs/:menuSlug/:sectionSlug/:pageSlug`),
+ * nunca a de edição do CMS. Desabilitado (com tooltip) quando o alvo não tem
+ * página pública ainda — ex.: um menu sem seções/páginas. Recebe os slugs já
  * resolvidos; o clipboard é escrito no próprio gesto do clique (sem await).
  */
 export function CopyLinkItem({
+  menuSlug,
   sectionSlug,
   pageSlug,
   disabledReason,
 }: {
+  menuSlug: string | null | undefined;
   sectionSlug: string | null | undefined;
   pageSlug: string | null | undefined;
   /** Tooltip quando desabilitado (ex.: "Este menu ainda não tem páginas"). */
@@ -44,7 +55,7 @@ export function CopyLinkItem({
       onSelect={() => {
         if (disabled) return;
         void navigator.clipboard
-          .writeText(publicPageUrl(sectionSlug, pageSlug))
+          .writeText(publicPageUrl(menuSlug, sectionSlug, pageSlug))
           .then(() => toast.success('Link copied'))
           .catch(() => toast.error('Could not copy the link'));
       }}
