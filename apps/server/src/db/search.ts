@@ -95,6 +95,8 @@ export interface SearchResult {
   pageSlug: string;
   sectionTitulo: string;
   sectionSlug: string | null;
+  /** Menu dono da seção (SYS-37): compõe a URL pública canônica do resultado. */
+  menuSlug: string | null;
   /**
    * Trecho do conteúdo com os termos casados delimitados pelos caracteres de
    * controle STX (``, abre) e ETX (``, fecha) — não `<mark>`, para
@@ -135,6 +137,7 @@ export function searchPublishedPages(db: Db, q: string, limit = 20): SearchResul
     pageSlug: string;
     sectionTitulo: string;
     sectionSlug: string | null;
+    menuSlug: string | null;
     snippet: string;
   }>(sql`
     SELECT
@@ -143,10 +146,12 @@ export function searchPublishedPages(db: Db, q: string, limit = 20): SearchResul
       p.slug AS pageSlug,
       s.titulo AS sectionTitulo,
       s.slug AS sectionSlug,
+      m.slug AS menuSlug,
       snippet(pages_fts, 3, char(2), char(3), '…', 12) AS snippet
     FROM pages_fts f
     JOIN pages p ON p.id = f.page_id
     JOIN sections s ON s.id = p.section_id
+    JOIN menus m ON m.id = s.menu_id
     WHERE pages_fts MATCH ${match}
     ORDER BY rank
     LIMIT ${limit}
