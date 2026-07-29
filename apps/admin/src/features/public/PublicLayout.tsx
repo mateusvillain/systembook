@@ -46,6 +46,16 @@ export function PublicLayout() {
     // ControlsPanel de Component Embed) ficam sempre claros — o `data-theme`
     // daqui não é o mecanismo que o shadcn entende.
     <div className={`sb-public${theme === 'dark' ? ' dark' : ''}`} data-theme={theme}>
+      <div
+        className="sb-public-backdrop"
+        data-open={navOpen || undefined}
+        onClick={() => setNavOpen(false)}
+        data-testid="nav-backdrop"
+      />
+      {/* Sidebar antes do header no DOM: no shell em card (SYS-36) ela sobe até
+          o topo da viewport, à esquerda de ambos, e o header começa à direita
+          dela — a ordem visual é dada pelo grid em `public.css`. */}
+      <PublicSidebar tree={tree} open={navOpen} onNavigate={() => setNavOpen(false)} />
       <header className="sb-public-header">
         <button
           type="button"
@@ -71,18 +81,13 @@ export function PublicLayout() {
           {theme === 'dark' ? <Sun aria-hidden size={16} /> : <Moon aria-hidden size={16} />}
         </button>
       </header>
-      <div className="sb-public-body">
-        <div
-          className="sb-public-backdrop"
-          data-open={navOpen || undefined}
-          onClick={() => setNavOpen(false)}
-          data-testid="nav-backdrop"
-        />
-        <PublicSidebar tree={tree} open={navOpen} onNavigate={() => setNavOpen(false)} />
-        <main className="sb-public-content">
+      {/* `main` é o cartão branco *e* o container de scroll da documentação; o
+          wrapper interno carrega padding e largura de leitura. */}
+      <main className="sb-public-content">
+        <div className="sb-public-content-inner">
           <Outlet context={context} />
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }
