@@ -19,7 +19,11 @@
 
 /* ---- Tokens: tema claro (padrão) ---- */
 .sb-public {
-  --sb-bg: #ffffff;
+  /* SYS-36: `--sb-bg` é a *moldura* cinza da app — sidebar e header ficam
+     sobre ela, sem chrome próprio. O branco virou `--sb-card`, a superfície
+     do cartão de conteúdo. */
+  --sb-bg: #f3f3f4;
+  --sb-card: #ffffff;
   --sb-surface: #f8f9fb;
   --sb-fg: #14181f;
   --sb-fg-muted: #57606a;
@@ -33,10 +37,18 @@
   --sb-mark-bg: #fde68a;
   --sb-mark-fg: #3b2f00;
   --sb-shadow: 0 8px 28px rgba(15, 23, 31, 0.12);
+  --sb-card-radius: 16px;
+  --sb-card-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+  /* Shell em card: a *página* não rola — o cartão tem scroll interno. A
+     sidebar ocupa as duas linhas (sobe até o topo da viewport) e o header
+     começa à direita dela. */
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
   color: var(--sb-fg);
   background: var(--sb-bg);
   font-family:
@@ -46,7 +58,9 @@
 
 /* ---- Tokens: tema escuro ---- */
 .sb-public[data-theme='dark'] {
-  --sb-bg: #0d1117;
+  /* Mesma inversão do claro: moldura um degrau *abaixo* do cartão. */
+  --sb-bg: #010409;
+  --sb-card: #0d1117;
   --sb-surface: #161b22;
   --sb-fg: #e6edf3;
   --sb-fg-muted: #9aa4b2;
@@ -60,22 +74,23 @@
   --sb-mark-bg: #6b5300;
   --sb-mark-fg: #ffe9a8;
   --sb-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+  --sb-card-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
-/* ---- Header (1.2) ---- */
+/* ---- Header (1.2, reformulado em SYS-36) ----
+   Sobre o cinza da moldura: sem background, sem borda e sem blur — e sem
+   `sticky`, já que a página não rola mais (o scroll é interno ao cartão).
+   `z-index` continua: o dropdown da busca precisa pintar acima do cartão,
+   que vem depois dele no DOM. Altura ~69px = 37px de conteúdo + 16px×2. */
 .sb-public-header {
-  position: sticky;
-  top: 0;
+  grid-column: 2;
+  grid-row: 1;
+  position: relative;
   z-index: 60;
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.75rem 1.5rem;
-  border-bottom: 1px solid var(--sb-border);
-  background: var(--sb-surface);
-  background: color-mix(in srgb, var(--sb-surface) 92%, transparent);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  padding: 16px 16px 16px 0;
   font-weight: 600;
 }
 
@@ -142,35 +157,55 @@
 }
 
 /* ---- Corpo / colunas ---- */
-.sb-public-body {
-  flex: 1;
-  display: flex;
-  align-items: stretch;
-}
-
+/* Sidebar sobre o cinza (SYS-36): sem background e sem borda, 240px, subindo
+   até o topo da viewport (ocupa as duas linhas do grid). */
 .sb-public-sidebar {
-  width: 260px;
-  flex-shrink: 0;
-  border-right: 1px solid var(--sb-border);
-  background: var(--sb-surface);
-  padding: 1.25rem 1rem;
+  grid-column: 1;
+  grid-row: 1 / -1;
+  width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px;
   overflow-y: auto;
 }
 
+/* O cartão branco elevado: superfície, radius e sombra do protótipo, com a
+   moldura cinza aparecendo à direita e embaixo (à esquerda e em cima ela vem
+   da sidebar e do header). É ele o container de scroll da documentação —
+   daí `overflow-y: auto` aqui e `overflow: hidden` no shell. */
 .sb-public-content {
-  flex: 1;
+  grid-column: 2;
+  grid-row: 2;
   min-width: 0;
-  padding: 2.25rem clamp(1.5rem, 5vw, 3.5rem);
-  max-width: 860px;
+  margin: 0 16px 16px 0;
+  background: var(--sb-card);
+  border-radius: var(--sb-card-radius);
+  box-shadow: var(--sb-card-shadow);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   font-size: 1.02rem;
   line-height: 1.7;
+
+  /* Dentro do cartão, "fundo da superfície" é o branco do cartão: os blocos
+     de conteúdo em `editor.css` (code block, embed, botões de copiar) leem
+     `var(--sb-bg)` como a cor da página onde estão desenhados. Sem este
+     rebind eles herdariam o cinza da moldura. */
+  --sb-bg: var(--sb-card);
+}
+
+/* A largura de leitura vive no wrapper interno, não no cartão (que agora vai
+   de ponta a ponta). Apertar para 640px é a 6.8. */
+.sb-public-content-inner {
+  padding: 2.5rem clamp(1.5rem, 4vw, 3rem);
+  max-width: 900px;
 }
 
 /* Páginas de conteúdo (2.1) precisam de mais fôlego que o container de
-   leitura padrão (860px) para caber a coluna reservada do TOC (2.2) ao lado
-   do texto. `:has()` sem suporte apenas mantém os 860px — grid degrada para
-   1 coluna nesse caso (ver media query abaixo), sem quebra. */
-.sb-public-content:has(.sb-page-grid) {
+   leitura padrão para caber a coluna reservada do TOC (2.2) ao lado do
+   texto. `:has()` sem suporte apenas mantém a largura padrão — grid degrada
+   para 1 coluna nesse caso (ver media query abaixo), sem quebra. */
+.sb-public-content-inner:has(.sb-page-grid) {
   max-width: 1180px;
 }
 
@@ -188,11 +223,12 @@
 
 .sb-page-toc {
   min-width: 0;
-  /* Acompanha o scroll abaixo do header sticky (Epic 1). */
+  /* Gruda no topo do *cartão* (o container de scroll agora, SYS-36) — não há
+     mais header sticky para compensar. */
   position: sticky;
-  top: calc(3.5rem + 1.5rem);
+  top: 0;
   align-self: start;
-  max-height: calc(100vh - 5rem);
+  max-height: calc(100dvh - 8rem);
   overflow-y: auto;
 }
 
@@ -249,11 +285,11 @@
   font-weight: 600;
 }
 
-/* Compensa o header sticky (Epic 1) para o scroll suave não esconder o
-   heading alvo atrás dele. */
+/* Sem header sticky (SYS-36) basta uma folga de respiro no topo do cartão
+   para o scroll suave não colar o heading na borda. */
 .sb-public .sb-editor .ProseMirror h2,
 .sb-public .sb-editor .ProseMirror h3 {
-  scroll-margin-top: 5.5rem;
+  scroll-margin-top: 1.5rem;
 }
 
 @media (max-width: 1100px) {
@@ -346,8 +382,9 @@
 }
 
 /* ---- Navegação (1.3) ---- */
+/* O espaçamento entre grupos vem do `gap: 24px` da sidebar (SYS-36). */
 .sb-public-section {
-  margin-bottom: 1.5rem;
+  margin-bottom: 0;
 }
 
 .sb-public-section-title {
@@ -635,7 +672,8 @@
   width: min(420px, 80vw);
   max-height: 60vh;
   overflow-y: auto;
-  background: var(--sb-bg);
+  /* Superfície elevada = branco do cartão; `--sb-bg` agora é o cinza da moldura. */
+  background: var(--sb-card);
   border: 1px solid var(--sb-border);
   border-radius: 10px;
   box-shadow: var(--sb-shadow);
@@ -715,6 +753,26 @@
 
 /* ---- Responsivo: < 768px (TASK-57) ---- */
 @media (max-width: 767px) {
+  /* A sidebar vira drawer `position: fixed` (regra abaixo), saindo do fluxo —
+     então o shell deixa de ser grid de 2 colunas e volta a empilhar header +
+     cartão, este ocupando a largura toda, sem moldura visível. */
+  .sb-public {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sb-public-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .sb-public-content {
+    flex: 1;
+    min-height: 0;
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
   .sb-nav-toggle {
     display: inline-flex;
   }
@@ -726,13 +784,15 @@
     white-space: nowrap;
   }
 
-  /* Sidebar vira um drawer off-canvas sobreposto. */
+  /* Sidebar vira um drawer off-canvas sobreposto. Como drawer ela precisa de
+     superfície própria (no desktop ela é transparente sobre a moldura). */
   .sb-public-sidebar {
     position: fixed;
     top: 0;
     left: 0;
     bottom: 0;
     width: min(82vw, 300px);
+    background: var(--sb-card);
     transform: translateX(-100%);
     transition: transform 0.22s ease;
     z-index: 70;
@@ -762,7 +822,7 @@
     pointer-events: auto;
   }
 
-  .sb-public-content {
+  .sb-public-content-inner {
     max-width: 100%;
     padding: 1.5rem 1.1rem;
   }
@@ -803,7 +863,7 @@
     position: fixed;
     inset: 0;
     z-index: 80;
-    background: var(--sb-bg);
+    background: var(--sb-card);
     padding: 0.75rem;
   }
 

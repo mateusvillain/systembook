@@ -61,19 +61,44 @@ export function TableOfContents({
       setActiveId(nextItems[0]?.id ?? '');
       if (headings.length === 0) return;
 
+      // O scroll é interno ao cartão branco (SYS-36), não da viewport — o
+      // observer precisa desse elemento como `root`, senão a interseção é
+      // medida contra a viewport (onde tudo está sempre visível) e o
+      // scroll-spy congela no primeiro heading. `null` (viewport) continua
+      // sendo o fallback correto fora do shell público.
+      const scrollRoot = container.closest('.sb-public-content');
+
       // rootMargin negativo por baixo: um heading conta como "ativo" assim
-      // que cruza a faixa superior da viewport, não só quando totalmente
+      // que cruza a faixa superior do container, não só quando totalmente
       // visível — combina com a leitura de cima para baixo.
+      //
+      // O estado de interseção é acumulado num `Set` em vez de lido só do
+      // batch de `entries`: um callback traz apenas o que *mudou*, então
+      // decidir o ativo pelo batch erra sempre que um heading continua na
+      // faixa mas não é re-reportado (salto de scroll, dois headings
+      // cruzando juntos). E quando nada está na faixa — o trecho final da
+      // página, longo e sem headings — o ativo é o último já ultrapassado,
+      // em vez de congelar no anterior.
+      const intersecting = new Set<Element>();
       const observer = new IntersectionObserver(
         (entries) => {
-          const visible = entries.filter((entry) => entry.isIntersecting);
-          if (visible.length === 0) return;
-          const topmost = visible.reduce((a, b) =>
-            a.boundingClientRect.top < b.boundingClientRect.top ? a : b,
-          );
-          setActiveId(topmost.target.id);
+          for (const entry of entries) {
+            if (entry.isIntersecting) intersecting.add(entry.target);
+            else intersecting.delete(entry.target);
+          }
+
+          const topmost = headings.find((heading) => intersecting.has(heading));
+          if (topmost) {
+            setActiveId(topmost.id);
+            return;
+          }
+
+          const rootTop = (scrollRoot ?? document.documentElement).getBoundingClientRect().top;
+          const passed = headings.filter((heading) => heading.getBoundingClientRect().top < rootTop);
+          const last = passed[passed.length - 1];
+          if (last) setActiveId(last.id);
         },
-        { rootMargin: '-80px 0px -70% 0px', threshold: 0 },
+        { root: scrollRoot, rootMargin: '-24px 0px -70% 0px', threshold: 0 },
       );
       headings.forEach((heading) => observer.observe(heading));
       cleanupObserver = () => observer.disconnect();
