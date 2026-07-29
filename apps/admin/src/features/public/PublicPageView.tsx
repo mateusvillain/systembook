@@ -4,15 +4,18 @@ import { useQuery } from '@tanstack/react-query';
 import { useTRPC } from '../../lib/trpc.js';
 import { PageRenderer, type RenderableSnapshot } from './PageRenderer.js';
 import { TableOfContents } from './TableOfContents.js';
+import { LegacyDocsRedirect } from './LegacyDocsRedirect.js';
 
 /**
  * Conteúdo de uma página na doc pública (TASK-52): resolve
- * `sectionSlug`/`pageSlug` para a última revisão publicada e renderiza via
- * `PageRenderer`. A tab ativa vem da URL (`/:tabId?`) e trocar de tab atualiza
- * a URL (client-side, sem reload), tornando o link direto/bookmarkável.
+ * `menuSlug`/`sectionSlug`/`pageSlug` para a última revisão publicada e
+ * renderiza via `PageRenderer`. A tab ativa vem da URL (`/:tabId?`) e trocar
+ * de tab atualiza a URL (client-side, sem reload), tornando o link
+ * direto/bookmarkável.
  */
 export function PublicPageView() {
-  const { sectionSlug, pageSlug, tabId } = useParams<{
+  const { menuSlug, sectionSlug, pageSlug, tabId } = useParams<{
+    menuSlug: string;
     sectionSlug: string;
     pageSlug: string;
     tabId?: string;
@@ -23,24 +26,22 @@ export function PublicPageView() {
 
   const query = useQuery({
     ...trpc.pages.getPublishedBySlug.queryOptions({
+      menuSlug: menuSlug ?? '',
       sectionSlug: sectionSlug ?? '',
       pageSlug: pageSlug ?? '',
     }),
-    enabled: !!sectionSlug && !!pageSlug,
+    enabled: !!menuSlug && !!sectionSlug && !!pageSlug,
   });
+
+  const basePath = `/docs/${menuSlug}/${sectionSlug}/${pageSlug}`;
 
   if (query.isLoading) return <p>Loading…</p>;
   if (query.isError) return <p role="alert">Failed to load the page.</p>;
 
-  // Seção/página inexistente → 404.
-  if (!query.data) {
-    return (
-      <div data-testid="public-not-found">
-        <h1 className="sb-public-title">Page not found</h1>
-        <p style={{ color: '#666' }}>This page does not exist or the address has changed.</p>
-      </div>
-    );
-  }
+  // Não resolveu como `menu/section/page`. Com 3 segmentos isso ainda pode ser
+  // a forma legada `section/page/tab` (SYS-37), então o resolvedor do servidor
+  // decide — e só ele conclui pelo 404.
+  if (!query.data) return <LegacyDocsRedirect />;
 
   const { titulo, subtitulo, snapshot } = query.data;
   // O corpo (tab primária) vive na URL sem `tabId`; as tabs de usuário em
@@ -77,11 +78,7 @@ export function PublicPageView() {
           snapshot={snapshot as RenderableSnapshot}
           activeTabId={activeTabId}
           onSelectTab={(nextTabId) =>
-            navigate(
-              nextTabId === primaryTabId
-                ? `/docs/${sectionSlug}/${pageSlug}`
-                : `/docs/${sectionSlug}/${pageSlug}/${nextTabId}`,
-            )
+            navigate(nextTabId === primaryTabId ? basePath : `${basePath}/${nextTabId}`)
           }
         />
       </article>
