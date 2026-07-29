@@ -17,6 +17,7 @@ import { PublicPage } from './pages/PublicPage.js';
 import { PublicLayout } from './features/public/PublicLayout.js';
 import { PublicHome } from './features/public/PublicHome.js';
 import { PublicPageView } from './features/public/PublicPageView.js';
+import { LegacyDocsRedirect } from './features/public/LegacyDocsRedirect.js';
 import { AdminLayout } from './components/AdminLayout.js';
 import { Toaster } from './components/ui/sonner.js';
 
@@ -29,8 +30,14 @@ const router = createBrowserRouter([
     element: <PublicLayout />,
     children: [
       { index: true, element: <PublicHome /> },
-      { path: ':sectionSlug/:pageSlug', element: <PublicPageView /> },
-      { path: ':sectionSlug/:pageSlug/:tabId', element: <PublicPageView /> },
+      // Forma canônica (SYS-37), com o menu na URL.
+      { path: ':menuSlug/:sectionSlug/:pageSlug', element: <PublicPageView /> },
+      { path: ':menuSlug/:sectionSlug/:pageSlug/:tabId', element: <PublicPageView /> },
+      // Forma legada `/docs/:sectionSlug/:pageSlug` (2 segmentos, sem
+      // ambiguidade com a canônica) → redirect. A legada COM tab tem 3
+      // segmentos e cai na rota canônica acima; o `PublicPageView` delega a
+      // este mesmo componente quando ela não resolve (ver LegacyDocsRedirect).
+      { path: ':sectionSlug/:pageSlug', element: <LegacyDocsRedirect /> },
     ],
   },
   // Link direto por id (TASK-50) — mantido para bookmarks/preview sem slug.

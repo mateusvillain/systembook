@@ -2,6 +2,7 @@ import { TRPCError } from '@trpc/server';
 import { and, asc, desc, eq, max, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import type { PageSnapshot } from '@systembook/schema';
+import type { Db } from '../../db/client.js';
 import { isUniqueViolation } from '../../db/errors.js';
 import { createRevision, restoreRevision } from '../../db/revisions.js';
 import { menus, pages, revisions, sections, statusTags, tabs } from '../../db/schema.js';
@@ -36,6 +37,59 @@ function slugConflict(): TRPCError {
 
 function pageNotFound(): TRPCError {
   return new TRPCError({ code: 'NOT_FOUND', message: 'Page not found' });
+}
+
+/** Path de `/docs` já na forma canônica `menu/section/page[/tab]` (SYS-37). */
+export interface PublicPathResolution {
+  menuSlug: string;
+  sectionSlug: string;
+  pageSlug: string;
+  tabId: string | null;
+}
+
+/**
+ * Localiza uma página pelos slugs de menu + seção + página. `null` quando
+ * qualquer um dos três não casa — inclusive quando a seção existe mas está
+ * sob outro menu.
+ */
+function resolveCanonicalPath(
+  db: Db,
+  menuSlug: string,
+  sectionSlug: string,
+  pageSlug: string,
+  tabId: string | null,
+): PublicPathResolution | null {
+  const row = db
+    .select({ menuSlug: menus.slug, menuId: menus.id })
+    .from(pages)
+    .innerJoin(sections, eq(sections.id, pages.sectionId))
+    .innerJoin(menus, eq(menus.id, sections.menuId))
+    .where(and(eq(menus.slug, menuSlug), eq(sections.slug, sectionSlug), eq(pages.slug, pageSlug)))
+    .get();
+  if (!row) return null;
+  return { menuSlug: row.menuSlug ?? row.menuId, sectionSlug, pageSlug, tabId };
+}
+
+/**
+ * Forma legada `section/page[/tab]`: o menu não estava na URL, então é
+ * derivado da própria seção (a hierarquia é 1:N estrita — uma seção pertence
+ * a exatamente um menu), produzindo o path canônico para o redirect.
+ */
+function resolveLegacyPath(
+  db: Db,
+  sectionSlug: string,
+  pageSlug: string,
+  tabId: string | null,
+): PublicPathResolution | null {
+  const row = db
+    .select({ menuSlug: menus.slug, menuId: menus.id })
+    .from(pages)
+    .innerJoin(sections, eq(sections.id, pages.sectionId))
+    .innerJoin(menus, eq(menus.id, sections.menuId))
+    .where(and(eq(sections.slug, sectionSlug), eq(pages.slug, pageSlug)))
+    .get();
+  if (!row) return null;
+  return { menuSlug: row.menuSlug ?? row.menuId, sectionSlug, pageSlug, tabId };
 }
 
 export const pagesRouter = router({
@@ -388,13 +442,32 @@ export const pagesRouter = router({
    * do `revisions.getLatestPublished`.
    */
   getPublishedBySlug: publicProcedure
-    .input(z.object({ sectionSlug: z.string(), pageSlug: z.string() }))
+    .input(
+      z.object({
+        // SYS-37: opcional porque a URL canônica passou a ter o menu
+        // (`/docs/:menuSlug/:sectionSlug/:pageSlug`), mas o slug da seção
+        // continua sendo único globalmente — sem `menuSlug` a resolução é a
+        // de antes. Quando vem, é **validado**: um menu que não contém a
+        // seção resolve para `null` (404), em vez de servir a mesma página
+        // sob endereços diferentes.
+        menuSlug: z.string().optional(),
+        sectionSlug: z.string(),
+        pageSlug: z.string(),
+      }),
+    )
     .query(({ ctx, input }) => {
       const page = ctx.db
         .select({ id: pages.id, titulo: pages.titulo, subtitulo: pages.subtitulo })
         .from(pages)
         .innerJoin(sections, eq(sections.id, pages.sectionId))
-        .where(and(eq(sections.slug, input.sectionSlug), eq(pages.slug, input.pageSlug)))
+        .innerJoin(menus, eq(menus.id, sections.menuId))
+        .where(
+          and(
+            eq(sections.slug, input.sectionSlug),
+            eq(pages.slug, input.pageSlug),
+            ...(input.menuSlug ? [eq(menus.slug, input.menuSlug)] : []),
+          ),
+        )
         .get();
       if (!page) return null;
 
@@ -412,5 +485,35 @@ export const pagesRouter = router({
         subtitulo: page.subtitulo,
         snapshot: rev ? (JSON.parse(rev.snapshotJson) as PageSnapshot) : null,
       };
+    }),
+
+  /**
+   * Canonicaliza um path de `/docs` (SYS-37). Existe para que **nenhum link
+   * publicado antes do menu entrar na URL quebre**: a doc pública redireciona
+   * o que este resolvedor devolver.
+   *
+   * O único caso genuinamente ambíguo é o de 3 segmentos, que tanto pode ser
+   * a forma nova `menu/section/page` quanto a antiga `section/page/tab`. A
+   * desambiguação é por dado, não por heurística de string: tenta a leitura
+   * canônica primeiro e só cai na legada se ela não resolver. Com 4 segmentos
+   * só a forma nova existe; com 2, só a antiga.
+   *
+   * Não exige publicação — mesmo critério de `getPublishedBySlug`, que
+   * distingue "não existe" (null) de "existe mas nunca publicada".
+   */
+  resolvePublicPath: publicProcedure
+    .input(z.object({ segments: z.array(z.string()).min(2).max(4) }))
+    .query(({ ctx, input }): PublicPathResolution | null => {
+      const [a, b, c, d] = input.segments;
+      switch (input.segments.length) {
+        case 2:
+          return resolveLegacyPath(ctx.db, a!, b!, null);
+        case 3:
+          return (
+            resolveCanonicalPath(ctx.db, a!, b!, c!, null) ?? resolveLegacyPath(ctx.db, a!, b!, c!)
+          );
+        default:
+          return resolveCanonicalPath(ctx.db, a!, b!, c!, d!);
+      }
     }),
 });

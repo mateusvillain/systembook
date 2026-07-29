@@ -106,7 +106,9 @@ describe('pages.move e menus.firstPagePath (TASK-109)', () => {
     await caller.pages.create({ sectionId: secB.id, titulo: 'Início', slug: 'inicio' });
     await caller.pages.create({ sectionId: secB.id, titulo: 'Depois', slug: 'depois' });
 
+    // O menu entrou no path público (SYS-37), então vem no retorno.
     expect(await caller.menus.firstPagePath({ menuId: menu.id })).toEqual({
+      menuSlug: menu.slug,
       sectionSlug: secB.slug,
       pageSlug: 'inicio',
     });
@@ -114,6 +116,7 @@ describe('pages.move e menus.firstPagePath (TASK-109)', () => {
     // Ao dar página à secA (ordem menor), ela passa a ser a resolvida.
     await caller.pages.create({ sectionId: secA.id, titulo: 'Topo', slug: 'topo' });
     expect(await caller.menus.firstPagePath({ menuId: menu.id })).toEqual({
+      menuSlug: menu.slug,
       sectionSlug: secA.slug,
       pageSlug: 'topo',
     });

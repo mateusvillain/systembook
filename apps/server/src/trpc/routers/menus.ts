@@ -30,7 +30,17 @@ export const menusRouter = router({
   // critério do "Copiar link" de uma página avulsa.
   firstPagePath: protectedProcedure
     .input(z.object({ menuId: z.string() }))
-    .query(({ ctx, input }): { sectionSlug: string; pageSlug: string } | null => {
+    .query(({ ctx, input }): { menuSlug: string; sectionSlug: string; pageSlug: string } | null => {
+      // SYS-37: o menu entrou na URL pública, então o link copiado já sai na
+      // forma canônica em vez de depender do redirect da forma legada.
+      const menu = ctx.db
+        .select({ id: menus.id, slug: menus.slug })
+        .from(menus)
+        .where(eq(menus.id, input.menuId))
+        .get();
+      if (!menu) return null;
+      const menuSlug = menu.slug ?? menu.id;
+
       const secs = ctx.db
         .select({ id: sections.id, slug: sections.slug })
         .from(sections)
@@ -45,7 +55,7 @@ export const menusRouter = router({
           .orderBy(asc(pages.ordem), asc(pages.id))
           .limit(1)
           .get();
-        if (page && sec.slug) return { sectionSlug: sec.slug, pageSlug: page.slug };
+        if (page && sec.slug) return { menuSlug, sectionSlug: sec.slug, pageSlug: page.slug };
       }
       return null;
     }),

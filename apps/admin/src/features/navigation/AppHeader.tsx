@@ -221,6 +221,7 @@ function MenuNavItem({
         onDelete={onDelete}
         extraItems={
           <CopyLinkItem
+            menuSlug={pathQuery.data?.menuSlug}
             sectionSlug={pathQuery.data?.sectionSlug}
             pageSlug={pathQuery.data?.pageSlug}
             disabledReason="This menu has no pages yet"

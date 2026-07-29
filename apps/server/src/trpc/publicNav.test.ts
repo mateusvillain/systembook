@@ -20,6 +20,22 @@ const DOC: TiptapDoc = {
   content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Conteúdo' }] }],
 };
 
+/** Cria seção + página com uma revisão publicada; devolve os ids criados. */
+async function publishPage(
+  caller: ReturnType<typeof callerFor>,
+  menuId: string,
+  sectionTitulo: string,
+  pageTitulo: string,
+  pageSlug: string,
+) {
+  const section = await caller.sections.create({ menuId, titulo: sectionTitulo });
+  const page = await caller.pages.create({ sectionId: section.id, titulo: pageTitulo, slug: pageSlug });
+  const tab = await caller.tabs.create({ pageId: page.id, titulo: 'Uso' });
+  await caller.blocks.saveDraft({ tabId: tab.id, doc: DOC });
+  await caller.pages.publish({ pageId: page.id });
+  return { sectionId: section.id, pageId: page.id, tabId: tab.id };
+}
+
 describe('navegação pública (TASK-52)', () => {
   let dir: string;
   let db: Db;
@@ -48,7 +64,7 @@ describe('navegação pública (TASK-52)', () => {
     expect(b.slug).toBe('componentes-de-ui-2');
   });
 
-  it('listPublic (anônimo) mostra só seções com página publicada, aninhadas', async () => {
+  it('listPublic (anônimo) mostra só seções com página publicada, aninhadas sob o menu', async () => {
     const caller = callerFor(db, editor);
     const sec = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'Botões' });
     // página publicada
@@ -64,8 +80,102 @@ describe('navegação pública (TASK-52)', () => {
     const anon = callerFor(db, null);
     const tree = await anon.sections.listPublic();
     expect(tree).toHaveLength(1);
-    expect(tree[0]).toMatchObject({ titulo: 'Botões', slug: 'botoes' });
-    expect(tree[0]!.pages.map((p) => p.slug)).toEqual(['primary']);
+    expect(tree[0]).toMatchObject({ id: DEFAULT_MENU_ID, slug: 'documentacao' });
+    expect(tree[0]!.sections).toHaveLength(1);
+    expect(tree[0]!.sections[0]).toMatchObject({ titulo: 'Botões', slug: 'botoes' });
+    expect(tree[0]!.sections[0]!.pages.map((p) => p.slug)).toEqual(['primary']);
+  });
+
+  it('listPublic agrupa por menu, na ordem dos menus, e omite menu sem página publicada', async () => {
+    const caller = callerFor(db, editor);
+    const components = await caller.menus.create({ titulo: 'Components' });
+    const vazio = await caller.menus.create({ titulo: 'Playground' });
+
+    // Menu default: 1 seção publicada.
+    await publishPage(caller, DEFAULT_MENU_ID, 'Cores', 'Tokens', 'tokens');
+    // Menu "Components": 1 seção publicada.
+    await publishPage(caller, components.id, 'Botões', 'Primary', 'primary');
+    // Menu "Playground": seção existe, mas sem nenhuma página publicada.
+    const rascunhos = await caller.sections.create({ menuId: vazio.id, titulo: 'Rascunhos' });
+    await caller.pages.create({ sectionId: rascunhos.id, titulo: 'Ideia', slug: 'ideia' });
+
+    const tree = await callerFor(db, null).sections.listPublic();
+    // `Playground` some por completo — não vira uma aba vazia na top navigation.
+    expect(tree.map((m) => m.slug)).toEqual(['documentacao', 'components']);
+    expect(tree[0]!.sections.map((s) => s.slug)).toEqual(['cores']);
+    expect(tree[1]!.sections.map((s) => s.slug)).toEqual(['botoes']);
+  });
+
+  it('getPublishedBySlug valida o menu quando ele vem na URL', async () => {
+    const caller = callerFor(db, editor);
+    const components = await caller.menus.create({ titulo: 'Components' });
+    await publishPage(caller, components.id, 'Botões', 'Primary', 'primary');
+
+    const anon = callerFor(db, null);
+    const ok = await anon.pages.getPublishedBySlug({
+      menuSlug: 'components',
+      sectionSlug: 'botoes',
+      pageSlug: 'primary',
+    });
+    expect(ok?.titulo).toBe('Primary');
+
+    // Mesma seção/página sob um menu que não a contém → 404, não a mesma
+    // página servida em dois endereços.
+    expect(
+      await anon.pages.getPublishedBySlug({
+        menuSlug: 'documentacao',
+        sectionSlug: 'botoes',
+        pageSlug: 'primary',
+      }),
+    ).toBeNull();
+  });
+
+  describe('resolvePublicPath (compatibilidade de URL, SYS-37)', () => {
+    it('canonicaliza a URL legada de 2 segmentos derivando o menu da seção', async () => {
+      const caller = callerFor(db, editor);
+      const components = await caller.menus.create({ titulo: 'Components' });
+      await publishPage(caller, components.id, 'Botões', 'Primary', 'primary');
+
+      expect(
+        await callerFor(db, null).pages.resolvePublicPath({ segments: ['botoes', 'primary'] }),
+      ).toEqual({
+        menuSlug: 'components',
+        sectionSlug: 'botoes',
+        pageSlug: 'primary',
+        tabId: null,
+      });
+    });
+
+    it('com 3 segmentos prefere a leitura canônica e só então a legada com tab', async () => {
+      const caller = callerFor(db, editor);
+      const components = await caller.menus.create({ titulo: 'Components' });
+      const { tabId } = await publishPage(caller, components.id, 'Botões', 'Primary', 'primary');
+      const anon = callerFor(db, null);
+
+      // menu/section/page existe → é essa a leitura.
+      expect(
+        await anon.pages.resolvePublicPath({ segments: ['components', 'botoes', 'primary'] }),
+      ).toMatchObject({ menuSlug: 'components', sectionSlug: 'botoes', tabId: null });
+
+      // Não existe menu "botoes": cai na leitura legada section/page/tab.
+      expect(
+        await anon.pages.resolvePublicPath({ segments: ['botoes', 'primary', tabId] }),
+      ).toEqual({
+        menuSlug: 'components',
+        sectionSlug: 'botoes',
+        pageSlug: 'primary',
+        tabId,
+      });
+    });
+
+    it('retorna null quando nenhuma leitura resolve', async () => {
+      const caller = callerFor(db, editor);
+      await publishPage(caller, DEFAULT_MENU_ID, 'Botões', 'Primary', 'primary');
+
+      expect(
+        await callerFor(db, null).pages.resolvePublicPath({ segments: ['nada', 'aqui'] }),
+      ).toBeNull();
+    });
   });
 
   it('getPublishedBySlug (anônimo) resolve o snapshot; null para inexistente', async () => {

@@ -33,6 +33,11 @@ const treeInputClass =
 // só o `PageRow` (o link que de fato navega) consome isto.
 const OnNavigateContext = createContext<(() => void) | undefined>(undefined);
 
+// Slug do menu ativo, só para o "Copiar link" do `PageRow` montar a URL
+// pública canônica (SYS-37). Mesmo motivo do contexto acima: evita arrastar a
+// prop por Section → PagesList → PageRow.
+const MenuSlugContext = createContext<string | null>(null);
+
 export function SidebarTree({
   activeMenuId,
   onNavigate,
@@ -56,6 +61,11 @@ export function SidebarTree({
   const remove = useMutation(trpc.sections.delete.mutationOptions({ onSuccess: invalidate }));
 
   const sections = sectionsQuery.data ?? [];
+  // `menus.list` já está no cache (o header o consome); daqui sai só o slug do
+  // menu ativo, usado pelo "Copiar link" das páginas.
+  const menusQuery = useQuery(trpc.menus.list.queryOptions());
+  const activeMenuSlug =
+    menusQuery.data?.find((menu) => menu.id === activeMenuId)?.slug ?? null;
 
   const dnd = useDragReorder({
     items: sections,
@@ -69,6 +79,7 @@ export function SidebarTree({
 
   return (
     <OnNavigateContext.Provider value={onNavigate}>
+    <MenuSlugContext.Provider value={activeMenuSlug}>
     <nav aria-label="Documentation structure" className="grid content-start gap-6 text-sm">
       {sectionsQuery.isPending && <span className="text-muted-foreground px-2 text-sm">Loading…</span>}
       {!sectionsQuery.isPending && sections.length === 0 && (
@@ -97,6 +108,7 @@ export function SidebarTree({
         onCreate={(titulo) => create.mutateAsync({ menuId: activeMenuId, titulo })}
       />
     </nav>
+    </MenuSlugContext.Provider>
     </OnNavigateContext.Provider>
   );
 }
@@ -242,6 +254,7 @@ function PageRow({
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(page.titulo);
   const onNavigate = useContext(OnNavigateContext);
+  const menuSlug = useContext(MenuSlugContext);
 
   if (editing) {
     return (
@@ -292,6 +305,7 @@ function PageRow({
         extraItems={
           <>
             <CopyLinkItem
+              menuSlug={menuSlug}
               sectionSlug={sectionSlug}
               pageSlug={page.slug}
               disabledReason="This page has no slug yet"

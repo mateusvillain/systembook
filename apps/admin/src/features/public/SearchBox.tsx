@@ -84,7 +84,10 @@ export function SearchBox() {
     setOpen(false);
     setMobileOpen(false);
     setQuery('');
-    navigate(`/docs/${r.sectionSlug ?? ''}/${r.pageSlug}`);
+    // URL canônica com o menu (SYS-37); sem `menuSlug` cai na forma legada,
+    // que o `LegacyDocsRedirect` resolve.
+    const prefix = r.menuSlug ? `${r.menuSlug}/` : '';
+    navigate(`/docs/${prefix}${r.sectionSlug ?? ''}/${r.pageSlug}`);
   }
 
   function openMobile() {
