@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { BookOpen, Menu, Moon, Sun } from 'lucide-react';
 import { useTRPC } from '../../lib/trpc.js';
 import { PublicSidebar, type PublicNavTree } from './PublicSidebar.js';
+import { PublicMenuNav, useActiveMenu } from './PublicMenuNav.js';
 import { SearchBox } from './SearchBox.js';
 import { useTheme } from './useTheme.js';
 import './public.css';
@@ -26,6 +27,11 @@ export function PublicLayout() {
   const tree = navQuery.data ?? [];
   const { theme, toggle } = useTheme();
   const [navOpen, setNavOpen] = useState(false);
+  // Em `/docs` a URL não nomeia menu nenhum (nenhum pill fica ativo), mas a
+  // sidebar ainda precisa listar alguma coisa — cai no primeiro menu, que é o
+  // mesmo destino que o leitor alcançaria clicando no primeiro pill.
+  const activeMenu = useActiveMenu(tree);
+  const sidebarMenu = activeMenu ?? tree[0];
 
   // Fecha o drawer mobile com ESC (clique fora e item de navegação já fecham
   // via onClick/onNavigate abaixo).
@@ -55,7 +61,12 @@ export function PublicLayout() {
       {/* Sidebar antes do header no DOM: no shell em card (SYS-36) ela sobe até
           o topo da viewport, à esquerda de ambos, e o header começa à direita
           dela — a ordem visual é dada pelo grid em `public.css`. */}
-      <PublicSidebar tree={tree} open={navOpen} onNavigate={() => setNavOpen(false)} />
+      <PublicSidebar
+        tree={tree}
+        menu={sidebarMenu}
+        open={navOpen}
+        onNavigate={() => setNavOpen(false)}
+      />
       <header className="sb-public-header">
         <button
           type="button"
@@ -69,6 +80,10 @@ export function PublicLayout() {
         </button>
         <BookOpen aria-hidden size={18} />
         <span className="sb-public-brand">Documentation</span>
+        {/* À esquerda do header, antes da busca — que se empurra para a
+            direita sozinha (`margin-left: auto`). A marca sai daqui na 6.4,
+            quando o logo sobe para o topo da sidebar. */}
+        <PublicMenuNav tree={tree} className="sb-public-menunav-header" />
         <SearchBox />
         <button
           type="button"
