@@ -4,6 +4,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useTRPC } from '../../lib/trpc.js';
 import { PageRenderer, type RenderableSnapshot } from './PageRenderer.js';
 import { TableOfContents } from './TableOfContents.js';
+import { HeadingAnchors } from './HeadingAnchors.js';
+import { useHeadingIds } from './useHeadingIds.js';
 import { LegacyDocsRedirect } from './LegacyDocsRedirect.js';
 
 /**
@@ -34,6 +36,15 @@ export function PublicPageView() {
   });
 
   const basePath = `/docs/${menuSlug}/${sectionSlug}/${pageSlug}`;
+
+  // Antes dos early returns (regras de hooks). O gatilho de reescaneio é a rota
+  // **mais** `dataUpdatedAt`: só a rota não bastaria, porque na primeira
+  // montagem o conteúdo ainda não chegou e a varredura acharia zero headings —
+  // é a chegada dos dados que precisa disparar o scan.
+  const { items, headings } = useHeadingIds(
+    bodyRef,
+    `${menuSlug}/${sectionSlug}/${pageSlug}/${tabId ?? ''}/${query.dataUpdatedAt}`,
+  );
 
   if (query.isLoading) return <p>Loading…</p>;
   if (query.isError) return <p role="alert">Failed to load the page.</p>;
@@ -81,12 +92,14 @@ export function PublicPageView() {
             navigate(nextTabId === primaryTabId ? basePath : `${basePath}/${nextTabId}`)
           }
         />
+        {/* Âncora "#" dentro de cada heading (SYS-34). Renderizada aqui, e não
+            no `PageRenderer`, porque depende dos `id` que o hook atribui — e o
+            renderer é compartilhado com o preview de revisões do admin, onde
+            link de seção não faz sentido. */}
+        <HeadingAnchors headings={headings} />
       </article>
       <aside className="sb-page-toc">
-        <TableOfContents
-          containerRef={bodyRef}
-          watch={`${sectionSlug}/${pageSlug}/${activeTabId}`}
-        />
+        <TableOfContents items={items} headings={headings} />
       </aside>
     </div>
   );
