@@ -54,6 +54,12 @@
      funciona igual se a moldura mudar de tom. */
   --sb-search-ring: rgba(15, 23, 31, 0.1);
 
+  /* TOC (SYS-42): dois cinzas do protótipo, um para o repouso e outro para o
+     item ativo. Tokens próprios porque o par tem que se inverter no dark sem
+     arrastar `--sb-fg-muted` (usado em prosa) com ele. */
+  --sb-toc-fg: #717784;
+  --sb-toc-fg-active: #2a2d32;
+
   /* Shell em card: a *página* não rola — o cartão tem scroll interno. A
      sidebar ocupa as duas linhas (sobe até o topo da viewport) e o header
      começa à direita dela. */
@@ -99,6 +105,10 @@
   --sb-search-muted: #6e7681;
   /* Sombra escura não aparece sobre superfície escura: o hairline vira luz. */
   --sb-search-ring: rgba(255, 255, 255, 0.14);
+  /* O par inverte: repouso legível sobre o cartão escuro (≥4.5:1) e ativo no
+     branco-gelo da prosa, para o degrau entre os dois ser o mesmo do claro. */
+  --sb-toc-fg: #8b949e;
+  --sb-toc-fg-active: #e6edf3;
 }
 
 /* ---- Header (1.2, reformulado em SYS-36) ----
@@ -381,9 +391,11 @@
   max-width: 1180px;
 }
 
+/* A coluna do TOC foi de 240px para 160px (SYS-42): é apoio, não navegação
+   principal — a sidebar é que carrega a estrutura do site. */
 .sb-page-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 240px;
+  grid-template-columns: minmax(0, 1fr) 160px;
   align-items: start;
   gap: 3rem;
 }
@@ -396,22 +408,31 @@
 .sb-page-toc {
   min-width: 0;
   /* Gruda no topo do *cartão* (o container de scroll agora, SYS-36) — não há
-     mais header sticky para compensar. */
+     mais header sticky para compensar. O respiro de 1.5rem é o mesmo
+     `scroll-margin-top` dos headings: o TOC para na altura em que o heading
+     ancorado também para. */
   position: sticky;
-  top: 0;
+  top: 1.5rem;
   align-self: start;
-  max-height: calc(100dvh - 8rem);
+  max-height: calc(100dvh - 5rem);
   overflow-y: auto;
 }
 
-/* ---- TOC "Nesta página" (2.2) ---- */
+/* ---- TOC "On this page" (2.2, revisto em SYS-42) ----
+   Elemento de apoio: sai toda a marcação (uppercase, peso 700, trilho de borda
+   à esquerda, barra de 2px por item, azul de acento no ativo) e fica só texto
+   pequeno em cinza. Sem borda, a coluna não compete com o conteúdo do cartão —
+   é o que a torna descartável pelo olho até ser procurada. */
 .sb-toc-title {
-  margin: 0 0 0.6rem;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--sb-fg-muted);
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+  line-height: 1.2;
+  /* Mesmo cinza dos itens inativos: o rótulo é par deles, não um cabeçalho
+     acima deles — a hierarquia já vem da posição. */
+  color: var(--sb-toc-fg);
 }
 
 .sb-toc-list {
@@ -419,42 +440,47 @@
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 2px;
-  border-left: 1px solid var(--sb-border);
+  gap: 8px;
 }
 
+/* Sem o trilho vertical, o aninhamento de h3 é dito só pelo recuo — 12px é o
+   suficiente para ler como filho sem abrir uma segunda coluna de texto. */
 .sb-toc-item-h3 .sb-toc-link {
-  padding-left: 1.5rem;
-  font-size: 0.82rem;
+  padding-left: 12px;
 }
 
 .sb-toc-link {
   display: block;
-  padding: 0.3rem 0 0.3rem 0.9rem;
-  margin-left: -1px;
-  border-left: 2px solid transparent;
-  color: var(--sb-fg-muted);
+  color: var(--sb-toc-fg);
   text-decoration: none;
-  font-size: 0.86rem;
+  font-size: 12px;
+  font-weight: 400;
   line-height: 1.4;
-  transition:
-    color 0.12s ease,
-    border-color 0.12s ease;
+  /* Só a cor: animar `font-weight` reflui o texto a cada quadro. */
+  transition: color 0.15s ease;
 }
 
 .sb-toc-link:hover {
-  color: var(--sb-fg);
+  color: var(--sb-toc-fg-active);
 }
 
 .sb-toc-link:focus-visible {
   outline: 2px solid var(--sb-accent);
-  outline-offset: -2px;
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
+/* Ativo por peso **e** cor (não só cor): sem a barra lateral, um único canal
+   deixaria o estado invisível para quem não distingue os dois cinzas. */
 .sb-toc-link.active {
-  border-left-color: var(--sb-accent);
-  color: var(--sb-accent);
-  font-weight: 600;
+  color: var(--sb-toc-fg-active);
+  font-weight: 500;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sb-toc-link {
+    transition: none;
+  }
 }
 
 /* Sem header sticky (SYS-36) basta uma folga de respiro no topo do cartão
