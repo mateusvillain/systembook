@@ -816,15 +816,33 @@
   min-width: 100%;
 }
 
+/* Grid "clean" na leitura (SYS-32): só divisores horizontais entre linhas,
+   sem bordas verticais entre colunas. O grid completo de `editor.css` (borda em
+   todos os lados de cada célula) lê como planilha; na doc pública a tabela é
+   texto de referência, e as colunas já são separadas pelo próprio espaçamento.
+   Override escopado a `.sb-public` — o editor admin mantém o grid completo, que
+   lá tem função: mostrar os limites da célula que está sendo editada e
+   redimensionada. */
 .sb-public .sb-editor .ProseMirror th,
 .sb-public .sb-editor .ProseMirror td {
   white-space: nowrap;
   padding: 0.55rem 0.85rem;
+  border: none;
+  border-bottom: 1px solid var(--sb-border);
 }
 
 /* ---- Tabelas (3.2): header destacado + hover de linha sutil ---- */
+/* Sem as verticais, o destaque do header fica todo no par fundo + linha de 2px
+   (o `--sb-th-bg` vem de `editor.css`) — é o que separa cabeçalho de dado agora
+   que não há mais grade. */
 .sb-public .sb-editor .ProseMirror th {
   border-bottom-width: 2px;
+}
+
+/* A última linha não fecha a tabela com um traço solto: o divisor existe para
+   separar duas linhas, e embaixo da última não há nada para separar. */
+.sb-public .sb-editor .ProseMirror tr:last-child td {
+  border-bottom: none;
 }
 
 .sb-public .sb-editor .ProseMirror tr:hover td {
