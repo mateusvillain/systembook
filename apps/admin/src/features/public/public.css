@@ -559,14 +559,24 @@
   margin-bottom: 0;
 }
 
+/* Título de seção (SYS-41): rótulo de agrupamento, não cabeçalho. Sai o
+   uppercase + `700` + `letter-spacing` (três ênfases sobre um texto que ninguém
+   lê como conteúdo) e entra caixa normal em 12px/400. A hierarquia contra os
+   itens passa a vir do *tamanho* e da opacidade, não do peso — assim o item de
+   página, que é o alvo de clique, é o elemento mais forte do grupo.
+   `opacity` em cima de `--sb-fg` em vez de `--sb-fg-muted`: o mesmo tom
+   funciona nos dois temas sem um segundo token. */
 .sb-public-section-title {
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--sb-fg-muted);
-  margin: 0 0 0.5rem;
-  padding: 0 0.6rem;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+  line-height: 1.2;
+  color: var(--sb-fg);
+  opacity: 0.8;
+  margin: 0;
+  /* Mesmo inset dos itens (8px), então título e páginas alinham à esquerda. */
+  padding: 8px;
 }
 
 .sb-public-pagelist {
@@ -574,40 +584,51 @@
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 1px;
+  gap: 2px;
 }
 
+/* Item de página (SYS-41): mesma anatomia das pills da top nav — 14px/500,
+   `padding: 8px`, `border-radius: 8px`, cor de texto cheia. Item não
+   selecionado continua sendo um destino legítimo, então não é esmaecido; a
+   seleção é dita pelo fundo, não pelo contraste do texto. */
 .sb-public-pagelink {
-  position: relative;
   display: block;
-  padding: 0.4rem 0.6rem 0.4rem 0.75rem;
-  border-left: 2px solid transparent;
-  border-radius: 0 6px 6px 0;
-  color: var(--sb-fg-muted);
-  text-decoration: none;
-  font-size: 0.88rem;
-  line-height: 1.4;
-  transition:
-    background-color 0.12s ease,
-    color 0.12s ease,
-    border-color 0.12s ease;
-}
-
-.sb-public-pagelink:hover {
-  background: var(--sb-hover);
+  padding: 8px;
+  border-radius: 8px;
   color: var(--sb-fg);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  /* Mais folgado que o 1.2 das pills do header: título de página quebra em
+     duas linhas na coluna de 240px, pill nunca quebra. */
+  line-height: 1.35;
+  transition: background-color 0.15s ease;
 }
 
-.sb-public-pagelink:focus-visible {
-  outline: 2px solid var(--sb-accent);
-  outline-offset: -2px;
+/* Hover e ativo saem dos mesmos tokens da top nav (SYS-38), e nessa ordem de
+   intensidade: hover `.02` fica *abaixo* do ativo `.04`, senão passar o mouse
+   sobre um vizinho apagaria a leitura de qual página está aberta. */
+.sb-public-pagelink:hover {
+  background: var(--sb-pill-hover);
 }
 
 .sb-public-pagelink.active {
-  background: var(--sb-accent-soft);
-  border-left-color: var(--sb-accent);
-  color: var(--sb-accent);
-  font-weight: 600;
+  background: var(--sb-pill-active);
+}
+
+/* `offset: 2px` (era `-2px`, desenhado por dentro): com o item agora arredondado
+   e sem borda, o anel por fora acompanha o raio em vez de cortá-lo. O foco
+   segue sendo o único estado com cor de acento — é o que o teclado precisa e
+   o que o ativo deliberadamente não usa. */
+.sb-public-pagelink:focus-visible {
+  outline: 2px solid var(--sb-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sb-public-pagelink {
+    transition: none;
+  }
 }
 
 .sb-public-empty {
@@ -1021,11 +1042,13 @@
     padding: 8px 12px;
   }
 
+  /* Alvo de toque ≥44px sem mexer no inset de 8px do desktop (SYS-41): a altura
+     vem do `min-height`, não de um padding maior — o pill do ativo precisa
+     continuar alinhado com o título da seção. */
   .sb-public-pagelink {
     min-height: 44px;
     display: flex;
     align-items: center;
-    padding: 0.5rem 0.6rem;
   }
 
   .sb-nav-toggle,
