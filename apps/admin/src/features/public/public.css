@@ -56,8 +56,11 @@
 
   /* TOC (SYS-42): dois cinzas do protótipo, um para o repouso e outro para o
      item ativo. Tokens próprios porque o par tem que se inverter no dark sem
-     arrastar `--sb-fg-muted` (usado em prosa) com ele. */
-  --sb-toc-fg: #717784;
+     arrastar `--sb-fg-muted` (usado em prosa) com ele.
+     O repouso é `#6f7785` e não o `#717784` do protótipo: aquele mede 4.49:1
+     sobre o cartão branco e perde AA por um centésimo em texto de 12px; este
+     dá 4.51:1 com uma diferença visual imperceptível (2 pontos em R). */
+  --sb-toc-fg: #6f7785;
   --sb-toc-fg-active: #2a2d32;
 
   /* Shell em card: a *página* não rola — o cartão tem scroll interno. A
