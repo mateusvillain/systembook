@@ -265,13 +265,14 @@
   flex-shrink: 0;
 }
 
+/* Sem `color` próprio: herda o do pill (como a lupa, via `currentColor`), que é
+   o que faz os dois subirem juntos no hover. */
 .sb-searchbox-kbd {
   flex-shrink: 0;
   font: inherit;
   font-size: 14px;
   font-weight: 500;
   line-height: 1;
-  color: var(--sb-search-muted);
 }
 
 /* ---- Top navigation de menus (SYS-38) ----
