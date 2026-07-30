@@ -523,6 +523,47 @@
   }
 }
 
+/* ---- Shell do preview de rascunho (SYS-58) ----
+   O preview do editor reusa o cartão da doc pública, mas não o shell dela: não
+   há sidebar nem header, e a altura não é a da viewport e sim o que sobra
+   abaixo da barra do dialog. Desarma o grid de duas colunas e o `100dvh` da
+   regra base de `.sb-public`, mantendo tokens, tipografia e o cartão idênticos
+   — é justamente por herdá-los que o preview é fiel.
+   Vive aqui, junto do shell que modifica, e não num CSS do admin: quem mexer
+   na regra base de `.sb-public` precisa ver este override na mesma tela. */
+.sb-public--preview {
+  height: auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* O cartão sai do grid (não há mais linhas/colunas) e passa a ocupar a sobra
+   do flex. `min-height: 0` é o que permite o scroll interno dele funcionar
+   dentro de um flex container — sem isso o item cresce além do dialog. */
+.sb-public--preview .sb-public-content {
+  grid-column: auto;
+  grid-row: auto;
+  flex: 1;
+  min-height: 0;
+  /* Moldura nos quatro lados: na doc pública, esquerda e topo são cobertos
+     pela sidebar e pelo header, que aqui não existem. */
+  margin: 16px;
+}
+
+/* No mobile a doc pública é full-bleed (sem moldura, radius ou sombra) — o
+   preview segue junto, senão mostraria uma página que o leitor nunca vê.
+   Precisa repetir o breakpoint porque a regra acima é mais específica que a
+   do `.sb-public-content` dentro da media query original. */
+@media (max-width: 767px) {
+  .sb-public--preview .sb-public-content {
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
 /* O backdrop fica sempre no DOM (permite fade animado no open/close via
    `data-open`) mas só existe visualmente no drawer mobile — ver media query. */
 .sb-public-backdrop {
