@@ -6,6 +6,7 @@ import type { Db } from '../../db/client.js';
 import { isUniqueViolation } from '../../db/errors.js';
 import { createRevision, restoreRevision } from '../../db/revisions.js';
 import { menus, pages, revisions, sections, statusTags, tabs } from '../../db/schema.js';
+import { validatePageEmbeds } from '../../previews/validate.js';
 import { protectedProcedure, publicProcedure, router } from '../init.js';
 import { assertCompleteReorder } from './reorder.js';
 
@@ -388,6 +389,38 @@ export const pagesRouter = router({
     if (!deleted) throw pageNotFound();
     return { ok: true };
   }),
+
+  /**
+   * Pré-checagem do publish (SYS-61): quais `component-embed` do rascunho atual
+   * não resolvem a um artefato de preview existente. Lista vazia = tudo ok.
+   *
+   * É uma **query separada, não um retorno do `publish`**: o editor precisa da
+   * resposta para decidir se publica assim mesmo ou corrige antes (SYS-62), e
+   * um aviso devolvido pelo `publish` chegaria com o conteúdo já publicado —
+   * tarde demais para ser uma decisão. O `publish` continua não bloqueando
+   * nada; quem avisa é a UI, a partir daqui.
+   */
+  validateEmbeds: protectedProcedure
+    .input(z.object({ pageId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const page = ctx.db
+        .select({ id: pages.id })
+        .from(pages)
+        .where(eq(pages.id, input.pageId))
+        .get();
+      if (!page) throw pageNotFound();
+
+      if (!ctx.previewsRoot) {
+        // Não ocorre em produção (index.ts sempre injeta env.PREVIEWS_PATH);
+        // mesmo contrato do componentPreviews.getLatest.
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'previewsRoot not configured in context',
+        });
+      }
+
+      return validatePageEmbeds(ctx.db, ctx.previewsRoot, input.pageId);
+    }),
 
   // Único lugar do MVP que cria uma revisão (nota da TASK-34) — snapshota
   // todas as tabs/blocks atuais da página. `autorId` vem do contexto, nunca
