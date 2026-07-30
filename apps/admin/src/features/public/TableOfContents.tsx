@@ -39,7 +39,7 @@ export function TableOfContents({
     const container = containerRef.current;
     if (!container) return;
 
-    let cleanupObserver: (() => void) | undefined;
+    let cleanup: (() => void) | undefined;
 
     // O Tiptap monta o conteúdo num efeito próprio; um frame de folga evita
     // varrer o DOM antes dos headings existirem.
@@ -61,52 +61,60 @@ export function TableOfContents({
       setActiveId(nextItems[0]?.id ?? '');
       if (headings.length === 0) return;
 
-      // O scroll é interno ao cartão branco (SYS-36), não da viewport — o
-      // observer precisa desse elemento como `root`, senão a interseção é
-      // medida contra a viewport (onde tudo está sempre visível) e o
-      // scroll-spy congela no primeiro heading. `null` (viewport) continua
-      // sendo o fallback correto fora do shell público.
+      // O scroll é interno ao cartão branco (SYS-36), não da viewport — é dele
+      // que vem o evento e é o topo dele que define a linha do "ativo".
+      // `null` (janela) continua sendo o fallback fora do shell público.
       const scrollRoot = container.closest('.sb-public-content');
 
-      // rootMargin negativo por baixo: um heading conta como "ativo" assim
-      // que cruza a faixa superior do container, não só quando totalmente
-      // visível — combina com a leitura de cima para baixo.
-      //
-      // O estado de interseção é acumulado num `Set` em vez de lido só do
-      // batch de `entries`: um callback traz apenas o que *mudou*, então
-      // decidir o ativo pelo batch erra sempre que um heading continua na
-      // faixa mas não é re-reportado (salto de scroll, dois headings
-      // cruzando juntos). E quando nada está na faixa — o trecho final da
-      // página, longo e sem headings — o ativo é o último já ultrapassado,
-      // em vez de congelar no anterior.
-      const intersecting = new Set<Element>();
-      const observer = new IntersectionObserver(
-        (entries) => {
-          for (const entry of entries) {
-            if (entry.isIntersecting) intersecting.add(entry.target);
-            else intersecting.delete(entry.target);
-          }
+      // O ativo é derivado da geometria a cada scroll, não de um
+      // `IntersectionObserver`. O observer só dispara quando algum heading
+      // *muda* de estado de interseção: um salto instantâneo de scroll (âncora,
+      // Page Down, restauração de posição) que caia numa faixa sem nenhum
+      // heading cruzando não gera callback nenhum, e o ativo **congela** no
+      // item anterior. Ler os rects num handler de scroll é O(headings) por
+      // quadro, com dezenas de headings no pior caso — mais barato que o bug.
+      const ACTIVE_LINE = 24; // px abaixo do topo do container de scroll
 
-          const topmost = headings.find((heading) => intersecting.has(heading));
-          if (topmost) {
-            setActiveId(topmost.id);
-            return;
-          }
+      function recompute() {
+        const rootTop = (scrollRoot ?? document.documentElement).getBoundingClientRect().top;
+        const line = rootTop + ACTIVE_LINE;
+        // Último heading que já passou da linha; antes do primeiro, o primeiro
+        // (uma página aberta no topo mostra o primeiro item destacado). Cobre
+        // também o trecho final longo sem headings, que antes congelava.
+        let current = headings[0]!;
+        for (const heading of headings) {
+          if (heading.getBoundingClientRect().top > line) break;
+          current = heading;
+        }
+        setActiveId(current.id);
+      }
 
-          const rootTop = (scrollRoot ?? document.documentElement).getBoundingClientRect().top;
-          const passed = headings.filter((heading) => heading.getBoundingClientRect().top < rootTop);
-          const last = passed[passed.length - 1];
-          if (last) setActiveId(last.id);
-        },
-        { root: scrollRoot, rootMargin: '-24px 0px -70% 0px', threshold: 0 },
-      );
-      headings.forEach((heading) => observer.observe(heading));
-      cleanupObserver = () => observer.disconnect();
+      // `rAF` como throttle: o scroll dispara muito mais que uma vez por
+      // quadro, e ler `getBoundingClientRect` em cada evento forçaria layout.
+      let queued = 0;
+      function onScroll() {
+        if (queued) return;
+        queued = requestAnimationFrame(() => {
+          queued = 0;
+          recompute();
+        });
+      }
+
+      const scrollTarget: EventTarget = scrollRoot ?? window;
+      scrollTarget.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', onScroll, { passive: true });
+      recompute();
+
+      cleanup = () => {
+        if (queued) cancelAnimationFrame(queued);
+        scrollTarget.removeEventListener('scroll', onScroll);
+        window.removeEventListener('resize', onScroll);
+      };
     });
 
     return () => {
       cancelAnimationFrame(raf);
-      cleanupObserver?.();
+      cleanup?.();
     };
     // `watch` é o gatilho intencional de reescaneio; `containerRef` é estável entre renders.
   }, [watch]);
