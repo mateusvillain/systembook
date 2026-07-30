@@ -380,32 +380,42 @@
 }
 
 /* A largura de leitura vive no wrapper interno, não no cartão (que agora vai
-   de ponta a ponta). Apertar para 640px é a 6.8. */
+   de ponta a ponta). Centrado, porque o cartão pode ser bem mais largo que ele
+   em telas grandes. */
 .sb-public-content-inner {
   padding: 2.5rem clamp(1.5rem, 4vw, 3rem);
-  max-width: 900px;
+  max-width: 736px; /* 640 de leitura + 2 × 48 de padding */
+  margin-inline: auto;
 }
 
 /* Páginas de conteúdo (2.1) precisam de mais fôlego que o container de
-   leitura padrão para caber a coluna reservada do TOC (2.2) ao lado do
-   texto. `:has()` sem suporte apenas mantém a largura padrão — grid degrada
-   para 1 coluna nesse caso (ver media query abaixo), sem quebra. */
+   leitura padrão para caber a coluna do TOC (2.2) ao lado do texto:
+   640 + 80 de gap + 160 = 880, mais o padding. `:has()` sem suporte apenas
+   mantém a largura padrão — o grid degrada para 1 coluna nesse caso (ver media
+   query abaixo), sem quebra. */
 .sb-public-content-inner:has(.sb-page-grid) {
-  max-width: 1180px;
+  max-width: 976px; /* 880 do grid + 2 × 48 de padding */
 }
 
-/* A coluna do TOC foi de 240px para 160px (SYS-42): é apoio, não navegação
-   principal — a sidebar é que carrega a estrutura do site. */
+/* Colunas fixas do protótipo (SYS-33/SYS-42): 640px de leitura + 160px de TOC,
+   com 80px entre eles. `justify-content: center` em vez de uma coluna elástica
+   porque a largura de leitura é o ponto da issue — sobrando espaço, ele vira
+   margem dos dois lados, não texto mais largo. É isso que reproduz o offset de
+   188px do conteúdo dentro do cartão em vez de deixar um vazio à direita. */
 .sb-page-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 160px;
+  grid-template-columns: minmax(0, 640px) 160px;
+  justify-content: center;
   align-items: start;
-  gap: 3rem;
+  gap: 5rem;
 }
 
+/* 640px é a medida de leitura do protótipo (era 760px). Com o grid já limitado
+   à mesma largura, este `max-width` é a garantia para o caso de 1 coluna
+   (≤1100px, quando o TOC sai) e para páginas sem TOC. */
 .sb-page-body {
   min-width: 0;
-  max-width: 760px;
+  max-width: 640px;
 }
 
 .sb-page-toc {
@@ -494,8 +504,18 @@
 }
 
 @media (max-width: 1100px) {
+  /* Sem o TOC, a coluna de leitura fica sozinha — e continua limitada a 640px,
+     centrada (o `justify-content` da regra base). Deixá-la em `1fr` alinharia o
+     texto à esquerda de um container de 880px, abrindo justamente o vazio à
+     direita que esta issue elimina. */
   .sb-page-grid {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 640px);
+  }
+
+  /* E o container encolhe para a medida de leitura: com o TOC fora, os 880px
+     do grid não têm mais razão de existir. */
+  .sb-public-content-inner:has(.sb-page-grid) {
+    max-width: 736px;
   }
 
   .sb-page-toc {
