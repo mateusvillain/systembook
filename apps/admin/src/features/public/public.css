@@ -46,6 +46,11 @@
   --sb-pill-active: rgba(0, 0, 0, 0.04);
   --sb-pill-hover: rgba(0, 0, 0, 0.02);
 
+  /* Cinza do protótipo para o placeholder, a lupa e o badge ⌘K da busca
+     (SYS-40) — deliberadamente mais claro que `--sb-fg-muted`: é affordance,
+     não conteúdo. Token próprio para poder escurecer no tema escuro. */
+  --sb-search-muted: #c8c9ce;
+
   /* Shell em card: a *página* não rola — o cartão tem scroll interno. A
      sidebar ocupa as duas linhas (sobe até o topo da viewport) e o header
      começa à direita dela. */
@@ -86,6 +91,9 @@
      grau de destaque percebido. */
   --sb-pill-active: rgba(255, 255, 255, 0.08);
   --sb-pill-hover: rgba(255, 255, 255, 0.04);
+  /* O cinza claro do protótipo brilharia sobre o cartão escuro: inverte para
+     um cinza *abaixo* de `--sb-fg-muted`, mantendo a hierarquia do claro. */
+  --sb-search-muted: #6e7681;
 }
 
 /* ---- Header (1.2, reformulado em SYS-36) ----
@@ -199,10 +207,39 @@
   outline-offset: 2px;
 }
 
+/* ---- Campo de busca: pill branco sobre o cinza do header (SYS-40) ----
+   O contorno do campo é o próprio contraste com a moldura (`--sb-bg`), então
+   não há borda: a superfície é a do cartão. Ícone e badge `⌘K` moram dentro
+   do pill, e o `input` é só texto (sem chrome próprio, ver regra adiante). */
 .sb-searchbox-field {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 8px;
+  width: 325px;
+  max-width: 40vw;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: var(--sb-card);
+  color: var(--sb-search-muted);
+}
+
+.sb-searchbox-field:focus-within {
+  outline: 2px solid var(--sb-accent);
+  outline-offset: 2px;
+}
+
+/* `flex-shrink: 0` nos dois: o input é quem cede espaço, não o ícone/badge. */
+.sb-searchbox-icon {
+  flex-shrink: 0;
+}
+
+.sb-searchbox-kbd {
+  flex-shrink: 0;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--sb-search-muted);
 }
 
 /* ---- Top navigation de menus (SYS-38) ----
@@ -734,37 +771,39 @@
   margin-left: auto;
 }
 
+/* O chrome (fundo, raio, foco) é do pill `.sb-searchbox-field`; o input é
+   apenas o texto dentro dele. */
 .sb-searchbox-input {
-  width: min(320px, 40vw);
-  padding: 0.45rem 0.75rem;
-  border: 1px solid var(--sb-border);
-  border-radius: 8px;
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: none;
   font: inherit;
-  font-size: 0.9rem;
-  background: var(--sb-surface);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.2;
   color: var(--sb-fg);
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
 }
 
 .sb-searchbox-input::placeholder {
-  color: var(--sb-fg-muted);
+  color: var(--sb-search-muted);
+  font-weight: 500;
 }
 
-.sb-searchbox-input:hover {
-  border-color: var(--sb-fg-muted);
-}
-
-.sb-searchbox-input:focus {
-  outline: none;
-  border-color: var(--sb-accent);
-  box-shadow: 0 0 0 3px var(--sb-accent-soft);
-}
-
+/* Sem anel próprio: `:focus-within` do pill já sinaliza o foco, e um outline
+   no input desenharia um retângulo dentro do pill. */
+.sb-searchbox-input:focus,
 .sb-searchbox-input:focus-visible {
-  outline: 2px solid var(--sb-accent);
-  outline-offset: 2px;
+  outline: none;
+}
+
+/* `type=search` traz um X de limpar nativo no WebKit que reintroduziria
+   chrome dentro do pill (e duplicaria o botão fechar do overlay mobile). */
+.sb-searchbox-input::-webkit-search-cancel-button,
+.sb-searchbox-input::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .sb-searchbox-dropdown {
@@ -984,6 +1023,20 @@
     z-index: 80;
     background: var(--sb-card);
     padding: 0.75rem;
+  }
+
+  /* No overlay o campo ocupa a largura toda (o pill de 325px é do desktop) e
+     o badge do atalho sai — não há teclado físico para acioná-lo. */
+  .sb-searchbox[data-mobile-open] .sb-searchbox-field {
+    width: 100%;
+    max-width: none;
+    min-height: 44px;
+    /* O overlay já é `--sb-card`: branco sobre branco apagaria o campo. */
+    background: var(--sb-surface);
+  }
+
+  .sb-searchbox-kbd {
+    display: none;
   }
 
   .sb-searchbox[data-mobile-open] .sb-searchbox-input {

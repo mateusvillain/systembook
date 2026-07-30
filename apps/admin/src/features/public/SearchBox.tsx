@@ -35,6 +35,19 @@ function highlight(snippet: string): ReactNode[] {
 
 const DEBOUNCE_MS = 300;
 
+// Rótulo do atalho: `⌘K` em Mac, `Ctrl K` no resto. Lido uma vez no módulo —
+// a plataforma não muda em runtime, e assim não vira estado do componente.
+const IS_MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+const SHORTCUT_LABEL = IS_MAC ? '⌘K' : 'Ctrl K';
+
+/** Foco já num campo editável? Então o atalho é do campo, não nosso. */
+function isTypingTarget(el: EventTarget | null): boolean {
+  if (!(el instanceof HTMLElement)) return false;
+  if (el.isContentEditable) return true;
+  const tag = el.tagName;
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+}
+
 /**
  * Busca da doc pública (TASK-54): input no header com resultados ao vivo num
  * dropdown, debounced (300ms) para não disparar `search.query` a cada tecla.
@@ -79,6 +92,28 @@ export function SearchBox() {
     document.addEventListener('mousedown', onDown);
     return () => document.removeEventListener('mousedown', onDown);
   }, [open]);
+
+  // Atalho global ⌘K / Ctrl+K (SYS-40): foca a busca de qualquer ponto de
+  // `/docs`. No mobile o campo só existe dentro do overlay, então o atalho
+  // abre o overlay antes de focar.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== 'k' && e.key !== 'K') return;
+      if (!e.metaKey && !e.ctrlKey) return;
+      // Deixa o campo em foco tratar o próprio atalho — exceto quando o campo
+      // em foco é o nosso (⌘K de novo é inofensivo e mantém o foco).
+      if (isTypingTarget(e.target) && e.target !== inputRef.current) return;
+      e.preventDefault();
+      if (window.matchMedia('(max-width: 767px)').matches) {
+        openMobile();
+        return;
+      }
+      setOpen(true);
+      inputRef.current?.focus();
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
 
   function goTo(r: (typeof results)[number]) {
     setOpen(false);
@@ -148,6 +183,7 @@ export function SearchBox() {
         data-testid="searchbox"
       >
         <div className="sb-searchbox-field">
+          <Search className="sb-searchbox-icon" aria-hidden size={16} />
           <input
             ref={inputRef}
             type="search"
@@ -159,7 +195,7 @@ export function SearchBox() {
             }}
             onFocus={() => setOpen(true)}
             onKeyDown={onKeyDown}
-            placeholder="Search the documentation…"
+            placeholder="Search the documentation"
             aria-label="Search the documentation"
             role="combobox"
             aria-expanded={showDropdown}
@@ -167,6 +203,11 @@ export function SearchBox() {
             aria-autocomplete="list"
             data-testid="public-search-input"
           />
+          {/* Dica do atalho: decorativa (`aria-hidden`) — o atalho não é a única
+              forma de chegar ao campo, e leitores de tela já anunciam o input. */}
+          <kbd className="sb-searchbox-kbd" aria-hidden>
+            {SHORTCUT_LABEL}
+          </kbd>
           {/* Botão fechar só aparece no overlay mobile (CSS). */}
           <button
             type="button"
