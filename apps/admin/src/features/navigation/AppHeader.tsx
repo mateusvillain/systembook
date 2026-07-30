@@ -341,6 +341,12 @@ function UserMenu({
             <Link to="/admin/settings/tokens">Tokens</Link>
           </DropdownMenuItem>
         )}
+        {/* Identidade: configuração da instância, só admin (SYS-39). */}
+        {isAdmin && (
+          <DropdownMenuItem asChild>
+            <Link to="/admin/settings/identity">Identity</Link>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem disabled={logoutPending} onSelect={onLogout}>
           <LogOut className="size-4" />

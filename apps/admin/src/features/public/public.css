@@ -105,6 +105,44 @@
   font-weight: 600;
 }
 
+/* ---- Identidade no topo da sidebar (SYS-39) ---- */
+/* Link de marca: logo enviado no CMS ou, sem logo, o nome em texto. */
+.sb-public-brand-link {
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+  color: inherit;
+  text-decoration: none;
+  border-radius: 8px;
+}
+
+.sb-public-brand-link:focus-visible {
+  outline: 2px solid var(--sb-accent);
+  outline-offset: 4px;
+}
+
+/* Altura do protótipo (~120×21): teto em altura, largura livre até o limite
+   da sidebar, para logos de proporções diferentes não estourarem a coluna. */
+.sb-public-logo {
+  display: block;
+  max-height: 28px;
+  max-width: 100%;
+  width: auto;
+}
+
+/* A variante é escolhida por CSS, não por JS — ver `PublicBrand`. */
+.sb-public-logo-dark {
+  display: none;
+}
+
+.sb-public[data-theme='dark'] .sb-public-logo-light {
+  display: none;
+}
+
+.sb-public[data-theme='dark'] .sb-public-logo-dark {
+  display: block;
+}
+
 .sb-public-brand {
   font-size: 0.95rem;
   font-weight: 600;
@@ -176,13 +214,6 @@
   align-items: center;
   gap: 8px;
   min-width: 0;
-}
-
-/* A marca é outro grupo: sem uma folga maior que o `gap` de 8px entre os
-   pills, os dois leem como uma lista só. 12px de `gap` do header + 12px aqui
-   = 24px, o triplo da distância interna. Some junto com a marca na 6.4. */
-.sb-public-menunav-header {
-  margin-left: 12px;
 }
 
 .sb-public-menupill {
@@ -846,13 +877,6 @@
 
   .sb-nav-toggle {
     display: inline-flex;
-  }
-
-  .sb-public-brand {
-    /* Deixa espaço p/ os botões no header estreito. */
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   /* Sidebar vira um drawer off-canvas sobreposto. Como drawer ela precisa de
