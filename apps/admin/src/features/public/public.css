@@ -50,6 +50,9 @@
      (SYS-40) — deliberadamente mais claro que `--sb-fg-muted`: é affordance,
      não conteúdo. Token próprio para poder escurecer no tema escuro. */
   --sb-search-muted: #c8c9ce;
+  /* Hairline do hover da busca: alpha sobre a cor de baixo, não uma cor fixa —
+     funciona igual se a moldura mudar de tom. */
+  --sb-search-ring: rgba(15, 23, 31, 0.1);
 
   /* Shell em card: a *página* não rola — o cartão tem scroll interno. A
      sidebar ocupa as duas linhas (sobe até o topo da viewport) e o header
@@ -94,6 +97,8 @@
   /* O cinza claro do protótipo brilharia sobre o cartão escuro: inverte para
      um cinza *abaixo* de `--sb-fg-muted`, mantendo a hierarquia do claro. */
   --sb-search-muted: #6e7681;
+  /* Sombra escura não aparece sobre superfície escura: o hairline vira luz. */
+  --sb-search-ring: rgba(255, 255, 255, 0.14);
 }
 
 /* ---- Header (1.2, reformulado em SYS-36) ----
@@ -221,11 +226,38 @@
   border-radius: 8px;
   background: var(--sb-card);
   color: var(--sb-search-muted);
+  cursor: text;
+  transition:
+    box-shadow 0.15s ease-out,
+    color 0.15s ease-out;
+}
+
+/* Hover: o campo já é branco no claro, então não há para onde clarear o fundo —
+   o feedback é um hairline de sombra (mesma linguagem do cartão elevado) mais a
+   affordance interna subindo um degrau de contraste, via a herança de `color`
+   da lupa e do badge. Nada muda de tamanho ou posição.
+   Atrás de `hover: hover` porque em touch o estado ficaria "colado" após o tap,
+   e suprimido no foco, onde o anel de acento é que manda. */
+@media (hover: hover) {
+  .sb-searchbox-field:hover:not(:focus-within) {
+    box-shadow: 0 0 0 1px var(--sb-search-ring);
+    color: var(--sb-fg-muted);
+  }
+
+  .sb-searchbox-field:hover:not(:focus-within) .sb-searchbox-input::placeholder {
+    color: var(--sb-fg-muted);
+  }
 }
 
 .sb-searchbox-field:focus-within {
   outline: 2px solid var(--sb-accent);
   outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sb-searchbox-field {
+    transition: none;
+  }
 }
 
 /* `flex-shrink: 0` nos dois: o input é quem cede espaço, não o ícone/badge. */
@@ -789,6 +821,8 @@
 .sb-searchbox-input::placeholder {
   color: var(--sb-search-muted);
   font-weight: 500;
+  /* Declarada no pseudo: a transição do `input` não alcança o placeholder. */
+  transition: color 0.15s ease-out;
 }
 
 /* Sem anel próprio: `:focus-within` do pill já sinaliza o foco, e um outline
