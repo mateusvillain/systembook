@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, NavLink, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Check, Eye, Plus, X } from 'lucide-react';
+import { Check, Plus, X } from 'lucide-react';
 import { queryClient, useTRPC, type RouterOutput } from '../lib/trpc.js';
 import { ContentEditor, type ContentEditorHandle } from '../features/editor/ContentEditor.js';
 import { DraftPreviewDialog } from '../features/editor/DraftPreviewDialog.js';
@@ -178,7 +178,6 @@ export function PageContentPage() {
                 consultar o passado (History), e a ação irreversível (Publish)
                 fica por último, sozinha como primária. */}
             <Button type="button" variant="ghost" ref={previewButtonRef} onClick={handlePreview}>
-              <Eye className="size-4" aria-hidden />
               Preview
             </Button>
             <Button asChild variant="ghost">
