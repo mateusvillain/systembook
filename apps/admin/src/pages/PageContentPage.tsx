@@ -3,7 +3,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, NavLink, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Check, Plus, X } from 'lucide-react';
-import { queryClient, useTRPC } from '../lib/trpc.js';
+import { queryClient, useTRPC, type RouterOutput } from '../lib/trpc.js';
 import { ContentEditor, type ContentEditorHandle } from '../features/editor/ContentEditor.js';
 import { SectionHeader } from '../features/editor/SectionHeader.js';
 import { StatusTagSelector } from '../features/editor/StatusTagSelector.js';
@@ -71,11 +71,33 @@ export function PageContentPage() {
       onError: () => toast.error('Failed to publish. Try again.'),
     }),
   );
+  const [checking, setChecking] = useState(false);
 
   async function handlePublish() {
     // Garante que o rascunho da tab ativa está salvo antes do snapshot
     // (nota da TASK-34: o autosave continua independente do publish).
     await editorRef.current?.flush();
+
+    // Pré-checagem de embeds quebrados (SYS-61/62): avisa antes de publicar,
+    // não bloqueia. `fetchQuery` com staleTime 0 porque o estado tem que ser
+    // o de agora — o editor pode ter acabado de corrigir o bloco, e um cache
+    // quente faria o aviso reaparecer para algo já resolvido.
+    setChecking(true);
+    let broken: BrokenEmbed[] = [];
+    try {
+      broken = await queryClient.fetchQuery({
+        ...trpc.pages.validateEmbeds.queryOptions({ pageId: pageId! }),
+        staleTime: 0,
+      });
+    } catch {
+      // A checagem é um auxílio, não um portão: se ela mesma falhar, publicar
+      // continua possível (o comportamento anterior a esta feature).
+    } finally {
+      setChecking(false);
+    }
+
+    if (broken.length > 0 && !window.confirm(brokenEmbedsWarning(broken))) return;
+
     publish.mutate({ pageId: pageId! });
   }
 
@@ -137,7 +159,7 @@ export function PageContentPage() {
             <Button asChild variant="ghost">
               <Link to={`/pages/${pageId}/history`}>History</Link>
             </Button>
-            <Button type="button" onClick={handlePublish} disabled={publish.isPending}>
+            <Button type="button" onClick={handlePublish} disabled={publish.isPending || checking}>
               {publish.isPending ? 'Publishing…' : 'Publish'}
             </Button>
           </>
@@ -173,6 +195,50 @@ export function PageContentPage() {
       <ContentEditor key={activeTabId} ref={editorRef} tabId={activeTabId} />
     </section>
   );
+}
+
+type BrokenEmbed = RouterOutput['pages']['validateEmbeds'][number];
+
+/**
+ * Texto do aviso de publicação com embeds quebrados (SYS-62). Cada `reason`
+ * vira uma frase diferente porque a correção é diferente: variante não
+ * escolhida o próprio editor resolve; artefato nunca buildado é conversa com
+ * quem cuida do CI; artefato sumido indica problema de infra — e nesse caso
+ * outras páginas provavelmente estão quebradas também.
+ *
+ * `window.confirm` (e não um dialog próprio) para ficar consistente com a
+ * outra confirmação desta mesma tela (exclusão de tab) — o admin ainda não
+ * tem primitiva de dialog.
+ */
+function brokenEmbedsWarning(broken: BrokenEmbed[]): string {
+  // O servidor reporta por bloco (a UI precisa saber quais corrigir), mas a
+  // mesma variante embutida N vezes na mesma tab renderia N linhas idênticas —
+  // parece bug e não ajuda a distinguir. Agrupa e sufixa a contagem.
+  const grupos = new Map<string, { linha: string; blocos: number }>();
+  for (const e of broken) {
+    const alvo = e.variantId ? `"${e.componentName}" (${e.variantId})` : `"${e.componentName}"`;
+    const motivo = {
+      'variant-unset': 'no variant selected yet',
+      'no-publication': 'never built by the CI',
+      'artifact-missing': 'the built files are gone from the server',
+    }[e.reason];
+
+    const linha = `• ${alvo} in "${e.tabTitulo}" — ${motivo}`;
+    const grupo = grupos.get(linha);
+    if (grupo) grupo.blocos += 1;
+    else grupos.set(linha, { linha, blocos: 1 });
+  }
+
+  const lines = [...grupos.values()].map(({ linha, blocos }) =>
+    blocos > 1 ? `${linha} (${blocos} blocks)` : linha,
+  );
+
+  const count =
+    broken.length === 1
+      ? '1 component preview on this page will not render:'
+      : `${broken.length} component previews on this page will not render:`;
+
+  return `${count}\n\n${lines.join('\n')}\n\nPublishing anyway shows a placeholder where the component should be.`;
 }
 
 function PageViewLink({ to, end, children }: { to: string; end?: boolean; children: React.ReactNode }) {
