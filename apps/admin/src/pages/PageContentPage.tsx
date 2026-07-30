@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Check, Plus, X } from 'lucide-react';
 import { queryClient, useTRPC, type RouterOutput } from '../lib/trpc.js';
 import { ContentEditor, type ContentEditorHandle } from '../features/editor/ContentEditor.js';
+import { DraftPreviewDialog } from '../features/editor/DraftPreviewDialog.js';
 import { SectionHeader } from '../features/editor/SectionHeader.js';
 import { StatusTagSelector } from '../features/editor/StatusTagSelector.js';
 import { Button } from '@/components/ui/button';
@@ -72,6 +73,23 @@ export function PageContentPage() {
     }),
   );
   const [checking, setChecking] = useState(false);
+
+  // Preview do rascunho (SYS-58). O `flush` antes de abrir é o que sustenta o
+  // critério "reflete o autosave mais recente": o autosave é debounced, então
+  // sem ele o preview leria o estado de até 1s atrás.
+  //
+  // O botão **não** é desabilitado durante essa espera: `disabled` tira o foco
+  // do elemento, e é para o elemento focado no momento da abertura que o Radix
+  // devolve o foco ao fechar — com o disabled, sair do preview jogava o teclado
+  // de volta no `<body>`, no topo da página. Abrir duas vezes é inofensivo (o
+  // dialog já está aberto); perder o lugar do teclado não é.
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const previewButtonRef = useRef<HTMLButtonElement>(null);
+
+  async function handlePreview() {
+    await editorRef.current?.flush();
+    setPreviewOpen(true);
+  }
 
   async function handlePublish() {
     // Garante que o rascunho da tab ativa está salvo antes do snapshot
@@ -156,6 +174,12 @@ export function PageContentPage() {
         statusSlot={<StatusTagSelector pageId={page.id} statusTagId={page.statusTagId} />}
         actions={
           <>
+            {/* Ordem por frequência e peso: conferir (Preview) vem antes de
+                consultar o passado (History), e a ação irreversível (Publish)
+                fica por último, sozinha como primária. */}
+            <Button type="button" variant="ghost" ref={previewButtonRef} onClick={handlePreview}>
+              Preview
+            </Button>
             <Button asChild variant="ghost">
               <Link to={`/pages/${pageId}/history`}>History</Link>
             </Button>
@@ -193,6 +217,13 @@ export function PageContentPage() {
 
       {/* key força instância nova do editor ao trocar de visão (TASK-25) */}
       <ContentEditor key={activeTabId} ref={editorRef} tabId={activeTabId} />
+
+      <DraftPreviewDialog
+        pageId={pageId!}
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        returnFocusRef={previewButtonRef}
+      />
     </section>
   );
 }
