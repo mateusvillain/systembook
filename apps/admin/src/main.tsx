@@ -10,6 +10,7 @@ import { UsersPage } from './pages/UsersPage.js';
 import { UploadTokensPage } from './pages/UploadTokensPage.js';
 import { LandingPageSettingsPage } from './pages/LandingPageSettingsPage.js';
 import { StatusTagsPage } from './pages/StatusTagsPage.js';
+import { BrandSettingsPage } from './pages/BrandSettingsPage.js';
 import { PageContentPage } from './pages/PageContentPage.js';
 import { PageHistoryPage } from './pages/PageHistoryPage.js';
 import { GlobalHistoryPage } from './pages/GlobalHistoryPage.js';
@@ -50,6 +51,7 @@ const router = createBrowserRouter([
       { path: 'admin/users', element: <UsersPage /> },
       { path: 'admin/settings/tokens', element: <UploadTokensPage /> },
       { path: 'admin/settings/status-tags', element: <StatusTagsPage /> },
+      { path: 'admin/settings/identity', element: <BrandSettingsPage /> },
       { path: 'admin/settings/landing-page', element: <LandingPageSettingsPage /> },
       { path: 'admin/history', element: <GlobalHistoryPage /> },
       { path: 'pages/:pageId', element: <PageContentPage /> },

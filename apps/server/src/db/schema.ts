@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { blob, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import type { BlockType } from '@systembook/schema';
 
 /**
@@ -249,6 +249,42 @@ export const componentPreviews = sqliteTable(
     ),
   ],
 );
+
+// Linha única de configuração da instância (SYS-39). O id sentinela segue o
+// padrão da landing e das status tags padrão: a linha é materializada no boot
+// e nunca criada pelo usuário, então "não existe configuração" é um estado
+// impossível para o resto do código.
+export const SETTINGS_ID = '__sb_settings__';
+
+/**
+ * Identidade do design system: nome e logo, por instância (SYS-39).
+ *
+ * O arquivo do logo é **BLOB, não caminho em disco** (decisão do produto): o
+ * `.db` fica autocontido, então copiar o banco leva a identidade junto, e a
+ * remoção do logo é atômica com a linha — sem arquivo órfão no volume. São
+ * poucos KB; os artefatos de preview, que são grandes, seguem em disco.
+ *
+ * Variante dark separada porque logo monocromático de tinta escura some sobre
+ * o fundo escuro. Nula = usa a clara nos dois temas.
+ *
+ * O `hash` de cada variante entra na URL pública, o que torna o endereço
+ * imutável e cacheável para sempre — mesma estratégia do `commitSha` nos paths
+ * de preview (TASK-46). Trocar o logo muda o hash, muda a URL, e nenhum cache
+ * intermediário devolve o logo antigo.
+ */
+export const settings = sqliteTable('settings', {
+  id: text('id').primaryKey(),
+  nomeDesignSystem: text('nome_design_system').notNull().default('Documentation'),
+  logo: blob('logo', { mode: 'buffer' }),
+  logoMime: text('logo_mime'),
+  logoHash: text('logo_hash'),
+  logoDark: blob('logo_dark', { mode: 'buffer' }),
+  logoDarkMime: text('logo_dark_mime'),
+  logoDarkHash: text('logo_dark_hash'),
+  atualizadoEm: integer('atualizado_em', { mode: 'timestamp' })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
 
 export const revisions = sqliteTable('revisions', {
   id: text('id')

@@ -1,9 +1,43 @@
-import { NavLink } from 'react-router-dom';
-import type { RouterOutput } from '../../lib/trpc.js';
+import { Link, NavLink } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { useTRPC, type RouterOutput } from '../../lib/trpc.js';
 import { PublicMenuNav } from './PublicMenuNav.js';
 
 /** Árvore de navegação vinda de `sections.listPublic` — menus → seções → páginas. */
 export type PublicNavTree = RouterOutput['sections']['listPublic'];
+
+/**
+ * Identidade da instância no topo da sidebar (SYS-39): logo enviado no CMS ou,
+ * sem logo, o nome do design system em texto. Sempre leva para `/docs` — é a
+ * convenção de qualquer documentação, e a raiz não tinha nenhuma outra porta
+ * depois que a marca saiu do header.
+ *
+ * As duas variantes são renderizadas juntas e escolhidas **por CSS**
+ * (`[data-theme='dark']`), não por JS: `useTheme` guarda estado local por
+ * instância, então chamá-lo aqui criaria um segundo tema, independente do
+ * botão do header. A dark cai na clara quando não foi enviada.
+ */
+function PublicBrand({ onNavigate }: { onNavigate?: () => void }) {
+  const trpc = useTRPC();
+  const { data } = useQuery(trpc.settings.getPublic.queryOptions());
+  if (!data) return null;
+
+  const { nomeDesignSystem, logoUrl, logoDarkUrl } = data;
+  const darkUrl = logoDarkUrl ?? logoUrl;
+
+  return (
+    <Link to="/docs" className="sb-public-brand-link" onClick={onNavigate}>
+      {logoUrl ? (
+        <>
+          <img className="sb-public-logo sb-public-logo-light" src={logoUrl} alt={nomeDesignSystem} />
+          <img className="sb-public-logo sb-public-logo-dark" src={darkUrl!} alt={nomeDesignSystem} />
+        </>
+      ) : (
+        <span className="sb-public-brand">{nomeDesignSystem}</span>
+      )}
+    </Link>
+  );
+}
 
 /**
  * Sidebar da doc pública (TASK-52): lista as seções do **menu ativo** (SYS-38)
@@ -37,6 +71,7 @@ export function PublicSidebar({
         data-open={open || undefined}
         aria-label="Documentation navigation"
       >
+        <PublicBrand onNavigate={onNavigate} />
         <p className="sb-public-empty">No pages published yet.</p>
       </nav>
     );
@@ -48,6 +83,7 @@ export function PublicSidebar({
       data-open={open || undefined}
       aria-label="Documentation navigation"
     >
+      <PublicBrand onNavigate={onNavigate} />
       {/* Só aparece no mobile (o header some nessa largura): sem isto o drawer
           seria a única navegação visível e não haveria como trocar de menu. */}
       <PublicMenuNav

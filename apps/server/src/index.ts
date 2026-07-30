@@ -8,11 +8,13 @@ import { ensureLandingPage } from './db/landing.js';
 import { backfillMenuSlugs, ensureDefaultMenu } from './db/menus.js';
 import { backfillSectionSlugs } from './db/sections.js';
 import { ensureDefaultStatusTags } from './db/statusTags.js';
+import { ensureSettings } from './db/settings.js';
 import { seedBootstrapAdmin } from './db/seed.js';
 import { appRouter } from './trpc/router.js';
 import { createContext } from './trpc/context.js';
 import { handlePreviewUpload } from './previews/upload.js';
 import { handlePreviewRequest, PREVIEWS_URL_PREFIX } from './previews/serve.js';
+import { handleLogoRequest, parseLogoPath } from './logo/serve.js';
 import { resolveAdminDist, serveStatic } from './static.js';
 
 // Verificação de resolução cross-package (TASK-3): o import de tipo abaixo
@@ -32,6 +34,8 @@ backfillSectionSlugs(db);
 ensureLandingPage(db);
 // Semeia as quatro tags de status padrão (TASK-105); idempotente por id.
 ensureDefaultStatusTags(db);
+// Linha única de identidade da instância (SYS-39); idempotente por id.
+ensureSettings(db);
 await seedBootstrapAdmin(db);
 
 const adminDist = resolveAdminDist();
@@ -59,6 +63,14 @@ const server = createServer((req, res) => {
 
   // Artefatos estáticos de preview (TASK-46) — públicos, sem auth, servidos
   // antes do fallback do admin para não cair no SPA fallback.
+  // Logo da instância (SYS-39): binário vindo do banco, público e cacheável
+  // por URL — por isso fora do tRPC, como os artefatos de preview.
+  const logoTarget = parseLogoPath(url.pathname);
+  if (logoTarget) {
+    handleLogoRequest(res, db, logoTarget);
+    return;
+  }
+
   if (url.pathname.startsWith(PREVIEWS_URL_PREFIX)) {
     void handlePreviewRequest(req.method, url.pathname, res, { previewsRoot: env.PREVIEWS_PATH });
     return;

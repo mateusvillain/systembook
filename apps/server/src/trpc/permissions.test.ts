@@ -80,6 +80,31 @@ describe('matriz de permissões (TASK-24)', () => {
     expect(await caller.statusTags.list()).toHaveLength(0);
   });
 
+  // Identidade da instância é configuração, não estrutura de conteúdo — e por
+  // isso é a segunda exceção (junto de users.*) ao "editor tem CRUD completo".
+  it('editor recebe FORBIDDEN em todas as procedures de escrita de settings.* (SYS-39)', async () => {
+    const caller = callerFor(db, editor);
+    const forbidden = { code: 'FORBIDDEN' };
+
+    await expect(caller.settings.get()).rejects.toMatchObject(forbidden);
+    await expect(
+      caller.settings.setNome({ nomeDesignSystem: 'Acme' }),
+    ).rejects.toMatchObject(forbidden);
+    await expect(
+      caller.settings.uploadLogo({
+        variant: 'light',
+        mime: 'image/svg+xml',
+        dataBase64: Buffer.from('<svg/>').toString('base64'),
+      }),
+    ).rejects.toMatchObject(forbidden);
+    await expect(caller.settings.removeLogo({ variant: 'light' })).rejects.toMatchObject(forbidden);
+
+    // Mas a leitura pública continua aberta — é o que a doc consome.
+    await expect(caller.settings.getPublic()).resolves.toMatchObject({
+      nomeDesignSystem: expect.any(String),
+    });
+  });
+
   it('editor recebe FORBIDDEN em todas as procedures de users.*', async () => {
     const caller = callerFor(db, editor);
     const forbidden = { code: 'FORBIDDEN' };

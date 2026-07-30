@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { BookOpen, Menu, Moon, Sun } from 'lucide-react';
+import { Menu, Moon, Sun } from 'lucide-react';
 import { useTRPC } from '../../lib/trpc.js';
 import { PublicSidebar, type PublicNavTree } from './PublicSidebar.js';
 import { PublicMenuNav, useActiveMenu } from './PublicMenuNav.js';
@@ -78,11 +78,9 @@ export function PublicLayout() {
         >
           <Menu aria-hidden size={18} />
         </button>
-        <BookOpen aria-hidden size={18} />
-        <span className="sb-public-brand">Documentation</span>
-        {/* À esquerda do header, antes da busca — que se empurra para a
-            direita sozinha (`margin-left: auto`). A marca sai daqui na 6.4,
-            quando o logo sobe para o topo da sidebar. */}
+        {/* A identidade saiu daqui na SYS-39 — o logo (ou o nome) vive no topo
+            da sidebar. O header começa direto nos menus, à esquerda, e a busca
+            se empurra para a direita sozinha (`margin-left: auto`). */}
         <PublicMenuNav tree={tree} className="sb-public-menunav-header" />
         <SearchBox />
         <button

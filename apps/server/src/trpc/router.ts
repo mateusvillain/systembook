@@ -9,6 +9,7 @@ import { pagesRouter } from './routers/pages.js';
 import { revisionsRouter } from './routers/revisions.js';
 import { searchRouter } from './routers/search.js';
 import { sectionsRouter } from './routers/sections.js';
+import { settingsRouter } from './routers/settings.js';
 import { statusTagsRouter } from './routers/statusTags.js';
 import { tabsRouter } from './routers/tabs.js';
 import { uploadTokensRouter } from './routers/uploadTokens.js';
@@ -43,6 +44,8 @@ import { usersRouter } from './routers/users.js';
  * | landing   | getEditorTarget                                   | protectedProcedure (admin + editor)  |
  * | uploadTokens | list, create, revoke                          | adminProcedure (só admin)            |
  * | statusTags | list, create, update, reorder, delete           | protectedProcedure (admin + editor)  |
+ * | settings  | getPublic                                         | publicProcedure (identidade na doc)  |
+ * | settings  | get, setNome, uploadLogo, removeLogo              | adminProcedure (só admin)            |
  *
  * Decisão de escopo do PRD: `editor` tem CRUD completo sobre a estrutura de
  * navegação (sections/pages/tabs) e sobre conteúdo (blocks/revisions, via
@@ -68,6 +71,7 @@ export const appRouter = router({
   landing: landingRouter,
   uploadTokens: uploadTokensRouter,
   statusTags: statusTagsRouter,
+  settings: settingsRouter,
 });
 
 export type AppRouter = typeof appRouter;
