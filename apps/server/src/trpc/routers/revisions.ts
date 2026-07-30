@@ -3,6 +3,7 @@ import { desc, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import type { PageSnapshot } from '@systembook/schema';
 import { pages, revisions, users } from '../../db/schema.js';
+import { diffSnapshots } from '../../revisions/diff.js';
 import { protectedProcedure, publicProcedure, router } from '../init.js';
 
 function revisionNotFound(): TRPCError {
@@ -84,6 +85,72 @@ export const revisionsRouter = router({
     const { snapshotJson, ...meta } = row;
     return { ...meta, snapshot: JSON.parse(snapshotJson) as PageSnapshot };
   }),
+
+  /**
+   * Diff estruturado entre duas revisões da mesma página (SYS-59): a lista de
+   * blocos com status (inalterado/adicionado/removido/alterado), agrupada por
+   * tab. O cálculo mora em `revisions/diff.ts` (função pura, testável sem
+   * banco); aqui ficam só a leitura e as validações.
+   *
+   * **A ordem dos argumentos é a direção do diff, não a cronológica**: o
+   * resultado descreve o caminho de `fromRevisionId` para `toRevisionId`.
+   * Comparar do mais novo para o mais antigo é legítimo (é assim que se lê "o
+   * que eu perderia se restaurasse aquela revisão") e simplesmente inverte
+   * adições e remoções — nenhum dos dois lados precisa ser o mais recente.
+   *
+   * As duas revisões precisam ser da **mesma página**: um diff entre páginas
+   * diferentes casaria tabs por id que nunca se corresponderam, produzindo um
+   * relatório sem significado. Comparar uma revisão com ela mesma é permitido
+   * e devolve tudo inalterado — é o caso degenerado correto, não um erro.
+   */
+  diff: protectedProcedure
+    .input(z.object({ fromRevisionId: z.string(), toRevisionId: z.string() }))
+    .query(({ ctx, input }) => {
+      const load = (id: string) => {
+        const row = ctx.db
+          .select({
+            id: revisions.id,
+            pageId: revisions.pageId,
+            criadoEm: revisions.criadoEm,
+            mensagem: revisions.mensagem,
+            autorEmail: users.email,
+            snapshotJson: revisions.snapshotJson,
+          })
+          .from(revisions)
+          .leftJoin(users, eq(users.id, revisions.autorId))
+          .where(eq(revisions.id, id))
+          .get();
+        if (!row) throw revisionNotFound();
+        return row;
+      };
+
+      const from = load(input.fromRevisionId);
+      const to = load(input.toRevisionId);
+
+      if (from.pageId !== to.pageId) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Both revisions must belong to the same page',
+        });
+      }
+
+      const meta = (row: ReturnType<typeof load>) => ({
+        id: row.id,
+        criadoEm: row.criadoEm,
+        mensagem: row.mensagem,
+        autorEmail: row.autorEmail,
+      });
+
+      return {
+        pageId: from.pageId,
+        from: meta(from),
+        to: meta(to),
+        ...diffSnapshots(
+          JSON.parse(from.snapshotJson) as PageSnapshot,
+          JSON.parse(to.snapshotJson) as PageSnapshot,
+        ),
+      };
+    }),
 
   /**
    * Superfície pública de documentação (TASK-50): o snapshot da **última
