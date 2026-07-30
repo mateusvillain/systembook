@@ -729,6 +729,77 @@
   margin-top: 0;
 }
 
+/* ---- Âncora de link no heading (SYS-34) ----
+   Discreta por padrão: existe no fluxo (não muda de tamanho ao aparecer, então
+   o texto nunca reflui) mas fica invisível até o leitor passar o mouse no
+   heading ou focar o botão pelo teclado. `vertical-align: middle` em vez de
+   posicionamento absoluto para acompanhar títulos que quebram em duas linhas. */
+.sb-public .sb-editor .ProseMirror :is(h2, h3) .sb-heading-anchor {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  margin-left: 0.4em;
+  padding: 2px;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  color: var(--sb-fg-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 0.15s ease,
+    color 0.15s ease;
+}
+
+.sb-public .sb-editor .ProseMirror :is(h2, h3):hover .sb-heading-anchor,
+.sb-public .sb-editor .ProseMirror .sb-heading-anchor:focus-visible,
+/* Depois de copiar, a âncora fica visível pelo tempo do feedback — some junto
+   com o ícone de check, não antes dele. */
+.sb-public .sb-editor .ProseMirror .sb-heading-anchor[data-copied] {
+  opacity: 1;
+}
+
+.sb-public .sb-editor .ProseMirror .sb-heading-anchor:hover {
+  color: var(--sb-fg);
+}
+
+.sb-public .sb-editor .ProseMirror .sb-heading-anchor:focus-visible {
+  outline: 2px solid var(--sb-accent);
+  outline-offset: 1px;
+}
+
+.sb-public .sb-editor .ProseMirror .sb-heading-anchor[data-copied] {
+  color: var(--sb-accent);
+}
+
+/* Sem mouse não existe hover: em touch a âncora fica permanentemente visível
+   (mais fraca, para não competir com o título). Sem isto o recurso seria
+   exclusivo de quem usa mouse.
+   O alvo de 44px vem de um pseudo-elemento posicionado, **não** de
+   `min-width`/`min-height`: um botão de 44px de altura dentro de um heading de
+   ~34px esticaria a linha e mudaria o ritmo vertical do texto. Assim a caixa
+   visual continua pequena e só a área tocável cresce, fora do fluxo. */
+@media (hover: none) {
+  .sb-public .sb-editor .ProseMirror :is(h2, h3) .sb-heading-anchor {
+    position: relative;
+    opacity: 0.5;
+  }
+
+  .sb-public .sb-editor .ProseMirror .sb-heading-anchor::after {
+    content: '';
+    position: absolute;
+    /* 18px de caixa + 13px de cada lado = 44px de alvo. */
+    inset: -13px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sb-public .sb-editor .ProseMirror .sb-heading-anchor {
+    transition: none;
+  }
+}
+
 .sb-public .sb-editor .ProseMirror p {
   margin: 1rem 0;
 }
