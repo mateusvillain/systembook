@@ -4,7 +4,7 @@ import { z } from 'zod';
 import type { PageSnapshot } from '@systembook/schema';
 import type { Db } from '../../db/client.js';
 import { isUniqueViolation } from '../../db/errors.js';
-import { createRevision, restoreRevision } from '../../db/revisions.js';
+import { buildPageSnapshot, createRevision, restoreRevision } from '../../db/revisions.js';
 import { menus, pages, revisions, sections, statusTags, tabs } from '../../db/schema.js';
 import { validatePageEmbeds } from '../../previews/validate.js';
 import { protectedProcedure, publicProcedure, router } from '../init.js';
@@ -517,6 +517,44 @@ export const pagesRouter = router({
         titulo: page.titulo,
         subtitulo: page.subtitulo,
         snapshot: rev ? (JSON.parse(rev.snapshotJson) as PageSnapshot) : null,
+      };
+    }),
+
+  /**
+   * Preview do rascunho (SYS-57): o conteúdo **atual** da página — o que o
+   * autosave de `blocks.saveDraft` gravou —, no mesmo formato que
+   * `getPublishedBySlug` devolve para a doc pública, para o `PageRenderer` ser
+   * reaproveitado sem adaptação.
+   *
+   * O snapshot é montado ao vivo por `buildPageSnapshot`, exatamente a função
+   * que o `publish` usa para gravar a revisão: é a garantia de fidelidade
+   * pedida pelo epic — o preview mostra literalmente o que seria publicado.
+   * Nada é escrito; nenhuma revisão é criada.
+   *
+   * Sempre há snapshot (diferente do publicado, que é `null` quando a página
+   * nunca foi publicada): sem rascunho divergente o retorno é o mesmo conteúdo
+   * da última revisão, e uma página sem nenhum bloco devolve tabs com `blocks`
+   * vazios — nenhum dos dois é erro.
+   *
+   * `protectedProcedure` porque isto expõe conteúdo **não publicado**: admin e
+   * editor têm acesso à estrutura inteira (mesmo critério do resto do domínio),
+   * mas anônimo não.
+   */
+  getDraftPreview: protectedProcedure
+    .input(z.object({ pageId: z.string() }))
+    .query(({ ctx, input }) => {
+      const page = ctx.db
+        .select({ id: pages.id, titulo: pages.titulo, subtitulo: pages.subtitulo })
+        .from(pages)
+        .where(eq(pages.id, input.pageId))
+        .get();
+      if (!page) throw pageNotFound();
+
+      return {
+        pageId: page.id,
+        titulo: page.titulo,
+        subtitulo: page.subtitulo,
+        snapshot: buildPageSnapshot(ctx.db, page.id),
       };
     }),
 
