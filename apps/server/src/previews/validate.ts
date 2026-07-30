@@ -1,0 +1,122 @@
+import type { Block, PageSnapshot } from '@systembook/schema';
+import type { Db } from '../db/client.js';
+import { getLatestPreview } from '../db/componentPreviews.js';
+import { buildPageSnapshot } from '../db/revisions.js';
+import { resolvePreviewEntry } from './entry.js';
+
+/**
+ * Por que um embed não renderiza um componente real na doc publicada:
+ * - `variant-unset`: o bloco foi inserido mas nenhuma variante foi escolhida;
+ * - `no-publication`: nenhum upload de CI para o par (componente, variante);
+ * - `artifact-missing`: existe registro em `component_previews`, mas os
+ *   arquivos sumiram do volume (mesmo caso que faz `getLatest` devolver
+ *   `null` → placeholder em vez de iframe quebrado).
+ */
+export type BrokenEmbedReason = 'variant-unset' | 'no-publication' | 'artifact-missing';
+
+export interface BrokenEmbed {
+  blockId: string;
+  tabId: string;
+  tabTitulo: string;
+  componentName: string;
+  variantId: string | null;
+  reason: BrokenEmbedReason;
+}
+
+interface EmbedRef {
+  blockId: string;
+  tabId: string;
+  tabTitulo: string;
+  componentName: string;
+  variantId: string | null;
+}
+
+/**
+ * Todo lugar do conteúdo que aponta para um preview de componente. São **dois**:
+ * o bloco `component-embed` (TASK-47) e o `cover` opcional do bloco `dos-donts`
+ * (TASK-71/73), que reaproveita o mesmo par (componente, variante). Um cover
+ * quebrado aparece na doc pública exatamente como um embed quebrado, então
+ * ambos entram na validação.
+ */
+export function collectEmbedRefs(snapshot: PageSnapshot): EmbedRef[] {
+  const refs: EmbedRef[] = [];
+
+  for (const tab of snapshot.tabs) {
+    for (const block of tab.blocks as Block[]) {
+      const base = { blockId: block.id, tabId: tab.tabId, tabTitulo: tab.titulo };
+
+      if (block.type === 'component-embed') {
+        refs.push({
+          ...base,
+          componentName: block.content.componentName,
+          variantId: block.content.variantId,
+        });
+        continue;
+      }
+
+      if (block.type === 'dos-donts') {
+        const cover = block.content.cover;
+        if (cover?.kind === 'component-embed') {
+          refs.push({
+            ...base,
+            componentName: cover.componentName,
+            variantId: cover.variantId,
+          });
+        }
+      }
+    }
+  }
+
+  return refs;
+}
+
+/**
+ * Checa, para o conteúdo **atual** (rascunho) de uma página, quais embeds não
+ * resolvem a um artefato de preview existente — a checagem que o editor faz
+ * antes de publicar (SYS-61).
+ *
+ * Reaproveita deliberadamente o mesmo caminho de resolução do read path
+ * (`getLatestPreview` + `resolvePreviewEntry`): se esta função diz "ok", o
+ * `componentPreviews.getLatest` da doc pública resolve o mesmo artefato. A
+ * resolução é memoizada por par (componente, variante) porque uma página
+ * costuma embutir a mesma variante em vários blocos, e cada miss custa I/O.
+ */
+export async function validatePageEmbeds(
+  db: Db,
+  previewsRoot: string,
+  pageId: string,
+): Promise<BrokenEmbed[]> {
+  const refs = collectEmbedRefs(buildPageSnapshot(db, pageId));
+  const checked = new Map<string, BrokenEmbedReason | null>();
+  const broken: BrokenEmbed[] = [];
+
+  for (const ref of refs) {
+    if (ref.variantId === null) {
+      broken.push({ ...ref, reason: 'variant-unset' });
+      continue;
+    }
+
+    const key = JSON.stringify([ref.componentName, ref.variantId]);
+    let reason = checked.get(key);
+    if (reason === undefined) {
+      reason = await resolveReason(db, previewsRoot, ref.componentName, ref.variantId);
+      checked.set(key, reason);
+    }
+    if (reason !== null) broken.push({ ...ref, reason });
+  }
+
+  return broken;
+}
+
+/** `null` quando o par resolve a um artefato servível. */
+async function resolveReason(
+  db: Db,
+  previewsRoot: string,
+  componentName: string,
+  variantId: string,
+): Promise<BrokenEmbedReason | null> {
+  const row = getLatestPreview(db, componentName, variantId);
+  if (!row) return 'no-publication';
+  const entry = await resolvePreviewEntry(previewsRoot, row.pathEstatico);
+  return entry ? null : 'artifact-missing';
+}
