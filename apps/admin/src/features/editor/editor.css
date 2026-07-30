@@ -53,6 +53,17 @@
   line-height: 1.6;
 }
 
+/* Bloco isolado dentro de um cartão de diff (SYS-60). As duas medidas da regra
+   acima existem para a *superfície de edição*: os 40vh de altura mínima dão
+   onde clicar numa página vazia, e a canaleta de 3.5rem à esquerda reserva o
+   espaço do handle de bloco. Num cartão que mostra um parágrafo só, e onde não
+   se edita nem se arrasta nada, as duas viram buraco — cada bloco do diff
+   ficaria com quase meia tela de altura. */
+.sb-diff-block .ProseMirror {
+  min-height: 0;
+  padding: 0;
+}
+
 /* Mobile (TASK-92): canaleta do handle de bloco menor para dar mais largura
    útil ao texto em telas estreitas. */
 @media (max-width: 767px) {
