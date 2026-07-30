@@ -877,10 +877,9 @@
   max-width: 100%;
 }
 
-/* Na leitura pública a tabela usa layout automático e não quebra o texto das
-   células: colunas mantêm largura legível e o excedente rola no `.tableWrapper`
-   (em vez de espremer as colunas). O editor admin mantém o layout fixo
-   redimensionável — este override é escopado a `.sb-public`. */
+/* Na leitura pública a tabela usa layout automático: as colunas se dimensionam
+   pelo conteúdo e o excedente rola no `.tableWrapper`. O editor admin mantém o
+   layout fixo redimensionável — este override é escopado a `.sb-public`. */
 .sb-public .sb-editor .ProseMirror table {
   table-layout: auto;
   width: auto;
@@ -893,10 +892,26 @@
    texto de referência, e as colunas já são separadas pelo próprio espaçamento.
    Override escopado a `.sb-public` — o editor admin mantém o grid completo, que
    lá tem função: mostrar os limites da célula que está sendo editada e
-   redimensionada. */
+   redimensionada.
+
+   Texto de célula quebra linha (SYS-31). Antes era `white-space: nowrap`, o que
+   fazia **qualquer** célula com uma frase empurrar scroll horizontal — uma
+   tabela de duas colunas com uma descrição de um parágrafo já rolava, mesmo
+   cabendo folgada se quebrasse o texto. O scroll continua existindo, mas passa
+   a ser consequência de a tabela ser *genuinamente* larga (muitas colunas), não
+   de um texto longo numa delas.
+   O piso de legibilidade é o `min-width: 8rem`: sem ele o layout automático
+   espremeria colunas até uma palavra por linha para caber tudo na largura de
+   leitura. É a soma desses pisos que estoura o container numa tabela larga e
+   devolve o scroll — o mesmo mecanismo da TASK-57, agora acionado pela
+   quantidade de colunas em vez de pelo comprimento do texto. */
 .sb-public .sb-editor .ProseMirror th,
 .sb-public .sb-editor .ProseMirror td {
-  white-space: nowrap;
+  white-space: normal;
+  /* Só entra em ação quando a *palavra* sozinha não cabe (URL, token, hash):
+     nesses casos quebrar no meio é melhor que estourar a coluna. */
+  overflow-wrap: break-word;
+  min-width: 8rem;
   padding: 0.55rem 0.85rem;
   border: none;
   border-bottom: 1px solid var(--sb-border);
