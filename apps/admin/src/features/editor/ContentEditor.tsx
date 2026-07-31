@@ -2,7 +2,7 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRe
 import { useMutation, useQuery } from '@tanstack/react-query';
 import type { Editor, JSONContent } from '@tiptap/core';
 import { EditorContent, useEditor, useEditorState } from '@tiptap/react';
-import { useTRPC } from '../../lib/trpc.js';
+import { queryClient, useTRPC } from '../../lib/trpc.js';
 import { editorExtensions as sharedExtensions } from './extensions.js';
 import { createSlashCommandExtension } from './SlashCommand.js';
 import { createLinkShortcutExtension } from './LinkShortcut.js';
@@ -98,6 +98,10 @@ const EditorInner = forwardRef<ContentEditorHandle, { tabId: string; initialDoc:
           // exige o literal 'doc' — na prática o root é sempre 'doc'.
           { tabId, doc: doc as unknown as { type: 'doc'; content?: { type: string }[] } },
         );
+        // O rascunho mudou: o indicador da árvore (SYS-68) precisa reagir.
+        // Só depois do save concluído — antes disso o servidor ainda responderia
+        // com o estado anterior.
+        queryClient.invalidateQueries(trpc.pages.draftStatus.queryFilter());
         // se já digitou de novo enquanto salvava, continua em "Salvando…"
         if (pendingDocRef.current) return;
         setStatus('saved');
