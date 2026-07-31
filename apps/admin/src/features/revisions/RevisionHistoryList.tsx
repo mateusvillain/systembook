@@ -81,6 +81,9 @@ export function RevisionHistoryList({ pageId, firstTabId }: Props) {
     trpc.pages.restoreRevision.mutationOptions({
       onSuccess: () => {
         queryClient.invalidateQueries(trpc.revisions.listByPage.queryFilter());
+        // O restore encadeia uma revisão nova: o rascunho volta a coincidir com
+        // o publicado e o ponto da árvore (SYS-68) sai.
+        queryClient.invalidateQueries(trpc.pages.draftStatus.queryFilter());
         toast.success('Revision restored.');
         if (firstTabId) navigate(`/pages/${pageId}/tabs/${firstTabId}`);
       },

@@ -68,6 +68,9 @@ export function PageContentPage() {
         toast.success('Page published.');
         // Atualiza status/metadados do Section Header (nova revisão publicada).
         queryClient.invalidateQueries(trpc.revisions.listByPage.queryFilter({ pageId: pageId! }));
+        // E o indicador de rascunho pendente na árvore (SYS-68), que acabou de
+        // deixar de valer para esta página.
+        queryClient.invalidateQueries(trpc.pages.draftStatus.queryFilter());
       },
       onError: () => toast.error('Failed to publish. Try again.'),
     }),
