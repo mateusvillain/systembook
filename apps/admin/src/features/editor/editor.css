@@ -61,6 +61,22 @@
   }
 }
 
+/* Bloco isolado dentro de um cartão de diff (SYS-60). As duas medidas da regra
+   base existem para a *superfície de edição*: os 40vh de altura mínima dão onde
+   clicar numa página vazia, e a canaleta de 3.5rem à esquerda reserva o espaço
+   do handle de bloco. Num cartão que mostra um parágrafo só, e onde não se
+   edita nem se arrasta nada, as duas viram buraco — cada bloco do diff ficaria
+   com quase meia tela de altura.
+
+   **Precisa vir depois da media query acima**: `.sb-diff-block .ProseMirror` e
+   `.sb-editor .ProseMirror` têm a mesma especificidade, então quem vem por
+   último vence — com esta regra antes, o `padding-left` do mobile voltava e
+   indentava o conteúdo do diff em telas estreitas. */
+.sb-diff-block .ProseMirror {
+  min-height: 0;
+  padding: 0;
+}
+
 /* O handle vive na canaleta (esquerda), acima do texto, revelado no hover. */
 .sb-block-handle {
   padding-left: 0.4rem;
