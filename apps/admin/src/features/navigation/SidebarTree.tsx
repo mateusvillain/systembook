@@ -203,6 +203,19 @@ function PagesList({ sectionId, sectionSlug }: { sectionId: string; sectionSlug?
 
   const pages = pagesQuery.data ?? [];
 
+  /**
+   * Indicador de rascunho pendente (SYS-68): **uma** chamada por seção, com os
+   * ids das páginas dela — não uma por página. É a mesma granularidade em que a
+   * árvore já carrega as páginas (`listBySection`), e a seção só monta quando
+   * expandida, então nada é consultado para o que está fechado.
+   */
+  const pageIds = pages.map((p) => p.id);
+  const draftStatus = useQuery({
+    ...trpc.pages.draftStatus.queryOptions({ pageIds }),
+    enabled: pageIds.length > 0,
+  });
+  const statusById = new Map((draftStatus.data ?? []).map((s) => [s.pageId, s]));
+
   const dnd = useDragReorder({
     items: pages,
     onReorder: (orderedIds) => reorder.mutate({ sectionId, orderedIds }),
@@ -217,6 +230,7 @@ function PagesList({ sectionId, sectionSlug }: { sectionId: string; sectionSlug?
           page={page}
           sectionId={sectionId}
           sectionSlug={sectionSlug}
+          draftStatus={statusById.get(page.id)}
           dragRow={dnd.getRowProps(page.id)}
           dragHandle={dnd.getHandleProps(page.id, i)}
           onRename={(titulo) => rename.mutate({ id: page.id, titulo })}
@@ -237,6 +251,7 @@ function PageRow({
   page,
   sectionId,
   sectionSlug,
+  draftStatus,
   onRename,
   onDelete,
   dragRow,
@@ -245,6 +260,12 @@ function PageRow({
   page: NodeShape;
   sectionId: string;
   sectionSlug?: string | null;
+  /**
+   * Status de publicação da página (SYS-67); ausente enquanto carrega. Não se
+   * chama `draft` porque a linha já tem um `draft` — o rascunho do título em
+   * edição inline.
+   */
+  draftStatus?: { hasUnpublishedChanges: boolean; neverPublished: boolean };
   onRename: (titulo: string) => void;
   onDelete: () => void;
   dragRow: DragRowProps;
@@ -295,6 +316,9 @@ function PageRow({
       >
         {page.titulo}
       </NavLink>
+      {draftStatus?.hasUnpublishedChanges && (
+        <DraftDot neverPublished={draftStatus.neverPublished} titulo={page.titulo} />
+      )}
       <RowActionsMenu
         triggerLabel={`More actions for page ${page.titulo}`}
         onRename={() => {
@@ -475,5 +499,41 @@ function CreatePageForm({
         </span>
       )}
     </form>
+  );
+}
+
+/**
+ * Indicador de rascunho pendente (SYS-68).
+ *
+ * **Um ponto, não um selo com texto.** A árvore é uma lista de nomes que se lê
+ * de relance; um "Draft" escrito em cada linha competiria com os títulos, que
+ * são a informação principal. O ponto marca sem disputar — e some sozinho
+ * quando a página é publicada, porque o dado que o liga é a divergência em si.
+ *
+ * **Cor não é o único canal**: o `title` e o texto para leitor de tela dizem o
+ * mesmo, e distinguem os dois casos ("nunca publicada" × "tem alterações"),
+ * que pedem ações diferentes de quem lê. Âmbar é o mesmo vocabulário do
+ * "alterado" do diff de revisões (SYS-60) — modificado, não errado.
+ *
+ * Fica à esquerda do "⋯": o menu de ações só aparece no hover, mas ocupa o
+ * espaço sempre, então o ponto não dança quando o mouse passa pela linha.
+ */
+function DraftDot({ neverPublished, titulo }: { neverPublished: boolean; titulo: string }) {
+  const label = neverPublished
+    ? `${titulo}: not published yet`
+    : `${titulo}: unpublished changes`;
+  return (
+    <span
+      className="flex size-4 shrink-0 items-center justify-center"
+      title={neverPublished ? 'Not published yet' : 'Unpublished changes'}
+      data-testid="draft-dot"
+    >
+      {/* `amber-600` e não `amber-500`: sobre o branco do painel o 500 mede
+          2,15:1 e fica abaixo do mínimo de 3:1 que a WCAG pede para elemento
+          gráfico que carrega significado; o 600 dá 3,19:1 com a mesma leitura
+          de "modificado". No escuro a relação inverte e o 400 é que rende. */}
+      <span className="size-1.5 rounded-full bg-amber-600 dark:bg-amber-400" aria-hidden />
+      <span className="sr-only">{label}</span>
+    </span>
   );
 }

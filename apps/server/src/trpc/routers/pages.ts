@@ -6,6 +6,7 @@ import type { Db } from '../../db/client.js';
 import { isUniqueViolation } from '../../db/errors.js';
 import { buildPageSnapshot, createRevision, restoreRevision } from '../../db/revisions.js';
 import { menus, pages, revisions, sections, statusTags, tabs } from '../../db/schema.js';
+import { getPagesDraftStatus } from '../../db/draftStatus.js';
 import { validatePageEmbeds } from '../../previews/validate.js';
 import { protectedProcedure, publicProcedure, router } from '../init.js';
 import { assertCompleteReorder } from './reorder.js';
@@ -519,6 +520,20 @@ export const pagesRouter = router({
         snapshot: rev ? (JSON.parse(rev.snapshotJson) as PageSnapshot) : null,
       };
     }),
+
+  /**
+   * Quais páginas têm algo não publicado (SYS-67), em lote — a árvore de
+   * navegação pede o status de todas as páginas do menu de uma vez, e o
+   * critério da issue é explicitamente não fazer uma query por nó.
+   *
+   * A definição de "divergente" é de **conteúdo** e mora em
+   * `db/draftStatus.ts`; aqui fica só o contrato. Página nunca publicada conta
+   * como pendente **se tiver conteúdo** — uma página em branco recém-criada não
+   * nasce com o indicador ligado.
+   */
+  draftStatus: protectedProcedure
+    .input(z.object({ pageIds: z.array(z.string()).max(200) }))
+    .query(({ ctx, input }) => getPagesDraftStatus(ctx.db, input.pageIds)),
 
   /**
    * Preview do rascunho (SYS-57): o conteúdo **atual** da página — o que o
