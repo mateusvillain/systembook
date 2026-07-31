@@ -4,6 +4,7 @@ import { Text } from '@tiptap/extension-text';
 import { Heading } from '@tiptap/extension-heading';
 import { Bold } from '@tiptap/extension-bold';
 import { Italic } from '@tiptap/extension-italic';
+import { Underline } from '@tiptap/extension-underline';
 import { Link } from '@tiptap/extension-link';
 import { BulletList, ListItem, OrderedList } from '@tiptap/extension-list';
 import { Table, TableCell, TableHeader, TableRow } from '@tiptap/extension-table';
@@ -25,8 +26,17 @@ const TABLE_CELL_CONTENT = '(paragraph | heading | bulletList | orderedList | co
 /**
  * Conjunto intencional de extensões do MVP (TASK-25/26/27) — sem StarterKit de
  * propósito: o set de nodes/marks espelha os tipos de bloco do PRD (heading,
- * paragraph, bold/italic, listas, code block, table). Strike, blockquote,
- * horizontal rule etc. ficam de fora até o schema de blocks ser estendido.
+ * paragraph, bold/italic/underline, listas, code block, table). Strike,
+ * blockquote, horizontal rule etc. ficam de fora até o schema de blocks ser
+ * estendido.
+ *
+ * **Marks não têm coluna própria no banco**: viajam dentro do JSON de conteúdo
+ * do bloco, e o serializer do server os trata como opacos (`marks?: unknown[]`
+ * em `blocks/serialize.ts`, que só valida tipos de nó top-level). Por isso
+ * adicionar um mark aqui não pede migration — mas **tirar** um depois de haver
+ * conteúdo salvo com ele apaga a formatação de forma silenciosa (o ProseMirror
+ * descarta a marca desconhecida ao carregar e o autosave seguinte grava a
+ * perda). Entrar é barato; sair não.
  *
  * Compartilhado entre o `ContentEditor` (edição) e o preview read-only de
  * revisões (TASK-35, `editable: false`) — mesmo modelo de conteúdo nos dois.
@@ -38,6 +48,11 @@ export const editorExtensions = [
   Heading.configure({ levels: [1, 2, 3] }),
   Bold,
   Italic,
+  // Sublinhado (SYS-77). Entra no set **compartilhado** de propósito: a doc
+  // pública renderiza pelo mesmo `editorExtensions`, e um mark que só existisse
+  // na edição sumiria da página publicada — o Tiptap descarta silenciosamente
+  // marca que o schema não conhece ao carregar o conteúdo.
+  Underline,
   // 'whenNotEditable': no editor o clique só posiciona o cursor (não navega
   // por engano durante a edição); no leitor público (`editable: false`) o
   // clique segue o link normalmente.
