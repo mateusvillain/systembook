@@ -3,7 +3,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { Check, ChevronDown, LogOut, PanelLeft, Plus, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { queryClient, useTRPC } from '../../lib/trpc.js';
-import { AdminSearch } from './AdminSearch.js';
+import { AdminSearchTrigger } from './AdminSearch.js';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,10 +38,13 @@ export function AppHeader({
   logoutPending,
   onToggleSidebar,
   sidebarOpen,
+  onOpenSearch,
 }: {
   role: string;
   activeMenuId: string | null;
   onSelectMenu: (menuId: string) => void;
+  /** Abre a paleta de busca, que vive no `AdminLayout` (SYS-64). */
+  onOpenSearch: () => void;
   onLogout: () => void;
   logoutPending: boolean;
   /** Alterna a sidebar (drawer no mobile / recolhível no tablet). TASK-92. */
@@ -77,7 +80,7 @@ export function AppHeader({
         <MenuNav activeMenuId={activeMenuId} onSelectMenu={onSelectMenu} className="hidden md:flex" />
 
         <div className="ml-auto flex shrink-0 items-center gap-1 md:gap-2">
-          <AdminSearch onSelectMenu={onSelectMenu} />
+          <AdminSearchTrigger onOpen={onOpenSearch} />
           <UserMenu role={role} onLogout={onLogout} logoutPending={logoutPending} />
         </div>
       </div>
