@@ -157,7 +157,7 @@ describe('search.query (TASK-53) — FTS5 full-text', () => {
   });
 });
 
-describe('search.structure (TASK-91) — títulos da navegação, incl. rascunhos', () => {
+describe('search.structure (TASK-91/SYS-63) — navegação: títulos e rascunho', () => {
   let dir: string;
   let db: Db;
   let editor: AuthUser;
@@ -233,5 +233,138 @@ describe('search.structure (TASK-91) — títulos da navegação, incl. rascunho
   it('exige autenticação (protectedProcedure, ao contrário de search.query)', async () => {
     const anon = callerFor(db, null);
     await expect(anon.search.structure({ q: 'paleta' })).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
+  });
+
+  // ---- SYS-63: caminho completo + conteúdo em rascunho ----
+
+  it('devolve o caminho completo até o item, sem repetir o próprio título', async () => {
+    const caller = callerFor(db, editor);
+
+    expect((await caller.search.structure({ q: 'fundamentos' }))[0]).toMatchObject({
+      type: 'menu',
+      path: [],
+    });
+    expect((await caller.search.structure({ q: 'cores' }))[0]).toMatchObject({
+      type: 'section',
+      path: ['Fundamentos'],
+    });
+    expect((await caller.search.structure({ q: 'paleta' }))[0]).toMatchObject({
+      type: 'page',
+      path: ['Fundamentos', 'Cores da marca'],
+    });
+    expect((await caller.search.structure({ q: 'acessibilidade' }))[0]).toMatchObject({
+      type: 'tab',
+      path: ['Fundamentos', 'Cores da marca', 'Paleta primária'],
+    });
+  });
+
+  it('acha texto que só existe no rascunho — nunca publicado', async () => {
+    const caller = callerFor(db, editor);
+    const primary = await caller.tabs.getPrimary({ pageId });
+    await caller.blocks.saveDraft({ tabId: primary.id, doc: paragraph('contraste mínimo de 4.5:1') });
+
+    // A página nunca foi publicada: o índice FTS5 não a conhece.
+    expect(await caller.search.query({ q: 'contraste' })).toEqual([]);
+
+    const results = await caller.search.structure({ q: 'contraste' });
+    expect(results).toHaveLength(1);
+    expect(results[0]).toMatchObject({
+      type: 'page',
+      pageId,
+      matchedIn: 'content',
+      path: ['Fundamentos', 'Cores da marca'],
+    });
+    expect(results[0]?.snippet).toContain('contraste');
+  });
+
+  it('acha o rascunho de uma aba de usuário e aponta para ela', async () => {
+    const caller = callerFor(db, editor);
+    const userTab = (await caller.tabs.create({ pageId, titulo: 'Tokens' })).id;
+    await caller.blocks.saveDraft({ tabId: userTab, doc: paragraph('token semântico de superfície') });
+
+    const results = await caller.search.structure({ q: 'semântico' });
+    expect(results).toHaveLength(1);
+    expect(results[0]).toMatchObject({
+      type: 'tab',
+      tabId: userTab,
+      pageId,
+      matchedIn: 'content',
+      path: ['Fundamentos', 'Cores da marca', 'Paleta primária'],
+    });
+  });
+
+  it('casamento por título não repete como casamento de conteúdo', async () => {
+    const caller = callerFor(db, editor);
+    const primary = await caller.tabs.getPrimary({ pageId });
+    // O texto do rascunho contém o mesmo termo do título da página.
+    await caller.blocks.saveDraft({ tabId: primary.id, doc: paragraph('a paleta primária tem 9 tons') });
+
+    const results = await caller.search.structure({ q: 'paleta' });
+    expect(results).toHaveLength(1);
+    expect(results[0]).toMatchObject({ type: 'page', matchedIn: 'title' });
+  });
+
+  it('ignora casamento que só existe no JSON, não no texto do bloco', async () => {
+    const caller = callerFor(db, editor);
+    const primary = await caller.tabs.getPrimary({ pageId });
+    await caller.blocks.saveDraft({
+      tabId: primary.id,
+      doc: {
+        type: 'doc',
+        content: [
+          {
+            type: 'paragraph',
+            content: [
+              {
+                type: 'text',
+                text: 'documentação oficial',
+                marks: [{ type: 'link', attrs: { href: 'https://exemplo.com/mediaqueries' } }],
+              },
+            ],
+          },
+        ],
+      },
+    });
+
+    // "mediaqueries" só existe dentro do href — o LIKE casa o JSON, mas a
+    // segunda passada sobre o texto puro descarta.
+    expect(await caller.search.structure({ q: 'mediaqueries' })).toEqual([]);
+    // E o texto de verdade continua achável.
+    expect(await caller.search.structure({ q: 'oficial' })).toHaveLength(1);
+  });
+
+  it('não busca em blocos sem prosa (código não entra)', async () => {
+    const caller = callerFor(db, editor);
+    const primary = await caller.tabs.getPrimary({ pageId });
+    await caller.blocks.saveDraft({
+      tabId: primary.id,
+      doc: {
+        type: 'doc',
+        content: [
+          {
+            type: 'codeBlock',
+            attrs: { language: 'ts' },
+            content: [{ type: 'text', text: 'const gradienteRoxo = 1;' }],
+          },
+        ],
+      },
+    });
+    expect(await caller.search.structure({ q: 'gradienteRoxo' })).toEqual([]);
+  });
+
+  it('uma página com o termo em vários blocos aparece uma vez só', async () => {
+    const caller = callerFor(db, editor);
+    const primary = await caller.tabs.getPrimary({ pageId });
+    await caller.blocks.saveDraft({
+      tabId: primary.id,
+      doc: {
+        type: 'doc',
+        content: [
+          { type: 'paragraph', content: [{ type: 'text', text: 'espaçamento base' }] },
+          { type: 'paragraph', content: [{ type: 'text', text: 'espaçamento composto' }] },
+        ],
+      },
+    });
+    expect(await caller.search.structure({ q: 'espaçamento' })).toHaveLength(1);
   });
 });

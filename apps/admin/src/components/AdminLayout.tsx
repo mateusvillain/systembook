@@ -4,6 +4,7 @@ import { Navigate, Outlet, useMatch, useNavigate } from 'react-router-dom';
 import { queryClient, useTRPC } from '../lib/trpc.js';
 import { SidebarTree } from '../features/navigation/SidebarTree.js';
 import { AppHeader, useActiveMenu } from '../features/navigation/AppHeader.js';
+import { AdminSearch, SidebarSearchTrigger } from '../features/navigation/AdminSearch.js';
 import { cn } from '@/lib/utils';
 
 /** Abaixo deste ponto (px) a sidebar é drawer; acima, coluna recolhível/fixa. */
@@ -36,6 +37,7 @@ export function AdminLayout() {
   // desktop a coluna é sempre visível via CSS (`lg:block`), então o estado só
   // afeta tablet/mobile. Default = expandida a partir do tablet, recolhida no
   // mobile — assim o drawer não nasce aberto num celular.
+  const [searchOpen, setSearchOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(
     () => typeof window === 'undefined' || window.innerWidth >= MOBILE_BREAKPOINT,
   );
@@ -92,7 +94,13 @@ export function AdminLayout() {
         logoutPending={logout.isPending}
         onToggleSidebar={() => setSidebarOpen((v) => !v)}
         sidebarOpen={sidebarOpen}
+        onOpenSearch={() => setSearchOpen(true)}
       />
+
+      {/* A paleta vive aqui, e não dentro do header (SYS-64): os dois gatilhos
+          — header e árvore de navegação — abrem a **mesma** busca, com um
+          estado só. */}
+      <AdminSearch open={searchOpen} onOpenChange={setSearchOpen} onSelectMenu={setActiveMenuId} />
       {/* Shell largo: sidebar + área principal centralizada (~1200px) com bastante
           respiro (TASK-87). Responsividade (TASK-92): desktop = coluna fixa;
           tablet = coluna recolhível (em fluxo); mobile = drawer off-canvas. */}
@@ -120,6 +128,14 @@ export function AdminLayout() {
         >
           {/* Mobile: a nav de menus (escondida no header estreito) mora aqui. */}
           <MobileMenuSwitcher activeMenuId={activeMenuId} onSelect={setActiveMenuId} />
+          {/* Busca no topo da árvore (SYS-64): a alternativa a varrer a
+              navegação com os olhos fica onde a varredura começaria. */}
+          <SidebarSearchTrigger
+            onOpen={() => {
+              setSearchOpen(true);
+              closeDrawerOnNavigate();
+            }}
+          />
           <SidebarTree activeMenuId={activeMenuId} onNavigate={closeDrawerOnNavigate} />
         </aside>
         <main className="min-w-0 flex-1">
