@@ -13,6 +13,7 @@ import {
   Link as LinkIcon,
   List,
   ListOrdered,
+  Underline as UnderlineIcon,
   Unlink,
   X,
 } from 'lucide-react';
@@ -131,6 +132,7 @@ export function BubbleFormatMenu({
         h3: e.isActive('heading', { level: 3 }),
         bold: e.isActive('bold'),
         italic: e.isActive('italic'),
+        underline: e.isActive('underline'),
         bulletList: e.isActive('bulletList'),
         orderedList: e.isActive('orderedList'),
         codeBlock: e.isActive('codeBlock'),
@@ -335,6 +337,15 @@ export function BubbleFormatMenu({
             title="Italic (Cmd/Ctrl+I)"
             active={state.italic}
             onClick={() => chain().toggleItalic().run()}
+          />
+          {/* Sublinhado fecha o trio de ênfase (SYS-77) e fica **antes** do
+              link: os três mudam a aparência do mesmo texto, o link muda o que
+              ele faz. O atalho `Mod-u` vem da própria extensão. */}
+          <BubbleButton
+            label={<UnderlineIcon />}
+            title="Underline (Cmd/Ctrl+U)"
+            active={state.underline}
+            onClick={() => chain().toggleUnderline().run()}
           />
           <BubbleButton
             label={<LinkIcon />}

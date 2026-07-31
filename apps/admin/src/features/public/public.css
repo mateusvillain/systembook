@@ -883,6 +883,24 @@
   border-radius: 2px;
 }
 
+/* Sublinhado (SYS-77) × link: os dois desenham uma linha embaixo do texto, e
+   confundi-los custa um clique frustrado. A separação é por **cor e peso da
+   linha**, não pela presença dela: o link é azul de acento e ganha a linha só
+   no hover (regra acima); o sublinhado herda a cor do texto e desenha uma
+   linha fina, sempre. Ou seja, no repouso o único texto sublinhado da página é
+   o que foi sublinhado de propósito.
+   `from-font` sozinho, e não `max(1px, from-font)`: `from-font` é palavra-chave,
+   não comprimento, então dentro de `max()` a declaração inteira é inválida e o
+   navegador a descarta (medido: computava `auto`). Sozinho ele já faz o que se
+   queria — usa a métrica da fonte quando ela informa uma e cai em `auto`
+   quando não. */
+.sb-public .sb-editor .ProseMirror u {
+  text-decoration: underline;
+  text-decoration-color: currentColor;
+  text-decoration-thickness: from-font;
+  text-underline-offset: 3px;
+}
+
 .sb-public .sb-editor .ProseMirror code {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.88em;

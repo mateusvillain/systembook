@@ -100,6 +100,18 @@
   text-decoration-color: var(--primary);
 }
 
+/* Sublinhado (SYS-77). Na superfície de edição o link **é** sublinhado (regra
+   acima, decisão da SYS-29: deixar óbvio que aquele trecho é link já que o
+   clique não navega), então aqui a diferença entre os dois é a cor — link no
+   acento, sublinhado na cor do texto — e a espessura da linha (`from-font`
+   sozinho: dentro de `max()` a declaração seria inválida e descartada). */
+.sb-editor .ProseMirror u {
+  text-decoration: underline;
+  text-decoration-color: currentColor;
+  text-decoration-thickness: from-font;
+  text-underline-offset: 2px;
+}
+
 /* Hint do editor vazio (TASK-104): mesmo padding do `.sb-editor .ProseMirror`
    (incl. o breakpoint mobile abaixo), pra a linha de placeholder cair
    exatamente sobre a primeira linha vazia em vez de flutuar descolada. */
