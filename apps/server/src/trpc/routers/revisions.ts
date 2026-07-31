@@ -2,7 +2,7 @@ import { TRPCError } from '@trpc/server';
 import { desc, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import type { PageSnapshot } from '@systembook/schema';
-import { pages, revisions, users } from '../../db/schema.js';
+import { pages, revisions, sections, users } from '../../db/schema.js';
 import { diffSnapshots } from '../../revisions/diff.js';
 import { protectedProcedure, publicProcedure, router } from '../init.js';
 
@@ -34,36 +34,82 @@ export const revisionsRouter = router({
     ),
 
   /**
-   * Feed de atividade do painel inteiro (TASK-69): as revisões de TODAS as
-   * páginas (publish/restore já gravados em `revisions`), mais recentes
-   * primeiro. Agrega o que já existe — sem tabela nova. Um audit log de eventos
-   * estruturais (create/rename/delete de user/section/page/tab, tokens) seria um
-   * follow-up maior com tabela própria. `protectedProcedure`: editor tem os
-   * mesmos poderes de conteúdo que admin e também gera revisões.
+   * Feed de atividade do painel inteiro (TASK-69, reformulado na SYS-69): as
+   * revisões de TODAS as páginas, mais recentes primeiro. Agrega o que já
+   * existe em `revisions` — um audit log de eventos estruturais (create/rename/
+   * delete) seria um follow-up com tabela própria.
+   *
+   * **`tipo` vem do banco** (SYS-69). Antes o cliente decidia "publicou ou
+   * restaurou?" olhando o prefixo da mensagem; como a mensagem do publish é
+   * texto livre, bastava alguém escrever a frase do restore para o feed mentir.
+   *
+   * **Paginação por keyset, não por offset.** O feed é escrito o tempo todo
+   * (todo publish entra no topo): com `OFFSET`, uma revisão nova entre duas
+   * páginas empurraria a lista e o leitor veria o mesmo item duas vezes. O
+   * cursor é o par `(criadoEm, rowid)` da última linha lida — o mesmo par que
+   * ordena —, então a segunda página continua exatamente de onde a primeira
+   * parou. `rowid` está no cursor porque `criado_em` tem resolução de segundo:
+   * dois publishes no mesmo segundo empatam, e sem o desempate um deles sumiria
+   * na virada de página.
+   *
+   * `protectedProcedure`: admin e editor publicam, então ambos veem o feed.
+   * `autorEmail` é `null` quando o usuário foi removido (`ON DELETE SET NULL`).
    */
   listRecent: protectedProcedure
-    .input(z.object({ limit: z.number().int().min(1).max(100).default(50) }))
-    .query(({ ctx, input }) =>
-      ctx.db
+    .input(
+      z.object({
+        limit: z.number().int().min(1).max(100).default(50),
+        cursor: z.object({ criadoEm: z.number().int(), rowid: z.number().int() }).nullish(),
+      }),
+    )
+    .query(({ ctx, input }) => {
+      const rows = ctx.db
         .select({
           id: revisions.id,
           criadoEm: revisions.criadoEm,
+          tipo: revisions.tipo,
           mensagem: revisions.mensagem,
           autorId: revisions.autorId,
           autorEmail: users.email,
           pageId: revisions.pageId,
           pageTitulo: pages.titulo,
+          // Contexto de navegação da linha: a seção situa a página (dois
+          // "Button" em seções diferentes são páginas diferentes) e o menu é o
+          // que o painel precisa ativar ao abrir a página (TASK-85/86).
+          sectionTitulo: sections.titulo,
+          menuId: sections.menuId,
+          rowid: sql<number>`${revisions}.rowid`,
         })
         .from(revisions)
         // innerJoin: pageId é FK cascade → toda revisão tem página. leftJoin em
         // users porque autor_id é SET NULL no hard delete (igual listByPage).
         .innerJoin(pages, eq(pages.id, revisions.pageId))
+        .innerJoin(sections, eq(sections.id, pages.sectionId))
         .leftJoin(users, eq(users.id, revisions.autorId))
+        .where(
+          input.cursor
+            ? sql`(${revisions.criadoEm}, ${revisions}.rowid) < (${input.cursor.criadoEm}, ${input.cursor.rowid})`
+            : undefined,
+        )
         // mesma ordenação/desempate do listByPage: rowid desempata segundos iguais
         .orderBy(desc(revisions.criadoEm), desc(sql`${revisions}.rowid`))
-        .limit(input.limit)
-        .all(),
-    ),
+        // Uma linha a mais que o pedido: é ela que diz se existe próxima
+        // página, sem uma segunda consulta de contagem.
+        .limit(input.limit + 1)
+        .all();
+
+      const hasMore = rows.length > input.limit;
+      const items = hasMore ? rows.slice(0, input.limit) : rows;
+      const last = items.at(-1);
+
+      return {
+        items: items.map(({ rowid: _rowid, ...item }) => item),
+        nextCursor:
+          hasMore && last
+            ? { criadoEm: Math.floor(last.criadoEm.getTime() / 1000), rowid: last.rowid }
+            : null,
+      };
+    }),
 
   getById: protectedProcedure.input(z.object({ id: z.string() })).query(({ ctx, input }) => {
     const row = ctx.db

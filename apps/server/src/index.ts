@@ -6,6 +6,7 @@ import { createDb } from './db/client.js';
 import { runMigrations } from './db/migrate.js';
 import { ensureLandingPage } from './db/landing.js';
 import { backfillMenuSlugs, ensureDefaultMenu } from './db/menus.js';
+import { backfillRevisionTypes } from './db/revisions.js';
 import { backfillSectionSlugs } from './db/sections.js';
 import { ensureDefaultStatusTags } from './db/statusTags.js';
 import { ensureSettings } from './db/settings.js';
@@ -29,6 +30,7 @@ runMigrations(db);
 // (TASK-83). É idempotente e também é chamado por runMigrations para testes.
 ensureDefaultMenu(db);
 backfillMenuSlugs(db);
+backfillRevisionTypes(db);
 // Preenche o slug de sections legadas (pré-migration 0008, TASK-52); idempotente.
 backfillSectionSlugs(db);
 ensureLandingPage(db);
