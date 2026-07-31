@@ -190,14 +190,19 @@ export function BubbleFormatMenu({
     return () => cancelAnimationFrame(frame);
   }, [editing]);
 
-
   if (!editor || !state) return null;
 
   const chain = () => editor.chain().focus();
 
-  function closeLinkEditor() {
+  /**
+   * `refocus` só quando o fechamento é uma decisão de teclado (Esc, Cancel,
+   * aplicar): aí devolver o cursor ao texto é o que a pessoa espera. Quando o
+   * fechamento vem de um clique no documento, refocar brigaria com o clique e
+   * jogaria o cursor de volta para a seleção antiga.
+   */
+  function closeLinkEditor(refocus = true) {
     setLinkDraft(null);
-    editor?.commands.focus();
+    if (refocus) editor?.commands.focus();
   }
 
   function applyLink() {
@@ -215,16 +220,13 @@ export function BubbleFormatMenu({
       // (mesma saída do Google Docs) em vez de aplicar uma marca no vazio, que
       // não deixaria nada visível na página.
       //
-      // Insere o texto e **depois** marca o trecho recém-inserido: passar o nó
-      // já com `marks` para o `insertContent` não surte efeito nenhum (medido —
-      // o documento continuava vazio), porque a marca chega sem os atributos
-      // que o `extension-link` preenche (`target`, `rel`).
+      // O texto entra primeiro e a marca vai depois, sobre o trecho recém
+      // inserido: passar `marks` direto no `insertContent` **não insere nada**
+      // (a marca chega sem `target`/`rel`, que o `extension-link` preenche), e
+      // a régua do intervalo é a posição do cursor *depois* da inserção —
+      // calcular a partir da anterior erra por um caractere (medido, o último
+      // ficava fora do link).
       chain().insertContent(href).run();
-      // A marca vai **depois**, sobre o texto recém-inserido, e a régua é a
-      // posição do cursor *depois* da inserção: calcular o intervalo a partir
-      // da posição anterior erra por um caractere (medido — o último ficava
-      // fora do link). Passar `marks` direto no `insertContent` não funciona:
-      // a marca chega sem os atributos que o `extension-link` preenche.
       const end = editor.state.selection.from;
       editor
         .chain()
@@ -276,6 +278,16 @@ export function BubbleFormatMenu({
             aria-label="Link address"
             value={linkDraft.url}
             onChange={(event) => setLinkDraft({ ...linkDraft, url: event.target.value })}
+            onBlur={(event) => {
+              // Clicar de volta no texto (ou em qualquer lugar fora da bolha)
+              // fecha o campo. Sem isto ele fica **preso** sobre o documento:
+              // o `shouldShow` mantém a barra visível enquanto o campo existe,
+              // e só Esc ou Cancel o tirariam da tela. Os botões da própria
+              // bolha dão `preventDefault` no mousedown, então não geram blur —
+              // aplicar e remover continuam funcionando pelo mouse.
+              if (event.currentTarget.parentElement?.contains(event.relatedTarget as Node)) return;
+              closeLinkEditor(false);
+            }}
             onKeyDown={(event) => {
               // Esc fecha sem aplicar e devolve o cursor ao texto. Fica no
               // input (e não num handler global) porque é aqui que o foco está.
