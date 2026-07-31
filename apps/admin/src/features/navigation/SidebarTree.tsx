@@ -209,7 +209,11 @@ function PagesList({ sectionId, sectionSlug }: { sectionId: string; sectionSlug?
    * árvore já carrega as páginas (`listBySection`), e a seção só monta quando
    * expandida, então nada é consultado para o que está fechado.
    */
-  const pageIds = pages.map((p) => p.id);
+  // O teto de 200 espelha o `max(200)` do input da procedure: passar do limite
+  // faria a query inteira falhar com BAD_REQUEST e a seção ficaria **sem
+  // nenhum** indicador. Cortando aqui, uma seção gigantesca perde o ponto só na
+  // cauda — e uma seção com mais de 200 páginas já é ingovernável como árvore.
+  const pageIds = pages.slice(0, 200).map((p) => p.id);
   const draftStatus = useQuery({
     ...trpc.pages.draftStatus.queryOptions({ pageIds }),
     enabled: pageIds.length > 0,
