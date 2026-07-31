@@ -5,6 +5,7 @@ import { EditorContent, useEditor, useEditorState } from '@tiptap/react';
 import { useTRPC } from '../../lib/trpc.js';
 import { editorExtensions as sharedExtensions } from './extensions.js';
 import { createSlashCommandExtension } from './SlashCommand.js';
+import { createLinkShortcutExtension } from './LinkShortcut.js';
 import { BubbleFormatMenu } from './BubbleFormatMenu.js';
 import { BlockHandles } from './BlockHandles.js';
 import { TableControls } from './TableControls.js';
@@ -65,12 +66,20 @@ const EditorInner = forwardRef<ContentEditorHandle, { tabId: string; initialDoc:
     const pendingDocRef = useRef<JSONContent | null>(null);
     const canvasRef = useRef<HTMLDivElement>(null);
     const [slashEmbedAtPos, setSlashEmbedAtPos] = useState<number | null>(null);
+    // Pedidos de Cmd/Ctrl+K (SYS-65). Contador e não booleano: reabrir depois
+    // de cancelar precisa disparar o efeito da bolha de novo.
+    const [linkRequest, setLinkRequest] = useState(0);
 
-    // Extensão do menu "/" (TASK-103): só no editor editável, não no preview
-    // read-only (`PageRenderer.tsx` usa `editorExtensions` puro). `setState` é
-    // estável entre renders, então este `useMemo` nunca precisa recriar.
+    // Extensões que dependem de UI React (TASK-103, SYS-65): só no editor
+    // editável, nunca no preview read-only (`PageRenderer.tsx` usa
+    // `editorExtensions` puro). `setState` é estável entre renders, então este
+    // `useMemo` nunca precisa recriar.
     const extensions = useMemo(
-      () => [...sharedExtensions, createSlashCommandExtension({ onRequestEmbed: setSlashEmbedAtPos })],
+      () => [
+        ...sharedExtensions,
+        createSlashCommandExtension({ onRequestEmbed: setSlashEmbedAtPos }),
+        createLinkShortcutExtension({ onRequestLink: () => setLinkRequest((n) => n + 1) }),
+      ],
       [],
     );
 
@@ -179,7 +188,7 @@ const EditorInner = forwardRef<ContentEditorHandle, { tabId: string; initialDoc:
         <div ref={canvasRef} className="sb-editor-canvas relative">
           {editor && <BlockHandles editor={editor} />}
           {editor && <TableControls editor={editor} canvasRef={canvasRef} />}
-          {editor && <BubbleFormatMenu editor={editor} />}
+          {editor && <BubbleFormatMenu editor={editor} linkRequest={linkRequest} />}
           <EditorContent editor={editor} />
           {isEmpty && <EditorEmptyState />}
         </div>
