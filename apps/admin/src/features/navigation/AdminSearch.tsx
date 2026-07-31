@@ -56,6 +56,11 @@ type StructureResult = {
   pageId?: string;
   tabId?: string;
   context?: string;
+  /** Caminho completo até o item, do menu para baixo (SYS-63). */
+  path: string[];
+  matchedIn: 'title' | 'content';
+  /** Trecho do rascunho, com o termo delimitado por STX/ETX (só em `content`). */
+  snippet?: string;
 };
 type ContentResult = {
   pageId: string;
@@ -93,30 +98,44 @@ const STRUCTURE_KIND_LABEL: Record<StructureResult['type'], string> = {
  * Escape para fechar — mas renderiza com os tokens do admin, num diálogo modal.
  * Ao selecionar, ativa o menu dono (TASK-85/86) e navega para o editor do item.
  */
-export function AdminSearch({ onSelectMenu }: { onSelectMenu: (menuId: string) => void }) {
+export function AdminSearch({
+  open,
+  onOpenChange,
+  onSelectMenu,
+}: {
+  /** Aberto por qualquer um dos gatilhos (header, sidebar) ou por ⌘K. */
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSelectMenu: (menuId: string) => void;
+}) {
   const trpc = useTRPC();
   const navigate = useNavigate();
   const listboxId = useId();
 
-  const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [debounced, setDebounced] = useState('');
   const [active, setActive] = useState(-1);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  // O listener de ⌘K é registrado uma vez; sem o ref ele leria o `open` da
+  // primeira montagem e o atalho pararia de alternar depois da primeira vez.
+  const openRef = useRef(open);
+  openRef.current = open;
 
-  // ⌘K / Ctrl+K abre a paleta de qualquer lugar do painel.
+  // ⌘K / Ctrl+K abre a paleta de qualquer lugar do painel — menos de dentro do
+  // editor, onde o atalho é "inserir link" e o plugin do ProseMirror para a
+  // propagação antes daqui (SYS-65).
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
-        setOpen((v) => !v);
+        onOpenChange(!openRef.current);
       }
     }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, []);
+  }, [onOpenChange]);
 
   // Debounce: só busca depois que o usuário para de digitar.
   useEffect(() => {
@@ -159,7 +178,7 @@ export function AdminSearch({ onSelectMenu }: { onSelectMenu: (menuId: string) =
   }, [active]);
 
   function close() {
-    setOpen(false);
+    onOpenChange(false);
     setQuery('');
     setDebounced('');
     setActive(-1);
@@ -207,24 +226,6 @@ export function AdminSearch({ onSelectMenu }: { onSelectMenu: (menuId: string) =
 
   return (
     <>
-      {/* Gatilho no header — mostra o atalho ⌘K como affordance. */}
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label="Search"
-        aria-keyshortcuts="Meta+K Control+K"
-        // Borderless (estilo Zeroheight): ícone + rótulo, feedback só no hover —
-        // sem a caixa com `border` que fazia o gatilho parecer um chip (TASK-95).
-        className="text-muted-foreground hover:text-foreground hover:bg-accent inline-flex size-11 items-center justify-center gap-2 rounded-editorial-sm text-sm transition-colors sm:h-8 sm:w-auto sm:justify-start sm:px-2.5"
-        data-testid="admin-search-trigger"
-      >
-        <Search className="size-4" />
-        <span className="hidden sm:inline">Search</span>
-        <kbd className="bg-muted text-muted-foreground ml-1 hidden rounded px-1.5 py-0.5 text-[0.6875rem] font-medium sm:inline-block">
-          ⌘K
-        </kbd>
-      </button>
-
       {open && (
         <div
           className="fixed inset-0 z-50 flex items-start justify-center px-4 pt-[12vh]"
@@ -280,16 +281,24 @@ export function AdminSearch({ onSelectMenu }: { onSelectMenu: (menuId: string) =
               ) : (
                 <>
                   {structureCount > 0 && (
-                    <Group label="Structure">
+                    <Group label="Structure and drafts">
                       {structure.map((r, i) => (
                         <ResultRow
-                          key={`s-${r.type}-${r.id}`}
+                          key={`s-${r.type}-${r.id}-${r.matchedIn}`}
                           index={i}
                           active={active === i}
-                          icon={STRUCTURE_ICON[r.type]}
+                          icon={r.matchedIn === 'content' ? Text : STRUCTURE_ICON[r.type]}
                           title={r.titulo}
-                          meta={r.context}
+                          // O caminho completo no lugar do pai imediato
+                          // (SYS-63/64): dois itens homônimos em menus
+                          // diferentes eram indistinguíveis com um rótulo só.
+                          meta={r.path.length > 0 ? r.path.join(' › ') : undefined}
                           badge={STRUCTURE_KIND_LABEL[r.type]}
+                          // O casamento em rascunho é dito por texto, não só
+                          // pelo ícone: "isto ainda não está publicado" é a
+                          // informação que muda o que a pessoa faz a seguir.
+                          note={r.matchedIn === 'content' ? 'Draft' : undefined}
+                          snippet={r.snippet ? highlight(r.snippet) : undefined}
                           onActivate={() => setActive(i)}
                           onSelect={() => select({ kind: 'structure', data: r })}
                         />
@@ -361,6 +370,7 @@ function ResultRow({
   title,
   meta,
   badge,
+  note,
   snippet,
   onActivate,
   onSelect,
@@ -371,6 +381,8 @@ function ResultRow({
   title: string;
   meta?: string;
   badge?: string;
+  /** Qualificador do resultado (ex.: "Draft"), ao lado do tipo. */
+  note?: string;
   snippet?: ReactNode;
   onActivate: () => void;
   onSelect: () => void;
@@ -404,13 +416,73 @@ function ResultRow({
               {badge}
             </span>
           )}
+          {note && (
+            <span className="text-muted-foreground border-border shrink-0 rounded-full border border-dashed px-1.5 py-px text-[0.625rem] uppercase tracking-wide">
+              {note}
+            </span>
+          )}
         </span>
-        {snippet ? (
+        {/* Caminho e trecho convivem: o caminho diz *onde* está, o trecho diz
+            *por que* casou — sem o caminho, um resultado de rascunho não teria
+            como ser localizado na árvore. */}
+        {meta && <span className="text-muted-foreground mt-0.5 block truncate text-xs">{meta}</span>}
+        {snippet && (
           <span className="text-muted-foreground mt-0.5 line-clamp-1 block text-xs">{snippet}</span>
-        ) : (
-          meta && <span className="text-muted-foreground mt-0.5 block truncate text-xs">{meta}</span>
         )}
       </span>
+    </button>
+  );
+}
+
+/**
+ * Gatilho do header (TASK-95): borderless, com o atalho como affordance.
+ * Separado do `AdminSearch` (SYS-64) porque agora há **dois** pontos de
+ * entrada para a mesma paleta — este e o da árvore de navegação —, e duplicar
+ * a paleta para duplicar o gatilho daria dois estados de busca vivos ao mesmo
+ * tempo.
+ */
+export function AdminSearchTrigger({ onOpen }: { onOpen: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label="Search"
+      aria-keyshortcuts="Meta+K Control+K"
+      className="text-muted-foreground hover:text-foreground hover:bg-accent inline-flex size-11 items-center justify-center gap-2 rounded-editorial-sm text-sm transition-colors sm:h-8 sm:w-auto sm:justify-start sm:px-2.5"
+      data-testid="admin-search-trigger"
+    >
+      <Search className="size-4" />
+      <span className="hidden sm:inline">Search</span>
+      <kbd className="bg-muted text-muted-foreground ml-1 hidden rounded px-1.5 py-0.5 text-[0.6875rem] font-medium sm:inline-block">
+        ⌘K
+      </kbd>
+    </button>
+  );
+}
+
+/**
+ * Gatilho no topo da árvore de navegação (SYS-64). Desenhado como um **campo**,
+ * e não como o botão do header: ali em cima ele é um item de chrome entre
+ * outros; aqui é a alternativa a percorrer a árvore com os olhos, e um campo é
+ * o que diz "digite o nome e eu levo você lá". Clicar abre a mesma paleta — o
+ * campo não é editável no lugar, porque manter duas caixas de busca com
+ * estados independentes seria duas verdades sobre o mesmo termo.
+ */
+export function SidebarSearchTrigger({ onOpen }: { onOpen: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label="Search the navigation"
+      aria-keyshortcuts="Meta+K Control+K"
+      className="border-input text-muted-foreground hover:border-ring/60 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 mb-1 flex min-h-9 w-full items-center gap-2 rounded-editorial-sm border px-2.5 text-left text-sm transition-colors outline-none focus-visible:ring-[3px]"
+      data-testid="sidebar-search-trigger"
+    >
+      <Search className="size-4 shrink-0" aria-hidden />
+      <span className="min-w-0 flex-1 truncate">Search…</span>
+      <kbd className="bg-muted text-muted-foreground hidden shrink-0 rounded px-1.5 py-0.5 text-[0.6875rem] font-medium md:inline-block">
+        ⌘K
+      </kbd>
     </button>
   );
 }
