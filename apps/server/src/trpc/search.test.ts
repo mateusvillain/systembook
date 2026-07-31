@@ -352,6 +352,27 @@ describe('search.structure (TASK-91/SYS-63) — navegação: títulos e rascunho
     expect(await caller.search.structure({ q: 'gradienteRoxo' })).toEqual([]);
   });
 
+  it('termo genérico não vira leitura da base inteira (varredura limitada)', async () => {
+    const caller = callerFor(db, editor);
+    const primary = await caller.tabs.getPrimary({ pageId });
+    // 300 blocos casando o mesmo termo: a varredura para em DRAFT_SCAN_LIMIT e
+    // a página ainda aparece — uma vez só.
+    await caller.blocks.saveDraft({
+      tabId: primary.id,
+      doc: {
+        type: 'doc',
+        content: Array.from({ length: 300 }, (_, i) => ({
+          type: 'paragraph' as const,
+          content: [{ type: 'text' as const, text: `linha ${i} com repetido` }],
+        })),
+      },
+    });
+
+    const results = await caller.search.structure({ q: 'repetido' });
+    expect(results).toHaveLength(1);
+    expect(results[0]).toMatchObject({ type: 'page', matchedIn: 'content' });
+  });
+
   it('uma página com o termo em vários blocos aparece uma vez só', async () => {
     const caller = callerFor(db, editor);
     const primary = await caller.tabs.getPrimary({ pageId });

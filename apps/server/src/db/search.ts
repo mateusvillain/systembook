@@ -232,6 +232,15 @@ function likePattern(q: string): string {
 const STRUCTURE_PER_TYPE = 8;
 /** Teto de páginas/tabs devolvidas pelo casamento em rascunho. */
 const DRAFT_CONTENT_LIMIT = 8;
+/**
+ * Teto de **linhas lidas** na varredura de rascunho. O filtro final (dedupe por
+ * página/tab e descarte de casamento que só existe no JSON) roda em memória, e
+ * sem este limite um termo genérico — um "a" digitado no meio da palavra —
+ * traria todos os blocos da instância para a memória antes de sobrar oito.
+ * Folga de ~25× sobre o teto de resultados: cobre páginas com muitos blocos
+ * casando o mesmo termo, sem transformar a busca numa leitura da base inteira.
+ */
+const DRAFT_SCAN_LIMIT = DRAFT_CONTENT_LIMIT * 25;
 /** Caracteres de contexto de cada lado do termo no trecho de rascunho. */
 const SNIPPET_RADIUS = 60;
 
@@ -309,7 +318,10 @@ function searchDraftContent(
         sql`${blocks.conteudoJson} LIKE ${pattern} ESCAPE '\\'`,
       ),
     )
+    // Ordem da árvore (não relevância): o corte do `LIMIT` fica determinístico,
+    // e é a mesma ordem em que os resultados aparecem na navegação.
     .orderBy(asc(pages.ordem), asc(tabs.ordem), asc(blocks.ordem))
+    .limit(DRAFT_SCAN_LIMIT)
     .all();
 
   const results: StructureSearchResult[] = [];
