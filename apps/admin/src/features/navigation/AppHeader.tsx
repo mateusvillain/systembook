@@ -325,7 +325,9 @@ function UserMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuItem asChild>
-          <Link to="/admin/history">Global history</Link>
+          {/* SYS-70: mesmo rótulo do título da tela — "Global history" descrevia
+              a rota antiga (feed cru); a tela é o painel de atividade. */}
+          <Link to="/admin/history">Activity</Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link to="/admin/settings/landing-page">Landing page</Link>
