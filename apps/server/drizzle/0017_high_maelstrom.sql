@@ -1,0 +1,1 @@
+ALTER TABLE `revisions` ADD `tipo` text DEFAULT 'publish' NOT NULL;

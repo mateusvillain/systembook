@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import type { Db } from './client.js';
 import { backfillMenuSlugs, ensureDefaultMenu } from './menus.js';
+import { backfillRevisionTypes } from './revisions.js';
 
 // Em dev (tsx) __dirname = src/db; no build = dist/db. A pasta drizzle/ fica
 // na raiz do pacote em ambos os casos.
@@ -19,4 +20,8 @@ export function runMigrations(db: Db): void {
   // vez de subir o servidor. Idempotente (só toca em `slug IS NULL`); o boot
   // em `index.ts` continua chamando por conta própria.
   backfillMenuSlugs(db);
+  // SYS-69: revisões anteriores ao campo `tipo` são classificadas uma vez, a
+  // partir da mensagem gerada pelo restore — o feed de atividade passa a ler um
+  // dado em vez de adivinhar por prefixo de string a cada render.
+  backfillRevisionTypes(db);
 }

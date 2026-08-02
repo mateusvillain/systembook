@@ -286,6 +286,15 @@ export const settings = sqliteTable('settings', {
     .default(sql`(unixepoch())`),
 });
 
+/**
+ * O que originou a revisão (SYS-69). Era derivado da `mensagem` no cliente
+ * ("começa com 'Restored from…'"), o que é frágil por construção: a mensagem
+ * do publish é **texto livre do usuário**, então bastava alguém escrever a
+ * frase certa para um publish se passar por restore no feed de atividade.
+ */
+export const REVISION_TYPES = ['publish', 'restore'] as const;
+export type RevisionType = (typeof REVISION_TYPES)[number];
+
 export const revisions = sqliteTable('revisions', {
   id: text('id')
     .primaryKey()
@@ -294,6 +303,7 @@ export const revisions = sqliteTable('revisions', {
     .notNull()
     .references(() => pages.id, { onDelete: 'cascade' }),
   snapshotJson: text('snapshot_json').notNull(),
+  tipo: text('tipo', { enum: REVISION_TYPES }).notNull().default('publish'),
   autorId: text('autor_id').references(() => users.id, { onDelete: 'set null' }),
   criadoEm: integer('criado_em', { mode: 'timestamp' })
     .notNull()
