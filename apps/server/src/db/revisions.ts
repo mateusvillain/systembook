@@ -1,5 +1,5 @@
 import type { Block, PageSnapshot } from '@systembook/schema';
-import { asc, desc, eq } from 'drizzle-orm';
+import { asc, desc, eq, sql } from 'drizzle-orm';
 import type { Db, DbTx } from './client.js';
 import { listBlocksByTab, replaceBlocksForTabInTx, type BlockRecord, type NewBlock } from './blocks.js';
 import { reindexPageFts } from './search.js';
@@ -61,6 +61,7 @@ export function createRevision(
       snapshotJson: JSON.stringify(snapshot),
       autorId: params.autorId,
       mensagem: params.mensagem,
+      tipo: 'publish',
     })
     .returning()
     .get();
@@ -124,6 +125,9 @@ export function restoreRevision(
         snapshotJson: JSON.stringify(restoredSnapshot),
         autorId: params.autorId,
         mensagem: `Restored from the revision of ${params.targetRevision.criadoEm.toISOString()}`,
+        // SYS-69: o tipo é dado, não inferência sobre a mensagem — que no
+        // publish é texto livre e podia imitar esta frase.
+        tipo: 'restore',
       })
       .returning()
       .get();
@@ -134,4 +138,22 @@ export function restoreRevision(
 
     return { revision, skippedTabIds };
   });
+}
+
+/**
+ * Marca como `restore` as revisões gravadas antes de o tipo existir (SYS-69).
+ * A frase é a que `restoreRevision` sempre gerou, e é o único sinal disponível
+ * no histórico antigo — daí a heurística ficar **aqui**, uma vez, em vez de no
+ * cliente a cada render. Idempotente: só toca no que ainda está como `publish`.
+ *
+ * Segue o padrão de `backfillMenuSlugs` (SYS-37): backfill de dado roda no
+ * boot e no `runMigrations`, não dentro do SQL gerado pelo drizzle-kit.
+ */
+export function backfillRevisionTypes(db: Db): { updated: number } {
+  const result = db.run(
+    sql`UPDATE ${revisions}
+        SET tipo = 'restore'
+        WHERE tipo = 'publish' AND mensagem LIKE 'Restored from the revision of %'`,
+  );
+  return { updated: Number(result.changes ?? 0) };
 }

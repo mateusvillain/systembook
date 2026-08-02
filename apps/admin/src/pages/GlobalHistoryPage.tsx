@@ -4,7 +4,7 @@ import { useTRPC, type RouterOutput } from '../lib/trpc.js';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 
-type Entry = RouterOutput['revisions']['listRecent'][number];
+type Entry = RouterOutput['revisions']['listRecent']['items'][number];
 
 /**
  * Histórico geral do painel (TASK-69): feed cronológico das revisões
@@ -27,11 +27,13 @@ export function GlobalHistoryPage() {
 
       {feed.isPending && <p className="text-muted-foreground">Loading…</p>}
       {feed.isError && <p role="alert" className="text-destructive">Failed to load the history.</p>}
-      {feed.data?.length === 0 && <p className="text-muted-foreground">No revisions published yet.</p>}
+      {feed.data?.items.length === 0 && (
+        <p className="text-muted-foreground">No revisions published yet.</p>
+      )}
 
-      {feed.data && feed.data.length > 0 && (
+      {feed.data && feed.data.items.length > 0 && (
         <ul className="grid list-none gap-2 p-0">
-          {feed.data.map((rev) => (
+          {feed.data.items.map((rev) => (
             <ActivityRow key={rev.id} rev={rev} />
           ))}
         </ul>
@@ -40,15 +42,12 @@ export function GlobalHistoryPage() {
   );
 }
 
-/** Deriva o tipo de evento a partir da `mensagem` da revisão (TASK-36/34). */
-function eventLabel(mensagem: string | null): string {
-  return mensagem?.startsWith('Restored from the revision of') ? 'Restored' : 'Published';
-}
-
 function ActivityRow({ rev }: { rev: Entry }) {
-  const label = eventLabel(rev.mensagem);
+  // SYS-69: o tipo vem do banco. Antes era deduzido do prefixo da mensagem —
+  // que no publish é texto livre e podia imitar a frase gerada pelo restore.
+  const label = rev.tipo === 'restore' ? 'Restored' : 'Published';
   // Mensagem do publish é livre; a de restore é gerada — só exibimos a de publish.
-  const publishNote = label === 'Published' ? rev.mensagem : null;
+  const publishNote = rev.tipo === 'publish' ? rev.mensagem : null;
 
   return (
     <li>
@@ -60,6 +59,9 @@ function ActivityRow({ rev }: { rev: Entry }) {
               <Link to={`/pages/${rev.pageId}/history`} className="text-primary hover:underline">
                 {rev.pageTitulo}
               </Link>
+              {/* A seção situa a página: dois "Button" em seções diferentes
+                  são páginas diferentes. */}
+              <span className="text-muted-foreground text-xs">in {rev.sectionTitulo}</span>
             </span>
             <span className="text-muted-foreground text-sm">
               {new Date(rev.criadoEm).toLocaleString('en-US')}

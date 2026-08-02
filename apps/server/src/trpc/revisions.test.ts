@@ -2,10 +2,11 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import type { ServerResponse } from 'node:http';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDb, type Db } from '../db/client.js';
 import { runMigrations } from '../db/migrate.js';
+import { backfillRevisionTypes } from '../db/revisions.js';
 import { DEFAULT_MENU_ID, memberships, revisions, users } from '../db/schema.js';
 import type { TiptapDoc } from '../blocks/serialize.js';
 import { appRouter } from './router.js';
@@ -82,10 +83,17 @@ describe('revisions router (TASK-35) + pages.restoreRevision (TASK-36)', () => {
 
       const feed = await caller.revisions.listRecent({});
       // publishes no mesmo segundo (unixepoch) → ordem = inserção desc (rowid)
-      expect(feed.map((r) => r.id)).toEqual([r3.id, r2.id, r1.id]);
-      // cada entrada traz página (título) e autor
-      expect(feed[0]).toMatchObject({ pageId, pageTitulo: 'Button', autorEmail: 'editor@test.local' });
-      expect(feed[1]).toMatchObject({ pageId: page2.id, pageTitulo: 'Cores' });
+      expect(feed.items.map((r) => r.id)).toEqual([r3.id, r2.id, r1.id]);
+      // cada entrada traz página (título), seção e autor
+      expect(feed.items[0]).toMatchObject({
+        pageId,
+        pageTitulo: 'Button',
+        sectionTitulo: 'Componentes',
+        autorEmail: 'editor@test.local',
+      });
+      expect(feed.items[1]).toMatchObject({ pageId: page2.id, pageTitulo: 'Cores' });
+      // tudo coube numa página só
+      expect(feed.nextCursor).toBeNull();
     });
 
     it('respeita o limit', async () => {
@@ -98,8 +106,8 @@ describe('revisions router (TASK-35) + pages.restoreRevision (TASK-36)', () => {
       const last = await caller.pages.publish({ pageId, mensagem: 'c' });
 
       const feed = await caller.revisions.listRecent({ limit: 2 });
-      expect(feed).toHaveLength(2);
-      expect(feed[0]?.id).toBe(last.id);
+      expect(feed.items).toHaveLength(2);
+      expect(feed.items[0]?.id).toBe(last.id);
     });
 
     it('autor removido (hard delete → SET NULL) aparece com autorEmail null', async () => {
@@ -111,15 +119,107 @@ describe('revisions router (TASK-35) + pages.restoreRevision (TASK-36)', () => {
       db.delete(users).where(eq(users.id, editor.userId)).run();
 
       const feed = await caller.revisions.listRecent({});
-      expect(feed).toHaveLength(1);
-      expect(feed[0]?.autorEmail).toBeNull();
-      expect(feed[0]?.pageTitulo).toBe('Button');
+      expect(feed.items).toHaveLength(1);
+      expect(feed.items[0]?.autorEmail).toBeNull();
+      expect(feed.items[0]?.pageTitulo).toBe('Button');
     });
 
     it('não autenticado recebe UNAUTHORIZED', async () => {
       await expect(callerFor(db, null).revisions.listRecent({})).rejects.toMatchObject({
         code: 'UNAUTHORIZED',
       });
+    });
+
+    // ---- SYS-69 ----
+
+    it('classifica publish e restore por dado, não pela mensagem', async () => {
+      const caller = callerFor(db, editor);
+      await caller.blocks.saveDraft({ tabId, doc: USAGE_V1 });
+      const primeira = await caller.pages.publish({ pageId, mensagem: 'v1' });
+      await caller.blocks.saveDraft({ tabId, doc: USAGE_V2 });
+      // Mensagem de publish imitando a frase que o restore gera: antes da
+      // SYS-69 isto aparecia como "restaurou" no feed.
+      const impostora = await caller.pages.publish({
+        pageId,
+        mensagem: 'Restored from the revision of 2020-01-01T00:00:00.000Z',
+      });
+      const restore = await caller.pages.restoreRevision({ pageId, revisionId: primeira.id });
+
+      const feed = await caller.revisions.listRecent({});
+      const byId = new Map(feed.items.map((r) => [r.id, r.tipo]));
+      expect(byId.get(restore.revision.id)).toBe('restore');
+      expect(byId.get(impostora.id)).toBe('publish');
+      expect(byId.get(primeira.id)).toBe('publish');
+    });
+
+    it('pagina por keyset, sem repetir nem pular no empate de segundo', async () => {
+      const caller = callerFor(db, editor);
+      const publicados: string[] = [];
+      for (let i = 0; i < 5; i++) {
+        await caller.blocks.saveDraft({ tabId, doc: i % 2 === 0 ? USAGE_V1 : USAGE_V2 });
+        publicados.push((await caller.pages.publish({ pageId, mensagem: `p${i}` })).id);
+      }
+      // Todos no mesmo segundo: é exatamente o caso em que um cursor só de
+      // timestamp perderia ou repetiria linhas.
+      const esperado = [...publicados].reverse();
+
+      const p1 = await caller.revisions.listRecent({ limit: 2 });
+      expect(p1.items.map((r) => r.id)).toEqual(esperado.slice(0, 2));
+      expect(p1.nextCursor).not.toBeNull();
+
+      const p2 = await caller.revisions.listRecent({ limit: 2, cursor: p1.nextCursor });
+      expect(p2.items.map((r) => r.id)).toEqual(esperado.slice(2, 4));
+
+      const p3 = await caller.revisions.listRecent({ limit: 2, cursor: p2.nextCursor });
+      expect(p3.items.map((r) => r.id)).toEqual(esperado.slice(4));
+      expect(p3.nextCursor).toBeNull();
+    });
+
+    it('publicar durante a paginação não faz a página seguinte repetir itens', async () => {
+      const caller = callerFor(db, editor);
+      const publicados: string[] = [];
+      for (let i = 0; i < 4; i++) {
+        await caller.blocks.saveDraft({ tabId, doc: i % 2 === 0 ? USAGE_V1 : USAGE_V2 });
+        publicados.push((await caller.pages.publish({ pageId, mensagem: `p${i}` })).id);
+      }
+
+      const p1 = await caller.revisions.listRecent({ limit: 2 });
+      // Alguém publica enquanto o leitor está na primeira página. Com OFFSET,
+      // a lista inteira desceria uma posição e a página 2 repetiria um item.
+      await caller.blocks.saveDraft({ tabId, doc: USAGE_V1 });
+      await caller.pages.publish({ pageId, mensagem: 'intrusa' });
+
+      const p2 = await caller.revisions.listRecent({ limit: 2, cursor: p1.nextCursor });
+      const vistos = [...p1.items, ...p2.items].map((r) => r.id);
+      expect(new Set(vistos).size).toBe(vistos.length);
+    });
+
+    it('devolve a seção e o menu da página, para a tela navegar direto', async () => {
+      const caller = callerFor(db, editor);
+      await caller.blocks.saveDraft({ tabId, doc: USAGE_V1 });
+      await caller.pages.publish({ pageId });
+
+      const feed = await caller.revisions.listRecent({});
+      expect(feed.items[0]).toMatchObject({
+        sectionTitulo: 'Componentes',
+        menuId: DEFAULT_MENU_ID,
+      });
+    });
+
+    it('revisões antigas (sem tipo) são classificadas pelo backfill', async () => {
+      const caller = callerFor(db, editor);
+      await caller.blocks.saveDraft({ tabId, doc: USAGE_V1 });
+      const rev = await caller.pages.publish({ pageId, mensagem: 'v1' });
+      await caller.pages.restoreRevision({ pageId, revisionId: rev.id });
+
+      // Simula o estado pré-migration: tudo gravado como 'publish'.
+      db.run(sql`UPDATE revisions SET tipo = 'publish'`);
+      expect(backfillRevisionTypes(db)).toEqual({ updated: 1 });
+
+      const feed = await caller.revisions.listRecent({});
+      expect(feed.items.filter((r) => r.tipo === 'restore')).toHaveLength(1);
+      // Idempotente: rodar de novo não muda nada.
+      expect(backfillRevisionTypes(db)).toEqual({ updated: 0 });
     });
   });
 
