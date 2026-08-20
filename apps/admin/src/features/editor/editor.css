@@ -211,8 +211,14 @@
     color 0.12s ease;
 }
 
+/* `[data-copy-manual]` (SYS-71): nem a Clipboard API nem `execCommand`
+   funcionaram, o código ficou selecionado e o botão virou instrução
+   ("Press ⌘C"). Fica em evidência como no hover — e não em vermelho de erro,
+   porque do ponto de vista de quem lê nada quebrou, só mudou o gesto; a
+   mensagem inteira está no rótulo, então aqui a cor é só ênfase. */
 .sb-editor .ProseMirror .sb-code-copy:hover,
-.sb-editor .ProseMirror .sb-code-copy:focus-visible {
+.sb-editor .ProseMirror .sb-code-copy:focus-visible,
+.sb-editor .ProseMirror .sb-code-copy[data-copy-manual] {
   opacity: 1;
   border-color: var(--sb-border, #d5d9df);
   color: var(--sb-fg, inherit);
@@ -223,16 +229,6 @@
   opacity: 1;
   color: var(--sb-hl-string);
   border-color: currentColor;
-}
-
-/* Nem a Clipboard API nem `execCommand` funcionaram (SYS-71): o código ficou
-   selecionado e o botão vira instrução ("Press ⌘C"). Não é vermelho de erro —
-   nada quebrou do ponto de vista de quem lê, só mudou o gesto — e a mensagem
-   inteira está no rótulo, então a cor aqui é só ênfase. */
-.sb-editor .ProseMirror .sb-code-copy[data-copy-manual] {
-  opacity: 1;
-  color: var(--sb-fg, inherit);
-  border-color: var(--sb-border, #d5d9df);
 }
 
 /* Alvo confortável onde não há mouse. */

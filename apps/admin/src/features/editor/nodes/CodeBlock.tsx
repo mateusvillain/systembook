@@ -113,6 +113,31 @@ const FEEDBACK_MS = 2000;
  */
 type CopyState = 'idle' | 'copied' | 'manual';
 
+/**
+ * As três falas de cada estado, juntas: o rótulo curto no botão, o nome
+ * acessível e o que a região viva anuncia. Num mapa em vez de três ternários
+ * espalhados pelo componente — assim o que muda quando um estado muda está tudo
+ * numa linha, e não a cem caracteres de distância.
+ *
+ * `title` é curto de propósito: o tooltip repete o rótulo, enquanto o
+ * `ariaLabel` carrega a instrução inteira para quem depende dele.
+ */
+const COPY_COPY: Record<CopyState, { short: string; title: string; ariaLabel: string; announce: string }> = {
+  idle: { short: 'Copy', title: 'Copy code', ariaLabel: 'Copy code', announce: '' },
+  copied: {
+    short: 'Copied',
+    title: 'Code copied',
+    ariaLabel: 'Code copied',
+    announce: 'Code copied to clipboard',
+  },
+  manual: {
+    short: 'Press ⌘C',
+    title: 'Press Ctrl+C or Cmd+C to copy',
+    ariaLabel: 'Could not copy automatically — the code is selected, press Ctrl+C or Cmd+C',
+    announce: 'Could not copy automatically. The code is selected — press Ctrl+C or Cmd+C.',
+  },
+};
+
 function CodeBlockView({ node, updateAttributes, editor }: NodeViewProps) {
   const language = node.attrs.language as string | null;
   const [copyState, setCopyState] = useState<CopyState>('idle');
@@ -154,12 +179,7 @@ function CodeBlockView({ node, updateAttributes, editor }: NodeViewProps) {
   }
 
   const copied = copyState === 'copied';
-  const label =
-    copyState === 'copied'
-      ? 'Code copied'
-      : copyState === 'manual'
-        ? 'Could not copy automatically — the code is selected, press Ctrl+C or Cmd+C'
-        : 'Copy code';
+  const labels = COPY_COPY[copyState];
 
   return (
     <NodeViewWrapper className="sb-code-block" data-language={language ?? undefined}>
@@ -189,23 +209,22 @@ function CodeBlockView({ node, updateAttributes, editor }: NodeViewProps) {
           onClick={copy}
           data-copied={copied || undefined}
           data-copy-manual={copyState === 'manual' || undefined}
-          aria-label={label}
-          title={label}
+          aria-label={labels.ariaLabel}
+          title={labels.title}
         >
           {copied ? <Check aria-hidden size={14} /> : <Copy aria-hidden size={14} />}
-          <span>
-            {copyState === 'copied' ? 'Copied' : copyState === 'manual' ? 'Press ⌘C' : 'Copy'}
-          </span>
+          <span>{labels.short}</span>
         </button>
       </div>
       {/* `aria-live`: o rótulo do botão muda, mas quem acionou por teclado ou
-          leitor de tela não é notificado da troca sem uma região viva. */}
-      <span className="sr-only" role="status" aria-live="polite">
-        {copyState === 'copied'
-          ? 'Code copied to clipboard'
-          : copyState === 'manual'
-            ? 'Could not copy automatically. The code is selected — press Ctrl+C or Cmd+C.'
-            : ''}
+          leitor de tela não é notificado da troca sem uma região viva.
+
+          `contentEditable={false}` como no `sb-code-head` acima: sem ele o span
+          é editável dentro do NodeView (medido: `isContentEditable === true` no
+          editor admin), virando um nó que o cursor alcança e que o observador de
+          DOM do ProseMirror pode ler de volta para o documento. */}
+      <span className="sr-only" role="status" aria-live="polite" contentEditable={false}>
+        {labels.announce}
       </span>
       <pre ref={preRef}>
         {/* Argumento de tipo explícito: `as` é `NoInfer<T>` e o default do
