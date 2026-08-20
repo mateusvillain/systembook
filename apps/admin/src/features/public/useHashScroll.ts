@@ -24,19 +24,28 @@ import { useEffect, useRef } from 'react';
  * acabou de abrir é animação sem informação — e em `prefers-reduced-motion`
  * seria animação indesejada.
  *
- * `signal` deve mudar a cada vez que o conteúdo se acomoda (nova página/tab, e
- * também quando um scan encontra blocos novos). O alvo pode aparecer **depois**
- * da primeira tentativa: o bloco de exemplo resolve o preview por rede e só
- * então recebe id, então uma única tentativa na montagem erraria justamente os
- * links de exemplo.
+ * Os dois parâmetros são deliberadamente separados:
+ *
+ * - `contentKey` identifica **o que** está sendo lido (rota + tab). É o que
+ *   define quando um novo salto é legítimo: o leitor navegou para outro lugar.
+ * - `generation` é só um gatilho de nova tentativa, e muda enquanto o mesmo
+ *   conteúdo se acomoda. O alvo pode aparecer **depois** da primeira tentativa:
+ *   o bloco de exemplo resolve o preview por rede e só então recebe id, então
+ *   uma única tentativa na montagem erraria justamente os links de exemplo.
+ *
+ * Encaixar os dois numa string só (e reparti-la aqui) foi como uma versão
+ * anterior fez, e escondia um defeito: a metade "identidade" incluía o
+ * `dataUpdatedAt` da query, então **qualquer refetch** cunhava uma chave nova e
+ * disparava um segundo `scrollIntoView`, puxando de volta um leitor que já
+ * tinha rolado para outro lugar. Hoje isso é raro porque o painel roda com
+ * `refetchOnWindowFocus: false` (`lib/trpc.ts`) — era uma armadilha esperando a
+ * primeira invalidação de cache, não um bug visível.
  */
-export function useHashScroll(signal: string) {
+export function useHashScroll(contentKey: string, generation: number) {
   /**
    * Que hash já foi atendido, e sob qual conteúdo. Sem isso, cada vez que um
    * embed terminasse de carregar o efeito rodaria de novo e **puxaria o leitor
    * de volta** para o bloco, mesmo que ele já tivesse rolado para outro lugar.
-   * A chave inclui o `signal` do conteúdo para que trocar de página/tab volte a
-   * permitir um salto.
    */
   const done = useRef<string | null>(null);
 
@@ -54,9 +63,9 @@ export function useHashScroll(signal: string) {
       id = raw;
     }
 
-    // A chave de "já atendido" é por página, não por scan: um scan posterior no
-    // mesmo conteúdo não deve saltar de novo.
-    const key = `${signal.split('|')[0]}#${id}`;
+    // A chave de "já atendido" é por conteúdo, não por scan: `generation` faz o
+    // efeito rodar de novo, mas não autoriza um segundo salto.
+    const key = `${contentKey}#${id}`;
     if (done.current === key) return;
 
     const target = document.getElementById(id);
@@ -76,5 +85,5 @@ export function useHashScroll(signal: string) {
     // O hash **não** entra nas deps de propósito: cliques na própria página o
     // atualizam por `replaceState` (`useCopyLink`), e reagir a isso puxaria a
     // página de volta ao bloco toda vez que alguém copiasse um link.
-  }, [signal]);
+  }, [contentKey, generation]);
 }

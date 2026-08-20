@@ -44,16 +44,22 @@ export function PublicPageView() {
   // **mais** `dataUpdatedAt`: só a rota não bastaria, porque na primeira
   // montagem o conteúdo ainda não chegou e a varredura acharia zero headings —
   // é a chegada dos dados que precisa disparar o scan.
+  // Chave de reescaneio: inclui `dataUpdatedAt` porque um refetch pode trazer
+  // conteúdo diferente, e aí os ids precisam ser recarimbados.
   const scanKey = `${menuSlug}/${sectionSlug}/${pageSlug}/${tabId ?? ''}/${query.dataUpdatedAt}`;
   const { items, headings } = useHeadingIds(bodyRef, scanKey);
-  // Mesma chave de reescaneio: os dois varrem o mesmo conteúdo, nos mesmos
-  // momentos, e só diferem no que procuram.
+  // Mesma chave: os dois varrem o mesmo conteúdo, nos mesmos momentos, e só
+  // diferem no que procuram.
   const blockAnchors = useBlockAnchorIds(bodyRef, scanKey);
 
-  // O sinal é a página (antes do `|`) mais o que já foi encontrado: o salto só
-  // pode acontecer depois de os ids existirem, e o alvo pode surgir tarde (um
-  // bloco de exemplo só recebe id quando o preview termina de carregar).
-  useHashScroll(`${scanKey}|${headings.length}|${blockAnchors.length}`);
+  // Para o salto de hash, o que identifica "onde o leitor está" é a **rota**,
+  // sem `dataUpdatedAt`: um refetch não é uma chegada nova e não deve autorizar
+  // um segundo salto. A contagem de alvos entra só como gatilho de nova
+  // tentativa, porque um bloco de exemplo só recebe id quando o preview carrega.
+  useHashScroll(
+    `${menuSlug}/${sectionSlug}/${pageSlug}/${tabId ?? ''}`,
+    headings.length + blockAnchors.length,
+  );
 
   if (query.isLoading) return <p>Loading…</p>;
   if (query.isError) return <p role="alert">Failed to load the page.</p>;

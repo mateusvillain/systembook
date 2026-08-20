@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
+import { slugify } from './slug.js';
 
 /**
  * Ids estáveis para blocos de código e de exemplo na doc pública (SYS-73),
@@ -25,13 +26,14 @@ import { useEffect, useRef, useState, type RefObject } from 'react';
  * abre no topo.
  */
 
-export interface BlockAnchor {
+/** Nome com sufixo `Target` para não colidir com o componente que o consome. */
+export interface BlockAnchorTarget {
   /** O bloco em si — quem recebe o `id` e para onde a página rola. */
   block: HTMLElement;
   /** Onde o botão de âncora é montado (a barra de chrome do bloco). */
   host: HTMLElement;
   id: string;
-  /** Frase usada no nome acessível do botão ("Copy link to this code example"). */
+  /** Frase usada no nome acessível do botão ("Copy link to this code block"). */
   label: string;
 }
 
@@ -51,17 +53,6 @@ function hash(text: string): string {
     h = Math.imul(h, 0x01000193);
   }
   return (h >>> 0).toString(36);
-}
-
-/** Mesmo slugify de `useHeadingIds` — ASCII-safe, único dentro da página. */
-function slugify(text: string): string {
-  return (
-    text
-      .toLowerCase()
-      .trim()
-      .replace(/[^\p{L}\p{N}]+/gu, '-')
-      .replace(/^-+|-+$/g, '') || 'block'
-  );
 }
 
 /**
@@ -111,7 +102,7 @@ const KINDS = [
     slug: (block: HTMLElement) => {
       const name = block.getAttribute('data-component-name') ?? '';
       const variant = block.getAttribute('data-variant-id') ?? '';
-      const parts = [name, variant].filter(Boolean).map(slugify);
+      const parts = [name, variant].filter(Boolean).map((p) => slugify(p, 'block'));
       return parts.length > 0 ? parts.join('-') : 'unset';
     },
   },
@@ -126,29 +117,37 @@ const KINDS = [
 export function useBlockAnchorIds(
   containerRef: RefObject<HTMLElement | null>,
   watch: string,
-): BlockAnchor[] {
-  const [anchors, setAnchors] = useState<BlockAnchor[]>([]);
+): BlockAnchorTarget[] {
+  const [anchors, setAnchors] = useState<BlockAnchorTarget[]>([]);
   // Guarda o resultado corrente para o comparador poder devolver a **mesma**
   // referência quando nada mudou — ver a nota do observer abaixo.
-  const current = useRef<BlockAnchor[]>([]);
+  const current = useRef<BlockAnchorTarget[]>([]);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    function scan() {
-      const root = containerRef.current;
-      if (!root) return;
+    // Conteúdo novo: o resultado anterior é de outra página/tab e não pode
+    // servir de base de comparação, senão o primeiro scan compararia o novo com
+    // o velho e poderia concluir "igual" por coincidência de tamanho.
+    current.current = [];
 
+    // Arrow const e não `function` hoistada: o TypeScript não mantém o
+    // narrowing de `container` dentro de uma declaração que poderia, em tese,
+    // ser chamada antes da guarda acima.
+    const scan = () => {
+      // Usa o `container` capturado — o mesmo nó em que o observer está
+      // pendurado. Reler `containerRef.current` aqui permitiria observar um nó
+      // e varrer outro, se a ref trocasse.
       // Um seletor único preserva a **ordem do documento**; varrer por tipo e
       // concatenar agruparia todos os blocos de código antes dos exemplos, e a
       // deduplicação (que numera pela ordem de aparição) passaria a depender do
       // tipo em vez da posição na página.
       const selector = KINDS.map((k) => k.selector).join(', ');
-      const found = Array.from(root.querySelectorAll<HTMLElement>(selector));
+      const found = Array.from(container.querySelectorAll<HTMLElement>(selector));
 
       const seen = new Map<string, number>();
-      const next: BlockAnchor[] = [];
+      const next: BlockAnchorTarget[] = [];
 
       for (const block of found) {
         const kind = KINDS.find((k) => block.matches(k.selector));
@@ -166,9 +165,19 @@ export function useBlockAnchorIds(
         if (!host) continue;
 
         const base = `${kind.prefix}-${kind.slug(block)}`;
-        const count = seen.get(base) ?? 0;
+        let count = seen.get(base) ?? 0;
+        let id = count === 0 ? base : `${base}-${count}`;
+
+        // Os headings são numerados por `useHeadingIds`, num mapa próprio: um
+        // título que faça slug de `code-1abc` produziria o mesmo id de um bloco,
+        // e `getElementById` levaria o link ao elemento errado. A checagem é
+        // contra o DOM real (e não contra o outro mapa) para não depender de
+        // qual dos dois scans rodou primeiro.
+        while (document.getElementById(id) && document.getElementById(id) !== block) {
+          count += 1;
+          id = `${base}-${count}`;
+        }
         seen.set(base, count + 1);
-        const id = count === 0 ? base : `${base}-${count}`;
 
         block.id = id;
         next.push({ block, host, id, label: kind.label });
@@ -177,12 +186,18 @@ export function useBlockAnchorIds(
       const prev = current.current;
       const same =
         prev.length === next.length &&
-        prev.every((a, i) => a.id === next[i]!.id && a.host === next[i]!.host);
+        prev.every(
+          (a, i) =>
+            a.id === next[i]!.id &&
+            a.host === next[i]!.host &&
+            a.block === next[i]!.block &&
+            a.label === next[i]!.label,
+        );
       if (same) return;
 
       current.current = next;
       setAnchors(next);
-    }
+    };
 
     // Mesmo frame de folga de `useHeadingIds`: o Tiptap monta o conteúdo num
     // efeito próprio, e varrer antes disso acharia zero blocos.

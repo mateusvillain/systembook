@@ -1,35 +1,29 @@
 import { createPortal } from 'react-dom';
-import { Check, Link2 } from 'lucide-react';
-import { useCopyLink } from './useCopyLink.js';
+import { CopyLinkButton } from './CopyLinkButton.js';
 
 /**
  * Botão "#" de uma seção (SYS-34): copia o link direto do heading e atualiza o
  * hash da URL — o mesmo par de efeitos do item do TOC, mas acionável de dentro
  * do texto, sem abrir o sumário.
  *
- * O comportamento (ordem hash→cópia, degradação sem `navigator.clipboard`,
- * duração do feedback) mora em `useCopyLink`, compartilhado com a âncora de
- * bloco da SYS-73.
+ * Comportamento e marcação vivem em `CopyLinkButton`, compartilhado com a âncora
+ * de bloco da SYS-73; aqui fica só o que é específico do heading.
  */
 function HeadingAnchor({ id }: { id: string }) {
-  const { copied, copyLink } = useCopyLink(id);
-
   return (
-    <button
-      type="button"
+    <CopyLinkButton
+      id={id}
+      className="sb-heading-anchor"
+      iconSize={14}
+      // O nome acessível diz *qual* alvo: um leitor de tela tabulando a página
+      // ouviria "copiar link" N vezes idênticas sem ele.
+      label="Copy link to this section"
+      copiedLabel="Section link copied"
+      title="Copy link to this section"
       // Lido pelo `headingText()` de `useHeadingIds` para se excluir do slug —
       // sem isso o rótulo do botão entraria no texto do heading.
       data-heading-anchor=""
-      className="sb-heading-anchor"
-      onClick={() => void copyLink()}
-      // O nome acessível diz *qual* seção: um leitor de tela tabulando a página
-      // ouviria "copiar link" N vezes idênticas sem ele.
-      aria-label={copied ? 'Section link copied' : 'Copy link to this section'}
-      title={copied ? 'Link copied' : 'Copy link to this section'}
-      data-copied={copied || undefined}
-    >
-      {copied ? <Check aria-hidden size={14} /> : <Link2 aria-hidden size={14} />}
-    </button>
+    />
   );
 }
 
