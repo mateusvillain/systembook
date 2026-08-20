@@ -8,6 +8,7 @@ import {
 import { Check, Copy } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { createLowlight } from 'lowlight';
+import { copyText } from '../../../lib/clipboard.js';
 import bash from 'highlight.js/lib/languages/bash';
 import css from 'highlight.js/lib/languages/css';
 import diff from 'highlight.js/lib/languages/diff';
@@ -101,20 +102,64 @@ function labelFor(language: unknown): string | null {
   return known ? known.label : language;
 }
 
+/** Quanto tempo o botão fica dizendo "Copied"/"Press ⌘C" antes de voltar ao repouso. */
+const FEEDBACK_MS = 2000;
+
+/**
+ * Desfecho da cópia. `manual` é o caso em que nem a Clipboard API nem
+ * `execCommand` funcionaram: em vez de um erro sem saída, o bloco fica com o
+ * código **selecionado** e o botão instrui a copiar pelo teclado — o leitor sai
+ * com o código do mesmo jeito, que é o critério da issue.
+ */
+type CopyState = 'idle' | 'copied' | 'manual';
+
 function CodeBlockView({ node, updateAttributes, editor }: NodeViewProps) {
   const language = node.attrs.language as string | null;
-  const [copied, setCopied] = useState(false);
+  const [copyState, setCopyState] = useState<CopyState>('idle');
+  const preRef = useRef<HTMLPreElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
 
+  function flash(state: Exclude<CopyState, 'idle'>) {
+    setCopyState(state);
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => setCopyState('idle'), FEEDBACK_MS);
+  }
+
+  /** Seleciona o código no próprio bloco, para o ⌘C/Ctrl+C do leitor pegar. */
+  function selectCode() {
+    const code = preRef.current?.querySelector('code');
+    if (!code) return;
+    const range = document.createRange();
+    range.selectNodeContents(code);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+  }
+
   function copy() {
-    void navigator.clipboard.writeText(node.textContent).then(() => {
-      setCopied(true);
-      if (timer.current) clearTimeout(timer.current);
-      timer.current = setTimeout(() => setCopied(false), 2000);
+    // `node.textContent` é o texto do documento, não o do DOM: as classes
+    // `hljs-*` do lowlight são decorations e não acrescentam nem um caractere,
+    // então o que vai para a área de transferência é exatamente o que o autor
+    // escreveu — quebras de linha e indentação incluídas.
+    void copyText(node.textContent).then((ok) => {
+      if (ok) {
+        flash('copied');
+        return;
+      }
+      selectCode();
+      flash('manual');
     });
   }
+
+  const copied = copyState === 'copied';
+  const label =
+    copyState === 'copied'
+      ? 'Code copied'
+      : copyState === 'manual'
+        ? 'Could not copy automatically — the code is selected, press Ctrl+C or Cmd+C'
+        : 'Copy code';
 
   return (
     <NodeViewWrapper className="sb-code-block" data-language={language ?? undefined}>
@@ -143,13 +188,26 @@ function CodeBlockView({ node, updateAttributes, editor }: NodeViewProps) {
           className="sb-code-copy"
           onClick={copy}
           data-copied={copied || undefined}
-          aria-label={copied ? 'Code copied' : 'Copy code'}
+          data-copy-manual={copyState === 'manual' || undefined}
+          aria-label={label}
+          title={label}
         >
           {copied ? <Check aria-hidden size={14} /> : <Copy aria-hidden size={14} />}
-          <span>{copied ? 'Copied' : 'Copy'}</span>
+          <span>
+            {copyState === 'copied' ? 'Copied' : copyState === 'manual' ? 'Press ⌘C' : 'Copy'}
+          </span>
         </button>
       </div>
-      <pre>
+      {/* `aria-live`: o rótulo do botão muda, mas quem acionou por teclado ou
+          leitor de tela não é notificado da troca sem uma região viva. */}
+      <span className="sr-only" role="status" aria-live="polite">
+        {copyState === 'copied'
+          ? 'Code copied to clipboard'
+          : copyState === 'manual'
+            ? 'Could not copy automatically. The code is selected — press Ctrl+C or Cmd+C.'
+            : ''}
+      </span>
+      <pre ref={preRef}>
         {/* Argumento de tipo explícito: `as` é `NoInfer<T>` e o default do
             componente é 'div' — sem ele o TS rejeita "code". */}
         <NodeViewContent<'code'> as="code" />

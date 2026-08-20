@@ -225,6 +225,16 @@
   border-color: currentColor;
 }
 
+/* Nem a Clipboard API nem `execCommand` funcionaram (SYS-71): o código ficou
+   selecionado e o botão vira instrução ("Press ⌘C"). Não é vermelho de erro —
+   nada quebrou do ponto de vista de quem lê, só mudou o gesto — e a mensagem
+   inteira está no rótulo, então a cor aqui é só ênfase. */
+.sb-editor .ProseMirror .sb-code-copy[data-copy-manual] {
+  opacity: 1;
+  color: var(--sb-fg, inherit);
+  border-color: var(--sb-border, #d5d9df);
+}
+
 /* Alvo confortável onde não há mouse. */
 @media (pointer: coarse) {
   .sb-editor .ProseMirror .sb-code-copy {
