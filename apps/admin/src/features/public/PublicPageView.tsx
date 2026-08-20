@@ -6,6 +6,9 @@ import { PageRenderer, type RenderableSnapshot } from './PageRenderer.js';
 import { TableOfContents } from './TableOfContents.js';
 import { HeadingAnchors } from './HeadingAnchors.js';
 import { useHeadingIds } from './useHeadingIds.js';
+import { BlockAnchors } from './BlockAnchors.js';
+import { useBlockAnchorIds } from './useBlockAnchorIds.js';
+import { useHashScroll } from './useHashScroll.js';
 import { LegacyDocsRedirect } from './LegacyDocsRedirect.js';
 
 /**
@@ -41,10 +44,16 @@ export function PublicPageView() {
   // **mais** `dataUpdatedAt`: só a rota não bastaria, porque na primeira
   // montagem o conteúdo ainda não chegou e a varredura acharia zero headings —
   // é a chegada dos dados que precisa disparar o scan.
-  const { items, headings } = useHeadingIds(
-    bodyRef,
-    `${menuSlug}/${sectionSlug}/${pageSlug}/${tabId ?? ''}/${query.dataUpdatedAt}`,
-  );
+  const scanKey = `${menuSlug}/${sectionSlug}/${pageSlug}/${tabId ?? ''}/${query.dataUpdatedAt}`;
+  const { items, headings } = useHeadingIds(bodyRef, scanKey);
+  // Mesma chave de reescaneio: os dois varrem o mesmo conteúdo, nos mesmos
+  // momentos, e só diferem no que procuram.
+  const blockAnchors = useBlockAnchorIds(bodyRef, scanKey);
+
+  // O sinal é a página (antes do `|`) mais o que já foi encontrado: o salto só
+  // pode acontecer depois de os ids existirem, e o alvo pode surgir tarde (um
+  // bloco de exemplo só recebe id quando o preview termina de carregar).
+  useHashScroll(`${scanKey}|${headings.length}|${blockAnchors.length}`);
 
   if (query.isLoading) return <p>Loading…</p>;
   if (query.isError) return <p role="alert">Failed to load the page.</p>;
@@ -97,6 +106,11 @@ export function PublicPageView() {
             renderer é compartilhado com o preview de revisões do admin, onde
             link de seção não faz sentido. */}
         <HeadingAnchors headings={headings} />
+        {/* Âncora de link nos blocos de código/exemplo (SYS-73), pelo mesmo
+            motivo de a de heading morar aqui: depende dos `id` atribuídos pelo
+            hook, e o `PageRenderer` é compartilhado com o preview de revisões do
+            admin, onde link direto para um bloco não faz sentido. */}
+        <BlockAnchors anchors={blockAnchors} />
       </article>
       <aside className="sb-page-toc">
         <TableOfContents items={items} headings={headings} />

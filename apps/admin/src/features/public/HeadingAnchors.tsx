@@ -1,41 +1,18 @@
-import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Check, Link2 } from 'lucide-react';
-
-const FEEDBACK_MS = 2000;
+import { useCopyLink } from './useCopyLink.js';
 
 /**
  * Botão "#" de uma seção (SYS-34): copia o link direto do heading e atualiza o
  * hash da URL — o mesmo par de efeitos do item do TOC, mas acionável de dentro
  * do texto, sem abrir o sumário.
  *
- * `navigator.clipboard` só existe em contexto seguro (https ou localhost); numa
- * instância self-hosted servida em http puro ele é `undefined`. Nesse caso o
- * botão **ainda funciona**: atualiza o hash, e a URL da barra de endereços passa
- * a ser o link a copiar à mão. Por isso a cópia é o efeito secundário, e não a
- * razão de o botão existir.
+ * O comportamento (ordem hash→cópia, degradação sem `navigator.clipboard`,
+ * duração do feedback) mora em `useCopyLink`, compartilhado com a âncora de
+ * bloco da SYS-73.
  */
 function HeadingAnchor({ id }: { id: string }) {
-  const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    if (!copied) return;
-    const t = setTimeout(() => setCopied(false), FEEDBACK_MS);
-    return () => clearTimeout(t);
-  }, [copied]);
-
-  async function onClick() {
-    const url = `${location.origin}${location.pathname}${location.search}#${id}`;
-    // `replaceState` (não `location.hash = …`) para não empilhar uma entrada de
-    // histórico por clique — igual ao item do TOC.
-    history.replaceState(null, '', `#${id}`);
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-    } catch {
-      // Sem clipboard: o hash já mudou, que é o comportamento mínimo útil.
-    }
-  }
+  const { copied, copyLink } = useCopyLink(id);
 
   return (
     <button
@@ -44,7 +21,7 @@ function HeadingAnchor({ id }: { id: string }) {
       // sem isso o rótulo do botão entraria no texto do heading.
       data-heading-anchor=""
       className="sb-heading-anchor"
-      onClick={onClick}
+      onClick={() => void copyLink()}
       // O nome acessível diz *qual* seção: um leitor de tela tabulando a página
       // ouviria "copiar link" N vezes idênticas sem ele.
       aria-label={copied ? 'Section link copied' : 'Copy link to this section'}
