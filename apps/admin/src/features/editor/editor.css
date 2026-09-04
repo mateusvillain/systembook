@@ -211,8 +211,16 @@
     color 0.12s ease;
 }
 
+/* `[data-copy-manual]` (SYS-71): nem a Clipboard API nem `execCommand`
+   funcionaram e o botão virou instrução ("Press ⌘C") — com o código já
+   selecionado no público, ou pedindo a seleção no editor, onde mexer na
+   seleção descartaria o cursor do autor.
+   Fica em evidência como no hover — e não em vermelho de erro,
+   porque do ponto de vista de quem lê nada quebrou, só mudou o gesto; a
+   mensagem inteira está no rótulo, então aqui a cor é só ênfase. */
 .sb-editor .ProseMirror .sb-code-copy:hover,
-.sb-editor .ProseMirror .sb-code-copy:focus-visible {
+.sb-editor .ProseMirror .sb-code-copy:focus-visible,
+.sb-editor .ProseMirror .sb-code-copy[data-copy-manual] {
   opacity: 1;
   border-color: var(--sb-border, #d5d9df);
   color: var(--sb-fg, inherit);
