@@ -1,20 +1,10 @@
 import { useEffect, useState, type RefObject } from 'react';
+import { slugify } from './slug.js';
 
 export interface TocItem {
   id: string;
   text: string;
   level: 2 | 3;
-}
-
-/** Slug ASCII-safe estável o bastante para âncora de heading (não precisa ser único globalmente, só dentro da página — a deduplicação é feita aqui). */
-function slugify(text: string): string {
-  return (
-    text
-      .toLowerCase()
-      .trim()
-      .replace(/[^\p{L}\p{N}]+/gu, '-')
-      .replace(/^-+|-+$/g, '') || 'section'
-  );
 }
 
 /**
@@ -58,7 +48,7 @@ export function useHeadingIds(containerRef: RefObject<HTMLElement | null>, watch
       const seen = new Map<string, number>();
       const nextItems: TocItem[] = found.map((heading) => {
         const text = headingText(heading);
-        const base = slugify(text);
+        const base = slugify(text, 'section');
         const count = seen.get(base) ?? 0;
         seen.set(base, count + 1);
         const id = count === 0 ? base : `${base}-${count}`;

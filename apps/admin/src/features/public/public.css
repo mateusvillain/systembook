@@ -499,7 +499,11 @@
 /* Sem header sticky (SYS-36) basta uma folga de respiro no topo do cartão
    para o scroll suave não colar o heading na borda. */
 .sb-public .sb-editor .ProseMirror h2,
-.sb-public .sb-editor .ProseMirror h3 {
+.sb-public .sb-editor .ProseMirror h3,
+/* Mesma folga para os blocos ancoráveis (SYS-73): chegar por link tem que
+   parar na mesma altura, seja o alvo um título ou um bloco de código. */
+.sb-public .sb-editor .ProseMirror .sb-code-block,
+.sb-public .sb-editor .ProseMirror .sb-component-embed {
   scroll-margin-top: 1.5rem;
 }
 
@@ -839,6 +843,75 @@
   .sb-public .sb-editor .ProseMirror .sb-heading-anchor {
     transition: none;
   }
+}
+
+/* ---- Âncora de link em bloco de código/exemplo (SYS-73) ----
+   Mesmo vocabulário da âncora de heading acima — ícone de elo, discreta até o
+   hover, confirmação por ícone de check no acento. A diferença é que ela vive
+   na barra de chrome do bloco, e não dentro de uma linha de texto: aqui não há
+   ritmo vertical de prosa para preservar, então o alvo de toque pode vir de
+   padding normal em vez do `::after` que o heading precisou. */
+.sb-public .sb-editor .ProseMirror .sb-block-anchor {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  color: var(--sb-fg-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 0.15s ease,
+    color 0.15s ease;
+}
+
+/* O gatilho é o hover no **bloco inteiro**, não na barra: o leitor mira o
+   cartão de código, não a faixa de 20px acima dele. */
+.sb-public .sb-editor .ProseMirror .sb-code-block:hover .sb-block-anchor,
+.sb-public .sb-editor .ProseMirror .sb-component-embed:hover .sb-block-anchor,
+.sb-public .sb-editor .ProseMirror .sb-block-anchor:focus-visible,
+/* Depois de copiar, fica visível pelo tempo do feedback — some junto com o
+   ícone de check, não antes dele. */
+.sb-public .sb-editor .ProseMirror .sb-block-anchor[data-copied] {
+  opacity: 1;
+}
+
+.sb-public .sb-editor .ProseMirror .sb-block-anchor:hover {
+  color: var(--sb-fg);
+}
+
+.sb-public .sb-editor .ProseMirror .sb-block-anchor:focus-visible {
+  outline: 2px solid var(--sb-accent);
+  outline-offset: 1px;
+}
+
+.sb-public .sb-editor .ProseMirror .sb-block-anchor[data-copied] {
+  color: var(--sb-accent);
+}
+
+/* Sem mouse não existe hover: em touch a âncora fica permanentemente visível
+   (mais fraca, para não competir com o conteúdo) e com alvo de 44px. */
+@media (hover: none) {
+  .sb-public .sb-editor .ProseMirror .sb-block-anchor {
+    opacity: 0.6;
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sb-public .sb-editor .ProseMirror .sb-block-anchor {
+    transition: none;
+  }
+}
+
+/* No embed vivo a barra de metadados só tem o nome do componente à esquerda
+   (o controle de "trocar componente" é exclusivo do editor), então a âncora
+   ocupa a ponta direita que o `space-between` já reservava. */
+.sb-public .sb-editor .ProseMirror .sb-component-embed-bar {
+  min-height: 1.5rem;
 }
 
 .sb-public .sb-editor .ProseMirror p {
