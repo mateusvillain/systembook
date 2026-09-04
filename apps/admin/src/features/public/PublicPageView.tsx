@@ -6,6 +6,9 @@ import { PageRenderer, type RenderableSnapshot } from './PageRenderer.js';
 import { TableOfContents } from './TableOfContents.js';
 import { HeadingAnchors } from './HeadingAnchors.js';
 import { useHeadingIds } from './useHeadingIds.js';
+import { BlockAnchors } from './BlockAnchors.js';
+import { useBlockAnchorIds } from './useBlockAnchorIds.js';
+import { useHashScroll } from './useHashScroll.js';
 import { LegacyDocsRedirect } from './LegacyDocsRedirect.js';
 
 /**
@@ -41,9 +44,21 @@ export function PublicPageView() {
   // **mais** `dataUpdatedAt`: só a rota não bastaria, porque na primeira
   // montagem o conteúdo ainda não chegou e a varredura acharia zero headings —
   // é a chegada dos dados que precisa disparar o scan.
-  const { items, headings } = useHeadingIds(
-    bodyRef,
-    `${menuSlug}/${sectionSlug}/${pageSlug}/${tabId ?? ''}/${query.dataUpdatedAt}`,
+  // Chave de reescaneio: inclui `dataUpdatedAt` porque um refetch pode trazer
+  // conteúdo diferente, e aí os ids precisam ser recarimbados.
+  const scanKey = `${menuSlug}/${sectionSlug}/${pageSlug}/${tabId ?? ''}/${query.dataUpdatedAt}`;
+  const { items, headings } = useHeadingIds(bodyRef, scanKey);
+  // Mesma chave: os dois varrem o mesmo conteúdo, nos mesmos momentos, e só
+  // diferem no que procuram.
+  const blockAnchors = useBlockAnchorIds(bodyRef, scanKey);
+
+  // Para o salto de hash, o que identifica "onde o leitor está" é a **rota**,
+  // sem `dataUpdatedAt`: um refetch não é uma chegada nova e não deve autorizar
+  // um segundo salto. A contagem de alvos entra só como gatilho de nova
+  // tentativa, porque um bloco de exemplo só recebe id quando o preview carrega.
+  useHashScroll(
+    `${menuSlug}/${sectionSlug}/${pageSlug}/${tabId ?? ''}`,
+    headings.length + blockAnchors.length,
   );
 
   if (query.isLoading) return <p>Loading…</p>;
@@ -97,6 +112,11 @@ export function PublicPageView() {
             renderer é compartilhado com o preview de revisões do admin, onde
             link de seção não faz sentido. */}
         <HeadingAnchors headings={headings} />
+        {/* Âncora de link nos blocos de código/exemplo (SYS-73), pelo mesmo
+            motivo de a de heading morar aqui: depende dos `id` atribuídos pelo
+            hook, e o `PageRenderer` é compartilhado com o preview de revisões do
+            admin, onde link direto para um bloco não faz sentido. */}
+        <BlockAnchors anchors={blockAnchors} />
       </article>
       <aside className="sb-page-toc">
         <TableOfContents items={items} headings={headings} />
