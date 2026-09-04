@@ -3,7 +3,13 @@
   "version": "0.1.0",
   "license": "MIT",
   "description": "CLI do SystemBook para descobrir arquivos *.preview.tsx no repo do time e buildar o artefato estático de preview.",
-  "keywords": ["systembook", "design-system", "documentation", "preview", "cli"],
+  "keywords": [
+    "systembook",
+    "design-system",
+    "documentation",
+    "preview",
+    "cli"
+  ],
   "homepage": "https://github.com/mateusvillain/systembook#readme",
   "repository": {
     "type": "git",
@@ -19,8 +25,14 @@
       "default": "./src/index.ts"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx"
+  ],
   "scripts": {
+    "prepack": "tsc -p tsconfig.build.json",
     "build": "tsc -p tsconfig.build.json",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
@@ -46,6 +58,7 @@
   },
   "publishConfig": {
     "access": "public",
+    "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
     "bin": {
       "systembook-connector": "./dist/cli.js"
@@ -56,5 +69,12 @@
         "default": "./dist/index.js"
       }
     }
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   }
 }

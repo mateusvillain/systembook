@@ -3,7 +3,13 @@
   "version": "0.1.0",
   "license": "MIT",
   "description": "Runtime de montagem dos previews do SystemBook dentro do iframe — renderiza variantes e aplica props via postMessage.",
-  "keywords": ["systembook", "design-system", "documentation", "preview", "react"],
+  "keywords": [
+    "systembook",
+    "design-system",
+    "documentation",
+    "preview",
+    "react"
+  ],
   "homepage": "https://github.com/mateusvillain/systembook#readme",
   "repository": {
     "type": "git",
@@ -19,8 +25,14 @@
       "default": "./src/index.ts"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx"
+  ],
   "scripts": {
+    "prepack": "tsc -p tsconfig.build.json",
     "build": "tsc -p tsconfig.build.json",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
@@ -44,6 +56,7 @@
   },
   "publishConfig": {
     "access": "public",
+    "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
     "exports": {
       ".": {
@@ -51,5 +64,8 @@
         "default": "./dist/index.js"
       }
     }
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

@@ -110,8 +110,12 @@ artefato estático para a instância.
 No repositório do design system:
 
 ```bash
-pnpm add -D @systembook/connector    # ou: npm i -D / yarn add -D
+pnpm add -D @systembook/connector @systembook/schema    # ou: npm i -D / yarn add -D
 ```
+
+O `@systembook/schema` entra explicitamente porque os `*.preview.tsx` importam
+`PreviewConfig` dele. Com pnpm, dependência transitiva **não** é resolvível a
+partir do seu código — sem instalá-la, o `tsc` e o editor acusam o import.
 
 ### Escrever um primeiro `*.preview.tsx`
 

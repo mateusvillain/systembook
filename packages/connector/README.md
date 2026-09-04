@@ -8,9 +8,13 @@ um artefato estático que o CI envia para a sua instância — o SystemBook não
 compila o código de vocês, só hospeda o resultado.
 
 ```bash
-npm i -D @systembook/connector
+npm i -D @systembook/connector @systembook/schema
 npx systembook-connector build
 ```
+
+`@systembook/schema` entra explicitamente porque os seus `*.preview.tsx`
+importam `PreviewConfig` dele — com pnpm, uma dependência transitiva não é
+resolvível a partir do seu código.
 
 ## Comandos
 

@@ -3,7 +3,12 @@
   "version": "0.1.0",
   "license": "MIT",
   "description": "Contratos de tipo compartilhados do SystemBook — PreviewConfig, tipos de bloco e mensagens de preview.",
-  "keywords": ["systembook", "design-system", "documentation", "types"],
+  "keywords": [
+    "systembook",
+    "design-system",
+    "documentation",
+    "types"
+  ],
   "homepage": "https://github.com/mateusvillain/systembook#readme",
   "repository": {
     "type": "git",
@@ -18,8 +23,14 @@
       "types": "./src/index.ts"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx"
+  ],
   "scripts": {
+    "prepack": "tsc -p tsconfig.build.json",
     "build": "tsc -p tsconfig.build.json",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit"
@@ -29,6 +40,7 @@
   },
   "publishConfig": {
     "access": "public",
+    "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
     "exports": {
       ".": {
@@ -36,5 +48,8 @@
         "default": "./dist/index.js"
       }
     }
+  },
+  "engines": {
+    "node": ">=22"
   }
 }
