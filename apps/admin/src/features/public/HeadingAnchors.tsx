@@ -1,58 +1,29 @@
-import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Check, Link2 } from 'lucide-react';
-
-const FEEDBACK_MS = 2000;
+import { CopyLinkButton } from './CopyLinkButton.js';
 
 /**
  * Botão "#" de uma seção (SYS-34): copia o link direto do heading e atualiza o
  * hash da URL — o mesmo par de efeitos do item do TOC, mas acionável de dentro
  * do texto, sem abrir o sumário.
  *
- * `navigator.clipboard` só existe em contexto seguro (https ou localhost); numa
- * instância self-hosted servida em http puro ele é `undefined`. Nesse caso o
- * botão **ainda funciona**: atualiza o hash, e a URL da barra de endereços passa
- * a ser o link a copiar à mão. Por isso a cópia é o efeito secundário, e não a
- * razão de o botão existir.
+ * Comportamento e marcação vivem em `CopyLinkButton`, compartilhado com a âncora
+ * de bloco da SYS-73; aqui fica só o que é específico do heading.
  */
 function HeadingAnchor({ id }: { id: string }) {
-  const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    if (!copied) return;
-    const t = setTimeout(() => setCopied(false), FEEDBACK_MS);
-    return () => clearTimeout(t);
-  }, [copied]);
-
-  async function onClick() {
-    const url = `${location.origin}${location.pathname}${location.search}#${id}`;
-    // `replaceState` (não `location.hash = …`) para não empilhar uma entrada de
-    // histórico por clique — igual ao item do TOC.
-    history.replaceState(null, '', `#${id}`);
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-    } catch {
-      // Sem clipboard: o hash já mudou, que é o comportamento mínimo útil.
-    }
-  }
-
   return (
-    <button
-      type="button"
+    <CopyLinkButton
+      id={id}
+      className="sb-heading-anchor"
+      iconSize={14}
+      // O nome acessível diz *qual* alvo: um leitor de tela tabulando a página
+      // ouviria "copiar link" N vezes idênticas sem ele.
+      label="Copy link to this section"
+      copiedLabel="Section link copied"
+      title="Copy link to this section"
       // Lido pelo `headingText()` de `useHeadingIds` para se excluir do slug —
       // sem isso o rótulo do botão entraria no texto do heading.
       data-heading-anchor=""
-      className="sb-heading-anchor"
-      onClick={onClick}
-      // O nome acessível diz *qual* seção: um leitor de tela tabulando a página
-      // ouviria "copiar link" N vezes idênticas sem ele.
-      aria-label={copied ? 'Section link copied' : 'Copy link to this section'}
-      title={copied ? 'Link copied' : 'Copy link to this section'}
-      data-copied={copied || undefined}
-    >
-      {copied ? <Check aria-hidden size={14} /> : <Link2 aria-hidden size={14} />}
-    </button>
+    />
   );
 }
 
