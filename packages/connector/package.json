@@ -1,8 +1,16 @@
 {
   "name": "@systembook/connector",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "license": "MIT",
+  "description": "CLI do SystemBook para descobrir arquivos *.preview.tsx no repo do time e buildar o artefato estático de preview.",
+  "keywords": ["systembook", "design-system", "documentation", "preview", "cli"],
+  "homepage": "https://github.com/mateusvillain/systembook#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mateusvillain/systembook.git",
+    "directory": "packages/connector"
+  },
+  "bugs": "https://github.com/mateusvillain/systembook/issues",
   "type": "module",
   "types": "./src/index.ts",
   "exports": {
@@ -11,15 +19,17 @@
       "default": "./src/index.ts"
     }
   },
+  "files": ["dist"],
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "cli": "tsx src/cli.ts"
   },
   "dependencies": {
-    "@systembook/preview-kit": "workspace:*",
-    "@systembook/schema": "workspace:*",
+    "@systembook/preview-kit": "workspace:^",
+    "@systembook/schema": "workspace:^",
     "@vitejs/plugin-react": "^4.7.0",
     "commander": "^14.0.0",
     "esbuild": "^0.25.0",
@@ -33,5 +43,18 @@
     "tsx": "^4.19.2",
     "typescript": "^5.7.3",
     "vitest": "^3.0.5"
+  },
+  "publishConfig": {
+    "access": "public",
+    "types": "./dist/index.d.ts",
+    "bin": {
+      "systembook-connector": "./dist/cli.js"
+    },
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
   }
 }

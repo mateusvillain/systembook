@@ -215,10 +215,10 @@ importers:
   packages/connector:
     dependencies:
       '@systembook/preview-kit':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../preview-kit
       '@systembook/schema':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../schema
       '@vitejs/plugin-react':
         specifier: ^4.7.0
@@ -258,7 +258,7 @@ importers:
   packages/preview-kit:
     dependencies:
       '@systembook/schema':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../schema
     devDependencies:
       '@types/react':
