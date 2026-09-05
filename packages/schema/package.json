@@ -1,8 +1,21 @@
 {
   "name": "@systembook/schema",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "license": "MIT",
+  "description": "Contratos de tipo compartilhados do SystemBook — PreviewConfig, tipos de bloco e mensagens de preview.",
+  "keywords": [
+    "systembook",
+    "design-system",
+    "documentation",
+    "types"
+  ],
+  "homepage": "https://github.com/mateusvillain/systembook#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mateusvillain/systembook.git",
+    "directory": "packages/schema"
+  },
+  "bugs": "https://github.com/mateusvillain/systembook/issues",
   "type": "module",
   "types": "./src/index.ts",
   "exports": {
@@ -10,12 +23,33 @@
       "types": "./src/index.ts"
     }
   },
+  "files": [
+    "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx"
+  ],
   "scripts": {
-    "build": "tsc --noEmit",
+    "prepack": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "typescript": "^5.7.3"
+  },
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

@@ -1,8 +1,22 @@
 {
   "name": "@systembook/preview-kit",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "license": "MIT",
+  "description": "Runtime de montagem dos previews do SystemBook dentro do iframe — renderiza variantes e aplica props via postMessage.",
+  "keywords": [
+    "systembook",
+    "design-system",
+    "documentation",
+    "preview",
+    "react"
+  ],
+  "homepage": "https://github.com/mateusvillain/systembook#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mateusvillain/systembook.git",
+    "directory": "packages/preview-kit"
+  },
+  "bugs": "https://github.com/mateusvillain/systembook/issues",
   "type": "module",
   "types": "./src/index.ts",
   "exports": {
@@ -11,13 +25,21 @@
       "default": "./src/index.ts"
     }
   },
+  "files": [
+    "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx"
+  ],
   "scripts": {
+    "prepack": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
   "dependencies": {
-    "@systembook/schema": "workspace:*"
+    "@systembook/schema": "workspace:^"
   },
   "peerDependencies": {
     "react": "^19.0.0",
@@ -31,5 +53,19 @@
     "react-dom": "^19.0.0",
     "typescript": "^5.7.3",
     "vitest": "^3.0.5"
+  },
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

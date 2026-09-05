@@ -103,10 +103,13 @@ Detalhes adicionais de arquitetura e gotchas do repositório estão no
 
 ## ⚠️ Mudanças em `packages/schema` são um contrato cross-cutting
 
-`packages/schema` é **types-only** (sem build) e define tipos compartilhados por
-**todo o monorepo**: o `apps/server`, o `apps/admin` e — importante — os pacotes
-`@systembook/connector` e `@systembook/preview-kit`, que são pensados para serem
-publicáveis e consumidos pelos times de design system.
+`packages/schema` é **types-only**: não exporta nenhum valor de runtime, e o
+`pnpm build` existe só para emitir os `.d.ts` do pacote publicado — dentro do
+monorepo os consumidores leem o fonte direto. Ele define tipos compartilhados
+por **todo o monorepo**: o `apps/server`, o `apps/admin` e — importante — os
+pacotes `@systembook/connector` e `@systembook/preview-kit`, empacotados para o
+npm sob o escopo `@systembook`, de modo que uma mudança de tipo aqui sai para
+fora do repositório.
 
 Por isso, ao propor mudanças em `packages/schema`:
 

@@ -215,10 +215,10 @@ importers:
   packages/connector:
     dependencies:
       '@systembook/preview-kit':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../preview-kit
       '@systembook/schema':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../schema
       '@vitejs/plugin-react':
         specifier: ^4.7.0
@@ -232,6 +232,9 @@ importers:
       fast-glob:
         specifier: ^3.3.3
         version: 3.3.3
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.7(react@19.2.7)
       vite:
         specifier: ^6.4.3
         version: 6.4.3(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.1)
@@ -258,7 +261,7 @@ importers:
   packages/preview-kit:
     dependencies:
       '@systembook/schema':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../schema
     devDependencies:
       '@types/react':

@@ -26,7 +26,9 @@ O server exige `PORT`, `DATABASE_PATH`, `SESSION_SECRET` (validação fail-fast 
 
 ## Arquitetura
 
-Monorepo pnpm: `apps/server` (Node http nativo + tRPC v11 + Drizzle/better-sqlite3), `apps/admin` (Vite + React 19 + React Router 7), `packages/schema` (tipos compartilhados, **types-only**: `exports` aponta para `src/`, sem build), `packages/preview-kit` e `packages/connector` (placeholders até as fases de preview).
+Monorepo pnpm: `apps/server` (Node http nativo + tRPC v11 + Drizzle/better-sqlite3), `apps/admin` (Vite + React 19 + React Router 7), `packages/schema` (tipos compartilhados, **types-only**), `packages/preview-kit` (runtime de montagem do preview no iframe) e `packages/connector` (CLI que descobre e builda os `*.preview.tsx` do repo consumidor).
+
+Os três são **empacotados para o npm** sob o escopo `@systembook` (SYS-44), em `0.1.0`. Dentro do monorepo o `exports` de cada um aponta para `src/` — sem build, os apps consomem o fonte. O que muda no pacote publicado vive em `publishConfig` (`exports`/`types`/`bin` → `dist/`), substituído pelo pnpm no `pack`/`publish`; o `workspace:^` das dependências internas vira semver real pelo mesmo mecanismo. Então **`pnpm pack` é obrigatoriamente `pnpm pack`, nunca `npm pack`** — o npm não faz nenhuma dessas duas substituições e produziria um tarball quebrado. `pnpm build` emite `dist/` via `tsconfig.build.json` em cada pacote.
 
 Fluxo de tipos: `AppRouter` é exportado de `apps/server/src/trpc/router.ts` e consumido pelo admin via `@systembook/server` (export `types` aponta direto ao fonte). O client usa `@trpc/tanstack-react-query` (`createTRPCContext` → `TRPCProvider`/`useTRPC` em `apps/admin/src/lib/trpc.ts`); o QueryCache/MutationCache global redireciona qualquer UNAUTHORIZED para `/login`.
 
