@@ -143,6 +143,6 @@ jobs:
 - Rodando localmente num macOS para testar, use `COPYFILE_DISABLE=1 tar -czf …`
   para o tar não incluir arquivos AppleDouble (`._*`). No `ubuntu-latest` do
   GitHub Actions (GNU tar) isso não acontece.
-- Enquanto o pacote `@systembook/connector` não está publicado no npm (fase
-  de empacotamento do projeto), dentro deste monorepo o equivalente do build é
+- Dentro deste monorepo (desenvolvimento da própria plataforma), o equivalente
+  do build sem passar pelo pacote publicado é
   `pnpm --filter @systembook/connector cli build --root <dir>`.

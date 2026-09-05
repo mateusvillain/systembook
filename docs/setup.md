@@ -110,14 +110,12 @@ artefato estático para a instância.
 No repositório do design system:
 
 ```bash
-pnpm add -D @systembook/connector    # ou: npm i -D / yarn add -D
+pnpm add -D @systembook/connector @systembook/schema    # ou: npm i -D / yarn add -D
 ```
 
-> **Pré-lançamento:** o pacote `@systembook/connector` ainda **não está publicado no
-> npm**. Enquanto isso, o equivalente do comando de build, rodando de dentro do
-> monorepo da plataforma, é
-> `pnpm --filter @systembook/connector cli build --root <caminho-do-repo>`. Os
-> comandos `pnpm add`/`npx` abaixo passam a valer quando o pacote for publicado.
+O `@systembook/schema` entra explicitamente porque os `*.preview.tsx` importam
+`PreviewConfig` dele. Com pnpm, dependência transitiva **não** é resolvível a
+partir do seu código — sem instalá-la, o `tsc` e o editor acusam o import.
 
 ### Escrever um primeiro `*.preview.tsx`
 
@@ -153,10 +151,7 @@ tipos de `PreviewControl`) e o contrato de runtime estão em
 Valide localmente que o conector descobre e builda os previews:
 
 ```bash
-# forma futura (pacote publicado):
 npx systembook-connector build --root .
-# forma atual (de dentro do monorepo da plataforma):
-pnpm --filter @systembook/connector cli build --root /caminho/para/seu-repo
 ```
 
 O build escreve o artefato em `.systembook/dist/` (adicione ao `.gitignore` do repo)
