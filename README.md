@@ -52,37 +52,84 @@ Em resumo: o SystemBook combina o **CMS real** (edição direta, sem PR) do lado
 "documentação" com o **live preview do componente real** do lado "Storybook" —
 buildado no CI do próprio time, self-hosted e sem custo de licença.
 
-## Quick start (self-hosting)
+## Instalação
 
-O onboarding completo (subir a instância, primeiro login, instalar o conector no
-repo do design system e configurar o CI) está no
-[**guia de setup**](./docs/setup.md). O resumo:
+O SystemBook roda como um **container Docker único** — não há banco externo, fila
+ou serviço de terceiros para provisionar. O passo a passo completo (subir a
+instância, primeiro login, instalar o conector no repo do design system e
+configurar o CI) está no [**guia de setup**](./docs/setup.md); o resumo está abaixo.
+
+### Pré-requisitos
+
+- **Docker** + **Docker Compose** na máquina/servidor que vai hospedar a instância.
+- Um repositório de componentes com **CI**, se você quiser publicar previews reais
+  (opcional para começar).
+- Você **não precisa clonar este repositório** para hospedar o SystemBook — só
+  baixar o compose de produção e o template de variáveis.
+
+### 1. Baixar o compose e o `.env`
 
 A imagem é publicada no GitHub Container Registry:
 [`ghcr.io/mateusvillain/systembook`](https://github.com/mateusvillain/systembook/pkgs/container/systembook)
 (multi-arch: `amd64` + `arm64`).
 
 ```bash
-# 1. Pegue o compose de produção e o exemplo de variáveis de ambiente
 curl -O https://raw.githubusercontent.com/mateusvillain/systembook/main/docker-compose.production.yml
 curl -O https://raw.githubusercontent.com/mateusvillain/systembook/main/.env.production.example
 cp .env.production.example .env
+```
 
-# 2. Edite o .env: gere segredos com `openssl rand -base64 32` e defina o
-#    admin inicial (INITIAL_ADMIN_EMAIL / INITIAL_ADMIN_PASSWORD)
+### 2. Preencher as variáveis obrigatórias
 
-# 3. Suba o container
+| Variável | O que é | Como preencher |
+| --- | --- | --- |
+| `SESSION_SECRET` | Segredo que assina os cookies de sessão. | `openssl rand -base64 32` |
+| `ARGON2_SECRET` | Pepper do hash de senha (argon2id). **Não mude depois de criar usuários** — invalidaria todas as senhas. | `openssl rand -base64 32` |
+| `INITIAL_ADMIN_EMAIL` | Email do admin criado no primeiro boot. | ex.: `admin@suaempresa.com` |
+| `INITIAL_ADMIN_PASSWORD` | Senha desse admin. | senha forte (mín. 8 caracteres) |
+
+As opcionais (`PORT`, `DATABASE_PATH`, `PREVIEWS_PATH`) já têm default na imagem.
+
+### 3. Subir o container
+
+```bash
+docker compose -f docker-compose.production.yml up -d
+docker compose -f docker-compose.production.yml ps    # deve ficar "healthy"
+```
+
+No primeiro boot (banco vazio), o container roda as migrations e faz o seed do
+admin inicial a partir das variáveis de ambiente. Acesse a instância na porta
+configurada (default `3000`), faça login em `/login` e — logo em seguida — crie
+usuários nomeados e rotacione a credencial de bootstrap. Em produção, coloque um
+reverse proxy com TLS na frente: os cookies de sessão são `Secure` fora de
+ambiente local.
+
+O banco SQLite e os artefatos de preview persistem no volume `systembook-data`
+declarado no compose, então sobrevivem a recriações e updates do container. O
+backup é responsabilidade operacional de quem hospeda — veja o
+[guia de backup e recuperação](./docs/backup.md) (setup recomendado com Litestream).
+
+### 4. Atualizar a instância
+
+```bash
+docker compose -f docker-compose.production.yml pull
 docker compose -f docker-compose.production.yml up -d
 ```
 
-No primeiro boot, o container roda as migrations e faz o seed do admin inicial a
-partir das variáveis de ambiente. Acesse a instância na porta configurada e faça
-login. O banco SQLite persiste no volume declarado no compose — o backup dele é
-responsabilidade operacional de quem hospeda; veja o
-[guia de backup e recuperação](./docs/backup.md) (setup recomendado com Litestream).
+As migrations pendentes rodam automaticamente no boot da nova versão. Faça backup
+do volume antes de atualizar.
 
-Para conectar o **pipeline de preview de componentes** (buildar os `*.preview.tsx`
-do seu design system no CI e enviar o artefato para a instância), veja
+### 5. (Opcional) Conectar o pipeline de previews
+
+Para embutir os componentes reais do seu design system, instale o conector no
+repositório de componentes e publique os artefatos pelo CI:
+
+```bash
+pnpm add -D @systembook/connector @systembook/schema   # ou npm i -D / yarn add -D
+npx systembook-connector build --root .
+```
+
+O workflow completo de GitHub Actions está em
 [`docs/ci-example.md`](./docs/ci-example.md); o contrato dos arquivos
 `*.preview.tsx` está em
 [`docs/preview-tsx-schema.md`](./docs/preview-tsx-schema.md).
