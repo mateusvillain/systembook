@@ -28,7 +28,7 @@
 services:
   app:
     # :latest acompanha o último release. Para reprodutibilidade, fixe uma
-    # versão, ex.: ghcr.io/mateusvillain/systembook:0.1.0
+    # versão, ex.: ghcr.io/mateusvillain/systembook:0.2.0
     image: ghcr.io/mateusvillain/systembook:latest
     restart: unless-stopped
     env_file: .env

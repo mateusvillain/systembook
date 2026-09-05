@@ -1,6 +1,6 @@
 {
   "name": "@systembook/preview-kit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "MIT",
   "description": "Runtime de montagem dos previews do SystemBook dentro do iframe — renderiza variantes e aplica props via postMessage.",
   "keywords": [
