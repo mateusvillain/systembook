@@ -8,7 +8,7 @@ import react from '@vitejs/plugin-react';
 import { build as viteBuild, type Plugin } from 'vite';
 import { buildEntries, generateEntries } from '@systembook/connector';
 import { siteDataFiles, STATIC_DATA_DIR } from '@systembook/content';
-import type { ResolvedConfig } from '../config.js';
+import { unsafeOutDir, type ResolvedConfig } from '../config.js';
 import { META_FILE, renderHtml, routeMetas } from './html.js';
 import { prepareSite, PREVIEWS_DIR } from './prepare.js';
 
@@ -134,26 +134,4 @@ export async function buildStaticSite(config: ResolvedConfig): Promise<BuildResu
   }
 
   return { ok: true, outDir: config.outDir, routes: routes.length };
-}
-
-/**
- * O `outDir` é apagado a cada build: ele precisa ser uma pasta própria dentro
- * do projeto — nem a raiz, nem fora dela, nem a pasta de conteúdo (ou dentro
- * dela, ou contendo-a), nem `.git`/`node_modules`.
- */
-function unsafeOutDir({ root, outDir, contentDir, file }: ResolvedConfig): string | null {
-  const inside = (child: string, parent: string) => {
-    const rel = path.relative(parent, child);
-    return rel === '' || (rel !== '..' && !rel.startsWith(`..${path.sep}`) && !path.isAbsolute(rel));
-  };
-  const [first] = path.relative(root, outDir).split(path.sep);
-  const unsafe =
-    outDir === root ||
-    !inside(outDir, root) ||
-    inside(contentDir, outDir) ||
-    inside(outDir, contentDir) ||
-    first === '.git' ||
-    first === 'node_modules';
-  if (!unsafe) return null;
-  return `${file}: "outDir" (${path.relative(root, outDir) || '.'}) precisa ser uma pasta própria dentro do projeto — não a raiz, nem fora dela, nem a pasta de conteúdo, .git ou node_modules. Ele é apagado a cada build.`;
 }

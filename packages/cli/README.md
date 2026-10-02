@@ -16,6 +16,7 @@ resolvível a partir do seu código.
 | Comando | O que faz |
 |---|---|
 | `build` | Gera o site estático do modo estático em `outDir` (ver abaixo) |
+| `check` | Valida conteúdo, config e referências sem gerar o site (para PR) |
 | `previews discover` | Lista os `*.preview.tsx` encontrados e os que falharam na validação |
 | `previews generate` | Escreve as entradas sintéticas em `.systembook/entries` |
 | `previews build` | `generate` + build Vite, produzindo `.systembook/dist/` e `manifest.json` |
@@ -70,6 +71,56 @@ Vercel, no S3 e em outros hosts, configure o cabeçalho para esse caminho.
 O `outDir` é apagado a cada build; por isso ele precisa ser uma pasta própria
 dentro do projeto — não a raiz, nem a pasta de conteúdo, `.git` ou
 `node_modules`.
+
+## Validar em PR: `systembook check`
+
+Faz tudo o que o `build` valida — config, conteúdo, navegação, links entre
+páginas, imagens, logos e os pares componente/variante dos previews — sem gerar
+o site. Lista todos os erros de uma vez, com `arquivo:linha:coluna`, e termina
+com código ≠ 0 se houver qualquer um:
+
+```
+docs/components/actions/button.mdx:6:1  heading de nível 4 não é suportado — use até ###.
+docs/components/actions/button.mdx:12:1  variante "ghost" de "Button" não existe nos *.preview.tsx — variantes: primary, disabled.
+
+2 erro(s).
+```
+
+Workflow de GitHub Actions que barra o PR com conteúdo quebrado
+(`.github/workflows/systembook-check.yml`):
+
+```yaml
+name: SystemBook check
+
+# Sem filtro de `paths`: um check obrigatório filtrado fica pendente para
+# sempre nos PRs que não tocam os caminhos — e mudar um componente também pode
+# quebrar um preview que a doc usa.
+on: pull_request
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Com npm ou yarn: remova este passo e o `cache: pnpm`, e troque o
+      # install por `npm ci` / `yarn install --frozen-lockfile`.
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10 # dispensável se o package.json tiver `packageManager`
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec systembook check
+```
+
+Os `*.preview.tsx` são compilados para ler o `PreviewConfig` de cada um (é o
+que permite conferir os pares), então as dependências do repo precisam estar
+instaladas. O bundle final dos previews (Vite) só roda no `build`: um erro que
+apareça só ali — um import que o esbuild tolera e o Rollup não — passa pelo
+`check`. E uma config inválida para o comando nela: sem a config, não se sabe
+onde está o conteúdo.
 
 ## Vindo do `@systembook/connector`
 

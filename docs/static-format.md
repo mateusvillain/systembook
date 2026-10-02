@@ -329,8 +329,9 @@ Campo desconhecido é erro.
 
 ## Erros
 
-Todo erro de conteúdo traz o arquivo e a posição, e o comando lista **todos**
-de uma vez:
+Todo erro de conteúdo traz o arquivo e a posição, e o comando (`systembook
+build` ou `systembook check`, que valida sem gerar o site) lista **todos** de
+uma vez:
 
 ```
 docs/components/actions/button.mdx:14:1  <Badge> não é um componente aceito. Use <Callout>, <ComponentEmbed>, <DosDonts> ou <u>.

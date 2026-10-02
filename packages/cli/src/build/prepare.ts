@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { readFileSync, statSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import path from 'node:path';
 import type { PublicComponentPreview } from '@systembook/schema';
 import { discoverPreviews, previewEntryName, type DiscoveredPreview } from '@systembook/connector';
@@ -78,6 +79,18 @@ export async function prepareSite(config: ResolvedConfig): Promise<PreparedSite>
     previews = discovery.previews;
     for (const failure of discovery.failures) {
       problems.push(`${relative(config, failure.filePath)}  ${failure.message.split('\n').join('\n  ')}`);
+    }
+  }
+  // O build dos previews monta com o react/react-dom do projeto: sem eles, o
+  // `build` falharia — o `check` acusa antes.
+  if (previews.length) {
+    const projectRequire = createRequire(path.join(config.root, 'package.json'));
+    for (const pkg of ['react', 'react-dom']) {
+      try {
+        projectRequire.resolve(`${pkg}/package.json`);
+      } catch {
+        problems.push(`${pkg} não está instalado no projeto — os previews de componente precisam dele.`);
+      }
     }
   }
   // Com previews (habilitados e existentes), todo par referenciado precisa existir.
