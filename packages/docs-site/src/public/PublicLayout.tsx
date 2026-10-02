@@ -26,7 +26,7 @@ export function PublicLayout() {
   const tree = navQuery.data ?? [];
   const { theme, toggle } = useTheme();
   const [navOpen, setNavOpen] = useState(false);
-  // Em `/docs` a URL não nomeia menu nenhum (nenhum pill fica ativo), mas a
+  // Na raiz da doc a URL não nomeia menu nenhum (nenhum pill fica ativo), mas a
   // sidebar ainda precisa listar alguma coisa — cai no primeiro menu, que é o
   // mesmo destino que o leitor alcançaria clicando no primeiro pill.
   const activeMenu = useActiveMenu(tree);

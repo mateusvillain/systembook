@@ -2,10 +2,11 @@ import { Link, NavLink } from 'react-router-dom';
 import type { PublicNavTree } from '@systembook/schema';
 import { PublicMenuNav } from './PublicMenuNav.js';
 import { usePublicSettings } from '../content/docsQueries.js';
+import { useDocsPaths } from './docsRoutes.js';
 
 /**
  * Identidade da instância no topo da sidebar (SYS-39): logo enviado no CMS ou,
- * sem logo, o nome do design system em texto. Sempre leva para `/docs` — é a
+ * sem logo, o nome do design system em texto. Sempre leva à raiz da doc — é a
  * convenção de qualquer documentação, e a raiz não tinha nenhuma outra porta
  * depois que a marca saiu do header.
  *
@@ -16,13 +17,14 @@ import { usePublicSettings } from '../content/docsQueries.js';
  */
 function PublicBrand({ onNavigate }: { onNavigate?: () => void }) {
   const { data } = usePublicSettings();
+  const paths = useDocsPaths();
   if (!data) return null;
 
   const { nomeDesignSystem, logoUrl, logoDarkUrl } = data;
   const darkUrl = logoDarkUrl ?? logoUrl;
 
   return (
-    <Link to="/docs" className="sb-public-brand-link" onClick={onNavigate}>
+    <Link to={paths.home} className="sb-public-brand-link" onClick={onNavigate}>
       {logoUrl ? (
         <>
           <img className="sb-public-logo sb-public-logo-light" src={logoUrl} alt={nomeDesignSystem} />
@@ -59,6 +61,7 @@ export function PublicSidebar({
   onNavigate?: () => void;
 }) {
   const sections = menu?.sections ?? [];
+  const paths = useDocsPaths();
 
   if (sections.length === 0) {
     return (
@@ -94,7 +97,11 @@ export function PublicSidebar({
             {section.pages.map((page) => (
               <li key={page.id}>
                 <NavLink
-                  to={`/docs/${menu!.slug}/${section.slug}/${page.slug}`}
+                  to={paths.page({
+                    menuSlug: menu!.slug,
+                    sectionSlug: section.slug,
+                    pageSlug: page.slug,
+                  })}
                   onClick={onNavigate}
                   className={({ isActive }) =>
                     `sb-public-pagelink${isActive ? ' active' : ''}`

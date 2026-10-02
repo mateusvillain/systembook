@@ -9,6 +9,7 @@ import { useBlockAnchorIds } from './useBlockAnchorIds.js';
 import { useHashScroll } from './useHashScroll.js';
 import { LegacyDocsRedirect } from './LegacyDocsRedirect.js';
 import { usePageBySlug } from '../content/docsQueries.js';
+import { useDocsPaths } from './docsRoutes.js';
 
 /**
  * Conteúdo de uma página na doc pública (TASK-52): resolve
@@ -29,7 +30,7 @@ export function PublicPageView() {
 
   const query = usePageBySlug({ menuSlug, sectionSlug, pageSlug });
 
-  const basePath = `/docs/${menuSlug}/${sectionSlug}/${pageSlug}`;
+  const paths = useDocsPaths();
 
   // Antes dos early returns (regras de hooks). O gatilho de reescaneio é a rota
   // **mais** `dataUpdatedAt`: só a rota não bastaria, porque na primeira
@@ -95,7 +96,13 @@ export function PublicPageView() {
           snapshot={snapshot}
           activeTabId={activeTabId}
           onSelectTab={(nextTabId) =>
-            navigate(nextTabId === primaryTabId ? basePath : `${basePath}/${nextTabId}`)
+            navigate(
+              paths.page(
+                // A rota exige os três params, e aqui a página já resolveu por eles.
+                { menuSlug: menuSlug!, sectionSlug: sectionSlug!, pageSlug: pageSlug! },
+                nextTabId === primaryTabId ? null : nextTabId,
+              ),
+            )
           }
         />
         {/* Âncora "#" dentro de cada heading (SYS-34). Renderizada aqui, e não

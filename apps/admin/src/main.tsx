@@ -15,36 +15,15 @@ import { BrandSettingsPage } from './pages/BrandSettingsPage.js';
 import { PageContentPage } from './pages/PageContentPage.js';
 import { PageHistoryPage } from './pages/PageHistoryPage.js';
 import { GlobalHistoryPage } from './pages/GlobalHistoryPage.js';
-import {
-  DocsDataSourceProvider,
-  LegacyDocsRedirect,
-  PublicHome,
-  PublicLayout,
-  PublicPageById,
-  PublicPageView,
-} from '@systembook/docs-site';
+import { createDocsRoute, DocsDataSourceProvider, PublicPageById } from '@systembook/docs-site';
 import { AdminLayout } from './components/AdminLayout.js';
 import { Toaster } from './components/ui/sonner.js';
 
 const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
   // Doc pública navegável (TASK-52) — árvore de rotas separada do AdminLayout:
-  // sem auth, sem chrome de admin.
-  {
-    path: '/docs',
-    element: <PublicLayout />,
-    children: [
-      { index: true, element: <PublicHome /> },
-      // Forma canônica (SYS-37), com o menu na URL.
-      { path: ':menuSlug/:sectionSlug/:pageSlug', element: <PublicPageView /> },
-      { path: ':menuSlug/:sectionSlug/:pageSlug/:tabId', element: <PublicPageView /> },
-      // Forma legada `/docs/:sectionSlug/:pageSlug` (2 segmentos, sem
-      // ambiguidade com a canônica) → redirect. A legada COM tab tem 3
-      // segmentos e cai na rota canônica acima; o `PublicPageView` delega a
-      // este mesmo componente quando ela não resolve (ver LegacyDocsRedirect).
-      { path: ':sectionSlug/:pageSlug', element: <LegacyDocsRedirect /> },
-    ],
-  },
+  // sem auth, sem chrome de admin. Rotas e links sob `/docs` (SYS-91).
+  createDocsRoute('/docs'),
   // Link direto por id (TASK-50) — mantido para bookmarks/preview sem slug.
   { path: '/p/:pageId', element: <PublicPageById /> },
   {

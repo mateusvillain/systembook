@@ -1,9 +1,10 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { DocsNotFound } from './DocsNotFound.js';
 import { useResolvedPath } from '../content/docsQueries.js';
+import { useDocsPaths } from './docsRoutes.js';
 
 /**
- * Compatibilidade das URLs de `/docs` publicadas antes de o menu entrar no
+ * Compatibilidade das URLs da doc publicadas antes de o menu entrar no
  * path (SYS-37). Pega os segmentos crus da URL, pede a forma canônica à fonte
  * de dados (`DocsDataSource.resolvePath`, que desambigua `menu/section/page` de
  * `section/page/tab` por dado, não por heurística) e redireciona com
@@ -15,7 +16,8 @@ import { useResolvedPath } from '../content/docsQueries.js';
  */
 export function LegacyDocsRedirect() {
   const { pathname } = useLocation();
-  const segments = pathname.replace(/^\/docs\/?/, '').split('/').filter(Boolean);
+  const paths = useDocsPaths();
+  const segments = paths.segments(pathname);
 
   const query = useResolvedPath(segments);
 
@@ -24,6 +26,5 @@ export function LegacyDocsRedirect() {
   if (!query.data) return <DocsNotFound />;
 
   const { menuSlug, sectionSlug, pageSlug, tabId } = query.data;
-  const canonical = `/docs/${menuSlug}/${sectionSlug}/${pageSlug}${tabId ? `/${tabId}` : ''}`;
-  return <Navigate to={canonical} replace />;
+  return <Navigate to={paths.page({ menuSlug, sectionSlug, pageSlug }, tabId)} replace />;
 }
