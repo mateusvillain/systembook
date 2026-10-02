@@ -1,0 +1,79 @@
+{
+  "name": "@systembook/content",
+  "version": "0.2.0",
+  "license": "MIT",
+  "description": "Conteúdo do SystemBook em arquivos: parser de .md/.mdx para os blocos do CMS e o mapeamento canônico entre nós Tiptap e blocos.",
+  "keywords": [
+    "systembook",
+    "design-system",
+    "documentation",
+    "markdown",
+    "mdx"
+  ],
+  "homepage": "https://github.com/mateusvillain/systembook#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mateusvillain/systembook.git",
+    "directory": "packages/content"
+  },
+  "bugs": "https://github.com/mateusvillain/systembook/issues",
+  "type": "module",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./blocks": {
+      "types": "./src/blocks.ts",
+      "default": "./src/blocks.ts"
+    }
+  },
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx"
+  ],
+  "scripts": {
+    "prepack": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@systembook/schema": "workspace:^",
+    "@types/mdast": "^4.0.4",
+    "remark-frontmatter": "^5.0.0",
+    "remark-gfm": "^4.0.1",
+    "remark-mdx": "^3.1.1",
+    "remark-parse": "^11.0.0",
+    "unified": "^11.0.5",
+    "yaml": "^2.9.1",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5"
+  },
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./blocks": {
+        "types": "./dist/blocks.d.ts",
+        "default": "./dist/blocks.js"
+      }
+    }
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

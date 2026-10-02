@@ -65,10 +65,10 @@ function CalloutView({ node, updateAttributes, editor, extension }: NodeViewProp
  * em vez do `'block+'` original — exclui `table` (uma tabela dentro de um
  * alerta não faz sentido no design system e o `TableControls`/toolbar não têm
  * como agir dentro dele), mantendo tudo o mais que já funcionava, incluindo
- * callout/dos-donts/embed aninhados.
+ * callout/dos-donts/embed aninhados. `image` entrou com o nó de imagem (SYS-93).
  */
 const CALLOUT_CONTENT =
-  '(paragraph | heading | bulletList | orderedList | codeBlock | callout | dosDonts | componentEmbed)+';
+  '(paragraph | heading | bulletList | orderedList | codeBlock | callout | dosDonts | componentEmbed | image)+';
 
 export const Callout = Node.create<CalloutOptions>({
   name: 'callout',

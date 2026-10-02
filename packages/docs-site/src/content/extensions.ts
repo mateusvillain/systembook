@@ -6,12 +6,14 @@ import { Bold } from '@tiptap/extension-bold';
 import { Italic } from '@tiptap/extension-italic';
 import { Underline } from '@tiptap/extension-underline';
 import { Link } from '@tiptap/extension-link';
+import { Code } from '@tiptap/extension-code';
 import { BulletList, ListItem, OrderedList } from '@tiptap/extension-list';
 import { Table, TableCell, TableHeader, TableRow } from '@tiptap/extension-table';
 import { Callout, type CalloutOptions } from './nodes/Callout.js';
 import { CodeBlock, codeBlockConfig, type CodeBlockOptions } from './nodes/CodeBlock.js';
 import { ComponentEmbed, type ComponentEmbedOptions } from './nodes/ComponentEmbed.js';
 import { DosDonts, type DosDontsOptions } from './nodes/DosDonts.js';
+import { Image } from './nodes/Image.js';
 
 /**
  * Conteúdo de célula de tabela (TASK-101): enumera os blocos permitidos em vez
@@ -66,6 +68,11 @@ export function createContentExtensions(options: {
     // por engano durante a edição); no leitor público (`editable: false`) o
     // clique segue o link normalmente.
     Link.configure({ openOnClick: 'whenNotEditable', autolink: true }),
+    // Código inline (SYS-93). `excludes: ''` porque o padrão do Tiptap (`_`)
+    // exclui todos os outros marks — e doc de componente vive de
+    // `[`Button`](…)`, que é link + código. A ordem aqui (depois de Link) é a
+    // ordem dos marks no JSON, que o parser de arquivos reproduz.
+    Code.extend({ excludes: '' }),
     BulletList,
     OrderedList,
     ListItem,
@@ -77,6 +84,7 @@ export function createContentExtensions(options: {
     Callout.configure(options.callout),
     ComponentEmbed.configure(options.componentEmbed),
     DosDonts.configure(options.dosDonts),
+    Image,
   ];
 }
 

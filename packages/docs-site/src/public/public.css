@@ -988,6 +988,12 @@
   padding: 0;
 }
 
+/* Código dentro de link (`[`Button`](…)`, SYS-93): o texto segue a cor do
+   link — sem isto o `--sb-code-fg` apaga a pista de que é clicável. */
+.sb-public .sb-editor .ProseMirror a code {
+  color: inherit;
+}
+
 /* Code block no tema escuro (SYS-28): só a paleta de sintaxe muda — a estrutura
    do cartão vive em `content.css` e já lê `--sb-code-bg`/`--sb-border` por tema,
    como o callout (TASK-55). Valores conferidos ≥4.5:1 sobre `--sb-code-bg`

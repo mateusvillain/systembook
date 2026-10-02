@@ -170,3 +170,34 @@ describe('serialização doc ↔ blocks (TASK-31)', () => {
     ).toThrow(UnknownNodeTypeError);
   });
 });
+
+/**
+ * Paridade com o mapeamento canônico de `@systembook/content/blocks` (SYS-93),
+ * que a doc pública e o parser de arquivos usam. O server mantém a própria
+ * cópia porque roda compilado em produção (`pnpm deploy --legacy`) e não
+ * importa pacotes de workspace em runtime; este teste é o que impede as duas
+ * de divergirem.
+ */
+describe('paridade com @systembook/content/blocks', () => {
+  it('doc → blocos e blocos → doc iguais ao canônico, para todos os tipos', async () => {
+    const canonical = await import('@systembook/content/blocks');
+
+    const server = tiptapDocToBlocks(FULL_DOC, 'tab-1').map(({ tipo, conteudo, ordem }) => ({
+      type: tipo,
+      content: conteudo,
+      ordem,
+    }));
+    const shared = canonical.tiptapDocToBlocks(FULL_DOC);
+    expect(server).toEqual(shared);
+    expect(new Set(server.map((b) => b.type)).size).toBe(9);
+
+    const rows = server.map(({ type, content, ordem }) => ({ tipo: type, conteudo: content, ordem }));
+    expect(blocksToTiptapDoc(rows)).toEqual(canonical.blocksToTiptapDoc(shared));
+  });
+
+  it('o nó desconhecido falha nos dois', async () => {
+    const canonical = await import('@systembook/content/blocks');
+    const doc: TiptapDoc = { type: 'doc', content: [{ type: 'iframe' }] };
+    expect(() => canonical.tiptapDocToBlocks(doc)).toThrow(canonical.UnknownNodeTypeError);
+  });
+});

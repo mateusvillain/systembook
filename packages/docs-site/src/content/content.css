@@ -611,3 +611,40 @@
   outline: 2px solid var(--sb-accent, #1d4ed8);
   outline-offset: 1px;
 }
+
+/* Código inline (SYS-93). A doc pública já tinha a regra (`public.css`); esta
+   é a base para as outras superfícies (editor, diff, preview de revisões), com
+   os mesmos tokens. `pre code` (bloco) fica de fora. */
+.sb-editor .ProseMirror :not(pre) > code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.88em;
+  background: var(--sb-code-bg, #f4f5f7);
+  color: var(--sb-code-fg, inherit);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+
+/* Dentro de link, o código segue a cor do link. */
+.sb-editor .ProseMirror a > code {
+  color: inherit;
+}
+
+/* Bloco de imagem (SYS-93): a imagem ocupa no máximo a largura de leitura e a
+   legenda fica abaixo, discreta. */
+.sb-editor .ProseMirror .sb-image {
+  margin: 1.25rem 0;
+}
+
+.sb-editor .ProseMirror .sb-image-img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  border: 1px solid var(--sb-border, #dfe3e8);
+}
+
+.sb-editor .ProseMirror .sb-image-caption {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--sb-fg-muted, #57606a);
+}
