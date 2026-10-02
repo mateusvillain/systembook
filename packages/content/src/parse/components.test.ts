@@ -42,7 +42,14 @@ describe('<Callout>', () => {
 
   it('tabela direto dentro é erro (como no CMS)', () => {
     const { diagnostics } = mdx('<Callout>\n\n| a |\n| - |\n| b |\n\n</Callout>');
-    expect(diagnostics.map((d) => d.message)).toEqual(['tabela dentro de <Callout> não é suportada (como no editor do CMS).']);
+    expect(diagnostics.map((d) => d.message)).toEqual([
+      'tabela não pode ficar direto dentro de <Callout> (como no editor do CMS) — use um <DosDonts> ou tire a tabela do callout.',
+    ]);
+  });
+
+  it('tabela mais funda (numa lista do callout) é aceita, como no CMS', () => {
+    const { diagnostics } = mdx('<Callout>\n\n- item\n\n  | a |\n  | - |\n  | b |\n\n</Callout>');
+    expect(diagnostics).toEqual([]);
   });
 });
 
@@ -83,7 +90,7 @@ describe('<DosDonts>', () => {
       titulo: '',
       cover: { kind: 'image', src: './x.png', alt: 'Dois primários' },
     });
-    expect(references.images).toEqual([{ src: './x.png', line: 1, column: 1 }]);
+    expect(references.images).toEqual([{ src: './x.png', line: 1, column: 26 }]);
   });
 
   it('sem cover, aceita tabela no conteúdo', () => {
@@ -104,9 +111,14 @@ describe('props e uso inválidos viram erro com posição', () => {
     ['<ComponentEmbed component="Button" />', 'a prop "variant" é obrigatória'],
     ['<ComponentEmbed component="Button" variant="p">texto</ComponentEmbed>', 'auto-fechada'],
     ['<ComponentEmbed componet="Button" variant="p" />', '(quis dizer "component"?)'],
+    ['<ComponentEmbed component="" variant="p" />', 'a prop "component" não pode ser vazia'],
+    ['<Callout variant="info" variant="tip">x</Callout>', 'a prop "variant" aparece mais de uma vez'],
+    ['<DosDonts variant="do" coverImage="./x.png" coverAlt="">a</DosDonts>', 'a prop "coverAlt" não pode ser vazia'],
+    ['{/* comentário */}', 'nem comentários'],
+    ['<Callout>texto\nmais\n\n- lista\n</Callout>', 'quebre a linha logo depois da tag de abertura'],
     ['<DosDonts title="x">a</DosDonts>', 'a prop "variant" é obrigatória'],
-    ['<DosDonts variant="do" coverImage="./x.png">a</DosDonts>', '`coverImage` e `coverAlt` andam juntos'],
-    ['<DosDonts variant="do" coverComponent="B">a</DosDonts>', '`coverComponent` e `coverVariant` andam juntos'],
+    ['<DosDonts variant="do" coverImage="./x.png">a</DosDonts>', '"coverImage" e "coverAlt" andam juntas'],
+    ['<DosDonts variant="do" coverComponent="B">a</DosDonts>', '"coverComponent" e "coverVariant" andam juntas'],
     ['<DosDonts variant="do" coverImage="a" coverAlt="b" coverComponent="c" coverVariant="d">a</DosDonts>', 'imagem ou um componente'],
     ['<DosDonts variant="do" />', '<DosDonts> vazio'],
     ['Texto <Callout>x</Callout> no meio', '<Callout> é um bloco'],
@@ -119,6 +131,16 @@ describe('props e uso inválidos viram erro com posição', () => {
   it('o erro de prop aponta a própria prop', () => {
     const { diagnostics } = mdx('ok\n\n<Callout\n  variant="danger">x</Callout>');
     expect(diagnostics.map((d) => [d.line, d.column])).toEqual([[4, 3]]);
+  });
+
+  it('cover de imagem de um bloco recusado não vira referência', () => {
+    const { references, diagnostics } = mdx('<DosDonts variant="do" coverImage="./a.png" coverAlt="a"></DosDonts>');
+    expect(diagnostics.map((d) => d.message)).toEqual(['<DosDonts> vazio — escreva a explicação entre as tags.']);
+    expect(references.images).toEqual([]);
+  });
+
+  it('title vazio é aceito (é opcional)', () => {
+    expect(mdx('<DosDonts variant="do" title="">a</DosDonts>').diagnostics).toEqual([]);
   });
 
   it('problemas dentro de um componente com prop inválida também aparecem', () => {

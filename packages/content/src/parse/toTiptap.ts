@@ -10,7 +10,14 @@ import type {
 } from 'mdast';
 import type { TiptapNode } from '../blocks.js';
 import type { DiagnosticBag, Positioned } from '../diagnostics.js';
-import { blockComponent, isBlockComponent, type JsxElement as BlockJsx } from './components.js';
+import {
+  ACCEPTED_COMPONENTS,
+  blockComponent,
+  componentMessage,
+  isBlockComponent,
+  meaningful,
+  type JsxElement,
+} from './components.js';
 
 /**
  * mdast → nós Tiptap (SYS-93), no formato **canônico** que o editor do CMS
@@ -39,8 +46,6 @@ interface ConvertContext {
   refs: ContentReferences;
   /** Dentro de célula de tabela: só conteúdo inline. */
   inCell?: boolean;
-  /** Componente pai direto, para as regras de aninhamento do CMS. */
-  parent?: 'callout' | 'dosDonts';
 }
 
 function pointOf(node: Positioned): SourcePoint {
@@ -123,29 +128,14 @@ function mergeText(nodes: TiptapNode[]): TiptapNode[] {
 /** Nó mdast que este módulo não conhece pelo tipo (MDX, extensões). */
 type AnyNode = { type: string } & Positioned;
 
-/** Shape mínimo de um elemento JSX do remark-mdx (`<u>`, `<Callout>`…). */
-interface JsxElement {
-  name: string | null;
-  attributes: unknown[];
-  children: unknown[];
-}
-
-const ACCEPTED_COMPONENTS = '<Callout>, <ComponentEmbed>, <DosDonts> ou <u>';
-
-function componentMessage(name: string | null): string {
-  return name
-    ? `<${name}> não é um componente aceito — use ${ACCEPTED_COMPONENTS}.`
-    : `fragmento JSX (<>…</>) não é aceito — use ${ACCEPTED_COMPONENTS}.`;
-}
-
 const UNSUPPORTED_BLOCK: Record<string, string> = {
   blockquote: 'citação (`>`) não é suportada — use <Callout>.',
   thematicBreak: 'linha horizontal (`---`) não é suportada — use um heading para separar o conteúdo.',
-  html: 'HTML não é suportado — use Markdown ou os componentes <Callout>, <ComponentEmbed>, <DosDonts> e <u>.',
+  html: `HTML não é suportado — use Markdown ou os componentes ${ACCEPTED_COMPONENTS}.`,
   definition: 'definição de link não é suportada — escreva o link no próprio texto: [texto](url).',
   footnoteDefinition: 'nota de rodapé não é suportada.',
   mdxjsEsm: '`import`/`export` não são permitidos em .mdx — o conteúdo é analisado, não executado.',
-  mdxFlowExpression: 'expressões `{…}` não são permitidas em .mdx.',
+  mdxFlowExpression: 'expressões `{…}` não são permitidas em .mdx (nem comentários `{/* … */}`).',
 };
 
 const UNSUPPORTED_INLINE: Record<string, string> = {
@@ -155,7 +145,7 @@ const UNSUPPORTED_INLINE: Record<string, string> = {
   footnoteReference: 'nota de rodapé não é suportada.',
   linkReference: 'link por referência não é suportado — escreva [texto](url).',
   imageReference: 'imagem por referência não é suportada — escreva ![alt](caminho).',
-  mdxTextExpression: 'expressões `{…}` não são permitidas em .mdx.',
+  mdxTextExpression: 'expressões `{…}` não são permitidas em .mdx (nem comentários `{/* … */}`).',
 };
 
 function inline(
@@ -234,9 +224,9 @@ function inline(
 
 /** Parágrafo cujo único conteúdo (fora espaços) é uma imagem. */
 function soloImage(node: Paragraph) {
-  const meaningful = node.children.filter((c) => !(c.type === 'text' && c.value.trim() === ''));
-  const [only] = meaningful;
-  return meaningful.length === 1 && only?.type === 'image' ? only : null;
+  const children = meaningful(node.children);
+  const [only] = children;
+  return children.length === 1 && only?.type === 'image' ? only : null;
 }
 
 function heading(node: Heading, ctx: ConvertContext): TiptapNode | null {
@@ -253,18 +243,18 @@ function heading(node: Heading, ctx: ConvertContext): TiptapNode | null {
 }
 
 /** Parágrafo que é só um componente de bloco escrito numa linha (`<Callout>…</Callout>`). */
-function soloComponent(node: Paragraph): BlockJsx | null {
-  const meaningful = node.children.filter((c) => !(c.type === 'text' && c.value.trim() === ''));
-  const [only] = meaningful as unknown as BlockJsx[];
-  return meaningful.length === 1 && only?.type === 'mdxJsxTextElement' && isBlockComponent(only.name)
+function soloComponent(node: Paragraph): JsxElement | null {
+  const children = meaningful(node.children);
+  const [only] = children as unknown as JsxElement[];
+  return children.length === 1 && only?.type === 'mdxJsxTextElement' && isBlockComponent(only.name)
     ? only
     : null;
 }
 
-function component(el: BlockJsx, ctx: ConvertContext): TiptapNode | null {
+function component(el: JsxElement, ctx: ConvertContext): TiptapNode | null {
   return blockComponent(el, {
     bag: ctx.bag,
-    convertChildren: (children, parent) => blocks(children, { ...ctx, parent }),
+    convertChildren: (children) => blocks(children, ctx),
     addImage: (src, at) => ctx.refs.images.push({ src, ...pointOf(at) }),
   });
 }
@@ -361,30 +351,25 @@ function asBlocks(nodes: RootContent[]): RootContent[] {
 /** Converte uma sequência de blocos mdast em nós Tiptap. */
 export function blocks(nodes: RootContent[], ctx: ConvertContext): TiptapNode[] {
   const out: TiptapNode[] = [];
-  const { parent, ...childCtx } = ctx;
   for (const node of asBlocks(nodes)) {
     let converted: TiptapNode | null = null;
     switch (node.type) {
       case 'yaml':
         continue; // frontmatter, lido à parte
       case 'heading':
-        converted = heading(node, childCtx);
+        converted = heading(node, ctx);
         break;
       case 'paragraph':
-        converted = paragraph(node, childCtx);
+        converted = paragraph(node, ctx);
         break;
       case 'list':
-        converted = list(node, childCtx);
+        converted = list(node, ctx);
         break;
       case 'code':
-        converted = code(node, childCtx);
+        converted = code(node, ctx);
         break;
       case 'table':
-        if (parent === 'callout') {
-          ctx.bag.report(node, 'tabela dentro de <Callout> não é suportada (como no editor do CMS).');
-          break;
-        }
-        converted = table(node, childCtx);
+        converted = table(node, ctx);
         break;
       default: {
         const type = (node as AnyNode).type;
@@ -408,7 +393,7 @@ export function blocks(nodes: RootContent[], ctx: ConvertContext): TiptapNode[] 
             continue;
           }
           if (isBlockComponent(jsx.name)) {
-            converted = component(node as unknown as BlockJsx, childCtx);
+            converted = component(node as unknown as JsxElement, ctx);
             break;
           }
           ctx.bag.report(node, componentMessage(jsx.name));

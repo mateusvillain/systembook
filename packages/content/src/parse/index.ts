@@ -55,7 +55,13 @@ export function parseDocument<K extends DocumentKind>(
     // Erro de sintaxe do MDX (JSX malformado etc.) vem com a posição.
     const place = (error as { place?: { line: number; column: number } | { start: { line: number; column: number } } }).place;
     const point = place && 'start' in place ? place.start : place;
-    bag.report(point ?? { line: 1, column: 1 }, `sintaxe inválida: ${(error as Error).message.replace(/\.?$/, '.')}`);
+    const message = (error as Error).message.replace(/\.?$/, '.');
+    // Erro clássico: texto na mesma linha da tag de abertura que continua em
+    // outras linhas. O MDX só fecha na mesma linha nesse caso.
+    const hint = /closing tag/i.test(message)
+      ? ' Dica: com conteúdo de várias linhas, quebre a linha logo depois da tag de abertura (<Callout>⏎).'
+      : '';
+    bag.report(point ?? { line: 1, column: 1 }, `sintaxe inválida: ${message}${hint}`);
     return { frontmatter: null, doc: empty, references, diagnostics: bag.items };
   }
 
