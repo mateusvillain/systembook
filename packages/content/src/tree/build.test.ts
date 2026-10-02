@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { buildContentTree } from './build.js';
-import { readContentDir } from './fs.js';
+import { readContentDir } from '../node.js';
 import type { ContentFile, ContentTree } from './types.js';
 
 const page = (title: string, extra = '') => `---\ntitle: ${title}\n${extra}---\n\nCorpo de ${title}.\n`;
@@ -98,10 +98,10 @@ describe('erros de estrutura', () => {
     [{ 'solta.mdx': page('X') }, 'solta.mdx: página na raiz do conteúdo'],
     [{ 'm/solta.mdx': page('X') }, 'm/solta.mdx: página direto no menu'],
     [{ 'm/s/p/sub/x.mdx': page('X') }, 'm/s/p/sub/x.mdx: subpasta dentro da pasta de uma página'],
-    [{ 'm/s/p/tab.mdx': page('T') }, 'm/s/p: a pasta da página "p" precisa de um index.mdx'],
+    [{ 'm/s/p/tab.mdx': page('T') }, 'm/s/p/: a pasta da página "p" precisa de um index.mdx'],
     [{ 'm/s/button.mdx': page('A'), 'm/s/button/index.mdx': page('B') }, 'página com slug "button" repetido'],
     [{ 'm/s/a.mdx': page('A'), 'm/s/b.mdx': page('B', 'slug: a\n') }, 'página com slug "a" repetido'],
-    [{ 'Foundation/s/p.mdx': page('P') }, 'Foundation: nome de menu "Foundation" não é um slug válido'],
+    [{ 'Foundation/s/p.mdx': page('P') }, 'Foundation/: nome de menu "Foundation" não é um slug válido'],
     [{ 'm/Get Started/p.mdx': page('P') }, 'nome de seção "Get Started" não é um slug válido'],
     [{ 'm/s/Botão.mdx': page('P') }, 'nome de arquivo "Botão" não é um slug válido'],
     [{ 'm/s/p/index.mdx': page('P'), 'm/s/p/t.mdx': page('T', 'slug: index\n') }, '"index" é reservado ao corpo da página'],
@@ -112,9 +112,34 @@ describe('erros de estrutura', () => {
     [{ 'index.md': '', 'index.mdx': '' }, 'a landing já está em index.md'],
     [{ 'm/s/p/index.md': page('A'), 'm/s/p/index.mdx': page('B') }, 'o corpo da página já está em'],
     [{ 'm/s/p.mdx': page('P', 'subtitle: x\n').replace('title: P\n', '') }, 'm/s/p.mdx: frontmatter: "title" é obrigatório'],
+    [{ 'm/s/_menu.yml': 'title: X\n', 'm/s/p.mdx': page('P') }, 'm/s/_menu.yml: _menu.yml fora do lugar'],
+    [{ 'm/_section.yml': 'title: X\n', 'm/s/p.mdx': page('P') }, 'm/_section.yml: _section.yml fora do lugar'],
+    [{ '_menu.yml': 'title: X\n' }, '_menu.yml: _menu.yml fora do lugar'],
+    [{ 'm/s/p.MDX': page('P') }, 'm/s/p.MDX: extensão em maiúsculas — renomeie para .mdx'],
+    [{ 'm/s/index.mdx': page('P') }, 'm/s/index.mdx: index solto numa seção'],
+    [{ 'm/_menu.yml': '- a\n- b\n', 'm/s/p.mdx': page('P') }, 'm/_menu.yml: precisa ser um mapa de campos'],
+    [{ 'm/_menu.yml': 'title: 3\n', 'm/s/p.mdx': page('P') }, 'm/_menu.yml: "title" precisa ser texto.'],
   ])('%j', (entries, expected) => {
     const tree = buildContentTree(files(entries), { statusTags: ['Stable'] });
     expect(messages(tree).join('\n')).toContain(expected);
+  });
+
+  it('status sem statusTags na config é erro (padrão: nenhuma tag) e não vai para a página', () => {
+    const tree = buildContentTree(files({ 'm/s/p.mdx': page('P', 'status: Beta\n') }));
+    expect(messages(tree)).toEqual(['m/s/p.mdx: frontmatter: status "Beta" não existe — aceitas: nenhuma (defina statusTags na config).']);
+    expect(tree.menus[0]!.sections[0]!.pages[0]!.status).toBeNull();
+  });
+
+  it('erro de yml aponta a linha do campo', () => {
+    const tree = buildContentTree(files({ 'm/_menu.yml': 'title: M\norder: 1\nbogus: x\n', 'm/s/p.mdx': page('P') }));
+    expect(tree.diagnostics.map((d) => `${d.file}:${d.line}`)).toEqual(['m/_menu.yml:3']);
+  });
+
+  it('caminhos com ./, barra invertida e barras repetidas são normalizados', () => {
+    const tree = buildContentTree(files({ './m/s/a.mdx': page('A'), 'm\\s\\b.mdx': page('B'), '/m//s/c.mdx': page('C') }));
+    expect(tree.diagnostics).toEqual([]);
+    expect(outline(tree)).toEqual([{ 'm (M)': [{ 's (S)': ['a', 'b', 'c'] }] }]);
+    expect(tree.menus[0]!.sections[0]!.pages[0]!.body.file).toBe('m/s/a.mdx');
   });
 
   it('um menu ou seção sem páginas válidas some, sem erro próprio', () => {
@@ -154,10 +179,14 @@ describe('readContentDir', () => {
       await writeFile(path.join(dir, 'm/s/p/img.png'), 'x');
       await writeFile(path.join(dir, 'node_modules/x/readme.md'), 'x');
       await writeFile(path.join(dir, '.git/notes.md'), 'x');
+      await writeFile(path.join(dir, 'm/s/Q.MDX'), page('Q'));
 
       const read = await readContentDir(dir);
-      expect(read.map((f) => f.path).sort()).toEqual(['index.mdx', 'm/_menu.yml', 'm/s/p/index.mdx']);
-      expect(buildContentTree(read).menus[0]!.titulo).toBe('M');
+      expect(read.map((f) => f.path).sort()).toEqual(['index.mdx', 'm/_menu.yml', 'm/s/Q.MDX', 'm/s/p/index.mdx']);
+      const tree = buildContentTree(read);
+      expect(tree.menus[0]!.titulo).toBe('M');
+      // a extensão em maiúsculas chega à árvore e vira erro, em vez de sumir
+      expect(tree.diagnostics.map((d) => d.file)).toEqual(['m/s/Q.MDX']);
     } finally {
       await rm(dir, { recursive: true, force: true });
     }

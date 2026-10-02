@@ -1,7 +1,5 @@
-import { parse as parseYaml } from 'yaml';
-import { z } from 'zod';
 import { didYouMean, DiagnosticBag, type Diagnostic } from '../diagnostics.js';
-import type { DocumentKind } from '../frontmatter.js';
+import { folderMetaSchema, readYamlFields, SLUG_PATTERN, type DocumentKind, type FolderMeta } from '../frontmatter.js';
 import { parseDocument } from '../parse/index.js';
 import type {
   BuildTreeOptions,
@@ -20,18 +18,24 @@ import type {
  * arquivos do diretório de conteúdo (SYS-95). As regras estão em
  * `docs/static-format.md` ("Estrutura de pastas", "Slugs e URLs", "Ordenação").
  * Puro: recebe os arquivos já lidos, então é testável sem disco.
+ *
+ * Em três fases: classificar cada arquivo pelo lugar que ocupa (`classify`),
+ * ler páginas e pastas, e montar a árvore ordenada checando slugs repetidos.
  */
 
-const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const CONTENT_FILE = /\.(md|mdx)$/;
+const META_FILES = ['_menu.yml', '_section.yml'] as const;
 
-/** `_menu.yml` / `_section.yml`. */
-const metaSchema = z.strictObject({
-  title: z.string().trim().min(1, 'não pode ser vazio').optional(),
-  order: z.number().int('precisa ser um número inteiro').optional(),
-  slug: z.string().regex(SLUG, 'precisa ser um slug: minúsculas, dígitos e hífens simples').optional(),
-});
-type Meta = z.infer<typeof metaSchema>;
+// ---- utilitários puros ----
+
+/** `a\b`, `./a/b/`, `/a//b` → `a/b`. */
+function normalizePath(path: string): string {
+  return path
+    .replace(/\\/g, '/')
+    .split('/')
+    .filter((segment) => segment !== '' && segment !== '.')
+    .join('/');
+}
 
 /** "get-started" → "Get started". */
 function humanize(slug: string): string {
@@ -55,20 +59,31 @@ function splitName(name: string): { base: string; format: 'md' | 'mdx' } {
   return { base: name.slice(0, -(format.length + 1)), format };
 }
 
-/** Ignorados: qualquer segmento que comece com `_` ou `.` (exceto os `.yml` de meta). */
-function isIgnored(segments: string[]): boolean {
-  return segments.some((segment, i) => {
-    if (!segment.startsWith('_') && !segment.startsWith('.')) return false;
-    const last = i === segments.length - 1;
-    return !(last && (segment === '_menu.yml' || segment === '_section.yml'));
-  });
+function lastSegment(path: string): string {
+  return path.slice(path.lastIndexOf('/') + 1);
 }
 
+/** Ignorados: qualquer segmento que comece com `_` ou `.`, exceto os yml de meta no fim. */
+function isIgnored(segments: string[]): boolean {
+  return segments.some(
+    (segment, i) =>
+      (segment.startsWith('_') || segment.startsWith('.')) &&
+      !(i === segments.length - 1 && (META_FILES as readonly string[]).includes(segment)),
+  );
+}
+
+/** Item com o caminho de onde veio, para as mensagens de slug repetido. */
+interface Located<T> {
+  node: T;
+  origin: string;
+}
+
+// ---- fase 1: classificar ----
+
 interface Folder {
-  /** Caminho relativo (`foundation/color`). */
   path: string;
   name: string;
-  meta: Meta | null;
+  metaFile: ContentFile | null;
 }
 
 interface PageFolder {
@@ -78,159 +93,177 @@ interface PageFolder {
   tabs: ContentFile[];
 }
 
+interface Classified {
+  landing: ContentFile | null;
+  menus: Map<string, Folder>;
+  sections: Map<string, Folder>;
+  /** Seção → arquivos de página soltos. */
+  pageFiles: Map<string, ContentFile[]>;
+  /** Caminho da pasta → página com tabs. */
+  pageFolders: Map<string, PageFolder>;
+}
+
+function classify(files: readonly ContentFile[], report: (file: string, message: string) => void): Classified {
+  const out: Classified = {
+    landing: null,
+    menus: new Map(),
+    sections: new Map(),
+    pageFiles: new Map(),
+    pageFolders: new Map(),
+  };
+  const folder = (map: Map<string, Folder>, path: string) => {
+    if (!map.has(path)) map.set(path, { path, name: lastSegment(path), metaFile: null });
+    return map.get(path)!;
+  };
+  const metaHere = { 2: '_menu.yml', 3: '_section.yml' } as const;
+
+  const normalized = files
+    .map((file) => ({ ...file, path: normalizePath(file.path) }))
+    .sort((a, b) => a.path.localeCompare(b.path));
+
+  for (const file of normalized) {
+    const segments = file.path.split('/');
+    if (isIgnored(segments)) continue;
+    const name = segments[segments.length - 1]!;
+    const depth = segments.length;
+
+    // Meta no lugar errado não pode sumir em silêncio.
+    if ((META_FILES as readonly string[]).includes(name)) {
+      if (metaHere[depth as 2 | 3] !== name) {
+        const where = name === '_menu.yml' ? 'na pasta do menu (menu/_menu.yml)' : 'na pasta da seção (menu/seção/_section.yml)';
+        report(file.path, `${name} fora do lugar — ele fica ${where}.`);
+        continue;
+      }
+      folder(depth === 2 ? out.menus : out.sections, segments.slice(0, -1).join('/')).metaFile = file;
+      if (depth === 3) folder(out.menus, segments[0]!);
+      continue;
+    }
+
+    if (!CONTENT_FILE.test(name)) {
+      if (/\.(md|mdx)$/i.test(name)) {
+        report(file.path, `extensão em maiúsculas — renomeie para .${name.split('.').pop()!.toLowerCase()}.`);
+      }
+      continue; // imagens e outros arquivos ficam no disco
+    }
+
+    const base = splitName(name).base;
+    switch (depth) {
+      case 1:
+        if (base !== 'index') {
+          report(file.path, 'página na raiz do conteúdo — toda página precisa de um menu e uma seção (menu/seção/página.mdx).');
+        } else if (out.landing) {
+          report(file.path, `a landing já está em ${out.landing.path} — deixe só um index.`);
+        } else out.landing = file;
+        break;
+      case 2:
+        report(file.path, 'página direto no menu — coloque-a numa seção (menu/seção/página.mdx).');
+        break;
+      case 3: {
+        if (base === 'index') {
+          report(file.path, 'index solto numa seção — o index é o corpo de uma página, dentro da pasta dela (menu/seção/página/index.mdx).');
+          break;
+        }
+        folder(out.menus, segments[0]!);
+        const section = folder(out.sections, segments.slice(0, 2).join('/'));
+        out.pageFiles.set(section.path, [...(out.pageFiles.get(section.path) ?? []), file]);
+        break;
+      }
+      case 4: {
+        folder(out.menus, segments[0]!);
+        folder(out.sections, segments.slice(0, 2).join('/'));
+        const path = segments.slice(0, 3).join('/');
+        const page = out.pageFolders.get(path) ?? { path, name: segments[2]!, index: null, tabs: [] };
+        if (base !== 'index') page.tabs.push(file);
+        else if (page.index) report(file.path, `o corpo da página já está em ${page.index.path} — deixe só um index.`);
+        else page.index = file;
+        out.pageFolders.set(path, page);
+        break;
+      }
+      default:
+        report(file.path, 'subpasta dentro da pasta de uma página não é permitida — tabs ficam direto na pasta da página.');
+    }
+  }
+  return out;
+}
+
+// ---- fases 2 e 3: ler e montar ----
+
 export function buildContentTree(files: readonly ContentFile[], options: BuildTreeOptions = {}): ContentTree {
   const diagnostics: Diagnostic[] = [];
-  const structural = (file: string, message: string) =>
-    diagnostics.push({ file, line: 1, column: 1, message });
+  const report = (file: string, message: string) => diagnostics.push({ file, line: 1, column: 1, message });
+  const statusTags = options.statusTags ?? [];
 
-  /** Lê e valida um arquivo de conteúdo; devolve o frontmatter (ou null) e o documento. */
+  const classified = classify(files, report);
+
   function read<K extends DocumentKind>(file: ContentFile, kind: K) {
-    const { format } = splitName(file.path);
-    const parsed = parseDocument(file.source, { file: file.path, format, kind });
+    const parsed = parseDocument(file.source, { file: file.path, format: splitName(file.path).format, kind });
     diagnostics.push(...parsed.diagnostics);
     const document: ContentDocument = { file: file.path, doc: parsed.doc, references: parsed.references };
     return { frontmatter: parsed.frontmatter, document };
   }
 
-  function readMeta(file: ContentFile): Meta | null {
+  function readMeta(file: ContentFile | null): FolderMeta | null {
+    if (!file) return null;
     const bag = new DiagnosticBag(file.path);
-    let data: unknown;
-    try {
-      data = parseYaml(file.source) ?? {};
-    } catch (error) {
-      bag.report({ line: 1, column: 1 }, `YAML inválido — ${(error as Error).message.split('\n')[0]!.replace(/\.?$/, '.')}`);
-      diagnostics.push(...bag.items);
-      return null;
-    }
-    const result = metaSchema.safeParse(data);
-    if (result.success) return result.data;
-    const known = Object.keys(metaSchema.shape);
-    for (const issue of result.error.issues) {
-      if (issue.code === 'unrecognized_keys') {
-        for (const key of issue.keys) bag.report({ line: 1, column: 1 }, `"${key}" não é um campo aceito${didYouMean(key, known)} — use title, order ou slug.`);
-      } else {
-        bag.report({ line: 1, column: 1 }, `"${issue.path.join('.')}" ${issue.message}.`);
-      }
-    }
+    const meta = readYamlFields(file.source, {
+      schema: folderMetaSchema,
+      firstLine: 1,
+      at: { line: 1, column: 1 },
+      prefix: '',
+      bag,
+    });
     diagnostics.push(...bag.items);
+    return meta;
+  }
+
+  /** Slug de arquivo (página ou tab): frontmatter > nome do arquivo, validado. */
+  function fileSlug(file: ContentFile, override: string | undefined): string | null {
+    const slug = override ?? splitName(lastSegment(file.path)).base;
+    if (SLUG_PATTERN.test(slug)) return slug;
+    report(file.path, `nome de arquivo "${slug}" não é um slug válido — renomeie (minúsculas, dígitos e hífens) ou defina "slug" no frontmatter.`);
     return null;
   }
 
-  // ---- 1. Classifica os arquivos por profundidade ----
-  let landingFile: ContentFile | null = null;
-  const menus = new Map<string, Folder>();
-  const sections = new Map<string, Folder>();
-  const pageFiles = new Map<string, ContentFile[]>(); // seção → arquivos de página soltos
-  const pageFolders = new Map<string, PageFolder>(); // caminho da pasta → página com tabs
-
-  const ensureMenu = (name: string) => {
-    if (!menus.has(name)) menus.set(name, { path: name, name, meta: null });
-    return menus.get(name)!;
-  };
-  const ensureSection = (menu: string, name: string) => {
-    ensureMenu(menu);
-    const path = `${menu}/${name}`;
-    if (!sections.has(path)) sections.set(path, { path, name, meta: null });
-    return sections.get(path)!;
-  };
-
-  for (const file of [...files].sort((a, b) => a.path.localeCompare(b.path))) {
-    const segments = file.path.split('/').filter(Boolean);
-    if (isIgnored(segments)) continue;
-    const name = segments[segments.length - 1]!;
-    const isContent = CONTENT_FILE.test(name);
-
-    switch (segments.length) {
-      case 1:
-        if (!isContent) continue;
-        if (splitName(name).base === 'index') {
-          if (landingFile) structural(file.path, `a landing já está em ${landingFile.path} — deixe só um index.`);
-          else landingFile = file;
-        } else {
-          structural(file.path, 'página na raiz do conteúdo — toda página precisa de um menu e uma seção (menu/seção/página.mdx).');
-        }
-        continue;
-      case 2:
-        if (name === '_menu.yml') ensureMenu(segments[0]!).meta = readMeta(file);
-        else if (isContent) structural(file.path, 'página direto no menu — coloque-a numa seção (menu/seção/página.mdx).');
-        continue;
-      case 3: {
-        const section = ensureSection(segments[0]!, segments[1]!);
-        if (name === '_section.yml') section.meta = readMeta(file);
-        else if (isContent) {
-          const list = pageFiles.get(section.path) ?? [];
-          list.push(file);
-          pageFiles.set(section.path, list);
-        }
-        continue;
-      }
-      case 4: {
-        if (!isContent) continue;
-        ensureSection(segments[0]!, segments[1]!);
-        const path = segments.slice(0, 3).join('/');
-        const folder = pageFolders.get(path) ?? { path, name: segments[2]!, index: null, tabs: [] };
-        if (splitName(name).base === 'index') {
-          if (folder.index) structural(file.path, `o corpo da página já está em ${folder.index.path} — deixe só um index.`);
-          else folder.index = file;
-        } else folder.tabs.push(file);
-        pageFolders.set(path, folder);
-        continue;
-      }
-      default:
-        if (isContent) {
-          structural(file.path, 'subpasta dentro da pasta de uma página não é permitida — tabs ficam direto na pasta da página.');
-        }
-    }
+  /** Slug de pasta (menu, seção): yml > nome da pasta, validado. */
+  function folderSlug(folder: Folder, meta: FolderMeta | null, kind: 'menu' | 'seção'): string | null {
+    const slug = meta?.slug ?? folder.name;
+    if (SLUG_PATTERN.test(slug)) return slug;
+    const metaFile = `${folder.path}/${kind === 'menu' ? '_menu.yml' : '_section.yml'}`;
+    report(`${folder.path}/`, `nome de ${kind} "${folder.name}" não é um slug válido — renomeie a pasta (minúsculas, dígitos e hífens) ou defina "slug" em ${metaFile}.`);
+    return null;
   }
-
-  // ---- 2. Slugs de pasta (menu, seção) ----
-  function folderSlug(folder: Folder, kind: 'menu' | 'seção', metaFile: string): string | null {
-    const slug = folder.meta?.slug ?? folder.name;
-    if (!SLUG.test(slug)) {
-      structural(
-        folder.path,
-        `nome de ${kind} "${folder.name}" não é um slug válido — renomeie a pasta (minúsculas, dígitos e hífens) ou defina "slug" em ${metaFile}.`,
-      );
-      return null;
-    }
-    return slug;
-  }
-
-  function checkDuplicates<T extends { slug: string }>(items: T[], where: (item: T) => string, what: string): T[] {
-    const seen = new Map<string, T>();
-    return items.filter((item) => {
-      const first = seen.get(item.slug);
-      if (first) {
-        structural(where(item), `${what} com slug "${item.slug}" repetido (já existe em ${where(first)}).`);
-        return false;
-      }
-      seen.set(item.slug, item);
-      return true;
-    });
-  }
-
-  // ---- 3. Páginas ----
-  const statusTags = options.statusTags;
-  const pageOrigins = new WeakMap<PageNode, string>();
 
   function validStatus(status: string | undefined, file: string): string | null {
     if (status === undefined) return null;
-    if (statusTags && !statusTags.includes(status)) {
-      const accepted = statusTags.length ? statusTags.map((t) => `"${t}"`).join(', ') : 'nenhuma (defina statusTags na config)';
-      structural(file, `frontmatter: status "${status}" não existe${didYouMean(status, statusTags)} — aceitas: ${accepted}.`);
-    }
-    return status;
+    if (statusTags.includes(status)) return status;
+    const accepted = statusTags.length ? statusTags.map((t) => `"${t}"`).join(', ') : 'nenhuma (defina statusTags na config)';
+    report(file, `frontmatter: status "${status}" não existe${didYouMean(status, statusTags)} — aceitas: ${accepted}.`);
+    return null;
+  }
+
+  /** Descarta (com erro) os itens cujo slug já apareceu no mesmo nível. */
+  function unique<T extends { slug: string; order: number | undefined }>(items: Located<T>[], what: string): T[] {
+    const seen = new Map<string, string>();
+    return items
+      .sort((a, b) => byOrder(a.node, b.node))
+      .filter(({ node, origin }) => {
+        const first = seen.get(node.slug);
+        if (first) {
+          report(origin, `${what} com slug "${node.slug}" repetido (já existe em ${first}).`);
+          return false;
+        }
+        seen.set(node.slug, origin);
+        return true;
+      })
+      .map(({ node }) => node);
   }
 
   function pageFromFile(file: ContentFile): PageNode | null {
     const { frontmatter, document } = read(file, 'page');
     if (!frontmatter) return null;
-    const slug = frontmatter.slug ?? splitName(file.path.split('/').pop()!).base;
-    if (!SLUG.test(slug)) {
-      structural(file.path, `nome de arquivo "${slug}" não é um slug válido — renomeie (minúsculas, dígitos e hífens) ou defina "slug" no frontmatter.`);
-      return null;
-    }
-    const page: PageNode = {
+    const slug = fileSlug(file, frontmatter.slug);
+    if (!slug) return null;
+    return {
       slug,
       titulo: frontmatter.title,
       subtitulo: frontmatter.subtitle ?? null,
@@ -239,91 +272,97 @@ export function buildContentTree(files: readonly ContentFile[], options: BuildTr
       body: document,
       tabs: [],
     };
-    pageOrigins.set(page, file.path);
-    return page;
   }
 
   function pageFromFolder(folder: PageFolder): PageNode | null {
-    if (!folder.index) {
-      structural(folder.path, `a pasta da página "${folder.name}" precisa de um index.mdx (o corpo da página).`);
-      for (const tab of folder.tabs) read(tab, 'tab'); // ainda reporta problemas das tabs
-      return null;
-    }
-    const page = pageFromFile(folder.index);
-    const tabs: TabNode[] = [];
+    const tabs: Located<TabNode>[] = [];
     for (const file of folder.tabs) {
       const { frontmatter, document } = read(file, 'tab');
       if (!frontmatter) continue;
-      const slug = frontmatter.slug ?? splitName(file.path.split('/').pop()!).base;
-      if (!SLUG.test(slug)) {
-        structural(file.path, `nome de arquivo "${slug}" não é um slug válido — renomeie (minúsculas, dígitos e hífens) ou defina "slug" no frontmatter.`);
-        continue;
-      }
+      const slug = fileSlug(file, frontmatter.slug);
+      if (!slug) continue;
       if (slug === 'index') {
-        structural(file.path, '"index" é reservado ao corpo da página — escolha outro slug para a tab.');
+        report(file.path, '"index" é reservado ao corpo da página — escolha outro slug para a tab.');
         continue;
       }
-      tabs.push({ ...document, slug, titulo: frontmatter.title, order: frontmatter.order });
+      tabs.push({ node: { ...document, slug, titulo: frontmatter.title, order: frontmatter.order }, origin: file.path });
     }
-    if (!page) return null;
-    // O slug da pasta manda, a menos que o index o sobrescreva.
-    const indexSlug = page.slug === 'index' ? folder.name : page.slug;
-    if (!SLUG.test(indexSlug)) {
-      structural(folder.path, `nome de pasta "${folder.name}" não é um slug válido — renomeie ou defina "slug" no frontmatter do index.`);
+    if (!folder.index) {
+      report(`${folder.path}/`, `a pasta da página "${folder.name}" precisa de um index.mdx (o corpo da página).`);
       return null;
     }
-    page.slug = indexSlug;
-    pageOrigins.set(page, folder.path);
-    page.tabs = checkDuplicates(tabs.sort(byOrder), (t) => t.file, 'tab');
-    return page;
+
+    const { frontmatter, document } = read(folder.index, 'page');
+    if (!frontmatter) return null;
+    // O slug é o da pasta, a menos que o index o sobrescreva.
+    const slug = frontmatter.slug ?? folder.name;
+    if (!SLUG_PATTERN.test(slug)) {
+      report(`${folder.path}/`, `nome de pasta "${folder.name}" não é um slug válido — renomeie ou defina "slug" no frontmatter do index.`);
+      return null;
+    }
+    return {
+      slug,
+      titulo: frontmatter.title,
+      subtitulo: frontmatter.subtitle ?? null,
+      status: validStatus(frontmatter.status, folder.index.path),
+      order: frontmatter.order,
+      body: document,
+      tabs: unique(tabs, 'tab'),
+    };
   }
 
-  // ---- 4. Monta seções e menus ----
-  const menuNodes: MenuNode[] = [];
-  const menuOrigins = new WeakMap<MenuNode, string>();
-  for (const menu of menus.values()) {
-    const menuSlug = folderSlug(menu, 'menu', `${menu.path}/_menu.yml`);
-    const sectionNodes: SectionNode[] = [];
-    const sectionOrigins = new WeakMap<SectionNode, string>();
+  const menus: Located<MenuNode>[] = [];
+  for (const menu of classified.menus.values()) {
+    const menuMeta = readMeta(menu.metaFile);
+    const menuSlug = folderSlug(menu, menuMeta, 'menu');
+    const sections: Located<SectionNode>[] = [];
 
-    for (const section of [...sections.values()].filter((s) => s.path.startsWith(`${menu.path}/`))) {
-      const sectionSlug = folderSlug(section, 'seção', `${section.path}/_section.yml`);
-      const pages = [
-        ...(pageFiles.get(section.path) ?? []).map(pageFromFile),
-        ...[...pageFolders.values()].filter((f) => f.path.startsWith(`${section.path}/`)).map(pageFromFolder),
-      ].filter((p): p is PageNode => p !== null);
+    for (const section of classified.sections.values()) {
+      if (!section.path.startsWith(`${menu.path}/`)) continue;
+      const sectionMeta = readMeta(section.metaFile);
+      const sectionSlug = folderSlug(section, sectionMeta, 'seção');
+
+      const pages: Located<PageNode>[] = [];
+      for (const file of classified.pageFiles.get(section.path) ?? []) {
+        const node = pageFromFile(file);
+        if (node) pages.push({ node, origin: file.path });
+      }
+      for (const folder of classified.pageFolders.values()) {
+        if (!folder.path.startsWith(`${section.path}/`)) continue;
+        const node = pageFromFolder(folder);
+        if (node) pages.push({ node, origin: `${folder.path}/` });
+      }
+
+      // Seção sem páginas válidas some (os erros das páginas já foram relatados).
       if (!sectionSlug || !pages.length) continue;
-      const node: SectionNode = {
-        slug: sectionSlug,
-        titulo: section.meta?.title ?? humanize(sectionSlug),
-        order: section.meta?.order,
-        pages: checkDuplicates(pages.sort(byOrder), (p) => pageOrigins.get(p)!, 'página'),
-      };
-      sectionOrigins.set(node, section.path);
-      sectionNodes.push(node);
+      sections.push({
+        node: {
+          slug: sectionSlug,
+          titulo: sectionMeta?.title ?? humanize(sectionSlug),
+          order: sectionMeta?.order,
+          pages: unique(pages, 'página'),
+        },
+        origin: `${section.path}/`,
+      });
     }
 
-    if (!menuSlug || !sectionNodes.length) continue;
-    const node: MenuNode = {
-      slug: menuSlug,
-      titulo: menu.meta?.title ?? humanize(menuSlug),
-      order: menu.meta?.order,
-      sections: checkDuplicates(sectionNodes.sort(byOrder), (s) => sectionOrigins.get(s)!, 'seção'),
-    };
-    menuOrigins.set(node, menu.path);
-    menuNodes.push(node);
+    if (!menuSlug || !sections.length) continue;
+    menus.push({
+      node: {
+        slug: menuSlug,
+        titulo: menuMeta?.title ?? humanize(menuSlug),
+        order: menuMeta?.order,
+        sections: unique(sections, 'seção'),
+      },
+      origin: `${menu.path}/`,
+    });
   }
 
-  // ---- 5. Landing ----
   let landing: LandingNode | null = null;
-  if (landingFile) {
-    const { frontmatter, document } = read(landingFile, 'landing');
+  if (classified.landing) {
+    const { frontmatter, document } = read(classified.landing, 'landing');
     landing = { ...document, titulo: frontmatter?.title ?? null };
   }
 
-  return {
-    landing,
-    menus: checkDuplicates(menuNodes.sort(byOrder), (m) => menuOrigins.get(m)!, 'menu'),
-    diagnostics,
-  };
+  return { landing, menus: unique(menus, 'menu'), diagnostics };
 }
