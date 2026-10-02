@@ -31,3 +31,6 @@ data/
 
 # Tarballs gerados por `pnpm pack` antes de publicar no npm
 .publish/
+
+# PRD, backlog e memória do agente — vivem só localmente (PRDs novos ficam no Linear)
+.prd/
