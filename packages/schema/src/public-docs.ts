@@ -6,9 +6,8 @@ import type { PageSnapshot } from './block.js';
  * A doc pública não sabe de onde vem o conteúdo: no modo CMS ele sai do
  * servidor (tRPC); no modo estático, de JSONs gerados no build. As duas fontes
  * implementam `DocsDataSource`, e os componentes públicos só conversam com
- * ela. Os tipos abaixo espelham o que as procedures públicas do server já
- * devolvem — o adaptador tRPC do admin é quem garante (pelo typecheck) que os
- * dois lados continuam batendo.
+ * ela. As procedures públicas do server declaram estes tipos como retorno, então
+ * o typecheck quebra se o servidor e o contrato divergirem.
  */
 
 /** Página publicada na árvore de navegação. */
@@ -101,9 +100,10 @@ export interface DocsDataSource {
   /** Última revisão publicada de uma página pelo id (rota `/p/:pageId`). */
   getPageById(pageId: string): Promise<PageSnapshot | null>;
   /**
-   * Resolve segmentos crus de um path anterior à entrada do menu na URL
-   * (`section/page`, `section/page/tab`) para a forma canônica, ou `null`
-   * quando nada casa (404).
+   * Resolve os segmentos crus de um path de `/docs` (2 a 4) para a forma
+   * canônica — cobre as URLs anteriores à entrada do menu no path
+   * (`section/page`, `section/page/tab`). `null` quando nada casa (404),
+   * inclusive para qualquer outra quantidade de segmentos.
    */
   resolvePath(segments: string[]): Promise<ResolvedPublicPath | null>;
   /** Busca no conteúdo publicado. `q` nunca é vazio. */

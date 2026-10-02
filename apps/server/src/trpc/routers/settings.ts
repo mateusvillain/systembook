@@ -1,6 +1,7 @@
 import { TRPCError } from '@trpc/server';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import type { PublicSettings } from '@systembook/schema';
 import {
   ALLOWED_LOGO_MIMES,
   getSettings,
@@ -48,7 +49,7 @@ function contentMatchesMime(bytes: Buffer, mime: string): boolean {
 export const settingsRouter = router({
   // Leitura pública: só o que a doc precisa, nunca os bytes do logo (que vêm
   // pela URL própria, cacheável, em vez de inflar todo payload de navegação).
-  getPublic: publicProcedure.query(({ ctx }) => {
+  getPublic: publicProcedure.query(({ ctx }): PublicSettings => {
     const row = getSettings(ctx.db);
     return {
       nomeDesignSystem: row.nomeDesignSystem,
