@@ -3,7 +3,7 @@
 Contratos de tipo compartilhados do [SystemBook](https://github.com/mateusvillain/systembook).
 
 Pacote **types-only**: não tem runtime próprio. Existe para que o `*.preview.tsx`
-que você escreve, o [`@systembook/connector`](https://www.npmjs.com/package/@systembook/connector)
+que você escreve, o [`@systembook/cli`](https://www.npmjs.com/package/@systembook/cli)
 que o builda e o painel admin que o renderiza concordem sobre a mesma forma.
 
 ```bash

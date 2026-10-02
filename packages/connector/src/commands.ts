@@ -1,7 +1,7 @@
 import path from 'node:path';
 import type { Command } from 'commander';
 import { buildEntries } from './build.js';
-import { discoverPreviews } from './discover.js';
+import { discoverPreviews, type DiscoveryFailure } from './discover.js';
 import { generateEntries } from './generate.js';
 
 /**
@@ -24,10 +24,7 @@ export function registerPreviewCommands(program: Command): Command {
           `✓ ${rel} — ${preview.config.component} (${preview.config.variants.length} variante(s), ${preview.config.controls.length} controle(s))`,
         );
       }
-      for (const failure of failures) {
-        const rel = path.relative(root, failure.filePath);
-        console.error(`✗ ${rel}\n  ${failure.message.split('\n').join('\n  ')}`);
-      }
+      printFailures(root, failures);
 
       console.log(
         `\n${previews.length + failures.length} arquivo(s) *.preview.tsx encontrado(s): ${previews.length} válido(s), ${failures.length} com erro.`,
@@ -46,10 +43,7 @@ export function registerPreviewCommands(program: Command): Command {
       const root = path.resolve(options.root);
       const { previews, failures } = await discoverPreviews({ root });
 
-      for (const failure of failures) {
-        const rel = path.relative(root, failure.filePath);
-        console.error(`✗ ${rel}\n  ${failure.message.split('\n').join('\n  ')}`);
-      }
+      printFailures(root, failures);
 
       const entries = await generateEntries(previews, { root, outDir: options.outDir });
       for (const entry of entries) {
@@ -74,10 +68,7 @@ export function registerPreviewCommands(program: Command): Command {
       const root = path.resolve(options.root);
       const { previews, failures } = await discoverPreviews({ root });
 
-      for (const failure of failures) {
-        const rel = path.relative(root, failure.filePath);
-        console.error(`✗ ${rel}\n  ${failure.message.split('\n').join('\n  ')}`);
-      }
+      printFailures(root, failures);
 
       const entries = await generateEntries(previews, { root });
       const { outDir } = await buildEntries(entries, { root, outDir: options.out });
@@ -92,4 +83,11 @@ export function registerPreviewCommands(program: Command): Command {
     });
 
   return program;
+}
+
+function printFailures(root: string, failures: DiscoveryFailure[]): void {
+  for (const failure of failures) {
+    const rel = path.relative(root, failure.filePath);
+    console.error(`✗ ${rel}\n  ${failure.message.split('\n').join('\n  ')}`);
+  }
 }

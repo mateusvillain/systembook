@@ -2,8 +2,8 @@
 
 Este documento é a referência do arquivo `*.preview.tsx` — o arquivo que o **time
 consumidor** escreve no próprio repositório para expor um componente ao live
-preview do SystemBook. O `@systembook/connector` descobre esses arquivos, builda
-cada variante no CI do time e envia o artefato estático para a instância; o
+preview do SystemBook. O `systembook previews` (do `@systembook/cli`) descobre
+esses arquivos, builda cada variante no CI do time e envia o artefato estático para a instância; o
 `component-embed` da doc então renderiza esse artefato num iframe real e
 interativo.
 
@@ -133,7 +133,7 @@ Neste exemplo:
 
 ## Convenção de descoberta e nomeação
 
-O connector (`@systembook/connector discover`, TASK-39) usa estas regras:
+A descoberta (`systembook previews discover`, TASK-39) usa estas regras:
 
 - **Padrão de arquivo**: qualquer arquivo cujo nome termine em **`.preview.tsx`**,
   em qualquer profundidade dentro da raiz passada (`--root`). O prefixo é livre —

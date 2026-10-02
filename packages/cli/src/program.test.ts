@@ -2,7 +2,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Command } from 'commander';
 import { registerPreviewCommands } from '@systembook/connector';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createProgram } from './program.js';
 
 const fixture = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../connector/fixtures/sample-repo');
@@ -19,8 +19,6 @@ async function run(program: Command, argv: string[]) {
   vi.restoreAllMocks();
   return { out: out.join('\n'), exitCode };
 }
-
-afterEach(() => vi.restoreAllMocks());
 
 describe('systembook', () => {
   it('expõe os comandos do connector sob `previews`', () => {

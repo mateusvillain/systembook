@@ -4,8 +4,9 @@ Runtime de montagem dos previews do [SystemBook](https://github.com/mateusvillai
 
 Roda **dentro do iframe** de preview: monta a variante pedida e reage às
 mudanças de props que o painel envia por `postMessage`. Na prática você não o
-chama à mão — o [`@systembook/connector`](https://www.npmjs.com/package/@systembook/connector)
-gera as entradas que o importam. Ele é uma dependência direta do connector; você
+chama à mão — o `systembook previews` do [`@systembook/cli`](https://www.npmjs.com/package/@systembook/cli)
+gera as entradas que o importam. Ele é uma dependência direta do connector, a
+biblioteca por trás do CLI; você
 só o instala sozinho se estiver montando o harness por conta própria.
 
 ```ts

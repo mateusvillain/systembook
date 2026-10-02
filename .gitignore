@@ -26,7 +26,7 @@ data/
 # Store do pnpm criado pelo container de dev
 .pnpm-store/
 
-# Entradas sintéticas geradas pelo connector (systembook-connector generate)
+# Entradas sintéticas e artefato dos previews (systembook previews generate/build)
 .systembook/
 
 # Tarballs gerados por `pnpm pack` antes de publicar no npm

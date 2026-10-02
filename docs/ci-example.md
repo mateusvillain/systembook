@@ -3,9 +3,9 @@
 Este guia mostra como o repositório do seu design system publica previews de
 componentes na sua instância SystemBook a cada push. O fluxo tem três partes:
 
-1. **Build** — o `systembook previews` (do `@systembook/cli`) descobre os arquivos `*.preview.tsx`
-   do repo, gera um entrypoint por variante e builda tudo com Vite num
-   artefato estático em `.systembook/dist/`.
+1. **Build** — o `systembook previews` (do `@systembook/cli`) descobre os
+   arquivos `*.preview.tsx` do repo, gera um entrypoint por variante e builda
+   tudo com Vite num artefato estático em `.systembook/dist/`.
 2. **Upload** — para cada variante, o job envia um `tar.gz` autenticado para
    `POST /api/previews` da instância, com `component_name`, `variant_id` e
    `commit_sha`.

@@ -107,9 +107,9 @@ Detalhes adicionais de arquitetura e gotchas do repositório estão no
 `pnpm build` existe só para emitir os `.d.ts` do pacote publicado — dentro do
 monorepo os consumidores leem o fonte direto. Ele define tipos compartilhados
 por **todo o monorepo**: o `apps/server`, o `apps/admin` e — importante — os
-pacotes `@systembook/cli`, `@systembook/connector` e `@systembook/preview-kit`, empacotados para o
-npm sob o escopo `@systembook`, de modo que uma mudança de tipo aqui sai para
-fora do repositório.
+pacotes `@systembook/cli`, `@systembook/connector` e
+`@systembook/preview-kit`, empacotados para o npm sob o escopo `@systembook`,
+de modo que uma mudança de tipo aqui sai para fora do repositório.
 
 Por isso, ao propor mudanças em `packages/schema`:
 
