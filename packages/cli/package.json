@@ -2,7 +2,7 @@
   "name": "@systembook/cli",
   "version": "0.2.0",
   "license": "MIT",
-  "description": "CLI do SystemBook: previews de componentes (os dois modos) e, no modo estático, a doc gerada a partir de arquivos .md/.mdx.",
+  "description": "CLI do SystemBook: previews de componentes (os dois modos) e o build do site estático a partir de arquivos .md/.mdx.",
   "keywords": [
     "systembook",
     "design-system",
@@ -28,23 +28,37 @@
   "files": [
     "dist",
     "src",
+    "app",
     "!src/**/*.test.ts",
     "!src/**/*.test.tsx"
   ],
   "scripts": {
     "prepack": "tsc -p tsconfig.build.json",
     "build": "tsc -p tsconfig.build.json",
-    "lint": "eslint src",
-    "typecheck": "tsc --noEmit",
+    "lint": "eslint src app",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p app",
     "test": "vitest run",
     "cli": "tsx src/cli.ts"
   },
   "dependencies": {
     "@systembook/connector": "workspace:^",
-    "commander": "^14.0.0"
+    "@systembook/content": "workspace:^",
+    "@systembook/docs-site": "workspace:^",
+    "@tanstack/react-query": "^5.101.2",
+    "@vitejs/plugin-react": "^4.7.0",
+    "commander": "^14.0.0",
+    "esbuild": "^0.25.0",
+    "react-router-dom": "^7.18.1",
+    "vite": "^6.4.3",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@systembook/schema": "workspace:^",
     "@types/node": "^22.13.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3",
     "vitest": "^3.0.5"

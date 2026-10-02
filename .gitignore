@@ -34,3 +34,9 @@ data/
 
 # PRD, backlog e memória do agente — vivem só localmente (PRDs novos ficam no Linear)
 .prd/
+
+# Saída padrão do systembook build (modo estático)
+systembook-dist/
+
+# Projetos temporários dos testes do CLI
+packages/cli/.tmp/
