@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import type { PublicNavTree } from './PublicSidebar.js';
+import type { PublicNavTree } from '@systembook/schema';
 
 type PublicMenu = PublicNavTree[number];
 
