@@ -5,6 +5,7 @@ import type { PublicNavTree } from '@systembook/schema';
 import { PublicSidebar } from './PublicSidebar.js';
 import { PublicMenuNav, useActiveMenu } from './PublicMenuNav.js';
 import { SearchBox } from './SearchBox.js';
+import { useInternalLinks } from './useInternalLinks.js';
 import { useTheme } from './useTheme.js';
 import { useNavTree } from '../content/docsQueries.js';
 import './public.css';
@@ -44,6 +45,7 @@ export function PublicLayout() {
   }, [navOpen]);
 
   const context: PublicOutletContext = { tree, isLoading: navQuery.isLoading };
+  const onContentClick = useInternalLinks();
 
   return (
     // `dark` (classe do shadcn, independente do `--sb-*` de `.sb-public`): sem
@@ -95,7 +97,7 @@ export function PublicLayout() {
       </header>
       {/* `main` é o cartão branco *e* o container de scroll da documentação; o
           wrapper interno carrega padding e largura de leitura. */}
-      <main className="sb-public-content">
+      <main className="sb-public-content" onClickCapture={onContentClick}>
         <div className="sb-public-content-inner">
           <Outlet context={context} />
         </div>
