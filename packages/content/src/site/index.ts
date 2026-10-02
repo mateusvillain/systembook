@@ -4,4 +4,4 @@
  * `staticDataSource` da doc pública importa.
  */
 export { pageKey, parsePageKey, previewKey, sitePath, STATIC_DATA_DIR, staticDataPaths } from './paths.js';
-export { loadSearchIndex, searchIndex, type SearchIndex } from './search.js';
+export { loadSearchIndex, querySearchIndex, type SearchIndex, type SearchIndexJson } from './search.js';

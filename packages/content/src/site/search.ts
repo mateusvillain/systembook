@@ -74,20 +74,32 @@ interface SearchDocument {
   text: string;
 }
 
-/** Termos como o FTS5 os vê: letras/números, minúsculos e sem acento. */
-const TOKEN = /[\p{L}\p{N}_]+/gu;
+/**
+ * Termos como o tokenizer `unicode61` do FTS5 os vê: letras e números (o `_`
+ * separa), minúsculos e sem acento. O texto vai para NFC antes: em NFD, as
+ * marcas de acento ficam fora da classe e partiriam "ação" no meio.
+ */
+const TOKEN = /[\p{L}\p{N}]+/gu;
+const tokens = (text: string) => text.normalize('NFC').match(TOKEN) ?? [];
 const normalize = (term: string) => term.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
 
 const OPTIONS: Options<SearchDocument> = {
   fields: ['pageTitulo', 'sectionTitulo', 'text'],
   storeFields: ['pageTitulo', 'sectionTitulo', 'text'],
-  tokenize: (text) => text.match(TOKEN) ?? [],
+  tokenize: tokens,
   processTerm: normalize,
-  searchOptions: { prefix: true, combineWith: 'AND', boost: { pageTitulo: 2 } },
+  // Sem boost: o `rank` do FTS5 pesa as colunas por igual.
+  searchOptions: { prefix: true, combineWith: 'AND' },
 };
 
-/** O índice de busca do site, serializável (`search.json`). */
-export function createSearchIndex(data: StaticSiteData): AsPlainObject {
+/** O índice serializado (`search.json`). */
+export type SearchIndexJson = AsPlainObject;
+
+/**
+ * O índice de busca do site. Guarda o texto de cada página além do índice:
+ * é dele que sai o trecho do resultado.
+ */
+export function createSearchIndex(data: StaticSiteData): SearchIndexJson {
   const index = new MiniSearch<SearchDocument>(OPTIONS);
   for (const key of Object.keys(data.pages).sort()) {
     const page = data.pages[key]!;
@@ -96,7 +108,7 @@ export function createSearchIndex(data: StaticSiteData): AsPlainObject {
       id: key,
       pageTitulo: page.titulo,
       sectionTitulo: section?.titulo ?? '',
-      text: page.snapshot ? extractSearchableText(page.snapshot) : '',
+      text: page.snapshot ? extractSearchableText(page.snapshot).normalize('NFC') : '',
     });
   }
   return index.toJSON();
@@ -110,7 +122,7 @@ function sectionOf(data: StaticSiteData, key: string) {
 /** Índice carregado de `search.json`, pronto para consultas. */
 export type SearchIndex = MiniSearch<SearchDocument>;
 
-export function loadSearchIndex(json: AsPlainObject): SearchIndex {
+export function loadSearchIndex(json: SearchIndexJson): SearchIndex {
   return MiniSearch.loadJS<SearchDocument>(json, OPTIONS);
 }
 
@@ -118,8 +130,8 @@ export function loadSearchIndex(json: AsPlainObject): SearchIndex {
  * Busca como a do server: todos os termos precisam casar (prefixo), por
  * relevância, com o trecho do conteúdo em volta do primeiro termo encontrado.
  */
-export function searchIndex(index: SearchIndex, q: string): PublicSearchResult[] {
-  const terms = (q.match(TOKEN) ?? []).map(normalize);
+export function querySearchIndex(index: SearchIndex, q: string): PublicSearchResult[] {
+  const terms = tokens(q).map(normalize);
   if (!terms.length) return [];
   return index
     .search(terms.join(' '))
@@ -139,25 +151,34 @@ export function searchIndex(index: SearchIndex, q: string): PublicSearchResult[]
 }
 
 /**
- * Trecho de até 12 termos em volta do primeiro que casa, com os casados entre
- * STX/ETX e `…` onde o texto foi cortado — o formato do `snippet()` do FTS5.
- * Sem termo no conteúdo (casou pelo título), o começo do texto.
+ * Trecho de até 12 termos, com os casados entre STX/ETX e `…` onde o texto
+ * foi cortado — o formato do `snippet()` do FTS5. Como lá, a janela é a que
+ * reúne mais termos distintos casados (no empate, a primeira), começando um
+ * pouco antes deles. Sem termo no conteúdo (casou pelo título), o começo do texto.
  */
-export function snippet(text: string, terms: string[]): string {
-  const tokens = [...text.matchAll(TOKEN)];
-  if (!tokens.length) return '';
-  const matches = (word: string) => terms.some((term) => normalize(word).startsWith(term));
-  const first = Math.max(0, tokens.findIndex((t) => matches(t[0])));
-  const start = Math.max(0, Math.min(first - 2, tokens.length - SNIPPET_TOKENS));
-  const end = Math.min(tokens.length, start + SNIPPET_TOKENS);
+export function snippet(rawText: string, terms: string[]): string {
+  const text = rawText.normalize('NFC');
+  const found = [...text.matchAll(TOKEN)];
+  if (!found.length) return '';
+  const termOf = (word: string) => terms.findIndex((term) => normalize(word).startsWith(term));
+
+  let start = 0;
+  let best = 0;
+  for (let i = 0; i < found.length; i++) {
+    if (termOf(found[i]![0]) < 0) continue;
+    const from = Math.max(0, Math.min(i - 2, found.length - SNIPPET_TOKENS));
+    const distinct = new Set(found.slice(from, from + SNIPPET_TOKENS).map((t) => termOf(t[0])).filter((t) => t >= 0)).size;
+    if (distinct > best) [best, start] = [distinct, from];
+  }
+  const end = Math.min(found.length, start + SNIPPET_TOKENS);
 
   let out = start > 0 ? '…' : '';
-  let cursor = tokens[start]!.index;
+  let cursor = found[start]!.index;
   for (let i = start; i < end; i++) {
-    const token = tokens[i]!;
+    const token = found[i]!;
     out += text.slice(cursor, token.index);
-    out += matches(token[0]) ? `${MATCH_OPEN}${token[0]}${MATCH_CLOSE}` : token[0];
+    out += termOf(token[0]) >= 0 ? `${MATCH_OPEN}${token[0]}${MATCH_CLOSE}` : token[0];
     cursor = token.index + token[0].length;
   }
-  return end < tokens.length ? `${out}…` : out + text.slice(cursor);
+  return end < found.length ? `${out}…` : out + text.slice(cursor);
 }

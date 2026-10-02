@@ -31,7 +31,8 @@ export {
   createSearchIndex,
   extractSearchableText,
   loadSearchIndex,
-  searchIndex,
+  querySearchIndex,
   snippet,
   type SearchIndex,
+  type SearchIndexJson,
 } from './site/search.js';

@@ -7,7 +7,14 @@ import type {
   PublicSettings,
   PublishedPage,
 } from '@systembook/schema';
-import { loadSearchIndex, previewKey, searchIndex, staticDataPaths, type SearchIndex } from '@systembook/content/site';
+import {
+  loadSearchIndex,
+  previewKey,
+  querySearchIndex,
+  staticDataPaths,
+  type SearchIndex,
+  type SearchIndexJson,
+} from '@systembook/content/site';
 
 /**
  * Fonte de dados da doc pública no modo estático (SYS-98): lê os JSONs que o
@@ -66,9 +73,11 @@ export function createStaticDataSource({ dataUrl, fetch: doFetch = globalThis.fe
 
   const getNavTree = () => once<PublicNavTree>(staticDataPaths.nav);
 
+  // Fora do `once`: guardar o JSON cru além do índice carregado seria o
+  // dado duas vezes na memória.
   let index: Promise<SearchIndex> | null = null;
   const getSearchIndex = () => {
-    index ??= once<Parameters<typeof loadSearchIndex>[0]>(staticDataPaths.search).then(loadSearchIndex, (error: unknown) => {
+    index ??= readJson<SearchIndexJson>(staticDataPaths.search).then(loadSearchIndex, (error: unknown) => {
       index = null;
       throw error;
     });
@@ -98,7 +107,7 @@ export function createStaticDataSource({ dataUrl, fetch: doFetch = globalThis.fe
     },
     // O modo estático nasce com as URLs canônicas: não há path legado a resolver.
     resolvePath: async () => null,
-    search: async (q) => searchIndex(await getSearchIndex(), q),
+    search: async (q) => querySearchIndex(await getSearchIndex(), q),
     getComponentPreview: async (ref) =>
       (await once<Record<string, PublicComponentPreview>>(staticDataPaths.previews))[previewKey(ref)] ?? null,
   };

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildContentTree } from '../tree/build.js';
 import { buildSiteData } from './build.js';
-import { blockPlainText, createSearchIndex, loadSearchIndex, searchIndex, snippet } from './search.js';
+import { blockPlainText, createSearchIndex, loadSearchIndex, querySearchIndex, snippet } from './search.js';
 
 const page = (title: string, body: string) => `---\ntitle: ${title}\n---\n\n${body}\n`;
 const tree = buildContentTree(
@@ -18,7 +18,7 @@ const tree = buildContentTree(
 const { data } = buildSiteData(tree, { settings: { nomeDesignSystem: 'X', logoUrl: null, logoDarkUrl: null } });
 // Ida e volta pelo JSON, como no site.
 const index = loadSearchIndex(JSON.parse(JSON.stringify(createSearchIndex(data))));
-const search = (q: string) => searchIndex(index, q);
+const search = (q: string) => querySearchIndex(index, q);
 
 describe('busca do modo estático', () => {
   it('resultado no formato do CMS, com snippet destacado entre STX/ETX', () => {
@@ -56,12 +56,22 @@ describe('busca do modo estático', () => {
     expect(search('button')[0]!.snippet).toBe('Verbo no rótulo Use verbos de ação.');
   });
 
+  it('texto e consulta em NFD casam (acento decomposto não parte a palavra); _ separa termos', () => {
+    expect(search('ação'.normalize('NFD')).length).toBe(3);
+    expect(snippet('foo_bar baz', ['bar'])).toBe('foo_\u0002bar\u0003 baz');
+  });
+
   it('consulta sem termos é vazia', () => {
     expect(search('  !! ')).toEqual([]);
   });
 });
 
 describe('snippet', () => {
+  it('a janela é a que reúne mais termos distintos', () => {
+    const text = ['alfa', ...Array.from({ length: 20 }, (_, i) => `x${i}`), 'alfa', 'beta', 'x'].join(' ');
+    expect(snippet(text, ['alfa', 'beta'])).toBe('…x11 x12 x13 x14 x15 x16 x17 x18 x19 \u0002alfa\u0003 \u0002beta\u0003 x');
+  });
+
   it('janela de 12 termos em volta do primeiro casado, com … nas pontas cortadas', () => {
     const text = Array.from({ length: 30 }, (_, i) => `t${i}`).join(' ');
     expect(snippet(text, ['t15'])).toBe('…t13 t14 \u0002t15\u0003 t16 t17 t18 t19 t20 t21 t22 t23 t24…');
