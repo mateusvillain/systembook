@@ -74,6 +74,10 @@ describe('useInternalLinks', () => {
     });
   });
 
+  it('slug com ponto continua sendo rota', async () => {
+    expect(await click('/acme/m/s/v1.2', { basename: '/acme/' })).toEqual({ intercepted: true, at: '/m/s/v1.2' });
+  });
+
   it('a raiz da base leva à landing', async () => {
     expect(await click('/acme', { basename: '/acme/', start: '/x/y/z' })).toEqual({ intercepted: true, at: '/' });
   });

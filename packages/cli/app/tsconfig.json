@@ -1,11 +1,17 @@
 {
-  "extends": "../../../tsconfig.base.json",
+  // Autocontido de propósito: \`app/\` vai no pacote publicado, e um \`extends\`
+  // para fora dele não existiria no node_modules de quem instala.
   "compilerOptions": {
+    "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "bundler",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "jsx": "react-jsx",
     "types": ["vite/client"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
     "noEmit": true
   },
   "include": ["."]

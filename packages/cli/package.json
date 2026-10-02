@@ -44,6 +44,7 @@
     "@systembook/connector": "workspace:^",
     "@systembook/content": "workspace:^",
     "@systembook/docs-site": "workspace:^",
+    "@systembook/schema": "workspace:^",
     "@tanstack/react-query": "^5.101.2",
     "@vitejs/plugin-react": "^4.7.0",
     "commander": "^14.0.0",
@@ -53,7 +54,6 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@systembook/schema": "workspace:^",
     "@types/node": "^22.13.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, describe, expect, it } from 'vitest';
@@ -11,11 +11,12 @@ mkdirSync(TMP, { recursive: true });
 const temps: string[] = [];
 afterAll(() => temps.forEach((dir) => rmSync(dir, { recursive: true, force: true })));
 
-/** Config do fixture com `outDir` temporário e a base dada. */
+/** Cópia do fixture num projeto temporário, com a base dada. */
 async function fixtureConfig(base: string): Promise<ResolvedConfig> {
-  const outDir = mkdtempSync(path.join(TMP, 'dist-'));
-  temps.push(outDir);
-  return { ...(await loadConfig(FIXTURE)), base, outDir };
+  const root = mkdtempSync(path.join(TMP, 'site-'));
+  temps.push(root);
+  cpSync(FIXTURE, root, { recursive: true, filter: (src) => !src.includes('systembook-dist') });
+  return { ...(await loadConfig(root)), base };
 }
 
 /** Todos os arquivos (caminho → conteúdo) de uma pasta, em ordem. */
@@ -55,13 +56,13 @@ describe('systembook build', { timeout: 60_000 }, () => {
     ]);
     expect(files.has('.nojekyll')).toBe(true);
     expect([...files.keys()].filter((f) => f.startsWith('_systembook/data/')).sort()).toEqual([
-      '_systembook/data/heads.json',
-      '_systembook/data/landing.json',
+            '_systembook/data/landing.json',
       '_systembook/data/nav.json',
       '_systembook/data/pages/components/actions/button.json',
       '_systembook/data/pages/foundation/color/palette.json',
       '_systembook/data/pages/foundation/color/tokens.json',
       '_systembook/data/previews.json',
+      '_systembook/data/routes.json',
       '_systembook/data/settings.json',
     ]);
 
@@ -120,7 +121,15 @@ describe('systembook build', { timeout: 60_000 }, () => {
 
   it('recusa outDir que apagaria o projeto ou o conteúdo', async () => {
     const config = await loadConfig(FIXTURE);
-    for (const outDir of [config.root, path.dirname(config.root), config.contentDir, path.join(config.contentDir, 'out')]) {
+    for (const outDir of [
+      config.root,
+      path.dirname(config.root),
+      path.join(path.dirname(config.root), 'vizinho'),
+      config.contentDir,
+      path.join(config.contentDir, 'out'),
+      path.join(config.root, '.git'),
+      path.join(config.root, 'node_modules', 'x'),
+    ]) {
       const result = await buildStaticSite({ ...config, outDir });
       expect(result.ok, outDir).toBe(false);
       expect(!result.ok && result.problems[0]).toContain('"outDir"');

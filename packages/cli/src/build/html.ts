@@ -2,7 +2,7 @@ import type { Block, PageSnapshot, StaticSiteData } from '@systembook/schema';
 import { parsePageKey, sitePath } from '@systembook/content/site';
 
 /** Uma rota do site e o que vai no `<head>` dela. */
-export interface RouteHead {
+export interface RouteMeta {
   /** Caminho sem a base, com `/` no início e sem no fim (`''` = landing). */
   path: string;
   title: string;
@@ -11,8 +11,8 @@ export interface RouteHead {
 
 const DESCRIPTION_MAX = 160;
 
-/** `RouteHead[]` de todas as rotas, na pasta de dados (o app lê ao navegar). */
-export const HEADS_FILE = 'heads.json';
+/** `RouteMeta[]` de todas as rotas, na pasta de dados (o app lê ao navegar). */
+export const META_FILE = 'routes.json';
 
 /** Texto puro de um conteúdo Tiptap (os nós `text`, em ordem). */
 function plainText(value: unknown): string {
@@ -43,9 +43,9 @@ const primaryBlocks = (snapshot: PageSnapshot | null) => snapshot?.tabs.find((t)
  * suas tabs — com título e descrição: o subtítulo da página, ou o primeiro
  * parágrafo, ou o nome do design system.
  */
-export function routeHeads(data: StaticSiteData, landingTitle: string | null): RouteHead[] {
+export function routeMetas(data: StaticSiteData, landingTitle: string | null): RouteMeta[] {
   const name = data.settings.nomeDesignSystem;
-  const routes: RouteHead[] = [
+  const routes: RouteMeta[] = [
     {
       path: '',
       title: landingTitle && landingTitle !== name ? `${landingTitle} · ${name}` : name,
@@ -73,8 +73,9 @@ const escapeHtml = (text: string) =>
   text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 /** O `index.html` do bundle com o `<head>` de uma rota. */
-export function renderHtml(template: string, head: Pick<RouteHead, 'title' | 'description'>): string {
+export function renderHtml(template: string, head: Pick<RouteMeta, 'title' | 'description'>): string {
+  // Função de substituição: com string, `$&`/`$'` no texto seriam padrões do `replace`.
   return template
-    .replace('%SYSTEMBOOK_TITLE%', escapeHtml(head.title))
-    .replace('%SYSTEMBOOK_DESCRIPTION%', escapeHtml(head.description));
+    .replace('%SYSTEMBOOK_TITLE%', () => escapeHtml(head.title))
+    .replace('%SYSTEMBOOK_DESCRIPTION%', () => escapeHtml(head.description));
 }

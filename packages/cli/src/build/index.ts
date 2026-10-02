@@ -13,7 +13,7 @@ import {
 } from '@systembook/content';
 import { readContentDir } from '@systembook/content/node';
 import type { ResolvedConfig } from '../config.js';
-import { HEADS_FILE, renderHtml, routeHeads } from './html.js';
+import { META_FILE, renderHtml, routeMetas } from './html.js';
 
 /** O app React que vira o site (`app/` do pacote), igual em `src/` e `dist/`. */
 const APP_DIR = fileURLToPath(new URL('../../app', import.meta.url));
@@ -67,10 +67,10 @@ export async function buildStaticSite(config: ResolvedConfig): Promise<BuildResu
   for (const [file, json] of siteDataFiles(site.data)) await write(path.join(STATIC_DATA_DIR, file), json);
 
   const template = await readFile(path.join(config.outDir, 'index.html'), 'utf8');
-  const routes = routeHeads(site.data, tree.landing?.titulo ?? null);
+  const routes = routeMetas(site.data, tree.landing?.titulo ?? null);
   for (const route of routes) await write(path.join(route.path, 'index.html'), renderHtml(template, route));
   // O mesmo `<head>` para o app atualizar ao navegar sem recarregar a página.
-  await write(path.join(STATIC_DATA_DIR, HEADS_FILE), `${JSON.stringify(routes)}\n`);
+  await write(path.join(STATIC_DATA_DIR, META_FILE), `${JSON.stringify(routes)}\n`);
   await write(
     '404.html',
     renderHtml(template, { title: `Page not found · ${config.name}`, description: config.name }),
@@ -88,16 +88,23 @@ function formatProblems(config: ResolvedConfig, diagnostics: Diagnostic[]): stri
 }
 
 /**
- * O `outDir` é apagado a cada build: recusa caminhos onde isso destruiria o
- * projeto (a raiz, um ancestral dela ou a pasta de conteúdo).
+ * O `outDir` é apagado a cada build: ele precisa ser uma pasta própria dentro
+ * do projeto — nem a raiz, nem fora dela, nem a pasta de conteúdo (ou dentro
+ * dela, ou contendo-a), nem `.git`/`node_modules`.
  */
 function unsafeOutDir({ root, outDir, contentDir, file }: ResolvedConfig): string | null {
   const inside = (child: string, parent: string) => {
     const rel = path.relative(parent, child);
-    return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
+    return rel === '' || (rel !== '..' && !rel.startsWith(`..${path.sep}`) && !path.isAbsolute(rel));
   };
-  if (inside(root, outDir) || inside(contentDir, outDir) || inside(outDir, contentDir)) {
-    return `${file}: "outDir" (${path.relative(root, outDir) || '.'}) não pode ser a raiz do projeto, conter a pasta de conteúdo nem ficar dentro dela — ele é apagado a cada build.`;
-  }
-  return null;
+  const [first] = path.relative(root, outDir).split(path.sep);
+  const unsafe =
+    outDir === root ||
+    !inside(outDir, root) ||
+    inside(contentDir, outDir) ||
+    inside(outDir, contentDir) ||
+    first === '.git' ||
+    first === 'node_modules';
+  if (!unsafe) return null;
+  return `${file}: "outDir" (${path.relative(root, outDir) || '.'}) precisa ser uma pasta própria dentro do projeto — não a raiz, nem fora dela, nem a pasta de conteúdo, .git ou node_modules. Ele é apagado a cada build.`;
 }

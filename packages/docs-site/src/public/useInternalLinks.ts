@@ -16,6 +16,12 @@ import { useDocsPaths } from './docsRoutes.js';
  *
  * Devolve o handler para o `onClickCapture` do contêiner do conteúdo.
  */
+/**
+ * Arquivos que um link pode baixar ou abrir. Lista explícita, e não "tem
+ * extensão": um slug pode ter ponto (`v1.2`) e continua sendo uma rota.
+ */
+const FILE_EXTENSION = /\.(pdf|zip|png|jpe?g|gif|svg|webp|avif|ico|mp4|webm|mp3|json|txt|csv|xml|md|mdx|ya?ml)$/i;
+
 export function useInternalLinks(): (event: React.MouseEvent<HTMLElement>) => void {
   const navigate = useNavigate();
   // A base do router sem a barra final (`/meu-repo` ou `''`). O `useHref('/')`
@@ -35,7 +41,7 @@ export function useInternalLinks(): (event: React.MouseEvent<HTMLElement>) => vo
       const url = new URL(anchor.href, window.location.href);
       if (url.origin !== window.location.origin) return;
       if (url.pathname !== docsRoot && !url.pathname.startsWith(`${docsRoot}/`)) return;
-      if (/\.[a-z0-9]+$/i.test(url.pathname)) return;
+      if (FILE_EXTENSION.test(url.pathname)) return;
 
       event.preventDefault();
       event.stopPropagation();
