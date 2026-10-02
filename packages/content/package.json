@@ -31,6 +31,10 @@
     "./node": {
       "types": "./src/node.ts",
       "default": "./src/node.ts"
+    },
+    "./site": {
+      "types": "./src/site/index.ts",
+      "default": "./src/site/index.ts"
     }
   },
   "sideEffects": false,
@@ -79,6 +83,10 @@
       "./node": {
         "types": "./dist/node.d.ts",
         "default": "./dist/node.js"
+      },
+      "./site": {
+        "types": "./dist/site/index.d.ts",
+        "default": "./dist/site/index.js"
       }
     }
   },
