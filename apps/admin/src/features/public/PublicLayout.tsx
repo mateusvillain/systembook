@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { Menu, Moon, Sun } from 'lucide-react';
-import { useTRPC } from '../../lib/trpc.js';
-import { PublicSidebar, type PublicNavTree } from './PublicSidebar.js';
+import type { PublicNavTree } from '@systembook/schema';
+import { PublicSidebar } from './PublicSidebar.js';
 import { PublicMenuNav, useActiveMenu } from './PublicMenuNav.js';
 import { SearchBox } from './SearchBox.js';
 import { useTheme } from './useTheme.js';
+import { useNavTree } from './docsQueries.js';
 import './public.css';
 
 /** Passado aos filhos via Outlet context (evita re-buscar a árvore). */
@@ -18,12 +18,11 @@ export interface PublicOutletContext {
 /**
  * Shell da documentação pública (TASK-52) — completamente separado do
  * `AdminLayout`: sem nav de admin, sem toolbar/edição, sem auth. Busca a árvore
- * de navegação (`sections.listPublic`) uma vez e a expõe à sidebar e às rotas
+ * de navegação (`DocsDataSource.getNavTree`) uma vez e a expõe à sidebar e às rotas
  * filhas.
  */
 export function PublicLayout() {
-  const trpc = useTRPC();
-  const navQuery = useQuery(trpc.sections.listPublic.queryOptions());
+  const navQuery = useNavTree();
   const tree = navQuery.data ?? [];
   const { theme, toggle } = useTheme();
   const [navOpen, setNavOpen] = useState(false);

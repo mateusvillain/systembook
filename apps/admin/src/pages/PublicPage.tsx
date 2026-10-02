@@ -1,7 +1,6 @@
 import { useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { useTRPC } from '../lib/trpc.js';
-import { PageRenderer, type RenderableSnapshot } from '../features/public/PageRenderer.js';
+import { PageRenderer } from '../features/public/PageRenderer.js';
+import { usePageById } from '../features/public/docsQueries.js';
 
 /**
  * Superfície pública de documentação de uma página (TASK-50). Renderiza o
@@ -11,12 +10,7 @@ import { PageRenderer, type RenderableSnapshot } from '../features/public/PageRe
  */
 export function PublicPage() {
   const { pageId } = useParams<{ pageId: string }>();
-  const trpc = useTRPC();
-
-  const query = useQuery({
-    ...trpc.revisions.getLatestPublished.queryOptions({ pageId: pageId ?? '' }),
-    enabled: !!pageId,
-  });
+  const query = usePageById(pageId);
 
   const container = (children: React.ReactNode) => (
     <main
@@ -39,5 +33,5 @@ export function PublicPage() {
     );
   }
 
-  return container(<PageRenderer snapshot={query.data as RenderableSnapshot} />);
+  return container(<PageRenderer snapshot={query.data} />);
 }

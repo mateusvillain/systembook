@@ -4,6 +4,8 @@ import './index.css';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { queryClient, trpcClient, TRPCProvider } from './lib/trpc.js';
+import { trpcDataSource } from './lib/trpcDataSource.js';
+import { DocsDataSourceProvider } from './features/public/dataSource.js';
 import { LoginPage } from './pages/LoginPage.js';
 import { DashboardPage } from './pages/DashboardPage.js';
 import { UsersPage } from './pages/UsersPage.js';
@@ -74,7 +76,10 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
-        <RouterProvider router={router} />
+        {/* Fonte da doc pública (SYS-88): no admin, sempre o servidor. */}
+        <DocsDataSourceProvider dataSource={trpcDataSource}>
+          <RouterProvider router={router} />
+        </DocsDataSourceProvider>
         <Toaster />
       </TRPCProvider>
     </QueryClientProvider>

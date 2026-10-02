@@ -1,12 +1,12 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import type { PublicNavTree } from './PublicSidebar.js';
+import type { PublicNavTree } from '@systembook/schema';
 
 type PublicMenu = PublicNavTree[number];
 
 /**
  * Destino de um menu: sua primeira página publicada. Menus não têm página
  * própria (TASK-109) — clicar num deles leva ao primeiro conteúdo abaixo dele.
- * A árvore de `sections.listPublic` já vem ordenada e sem menus/seções vazios
+ * A árvore de `DocsDataSource.getNavTree` já vem ordenada e sem menus/seções vazios
  * (SYS-37), então o primeiro de cada nível é o certo; o fallback para `/docs`
  * é defensivo e não deve acontecer na prática.
  */

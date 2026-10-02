@@ -1,12 +1,11 @@
 import { Link, useOutletContext } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { useTRPC } from '../../lib/trpc.js';
 import type { PublicOutletContext } from './PublicLayout.js';
-import { PageRenderer, type RenderableSnapshot } from './PageRenderer.js';
+import { PageRenderer } from './PageRenderer.js';
+import { useLanding } from './docsQueries.js';
 
 /**
  * Raiz da doc pública (`/docs`, TASK-56). Mostra a **página inicial
- * customizável** (última revisão publicada da landing, via `landing.get`)
+ * customizável** (última revisão publicada da landing, via `DocsDataSource.getLanding`)
  * renderizada pelo `PageRenderer` comum. Se a landing nunca foi publicada,
  * mostra um estado padrão de boas-vindas com um caminho para dentro da
  * documentação — nunca uma tela em branco (não redireciona mais direto para a
@@ -14,18 +13,17 @@ import { PageRenderer, type RenderableSnapshot } from './PageRenderer.js';
  */
 export function PublicHome() {
   const { tree, isLoading } = useOutletContext<PublicOutletContext>();
-  const trpc = useTRPC();
-  const landing = useQuery(trpc.landing.get.queryOptions());
+  const landing = useLanding();
 
   if (isLoading || landing.isPending) return <p>Loading…</p>;
 
-  const snapshot = landing.data?.snapshot;
+  const snapshot = landing.data;
   const hasContent = snapshot && snapshot.tabs.some((t) => t.blocks.length > 0);
 
   if (hasContent) {
     return (
       <div data-testid="landing-published">
-        <PageRenderer snapshot={snapshot as RenderableSnapshot} />
+        <PageRenderer snapshot={snapshot} />
       </div>
     );
   }

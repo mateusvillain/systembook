@@ -1,10 +1,7 @@
 import { Link, NavLink } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { useTRPC, type RouterOutput } from '../../lib/trpc.js';
+import type { PublicNavTree } from '@systembook/schema';
 import { PublicMenuNav } from './PublicMenuNav.js';
-
-/** Árvore de navegação vinda de `sections.listPublic` — menus → seções → páginas. */
-export type PublicNavTree = RouterOutput['sections']['listPublic'];
+import { usePublicSettings } from './docsQueries.js';
 
 /**
  * Identidade da instância no topo da sidebar (SYS-39): logo enviado no CMS ou,
@@ -18,8 +15,7 @@ export type PublicNavTree = RouterOutput['sections']['listPublic'];
  * botão do header. A dark cai na clara quando não foi enviada.
  */
 function PublicBrand({ onNavigate }: { onNavigate?: () => void }) {
-  const trpc = useTRPC();
-  const { data } = useQuery(trpc.settings.getPublic.queryOptions());
+  const { data } = usePublicSettings();
   if (!data) return null;
 
   const { nomeDesignSystem, logoUrl, logoDarkUrl } = data;

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { queryClient, useTRPC } from '../../lib/trpc.js';
+import { docsQueryKeys } from '../public/docsQueries.js';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -42,7 +43,7 @@ export function BrandSettings() {
   const invalidate = () =>
     Promise.all([
       queryClient.invalidateQueries(trpc.settings.get.queryFilter()),
-      queryClient.invalidateQueries(trpc.settings.getPublic.queryFilter()),
+      queryClient.invalidateQueries({ queryKey: docsQueryKeys.settings() }),
     ]);
 
   return (

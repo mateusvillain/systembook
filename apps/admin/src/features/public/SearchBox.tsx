@@ -1,8 +1,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { Search, X } from 'lucide-react';
-import { useTRPC } from '../../lib/trpc.js';
+import { usePublicSearch } from './docsQueries.js';
 
 // Delimitadores STX/ETX que o `snippet()` do FTS5 coloca ao redor dos termos
 // casados (ver SearchResult.snippet no server). Escritos como escapes \u para
@@ -50,13 +49,12 @@ function isTypingTarget(el: EventTarget | null): boolean {
 
 /**
  * Busca da doc pública (TASK-54): input no header com resultados ao vivo num
- * dropdown, debounced (300ms) para não disparar `search.query` a cada tecla.
+ * dropdown, debounced (300ms) para não disparar uma busca a cada tecla.
  * Cada resultado mostra título, breadcrumb da seção e o snippet destacado, e
  * navega para a página ao ser selecionado (mouse ou ↑/↓+Enter). Escopo MVP:
  * dropdown leve in-page, sem página de resultados dedicada (nota do spec).
  */
 export function SearchBox() {
-  const trpc = useTRPC();
   const navigate = useNavigate();
   const listboxId = useId();
 
@@ -74,10 +72,7 @@ export function SearchBox() {
     return () => clearTimeout(id);
   }, [query]);
 
-  const searchQuery = useQuery({
-    ...trpc.search.query.queryOptions({ q: debounced }),
-    enabled: debounced.length > 0,
-  });
+  const searchQuery = usePublicSearch(debounced);
   const results = searchQuery.data ?? [];
 
   // Reseta o item ativo quando os resultados mudam.

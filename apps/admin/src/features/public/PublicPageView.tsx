@@ -1,8 +1,6 @@
 import { useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { useTRPC } from '../../lib/trpc.js';
-import { PageRenderer, type RenderableSnapshot } from './PageRenderer.js';
+import { PageRenderer } from './PageRenderer.js';
 import { TableOfContents } from './TableOfContents.js';
 import { HeadingAnchors } from './HeadingAnchors.js';
 import { useHeadingIds } from './useHeadingIds.js';
@@ -10,6 +8,7 @@ import { BlockAnchors } from './BlockAnchors.js';
 import { useBlockAnchorIds } from './useBlockAnchorIds.js';
 import { useHashScroll } from './useHashScroll.js';
 import { LegacyDocsRedirect } from './LegacyDocsRedirect.js';
+import { usePageBySlug } from './docsQueries.js';
 
 /**
  * Conteúdo de uma página na doc pública (TASK-52): resolve
@@ -26,17 +25,9 @@ export function PublicPageView() {
     tabId?: string;
   }>();
   const navigate = useNavigate();
-  const trpc = useTRPC();
   const bodyRef = useRef<HTMLElement>(null);
 
-  const query = useQuery({
-    ...trpc.pages.getPublishedBySlug.queryOptions({
-      menuSlug: menuSlug ?? '',
-      sectionSlug: sectionSlug ?? '',
-      pageSlug: pageSlug ?? '',
-    }),
-    enabled: !!menuSlug && !!sectionSlug && !!pageSlug,
-  });
+  const query = usePageBySlug({ menuSlug, sectionSlug, pageSlug });
 
   const basePath = `/docs/${menuSlug}/${sectionSlug}/${pageSlug}`;
 
@@ -101,7 +92,7 @@ export function PublicPageView() {
           {subtitulo && <p className="sb-page-subtitle">{subtitulo}</p>}
         </header>
         <PageRenderer
-          snapshot={snapshot as RenderableSnapshot}
+          snapshot={snapshot}
           activeTabId={activeTabId}
           onSelectTab={(nextTabId) =>
             navigate(nextTabId === primaryTabId ? basePath : `${basePath}/${nextTabId}`)
