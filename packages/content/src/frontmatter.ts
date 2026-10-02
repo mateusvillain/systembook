@@ -44,6 +44,19 @@ export type FrontmatterFor<K extends DocumentKind> = K extends 'page'
     ? TabFrontmatter
     : LandingFrontmatter;
 
+/**
+ * Linha de cada chave de topo do YAML, para apontar o campo com problema. O
+ * YAML começa na linha seguinte ao `---` de abertura (`at`).
+ */
+function keyLines(raw: string, at: PointLike): Map<string, PointLike> {
+  const lines = new Map<string, PointLike>();
+  raw.split('\n').forEach((text, i) => {
+    const match = /^([A-Za-z_][\w-]*)\s*:/.exec(text);
+    if (match) lines.set(match[1]!, { line: at.line + 1 + i, column: 1 });
+  });
+  return lines;
+}
+
 /** Nome em português do tipo esperado, para as mensagens de erro. */
 const EXPECTED: Record<string, string> = { string: 'texto', number: 'um número', object: 'um mapa' };
 
@@ -70,7 +83,10 @@ export function readFrontmatter<K extends DocumentKind>(
     } catch (error) {
       const line = error instanceof YAMLParseError ? (error.linePos?.[0]?.line ?? 0) : 0;
       // +1: o YAML começa na linha seguinte ao `---` de abertura.
-      bag.report({ line: at.line + line, column: 1 }, `frontmatter: YAML inválido — ${(error as Error).message.split('\n')[0]}`);
+      bag.report(
+        { line: at.line + line, column: 1 },
+        `frontmatter: YAML inválido — ${(error as Error).message.split('\n')[0]!.replace(/\.?$/, '.')}`,
+      );
       return null;
     }
     if (data === null) data = {};
@@ -85,11 +101,13 @@ export function readFrontmatter<K extends DocumentKind>(
   if (result.success) return result.data as FrontmatterFor<K>;
 
   const known = Object.keys(schema.shape);
+  const lines = keyLines(raw ?? '', at);
+  const atKey = (key: PropertyKey | undefined) => lines.get(String(key)) ?? at;
   for (const issue of result.error.issues) {
     if (issue.code === 'unrecognized_keys') {
       for (const key of issue.keys) {
         const where = kind === 'landing' ? ' na landing (só `title`)' : kind === 'tab' ? ' em tab' : '';
-        bag.report(at, `frontmatter: "${key}" não é um campo aceito${where}${didYouMean(key, known)}.`);
+        bag.report(atKey(key), `frontmatter: "${key}" não é um campo aceito${where}${didYouMean(key, known)}.`);
       }
     } else {
       const field = issue.path.join('.');
@@ -99,7 +117,7 @@ export function readFrontmatter<K extends DocumentKind>(
         : issue.code === 'invalid_type' && issue.expected in EXPECTED
           ? `precisa ser ${EXPECTED[issue.expected]}`
           : issue.message;
-      bag.report(at, `frontmatter: "${field}" ${message}.`);
+      bag.report(present ? atKey(issue.path[0]) : at, `frontmatter: "${field}" ${message}.`);
     }
   }
   return null;

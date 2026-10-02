@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { Editor, getSchema, type JSONContent } from '@tiptap/core';
 import { describe, expect, it } from 'vitest';
-import { blocksToTiptapDoc, parseDocument, tiptapDocToBlocks } from '@systembook/content';
+import { blocksToTiptapDoc, MARK_ORDER, parseDocument, tiptapDocToBlocks } from '@systembook/content';
 import { contentExtensions } from './extensions.js';
 
 /**
@@ -17,7 +17,7 @@ title: Botão
 
 # Botão
 
-Use o **botão primário** para a *ação principal* — [ver tokens](https://x.dev "Tokens"),
+Use o **botão **primário**** para a *ação <u>principal</u>* — [ver *tokens*](https://x.dev "Tokens"),
 \`--primary\` e [\`Button\`](./button.mdx).
 
 ## Variantes
@@ -54,6 +54,10 @@ describe('parser ↔ schema do conteúdo', () => {
 
   it('o fixture não tem diagnósticos', () => {
     expect(diagnostics).toEqual([]);
+  });
+
+  it('a ordem de marks do parser é a do schema', () => {
+    expect(Object.keys(getSchema(contentExtensions).marks)).toEqual([...MARK_ORDER]);
   });
 
   it('é válido no schema', () => {

@@ -70,8 +70,9 @@ export function createContentExtensions(options: {
     Link.configure({ openOnClick: 'whenNotEditable', autolink: true }),
     // Código inline (SYS-93). `excludes: ''` porque o padrão do Tiptap (`_`)
     // exclui todos os outros marks — e doc de componente vive de
-    // `[`Button`](…)`, que é link + código. A ordem aqui (depois de Link) é a
-    // ordem dos marks no JSON, que o parser de arquivos reproduz.
+    // `[`Button`](…)`, que é link + código. A ordem dos marks no JSON é a do
+    // schema, que o parser de arquivos reproduz (`MARK_ORDER`, travado por
+    // teste).
     Code.extend({ excludes: '' }),
     BulletList,
     OrderedList,

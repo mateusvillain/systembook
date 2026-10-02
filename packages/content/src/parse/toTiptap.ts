@@ -21,15 +21,28 @@ import type { DiagnosticBag, Positioned } from '../diagnostics.js';
  * silêncio (`docs/static-format.md`).
  */
 
-/** Referências que o resto do pipeline resolve (arquivos, páginas). */
-export interface ContentReferences {
-  images: { src: string; node: Positioned }[];
-  links: { href: string; node: Positioned }[];
+/** Onde uma referência aparece no arquivo (1-based). */
+export interface SourcePoint {
+  line: number;
+  column: number;
 }
 
-export interface ConvertContext {
+/** Referências que o resto do pipeline resolve (arquivos, páginas). */
+export interface ContentReferences {
+  images: ({ src: string } & SourcePoint)[];
+  links: ({ href: string } & SourcePoint)[];
+}
+
+interface ConvertContext {
   bag: DiagnosticBag;
   refs: ContentReferences;
+  /** Dentro de célula de tabela: só conteúdo inline. */
+  inCell?: boolean;
+}
+
+function pointOf(node: Positioned): SourcePoint {
+  const start = node.position?.start;
+  return { line: start?.line ?? 1, column: start?.column ?? 1 };
 }
 
 /** Apelidos de linguagem → nome registrado no realce de sintaxe do renderer. */
@@ -53,9 +66,14 @@ export function normalizeLanguage(lang: string | null | undefined): string | nul
   return LANGUAGE_ALIASES[lower] ?? lower;
 }
 
-/** Ordem dos marks no schema (= ordem das extensões em `createContentExtensions`). */
-const MARK_RANK = ['bold', 'italic', 'underline', 'link', 'code'] as const;
-type MarkType = (typeof MARK_RANK)[number];
+/**
+ * Ordem dos marks no schema do conteúdo, que é a ordem em que o ProseMirror
+ * os grava no JSON. Não é a ordem das extensões: o Tiptap registra por
+ * prioridade, e o Link (prioridade 1000) vem antes. O teste de round-trip do
+ * `@systembook/docs-site` confere esta lista contra o schema real.
+ */
+export const MARK_ORDER = ['link', 'bold', 'italic', 'underline', 'code'] as const;
+type MarkType = (typeof MARK_ORDER)[number];
 type Mark = { type: MarkType; attrs?: Record<string, unknown> };
 
 /** Attrs que o mark `link` do Tiptap grava (padrões de `@tiptap/extension-link`). */
@@ -72,8 +90,13 @@ function linkMark(href: string, title: string | null | undefined): Mark {
   };
 }
 
+/** Acrescenta um mark — o mesmo tipo duas vezes (`**a **b****`) é um só. */
+function withMark(marks: Mark[], mark: Mark): Mark[] {
+  return marks.some((m) => m.type === mark.type) ? marks : [...marks, mark];
+}
+
 function sortMarks(marks: Mark[]): Mark[] {
-  return [...marks].sort((a, b) => MARK_RANK.indexOf(a.type) - MARK_RANK.indexOf(b.type));
+  return [...marks].sort((a, b) => MARK_ORDER.indexOf(a.type) - MARK_ORDER.indexOf(b.type));
 }
 
 function sameMarks(a: unknown[] | undefined, b: unknown[] | undefined): boolean {
@@ -96,6 +119,21 @@ function mergeText(nodes: TiptapNode[]): TiptapNode[] {
 
 /** Nó mdast que este módulo não conhece pelo tipo (MDX, extensões). */
 type AnyNode = { type: string } & Positioned;
+
+/** Shape mínimo de um elemento JSX do remark-mdx (`<u>`, `<Callout>`…). */
+interface JsxElement {
+  name: string | null;
+  attributes: unknown[];
+  children: unknown[];
+}
+
+const ACCEPTED_COMPONENTS = '<Callout>, <ComponentEmbed>, <DosDonts> ou <u>';
+
+function componentMessage(name: string | null): string {
+  return name
+    ? `<${name}> não é um componente aceito — use ${ACCEPTED_COMPONENTS}.`
+    : `fragmento JSX (<>…</>) não é aceito — use ${ACCEPTED_COMPONENTS}.`;
+}
 
 const UNSUPPORTED_BLOCK: Record<string, string> = {
   blockquote: 'citação (`>`) não é suportada — use <Callout>.',
@@ -132,35 +170,55 @@ function inline(
         break;
       }
       case 'strong':
-        out.push(...inline(node.children, [...marks, { type: 'bold' }], ctx));
+        out.push(...inline(node.children, withMark(marks, { type: 'bold' }), ctx));
         break;
       case 'emphasis':
-        out.push(...inline(node.children, [...marks, { type: 'italic' }], ctx));
+        out.push(...inline(node.children, withMark(marks, { type: 'italic' }), ctx));
         break;
       case 'inlineCode':
         // O mark `code` do conteúdo convive com os outros (ver `createContentExtensions`):
         // `[`Button`](./button.mdx)` é link + código.
-        if (node.value) {
-          out.push({ type: 'text', text: node.value, marks: sortMarks([...marks, { type: 'code' }]) });
+        if (!node.value) {
+          ctx.bag.report(node, 'código inline vazio — remova os acentos graves ou escreva o código.');
+          break;
         }
+        out.push({ type: 'text', text: node.value, marks: sortMarks(withMark(marks, { type: 'code' })) });
         break;
-      case 'link':
+      case 'link': {
         if (marks.some((m) => m.type === 'link')) {
           ctx.bag.report(node, 'link dentro de link não é suportado.');
           break;
         }
-        ctx.refs.links.push({ href: node.url, node });
-        out.push(...inline(node.children, [...marks, linkMark(node.url, node.title)], ctx));
+        const content = inline(node.children, [...marks, linkMark(node.url, node.title)], ctx);
+        if (!content.length) {
+          ctx.bag.report(node, 'link sem texto — escreva o texto entre os colchetes: [texto](url).');
+          break;
+        }
+        ctx.refs.links.push({ href: node.url, ...pointOf(node) });
+        out.push(...content);
         break;
+      }
       case 'image':
         ctx.bag.report(
           node,
-          'imagem no meio do texto não é suportada — deixe a imagem sozinha num parágrafo (ela vira um bloco).',
+          ctx.inCell
+            ? 'imagem não pode ficar em célula de tabela.'
+            : 'imagem no meio do texto não é suportada — deixe a imagem sozinha num parágrafo (ela vira um bloco).',
         );
         break;
+      case 'mdxJsxTextElement': {
+        const jsx = node as unknown as JsxElement;
+        if (jsx.name !== 'u') {
+          ctx.bag.report(node, componentMessage(jsx.name));
+          break;
+        }
+        if (jsx.attributes.length) ctx.bag.report(node, '<u> não aceita props.');
+        out.push(...inline(jsx.children as PhrasingContent[], withMark(marks, { type: 'underline' }), ctx));
+        break;
+      }
       default: {
-        const message = UNSUPPORTED_INLINE[(node as AnyNode).type];
-        ctx.bag.report(node, message ?? `elemento "${(node as AnyNode).type}" não é suportado.`);
+        const type = (node as AnyNode).type;
+        ctx.bag.report(node, UNSUPPORTED_INLINE[type] ?? `elemento "${type}" não é suportado.`);
       }
     }
   }
@@ -175,11 +233,13 @@ function soloImage(node: Paragraph) {
 }
 
 function heading(node: Heading, ctx: ConvertContext): TiptapNode | null {
+  // Converte antes de recusar o nível: os problemas dentro do heading também
+  // precisam aparecer na mesma rodada.
+  const content = inline(node.children, [], ctx);
   if (node.depth > 3) {
     ctx.bag.report(node, `heading de nível ${node.depth} não é suportado — use até ###.`);
     return null;
   }
-  const content = inline(node.children, [], ctx);
   return content.length
     ? { type: 'heading', attrs: { level: node.depth }, content }
     : { type: 'heading', attrs: { level: node.depth } };
@@ -188,7 +248,7 @@ function heading(node: Heading, ctx: ConvertContext): TiptapNode | null {
 function paragraph(node: Paragraph, ctx: ConvertContext): TiptapNode | null {
   const image = soloImage(node);
   if (image) {
-    ctx.refs.images.push({ src: image.url, node: image });
+    ctx.refs.images.push({ src: image.url, ...pointOf(image) });
     return {
       type: 'image',
       attrs: { src: image.url, alt: image.alt ?? '', caption: image.title ?? null },
@@ -198,7 +258,10 @@ function paragraph(node: Paragraph, ctx: ConvertContext): TiptapNode | null {
   return content.length ? { type: 'paragraph', content } : null;
 }
 
-function code(node: Code): TiptapNode {
+function code(node: Code, ctx: ConvertContext): TiptapNode {
+  if (node.meta) {
+    ctx.bag.report(node, `metadados do bloco de código ("${node.meta}") não são suportados — deixe só a linguagem.`);
+  }
   const language = normalizeLanguage(node.lang);
   return node.value
     ? { type: 'codeBlock', attrs: { language }, content: [{ type: 'text', text: node.value }] }
@@ -232,7 +295,7 @@ function table(node: Table, ctx: ConvertContext): TiptapNode {
   const rows = node.children.map((row, rowIndex) => ({
     type: 'tableRow',
     content: row.children.map((cell, column) => {
-      const content = inline(cell.children, [], ctx);
+      const content = inline(cell.children, [], { ...ctx, inCell: true });
       return {
         type: rowIndex === 0 ? 'tableHeader' : 'tableCell',
         // `align` vem do alinhamento da coluna no GFM (`:---:`).
@@ -245,7 +308,10 @@ function table(node: Table, ctx: ConvertContext): TiptapNode {
 }
 
 /** Converte uma sequência de blocos mdast em nós Tiptap. */
-export function blocks(nodes: RootContent[], ctx: ConvertContext): TiptapNode[] {
+export function blocks(
+  nodes: RootContent[],
+  ctx: { bag: DiagnosticBag; refs: ContentReferences },
+): TiptapNode[] {
   const out: TiptapNode[] = [];
   for (const node of nodes) {
     let converted: TiptapNode | null = null;
@@ -262,7 +328,7 @@ export function blocks(nodes: RootContent[], ctx: ConvertContext): TiptapNode[] 
         converted = list(node, ctx);
         break;
       case 'code':
-        converted = code(node);
+        converted = code(node, ctx);
         break;
       case 'table':
         converted = table(node, ctx);
@@ -271,9 +337,24 @@ export function blocks(nodes: RootContent[], ctx: ConvertContext): TiptapNode[] 
         const type = (node as AnyNode).type;
         const message = UNSUPPORTED_BLOCK[type];
         if (message) ctx.bag.report(node, message);
-        else if (type === 'mdxJsxFlowElement' || type === 'mdxJsxTextElement') {
-          const name = (node as unknown as { name: string | null }).name ?? 'fragmento';
-          ctx.bag.report(node, `<${name}> não é um componente aceito.`);
+        else if (type === 'mdxJsxFlowElement') {
+          const jsx = node as unknown as JsxElement;
+          if (jsx.name === 'u') {
+            // `<u>…</u>` sozinho na linha vira elemento de bloco no MDX: é um
+            // parágrafo sublinhado.
+            if (jsx.attributes.length) ctx.bag.report(node, '<u> não aceita props.');
+            for (const child of jsx.children as RootContent[]) {
+              const children = child.type === 'paragraph' ? child.children : null;
+              if (!children) {
+                ctx.bag.report(child, '<u> só aceita texto.');
+                continue;
+              }
+              const content = inline(children, [{ type: 'underline' }], ctx);
+              if (content.length) out.push({ type: 'paragraph', content });
+            }
+            continue;
+          }
+          ctx.bag.report(node, componentMessage(jsx.name));
         } else ctx.bag.report(node, `elemento "${type}" não é suportado.`);
       }
     }

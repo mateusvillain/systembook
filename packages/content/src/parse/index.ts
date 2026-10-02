@@ -9,7 +9,7 @@ import { DiagnosticBag, type Diagnostic } from '../diagnostics.js';
 import { readFrontmatter, type DocumentKind, type FrontmatterFor } from '../frontmatter.js';
 import { blocks, type ContentReferences } from './toTiptap.js';
 
-export type { ContentReferences } from './toTiptap.js';
+export type { ContentReferences, SourcePoint } from './toTiptap.js';
 
 export interface ParseOptions<K extends DocumentKind> {
   /** Caminho do arquivo como deve aparecer nos diagnósticos. */
@@ -55,7 +55,7 @@ export function parseDocument<K extends DocumentKind>(
     // Erro de sintaxe do MDX (JSX malformado etc.) vem com a posição.
     const place = (error as { place?: { line: number; column: number } | { start: { line: number; column: number } } }).place;
     const point = place && 'start' in place ? place.start : place;
-    bag.report(point ?? { line: 1, column: 1 }, `sintaxe inválida: ${(error as Error).message}`);
+    bag.report(point ?? { line: 1, column: 1 }, `sintaxe inválida: ${(error as Error).message.replace(/\.?$/, '.')}`);
     return { frontmatter: null, doc: empty, references, diagnostics: bag.items };
   }
 

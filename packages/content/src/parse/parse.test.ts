@@ -102,9 +102,35 @@ describe('blocos Markdown padrão', () => {
     ]);
   });
 
-  it('links são coletados como referências', () => {
-    const { references } = page('[a](../outra.mdx#uso) e [b](https://x.dev)');
-    expect(references.links.map((l) => l.href)).toEqual(['../outra.mdx#uso', 'https://x.dev']);
+  it('links e imagens são coletados como referências, com posição', () => {
+    const { references } = page('[a](../outra.mdx#uso) e [b](https://x.dev)\n\n![i](./i.png)');
+    expect(references.links).toEqual([
+      { href: '../outra.mdx#uso', line: 5, column: 1 },
+      { href: 'https://x.dev', line: 5, column: 25 },
+    ]);
+    expect(references.images).toEqual([{ src: './i.png', line: 7, column: 1 }]);
+  });
+
+  it('ênfase do mesmo tipo aninhada não duplica o mark', () => {
+    const { doc, diagnostics } = page('**a **b** c** *d *e* f*');
+    expect(diagnostics).toEqual([]);
+    expect(doc.content?.[0]?.content).toEqual([
+      text('a b c', [{ type: 'bold' }]),
+      text(' '),
+      text('d e f', [{ type: 'italic' }]),
+    ]);
+  });
+
+  it('<u> vira sublinhado, inline e sozinho na linha', () => {
+    const { doc, diagnostics } = page('Texto <u>**forte**</u> fim.\n\n<u>Linha toda</u>');
+    expect(diagnostics).toEqual([]);
+    expect(doc.content).toEqual([
+      {
+        type: 'paragraph',
+        content: [text('Texto '), text('forte', [{ type: 'bold' }, { type: 'underline' }]), text(' fim.')],
+      },
+      { type: 'paragraph', content: [text('Linha toda', [{ type: 'underline' }])] },
+    ]);
   });
 
   it('arquivo .md sem frontmatter de landing é válido e vazio', () => {
@@ -128,6 +154,11 @@ describe('o que o CMS não representa vira erro com posição', () => {
     ['a {1 + 1}', 'expressões'],
     ["import X from './x'", '`import`/`export`'],
     ['<Badge />', '<Badge> não é um componente aceito'],
+    ['texto <Badge>x</Badge> inline', '<Badge> não é um componente aceito'],
+    ['<u class="x">a</u>', '<u> não aceita props'],
+    ['[](https://x.dev)', 'link sem texto'],
+    ['```ts title="x.ts"\nconst a = 1\n```', 'metadados do bloco de código'],
+    ['| a |\n| - |\n| ![i](x.png) |', 'imagem não pode ficar em célula de tabela'],
   ])('%j', (body, expected) => {
     const found = messages(body);
     expect(found.length).toBeGreaterThan(0);
@@ -138,6 +169,12 @@ describe('o que o CMS não representa vira erro com posição', () => {
     expect(messages('ok\n\n#### fora')).toEqual([
       'docs/m/s/p.mdx:7:1  heading de nível 4 não é suportado — use até ###.',
     ]);
+  });
+
+  it('problemas dentro de um heading recusado também aparecem', () => {
+    const found = messages('#### ~~x~~');
+    expect(found).toHaveLength(2);
+    expect(found.join('\n')).toContain('tachado');
   });
 
   it('em .md, HTML é erro (sem componentes)', () => {
@@ -152,6 +189,18 @@ describe('o que o CMS não representa vira erro com posição', () => {
 });
 
 describe('frontmatter', () => {
+  it('o erro aponta a linha do campo', () => {
+    const { diagnostics } = parseDocument('---\ntitle: A\norder: x\ntitel: B\n---\n', {
+      file: 'f.mdx',
+      format: 'mdx',
+      kind: 'page',
+    });
+    expect(diagnostics.map((d) => `${d.line}: ${d.message}`).sort()).toEqual([
+      '3: frontmatter: "order" precisa ser um número.',
+      '4: frontmatter: "titel" não é um campo aceito (quis dizer "title"?).',
+    ]);
+  });
+
   const fm = (yaml: string, kind: 'page' | 'tab' | 'landing' = 'page') =>
     parseDocument(`---\n${yaml}\n---\n`, { file: 'f.mdx', format: 'mdx', kind });
 

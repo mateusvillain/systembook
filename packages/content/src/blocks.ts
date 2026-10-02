@@ -1,11 +1,16 @@
-import type { Block, BlockType } from '@systembook/schema';
+import type { Block, BlockType, CalloutVariant, DosDontsCover, DosDontsVariant } from '@systembook/schema';
 
 /**
  * Mapeamento canônico entre nós Tiptap top-level e blocos do SystemBook
- * (TASK-31; centralizado aqui na SYS-93). É a única implementação: o server
- * (`blocks/serialize.ts`, persistência), a doc pública (`@systembook/docs-site`,
- * renderização) e o parser de arquivos deste pacote usam estas funções. A
- * forma de cada tipo está documentada em `packages/schema/src/block.ts`.
+ * (TASK-31; centralizado aqui na SYS-93). A doc pública
+ * (`@systembook/docs-site`) e o parser de arquivos deste pacote usam estas
+ * funções. O server (`apps/server/src/blocks/serialize.ts`) mantém uma cópia —
+ * ele roda compilado em produção e não importa pacote de workspace em runtime
+ * —, e um teste de paridade lá exige que as duas produzam o mesmo resultado.
+ * A forma de cada tipo está documentada em `packages/schema/src/block.ts`.
+ *
+ * Os attrs são lidos sem validação (os casts abaixo só nomeiam o tipo): quem
+ * garante valores válidos é o schema do editor ou o parser, antes daqui.
  *
  * Funções puras, sem dependência de Tiptap — o shape mínimo de nó é declarado
  * aqui.
@@ -46,7 +51,7 @@ export function nodeToBlock(node: TiptapNode): BlockData {
     case 'heading':
       return {
         type: 'heading',
-        content: { level: (node.attrs?.level as 1 | 2 | 3 | 4) ?? 1, body: node.content },
+        content: { level: (node.attrs?.level as 1 | 2 | 3 | 4 | undefined) ?? 1, body: node.content },
       };
     case 'paragraph':
       return { type: 'paragraph', content: { body: node.content } };
@@ -63,8 +68,8 @@ export function nodeToBlock(node: TiptapNode): BlockData {
       return {
         type: 'image',
         content: {
-          src: (node.attrs?.src as string) ?? '',
-          alt: (node.attrs?.alt as string) ?? '',
+          src: (node.attrs?.src as string | undefined) ?? '',
+          alt: (node.attrs?.alt as string | undefined) ?? '',
           caption: (node.attrs?.caption as string | null) ?? null,
         },
       };
@@ -73,13 +78,13 @@ export function nodeToBlock(node: TiptapNode): BlockData {
     case 'callout':
       return {
         type: 'callout',
-        content: { variant: (node.attrs?.variant as 'info') ?? 'info', body: node.content },
+        content: { variant: (node.attrs?.variant as CalloutVariant | undefined) ?? 'info', body: node.content },
       };
     case 'componentEmbed':
       return {
         type: 'component-embed',
         content: {
-          componentName: (node.attrs?.componentName as string) ?? '',
+          componentName: (node.attrs?.componentName as string | undefined) ?? '',
           variantId: (node.attrs?.variantId as string | null) ?? null,
         },
       };
@@ -87,9 +92,9 @@ export function nodeToBlock(node: TiptapNode): BlockData {
       return {
         type: 'dos-donts',
         content: {
-          variant: (node.attrs?.variant as 'do') ?? 'do',
+          variant: (node.attrs?.variant as DosDontsVariant | undefined) ?? 'do',
           titulo: (node.attrs?.titulo as string) ?? '',
-          cover: (node.attrs?.cover as Extract<Block, { type: 'dos-donts' }>['content']['cover']) ?? undefined,
+          cover: (node.attrs?.cover as DosDontsCover | null | undefined) ?? undefined,
           descricao: node.content,
         },
       };

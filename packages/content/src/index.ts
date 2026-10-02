@@ -18,7 +18,8 @@ export {
 export {
   parseDocument,
   type ContentReferences,
+  type SourcePoint,
   type ParsedDocument,
   type ParseOptions,
 } from './parse/index.js';
-export { normalizeLanguage } from './parse/toTiptap.js';
+export { MARK_ORDER, normalizeLanguage } from './parse/toTiptap.js';
