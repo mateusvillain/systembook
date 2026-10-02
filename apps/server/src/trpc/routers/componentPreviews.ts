@@ -1,5 +1,6 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
+import type { PublicComponentPreview } from '@systembook/schema';
 import {
   getLatestPreview,
   listComponentNames,
@@ -17,6 +18,14 @@ import { protectedProcedure, publicProcedure, router } from '../init.js';
  * protectedProcedure: é conteúdo do editor (admin + editor têm acesso, mesma
  * decisão de escopo de blocks/revisions).
  */
+/** Metadados do artefato que vão além do contrato público. */
+interface PreviewMeta {
+  componentName: string;
+  variantId: string;
+  commitSha: string;
+  publicadoEm: string;
+}
+
 export const componentPreviewsRouter = router({
   /** Componentes selecionáveis no picker (TASK-48) — só os já publicados. */
   listComponents: protectedProcedure.query(({ ctx }) => listComponentNames(ctx.db)),
@@ -31,7 +40,8 @@ export const componentPreviewsRouter = router({
   // component-embed precisa dele na doc pública deslogada (TASK-50).
   getLatest: publicProcedure
     .input(z.object({ componentName: z.string().min(1), variantId: z.string().min(1) }))
-    .query(async ({ ctx, input }) => {
+    // Retorno é o contrato público (SYS-89) mais os metadados do artefato.
+    .query(async ({ ctx, input }): Promise<(PublicComponentPreview & PreviewMeta) | null> => {
       const row = getLatestPreview(ctx.db, input.componentName, input.variantId);
       if (!row) return null;
 

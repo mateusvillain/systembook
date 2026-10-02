@@ -32,4 +32,9 @@ export const trpcDataSource: DocsDataSource = {
       : null,
 
   search: (q) => trpcClient.search.query.query({ q }),
+
+  getComponentPreview: async (ref) => {
+    const preview = await trpcClient.componentPreviews.getLatest.query(ref);
+    return preview && { url: preview.url, config: preview.config };
+  },
 };

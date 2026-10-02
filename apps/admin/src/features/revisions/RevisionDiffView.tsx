@@ -5,10 +5,12 @@ import type { Block } from '@systembook/schema';
 import { ArrowLeftRight, Minus, PenLine, Plus, X } from 'lucide-react';
 import { useTRPC, type RouterOutput } from '../../lib/trpc.js';
 import { blocksToTiptapDoc } from './blocksToTiptapDoc.js';
-import { editorExtensions } from '../editor/extensions.js';
+import { contentExtensions } from '../content/extensions.js';
 import { Button } from '@/components/ui/button';
 import { adminTypography } from '../../lib/typography.js';
 import { cn } from '@/lib/utils';
+// Conteúdo primeiro: `.sb-diff-block` (editor.css) precisa vencer na cascata.
+import '../content/content.css';
 import '../editor/editor.css';
 
 type Diff = RouterOutput['revisions']['diff'];
@@ -288,7 +290,7 @@ function BeforeAfter({
 function BlockContent({ block, muted }: { block: DiffBlock | null; muted?: boolean }) {
   const editor = useEditor(
     {
-      extensions: editorExtensions,
+      extensions: contentExtensions,
       content: block ? blocksToTiptapDoc([block as Block]) : { type: 'doc', content: [] },
       editable: false,
     },

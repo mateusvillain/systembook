@@ -1,4 +1,5 @@
 import type { PageSnapshot } from './block.js';
+import type { PreviewConfig } from './preview-config.js';
 
 /**
  * Contrato de dados da documentação pública (SYS-87).
@@ -87,6 +88,20 @@ export interface PublicSearchResult {
   snippet: string;
 }
 
+/** Par que um bloco `component-embed` (ou o cover de um dos-donts) referencia. */
+export interface ComponentPreviewRef {
+  componentName: string;
+  variantId: string;
+}
+
+/** Preview publicado de uma variante de componente (SYS-89). */
+export interface PublicComponentPreview {
+  /** URL do artefato estático, usada como `src` do iframe. */
+  url: string;
+  /** `PreviewConfig` co-localizado; `null` em artefatos sem config (o painel de controles some). */
+  config: PreviewConfig | null;
+}
+
 /** Fonte de dados da doc pública. Toda leitura é assíncrona. */
 export interface DocsDataSource {
   /** Árvore de navegação pública. */
@@ -108,4 +123,6 @@ export interface DocsDataSource {
   resolvePath(segments: string[]): Promise<ResolvedPublicPath | null>;
   /** Busca no conteúdo publicado. `q` nunca é vazio. */
   search(q: string): Promise<PublicSearchResult[]>;
+  /** Preview publicado mais recente de uma variante, ou `null` se não há. */
+  getComponentPreview(ref: ComponentPreviewRef): Promise<PublicComponentPreview | null>;
 }

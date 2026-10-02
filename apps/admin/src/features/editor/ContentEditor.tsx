@@ -12,6 +12,7 @@ import { TableControls } from './TableControls.js';
 import { EditorEmptyState } from './EditorEmptyState.js';
 import { ComponentEmbedPicker, type ComponentEmbedSelection } from './ComponentEmbedPicker.js';
 import { insertComponentEmbed } from './blockInsert.js';
+import '../content/content.css';
 import './editor.css';
 
 declare global {
@@ -71,8 +72,8 @@ const EditorInner = forwardRef<ContentEditorHandle, { tabId: string; initialDoc:
     const [linkRequest, setLinkRequest] = useState(0);
 
     // Extensões que dependem de UI React (TASK-103, SYS-65): só no editor
-    // editável, nunca no preview read-only (`PageRenderer.tsx` usa
-    // `editorExtensions` puro). `setState` é estável entre renders, então este
+    // editável, nunca no preview read-only (`PageRenderer.tsx` usa só
+    // `contentExtensions`). `setState` é estável entre renders, então este
     // `useMemo` nunca precisa recriar.
     const extensions = useMemo(
       () => [

@@ -13,8 +13,8 @@ export interface LinkShortcutOptions {
  * nenhum atalho: só quem tem a UI sabe o que "abrir o link" significa. Daí a
  * **fábrica** com callback, mesmo padrão do `createSlashCommandExtension`
  * (TASK-103) — a extensão é montada por instância no `ContentEditor`, e o
- * renderer read-only da doc pública, que importa `editorExtensions` puro,
- * nunca a recebe.
+ * renderer read-only da doc pública, que monta só o conjunto de conteúdo
+ * (`contentExtensions`), nunca a recebe.
  *
  * **Por que um plugin com `handleKeyDown` e não `addKeyboardShortcuts`.** O
  * painel já tem um dono para ⌘K: a paleta de busca (`AdminSearch`), num

@@ -5,18 +5,24 @@ import {
   ReactNodeViewRenderer,
   type NodeViewProps,
 } from '@tiptap/react';
+import type { ComponentType } from 'react';
 import { Check, X, type LucideIcon } from 'lucide-react';
 import type { DosDontsCover, DosDontsVariant } from '@systembook/schema';
-import { DosDontsCoverField } from './DosDontsCover.js';
+import { DosDontsCoverView, type DosDontsCoverFieldProps } from './DosDontsCover.js';
 
 /**
  * Bloco de convenção de uso (Fase 8, TASK-72/73) — mesmo padrão NodeView React
  * estabelecido pelo `Callout` (TASK-28): extensão + view no mesmo arquivo,
  * attrs espelhados em `data-*`, switcher in-place preservando o conteúdo.
  *
- * `cover` (TASK-73) é opcional — imagem OU component-embed — e sua UI vive em
- * `DosDontsCover.tsx`.
+ * `cover` (TASK-73) é opcional — imagem OU component-embed. A renderização vem
+ * de `DosDontsCover.tsx`; o editor troca o campo pela versão editável via a
+ * opção `CoverField` (SYS-89), que depende do picker e da API do painel.
  */
+
+export interface DosDontsOptions {
+  CoverField: ComponentType<DosDontsCoverFieldProps>;
+}
 
 export const DOS_DONTS_VARIANTS = ['do', 'dont'] as const satisfies readonly DosDontsVariant[];
 
@@ -41,7 +47,8 @@ function parseCover(raw: string | null): DosDontsCover | null {
   }
 }
 
-function DosDontsView({ node, updateAttributes, editor }: NodeViewProps) {
+function DosDontsView({ node, updateAttributes, editor, extension }: NodeViewProps) {
+  const { CoverField } = extension.options as DosDontsOptions;
   const variant = node.attrs.variant as DosDontsVariant;
   const titulo = node.attrs.titulo as string;
   const cover = node.attrs.cover as DosDontsCover | null;
@@ -50,7 +57,7 @@ function DosDontsView({ node, updateAttributes, editor }: NodeViewProps) {
 
   return (
     <NodeViewWrapper className="sb-dos-donts" data-variant={variant}>
-      <DosDontsCoverField
+      <CoverField
         cover={cover}
         editable={editor.isEditable}
         onChange={(next) => updateAttributes({ cover: next })}
@@ -111,11 +118,15 @@ function DosDontsView({ node, updateAttributes, editor }: NodeViewProps) {
   );
 }
 
-export const DosDonts = Node.create({
+export const DosDonts = Node.create<DosDontsOptions>({
   name: 'dosDonts',
   group: 'block',
   content: 'block+',
   defining: true,
+
+  addOptions() {
+    return { CoverField: DosDontsCoverView };
+  },
 
   addAttributes() {
     return {
