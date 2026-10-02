@@ -63,6 +63,7 @@ describe('systembook build', { timeout: 60_000 }, () => {
       '_systembook/data/pages/foundation/color/tokens.json',
       '_systembook/data/previews.json',
       '_systembook/data/routes.json',
+      '_systembook/data/search.json',
       '_systembook/data/settings.json',
     ]);
 

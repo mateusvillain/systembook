@@ -41,7 +41,11 @@ function collectText(node: unknown, out: string[]): void {
 }
 
 /**
- * Texto plano de **um** bloco. Extraído para fora do `extractSearchableText`
+ * Texto plano de **um** bloco. Cópia da regra canônica de `@systembook/content`
+ * (`site/search.ts`), que o índice de busca do modo estático usa — o teste de
+ * paridade (`searchText.test.ts`) impede as duas de divergirem.
+ *
+ * Extraído para fora do `extractSearchableText`
  * (SYS-63) porque a busca em rascunho lê linha a linha de `blocks`, sem
  * snapshot: as duas leituras precisam concordar sobre o que é "texto do
  * bloco", senão o mesmo conteúdo apareceria numa busca e não na outra.

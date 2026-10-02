@@ -54,6 +54,7 @@
   "dependencies": {
     "@systembook/schema": "workspace:^",
     "@types/mdast": "^4.0.4",
+    "minisearch": "^7.2.0",
     "remark-frontmatter": "^5.0.0",
     "remark-gfm": "^4.0.1",
     "remark-mdx": "^3.1.1",

@@ -10,6 +10,8 @@ export const staticDataPaths = {
   nav: 'nav.json',
   landing: 'landing.json',
   previews: 'previews.json',
+  /** Índice de busca (SYS-101), lido só na primeira busca. */
+  search: 'search.json',
   page: (ref: PublicPageRef) => `pages/${pageKey(ref)}.json`,
 };
 

@@ -174,6 +174,7 @@ describe('siteDataFiles', () => {
       'nav.json',
       'landing.json',
       'previews.json',
+      'search.json',
       'pages/components/actions/button.json',
       'pages/foundation/color/palette.json',
       'pages/foundation/color/tokens.json',

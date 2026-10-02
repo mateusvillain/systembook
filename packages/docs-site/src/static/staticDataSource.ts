@@ -7,13 +7,20 @@ import type {
   PublicSettings,
   PublishedPage,
 } from '@systembook/schema';
-import { previewKey, staticDataPaths } from '@systembook/content/site';
+import {
+  loadSearchIndex,
+  previewKey,
+  querySearchIndex,
+  staticDataPaths,
+  type SearchIndex,
+  type SearchIndexJson,
+} from '@systembook/content/site';
 
 /**
  * Fonte de dados da doc pública no modo estático (SYS-98): lê os JSONs que o
  * `systembook build` gera (`siteDataFiles`, em `@systembook/content`), sem
  * servidor. Nav, settings e previews são lidos uma vez; cada página, só quando
- * pedida.
+ * pedida; o índice de busca, só na primeira busca (SYS-101).
  *
  * Uma página só é buscada se existir na nav. Além de poupar a rede, é o que
  * torna a fonte segura em hosts com fallback de SPA, que respondem 200 com o
@@ -66,6 +73,17 @@ export function createStaticDataSource({ dataUrl, fetch: doFetch = globalThis.fe
 
   const getNavTree = () => once<PublicNavTree>(staticDataPaths.nav);
 
+  // Fora do `once`: guardar o JSON cru além do índice carregado seria o
+  // dado duas vezes na memória.
+  let index: Promise<SearchIndex> | null = null;
+  const getSearchIndex = () => {
+    index ??= readJson<SearchIndexJson>(staticDataPaths.search).then(loadSearchIndex, (error: unknown) => {
+      index = null;
+      throw error;
+    });
+    return index;
+  };
+
   async function getPage(ref: PublicPageRef): Promise<PublishedPage | null> {
     const nav = await getNavTree();
     const exists = nav
@@ -89,8 +107,7 @@ export function createStaticDataSource({ dataUrl, fetch: doFetch = globalThis.fe
     },
     // O modo estático nasce com as URLs canônicas: não há path legado a resolver.
     resolvePath: async () => null,
-    // Busca client-side: SYS-101.
-    search: async () => [],
+    search: async (q) => querySearchIndex(await getSearchIndex(), q),
     getComponentPreview: async (ref) =>
       (await once<Record<string, PublicComponentPreview>>(staticDataPaths.previews))[previewKey(ref)] ?? null,
   };

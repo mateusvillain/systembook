@@ -11,6 +11,7 @@ import { tiptapDocToBlocks, type TiptapDoc, type TiptapNode } from '../blocks.js
 import type { Diagnostic } from '../diagnostics.js';
 import type { ContentDocument, ContentTree } from '../tree/types.js';
 import { pageKey, parsePageKey, sitePath, staticDataPaths } from './paths.js';
+import { createSearchIndex } from './search.js';
 
 /**
  * Árvore de conteúdo → dados do site estático (SYS-96): a navegação, as
@@ -252,6 +253,7 @@ export function siteDataFiles(data: StaticSiteData): Map<string, string> {
     [staticDataPaths.nav, json(data.nav)],
     [staticDataPaths.landing, json(data.landing)],
     [staticDataPaths.previews, json(sortedRecord(data.previews))],
+    [staticDataPaths.search, json(createSearchIndex(data))],
   ]);
   for (const key of Object.keys(data.pages).sort()) {
     files.set(staticDataPaths.page(parsePageKey(key)), json(data.pages[key]));
