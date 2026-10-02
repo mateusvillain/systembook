@@ -2,9 +2,10 @@ import { Link, useOutletContext } from 'react-router-dom';
 import type { PublicOutletContext } from './PublicLayout.js';
 import { PageRenderer } from './PageRenderer.js';
 import { useLanding } from '../content/docsQueries.js';
+import { useDocsPaths } from './docsRoutes.js';
 
 /**
- * Raiz da doc pública (`/docs`, TASK-56). Mostra a **página inicial
+ * Raiz da doc pública (`/docs` no modo CMS, TASK-56). Mostra a **página inicial
  * customizável** (última revisão publicada da landing, via `DocsDataSource.getLanding`)
  * renderizada pelo `PageRenderer` comum. Se a landing nunca foi publicada,
  * mostra um estado padrão de boas-vindas com um caminho para dentro da
@@ -12,6 +13,7 @@ import { useLanding } from '../content/docsQueries.js';
  * primeira seção, decisão da TASK-56).
  */
 export function PublicHome() {
+  const paths = useDocsPaths();
   const { tree, isLoading } = useOutletContext<PublicOutletContext>();
   const landing = useLanding();
 
@@ -41,7 +43,13 @@ export function PublicHome() {
       {firstMenu && firstSection && firstPage ? (
         <p>
           Bem-vindo à documentação. Comece por{' '}
-          <Link to={`/docs/${firstMenu.slug}/${firstSection.slug}/${firstPage.slug}`}>
+          <Link
+            to={paths.page({
+              menuSlug: firstMenu.slug,
+              sectionSlug: firstSection.slug,
+              pageSlug: firstPage.slug,
+            })}
+          >
             {firstPage.titulo}
           </Link>
           .

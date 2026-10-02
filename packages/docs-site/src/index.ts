@@ -58,6 +58,7 @@ export { PublicHome } from './public/PublicHome.js';
 export { PublicPageView } from './public/PublicPageView.js';
 export { PublicPageById } from './public/PublicPageById.js';
 export { LegacyDocsRedirect } from './public/LegacyDocsRedirect.js';
+export { DocsRoutesProvider, useDocsPaths, type DocsPaths } from './public/docsRoutes.js';
 export { TableOfContents } from './public/TableOfContents.js';
 export { useHeadingIds } from './public/useHeadingIds.js';
 export { useTheme } from './public/useTheme.js';

@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, X } from 'lucide-react';
 import { usePublicSearch } from '../content/docsQueries.js';
+import { useDocsPaths } from './docsRoutes.js';
 
 // Delimitadores STX/ETX que o `snippet()` do FTS5 coloca ao redor dos termos
 // casados (ver SearchResult.snippet no server). Escritos como escapes \u para
@@ -56,6 +57,7 @@ function isTypingTarget(el: EventTarget | null): boolean {
  */
 export function SearchBox() {
   const navigate = useNavigate();
+  const paths = useDocsPaths();
   const listboxId = useId();
 
   const [query, setQuery] = useState('');
@@ -89,7 +91,7 @@ export function SearchBox() {
   }, [open]);
 
   // Atalho global ⌘K / Ctrl+K (SYS-40): foca a busca de qualquer ponto de
-  // `/docs`. No mobile o campo só existe dentro do overlay, então o atalho
+  // da doc. No mobile o campo só existe dentro do overlay, então o atalho
   // abre o overlay antes de focar.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -116,8 +118,11 @@ export function SearchBox() {
     setQuery('');
     // URL canônica com o menu (SYS-37); sem `menuSlug` cai na forma legada,
     // que o `LegacyDocsRedirect` resolve.
-    const prefix = r.menuSlug ? `${r.menuSlug}/` : '';
-    navigate(`/docs/${prefix}${r.sectionSlug ?? ''}/${r.pageSlug}`);
+    navigate(
+      r.menuSlug
+        ? paths.page({ menuSlug: r.menuSlug, sectionSlug: r.sectionSlug ?? '', pageSlug: r.pageSlug })
+        : paths.legacyPage(r.sectionSlug ?? '', r.pageSlug),
+    );
   }
 
   function openMobile() {
