@@ -13,7 +13,7 @@ import { Switch } from '../ui/switch.js';
  */
 
 /**
- * Valor de `type` da mensagem (o admin não depende de preview-kit; o literal é
+ * Valor de `type` da mensagem (o docs-site não depende de preview-kit; o literal é
  * anotado contra o tipo do schema para não divergir — mesma convenção do
  * server com BLOCK_TYPES). O preview-kit exporta o mesmo literal.
  */

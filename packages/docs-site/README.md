@@ -2,7 +2,7 @@
 
 A documentação pública do [SystemBook](https://github.com/mateusvillain/systembook) e a camada de renderização de conteúdo (extensões Tiptap, NodeViews e estilos), independentes de onde o conteúdo vem.
 
-O mesmo site roda sobre o servidor do SystemBook (modo CMS) ou sobre arquivos gerados no build (modo estático). Quem monta o site fornece a fonte de dados, implementando o contrato `DocsDataSource` de [`@systembook/schema`](../schema):
+O mesmo site roda sobre o servidor do SystemBook (modo CMS) ou sobre arquivos gerados no build (modo estático). Quem monta o site fornece a fonte de dados, implementando o contrato `DocsDataSource` de [`@systembook/schema`](https://www.npmjs.com/package/@systembook/schema):
 
 ```tsx
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';

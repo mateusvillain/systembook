@@ -11,7 +11,18 @@
 
 // Fonte de dados e leituras
 export { DocsDataSourceProvider, useDocsDataSource } from './content/dataSource.js';
-export * from './content/docsQueries.js';
+export {
+  docsQueryKeys,
+  hasPreviewSelection,
+  useComponentPreview,
+  useLanding,
+  useNavTree,
+  usePageById,
+  usePageBySlug,
+  usePublicSearch,
+  usePublicSettings,
+  useResolvedPath,
+} from './content/docsQueries.js';
 
 // Conteúdo: extensões Tiptap, nós e utilitários
 export { createContentExtensions, contentExtensions } from './content/extensions.js';

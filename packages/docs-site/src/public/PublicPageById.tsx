@@ -5,8 +5,9 @@ import { usePageById } from '../content/docsQueries.js';
 /**
  * Superfície pública de documentação de uma página (TASK-50). Renderiza o
  * conteúdo da **última revisão publicada** (não o rascunho ao vivo), sem
- * autenticação. Rota provisória `/p/:pageId` — a hierarquia por slug
- * (`/:section/:page`) e o chrome de layout vêm com a TASK-52 (Fase 6).
+ * autenticação, sem o shell da doc. Atende o link direto por id
+ * (`/p/:pageId`), mantido para bookmarks e preview sem slug; a navegação
+ * pública canônica é por slug (`PublicPageView`, TASK-52).
  */
 export function PublicPageById() {
   const { pageId } = useParams<{ pageId: string }>();
