@@ -79,10 +79,19 @@ describe('staticDataSource', () => {
     expect(await ds.getComponentPreview({ componentName: 'Button', variantId: 'ghost' })).toBeNull();
   });
 
-  it('sem paths legados; busca vazia até a SYS-101', async () => {
+  it('sem paths legados', async () => {
     const { ds } = source();
     expect(await ds.resolvePath(['color', 'palette'])).toBeNull();
-    expect(await ds.search('cores')).toEqual([]);
+  });
+
+  it('busca: o índice só é lido na primeira busca, e uma vez', async () => {
+    const { ds, requests } = source();
+    await ds.getNavTree();
+    expect(requests.some((u) => u.endsWith('search.json'))).toBe(false);
+    const results = await ds.search('cores');
+    expect(results.map((r) => [r.pageId, r.snippet])).toEqual([['foundation/color/palette', '\u0002Cores\u0003.']]);
+    await ds.search('uso');
+    expect(requests.filter((u) => u.endsWith('search.json'))).toHaveLength(1);
   });
 
   it('arquivo de dados que volta como HTML (fallback de SPA) é erro com a URL', async () => {
