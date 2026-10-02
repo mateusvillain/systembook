@@ -79,3 +79,56 @@ describe('parser ↔ schema do conteúdo', () => {
     expect(blocksToTiptapDoc(tiptapDocToBlocks(doc))).toEqual(doc);
   });
 });
+
+/**
+ * Componentes MDX (SYS-94). Os NodeViews deles são React; o `Editor` puro do
+ * core não os monta, mas a normalização que interessa é a do schema — é ela que
+ * o editor aplica ao carregar o conteúdo, e o `getJSON()` é o `toJSON()` do doc.
+ */
+const COMPONENTS = `<Callout variant="warning">
+  Evite **duas** ações primárias.
+
+  <Callout>Aninhado numa linha.</Callout>
+
+  <ComponentEmbed component="Button" variant="primary" />
+
+  ![Botão](./b.png "Legenda")
+
+  - item
+</Callout>
+
+<DosDonts variant="do" title="Use verbos" coverComponent="Button" coverVariant="primary">
+  "Salvar" diz o que acontece.
+
+  | Rótulo | Bom? |
+  | --- | :---: |
+  | Salvar | sim |
+</DosDonts>
+
+<DosDonts variant="dont" coverImage="./x.png" coverAlt="Dois primários">
+  Não empilhe.
+</DosDonts>
+
+<DosDonts variant="do">Sem cover nem título.</DosDonts>
+
+<ComponentEmbed component="Input" variant="error" />
+`;
+
+describe('componentes MDX ↔ schema do conteúdo', () => {
+  const { doc, diagnostics } = parseDocument(COMPONENTS, { file: 'c.mdx', format: 'mdx', kind: 'landing' });
+
+  it('o fixture não tem diagnósticos', () => {
+    expect(diagnostics).toEqual([]);
+  });
+
+  it('é válido no schema e já sai normalizado', () => {
+    const node = getSchema(contentExtensions).nodeFromJSON(doc);
+    expect(() => node.check()).not.toThrow();
+    expect(node.toJSON()).toEqual(doc);
+  });
+
+  it('sobrevive à ida e volta por blocos', () => {
+    expect(blocksToTiptapDoc(tiptapDocToBlocks(doc))).toEqual(doc);
+  });
+});
+

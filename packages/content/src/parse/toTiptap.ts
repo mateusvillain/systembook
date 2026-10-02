@@ -10,6 +10,7 @@ import type {
 } from 'mdast';
 import type { TiptapNode } from '../blocks.js';
 import type { DiagnosticBag, Positioned } from '../diagnostics.js';
+import { blockComponent, isBlockComponent, type JsxElement as BlockJsx } from './components.js';
 
 /**
  * mdast → nós Tiptap (SYS-93), no formato **canônico** que o editor do CMS
@@ -38,6 +39,8 @@ interface ConvertContext {
   refs: ContentReferences;
   /** Dentro de célula de tabela: só conteúdo inline. */
   inCell?: boolean;
+  /** Componente pai direto, para as regras de aninhamento do CMS. */
+  parent?: 'callout' | 'dosDonts';
 }
 
 function pointOf(node: Positioned): SourcePoint {
@@ -208,6 +211,10 @@ function inline(
         break;
       case 'mdxJsxTextElement': {
         const jsx = node as unknown as JsxElement;
+        if (isBlockComponent(jsx.name)) {
+          ctx.bag.report(node, `<${jsx.name}> é um bloco — deixe-o sozinho, fora do texto do parágrafo.`);
+          break;
+        }
         if (jsx.name !== 'u') {
           ctx.bag.report(node, componentMessage(jsx.name));
           break;
@@ -245,7 +252,26 @@ function heading(node: Heading, ctx: ConvertContext): TiptapNode | null {
     : { type: 'heading', attrs: { level: node.depth } };
 }
 
+/** Parágrafo que é só um componente de bloco escrito numa linha (`<Callout>…</Callout>`). */
+function soloComponent(node: Paragraph): BlockJsx | null {
+  const meaningful = node.children.filter((c) => !(c.type === 'text' && c.value.trim() === ''));
+  const [only] = meaningful as unknown as BlockJsx[];
+  return meaningful.length === 1 && only?.type === 'mdxJsxTextElement' && isBlockComponent(only.name)
+    ? only
+    : null;
+}
+
+function component(el: BlockJsx, ctx: ConvertContext): TiptapNode | null {
+  return blockComponent(el, {
+    bag: ctx.bag,
+    convertChildren: (children, parent) => blocks(children, { ...ctx, parent }),
+    addImage: (src, at) => ctx.refs.images.push({ src, ...pointOf(at) }),
+  });
+}
+
 function paragraph(node: Paragraph, ctx: ConvertContext): TiptapNode | null {
+  const single = soloComponent(node);
+  if (single) return component(single, ctx);
   const image = soloImage(node);
   if (image) {
     ctx.refs.images.push({ src: image.url, ...pointOf(image) });
@@ -307,31 +333,58 @@ function table(node: Table, ctx: ConvertContext): TiptapNode {
   return { type: 'table', content: rows };
 }
 
-/** Converte uma sequência de blocos mdast em nós Tiptap. */
-export function blocks(
-  nodes: RootContent[],
-  ctx: { bag: DiagnosticBag; refs: ContentReferences },
-): TiptapNode[] {
-  const out: TiptapNode[] = [];
+/** Tipos inline do mdast — aparecem soltos como filhos de um componente de uma linha. */
+const PHRASING = new Set([
+  'text', 'emphasis', 'strong', 'inlineCode', 'link', 'image', 'break', 'delete', 'html',
+  'mdxJsxTextElement', 'mdxTextExpression', 'footnoteReference', 'linkReference', 'imageReference',
+]);
+
+/** Agrupa filhos inline soltos em parágrafos, para converter como blocos. */
+function asBlocks(nodes: RootContent[]): RootContent[] {
+  const out: RootContent[] = [];
+  let run: PhrasingContent[] = [];
+  const flush = () => {
+    if (run.length) out.push({ type: 'paragraph', children: run, position: run[0]!.position } as Paragraph);
+    run = [];
+  };
   for (const node of nodes) {
+    if (PHRASING.has(node.type)) run.push(node as PhrasingContent);
+    else {
+      flush();
+      out.push(node);
+    }
+  }
+  flush();
+  return out;
+}
+
+/** Converte uma sequência de blocos mdast em nós Tiptap. */
+export function blocks(nodes: RootContent[], ctx: ConvertContext): TiptapNode[] {
+  const out: TiptapNode[] = [];
+  const { parent, ...childCtx } = ctx;
+  for (const node of asBlocks(nodes)) {
     let converted: TiptapNode | null = null;
     switch (node.type) {
       case 'yaml':
         continue; // frontmatter, lido à parte
       case 'heading':
-        converted = heading(node, ctx);
+        converted = heading(node, childCtx);
         break;
       case 'paragraph':
-        converted = paragraph(node, ctx);
+        converted = paragraph(node, childCtx);
         break;
       case 'list':
-        converted = list(node, ctx);
+        converted = list(node, childCtx);
         break;
       case 'code':
-        converted = code(node, ctx);
+        converted = code(node, childCtx);
         break;
       case 'table':
-        converted = table(node, ctx);
+        if (parent === 'callout') {
+          ctx.bag.report(node, 'tabela dentro de <Callout> não é suportada (como no editor do CMS).');
+          break;
+        }
+        converted = table(node, childCtx);
         break;
       default: {
         const type = (node as AnyNode).type;
@@ -353,6 +406,10 @@ export function blocks(
               if (content.length) out.push({ type: 'paragraph', content });
             }
             continue;
+          }
+          if (isBlockComponent(jsx.name)) {
+            converted = component(node as unknown as BlockJsx, childCtx);
+            break;
           }
           ctx.bag.report(node, componentMessage(jsx.name));
         } else ctx.bag.report(node, `elemento "${type}" não é suportado.`);
