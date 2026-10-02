@@ -1,10 +1,8 @@
-import { useRef, useState } from 'react';
+import { useRef, type ComponentType } from 'react';
 import { mergeAttributes, Node } from '@tiptap/core';
 import { NodeViewWrapper, ReactNodeViewRenderer, type NodeViewProps } from '@tiptap/react';
-import { useQuery } from '@tanstack/react-query';
 import { Puzzle, TriangleAlert } from 'lucide-react';
-import { useTRPC } from '../../../lib/trpc.js';
-import { ComponentEmbedPicker } from '../ComponentEmbedPicker.js';
+import { hasPreviewSelection, useComponentPreview } from '../docsQueries.js';
 import { ControlsPanel } from '../ControlsPanel.js';
 
 /**
@@ -12,12 +10,33 @@ import { ControlsPanel } from '../ControlsPanel.js';
  * `componentName`/`variantId` no JSON; a forma persistida não mudou.
  *
  * TASK-47: quando ambos estão preenchidos, o NodeView resolve o artefato
- * publicado mais recente via `componentPreviews.getLatest` e renderiza um
- * `<iframe>` apontando para a rota estática (`/previews/...`, TASK-46). Sem
- * artefato publicado (ou enquanto carrega), cai no placeholder da TASK-29
- * (o polimento do empty-state fica na TASK-51). A UI de seleção de
- * componente/variante vem na TASK-48.
+ * publicado mais recente via `DocsDataSource.getComponentPreview` e renderiza
+ * um `<iframe>` apontando para o artefato estático. Sem artefato publicado (ou
+ * enquanto carrega), cai no placeholder da TASK-29 (o polimento do empty-state
+ * fica na TASK-51).
+ *
+ * Este é o NodeView de **renderização** (SYS-89): não conhece o picker nem a
+ * API do painel. A (re)seleção de componente (TASK-48) é injetada pelo editor
+ * via a opção `EditControls`, que só aparece quando o editor é editável.
  */
+
+/** Estado do embed exposto aos controles de edição. */
+export type ComponentEmbedState = 'unset' | 'loading' | 'empty' | 'live';
+
+export interface ComponentEmbedEditControlsProps {
+  componentName: string;
+  variantId: string | null;
+  state: ComponentEmbedState;
+  /** Nova tentativa de resolver o preview (estado `empty`). */
+  onRetry: () => void;
+  retrying: boolean;
+  onSelect: (selection: { componentName: string; variantId: string }) => void;
+}
+
+export interface ComponentEmbedOptions {
+  /** Controles de edição; `null` na renderização read-only. */
+  EditControls: ComponentType<ComponentEmbedEditControlsProps> | null;
+}
 
 function Placeholder({
   componentName,
@@ -46,54 +65,45 @@ function Placeholder({
   );
 }
 
-function ComponentEmbedView({ node, updateAttributes, editor }: NodeViewProps) {
+function ComponentEmbedView({ node, updateAttributes, editor, extension }: NodeViewProps) {
   const componentName = node.attrs.componentName as string;
   const variantId = node.attrs.variantId as string | null;
-  const trpc = useTRPC();
-  const [pickerOpen, setPickerOpen] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  const hasSelection = componentName.length > 0 && !!variantId && variantId.length > 0;
+  const hasSelection = hasPreviewSelection(componentName, variantId);
 
-  const previewQuery = useQuery({
-    ...trpc.componentPreviews.getLatest.queryOptions({
-      componentName,
-      variantId: variantId ?? '',
-    }),
-    enabled: hasSelection,
-  });
+  const previewQuery = useComponentPreview(componentName, variantId);
 
-  // Read-only (doc pública, TASK-50): o mesmo NodeView renderiza fora do editor
-  // — o iframe e o painel de controles ficam, mas a (re)seleção de componente
-  // não faz sentido, então o controle e o picker só aparecem quando editável.
-  const control = !editor.isEditable ? null : (
-    <>
-      <button
-        type="button"
-        data-testid="component-embed-reselect"
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={() => setPickerOpen(true)}
-        className="sb-embed-action-btn"
-      >
-        {hasSelection ? 'Replace component' : 'Select component'}
-      </button>
-      {pickerOpen && (
-        <ComponentEmbedPicker
-          initial={hasSelection ? { componentName, variantId: variantId! } : null}
-          onConfirm={(selection) => {
-            setPickerOpen(false);
-            updateAttributes({
-              componentName: selection.componentName,
-              variantId: selection.variantId,
-            });
-          }}
-          onCancel={() => setPickerOpen(false)}
-        />
-      )}
-    </>
-  );
+  const state: ComponentEmbedState = !hasSelection
+    ? 'unset'
+    : previewQuery.isLoading
+      ? 'loading'
+      : previewQuery.isError || !previewQuery.data
+        ? 'empty'
+        : 'live';
 
-  if (!hasSelection) {
+  // Read-only (doc pública, TASK-50): o iframe e o painel de controles ficam,
+  // mas a (re)seleção de componente não faz sentido — os controles só existem
+  // quando o editor é editável e os injetou.
+  const { EditControls } = extension.options as ComponentEmbedOptions;
+  const control =
+    editor.isEditable && EditControls ? (
+      <EditControls
+        componentName={componentName}
+        variantId={variantId}
+        state={state}
+        onRetry={() => void previewQuery.refetch()}
+        retrying={previewQuery.isFetching}
+        onSelect={(selection) =>
+          updateAttributes({
+            componentName: selection.componentName,
+            variantId: selection.variantId,
+          })
+        }
+      />
+    ) : null;
+
+  if (state === 'unset') {
     return (
       <Placeholder
         componentName={componentName}
@@ -113,7 +123,7 @@ function ComponentEmbedView({ node, updateAttributes, editor }: NodeViewProps) {
     );
   }
 
-  if (previewQuery.isLoading) {
+  if (state === 'loading') {
     return (
       <Placeholder
         componentName={componentName}
@@ -132,7 +142,8 @@ function ComponentEmbedView({ node, updateAttributes, editor }: NodeViewProps) {
   // Selecionado mas sem artefato publicável (nunca publicado, ou referência
   // defasada/renomeada) — estado visualmente distinto do "não selecionado"
   // (TASK-51). Nunca renderiza um iframe com src inválido.
-  if (previewQuery.isError || !previewQuery.data) {
+  // `!data` é só para o TS estreitar o tipo — em `live` ele sempre existe.
+  if (state === 'empty' || !previewQuery.data) {
     return (
       <NodeViewWrapper
         className="sb-component-embed sb-component-embed--empty"
@@ -149,18 +160,6 @@ function ComponentEmbedView({ node, updateAttributes, editor }: NodeViewProps) {
           yet.
           {editor.isEditable && ' Publish it via the connector in the component repository.'}
         </span>
-        {editor.isEditable && (
-          <button
-            type="button"
-            data-testid="component-embed-retry"
-            disabled={previewQuery.isFetching}
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => void previewQuery.refetch()}
-            className="sb-embed-action-btn"
-          >
-            {previewQuery.isFetching ? 'Checking…' : 'Try again'}
-          </button>
-        )}
         {control}
       </NodeViewWrapper>
     );
@@ -219,10 +218,14 @@ function ComponentEmbedView({ node, updateAttributes, editor }: NodeViewProps) {
   );
 }
 
-export const ComponentEmbed = Node.create({
+export const ComponentEmbed = Node.create<ComponentEmbedOptions>({
   name: 'componentEmbed',
   group: 'block',
   atom: true,
+
+  addOptions() {
+    return { EditControls: null };
+  },
 
   addAttributes() {
     return {

@@ -5,18 +5,33 @@ import {
   ReactNodeViewRenderer,
   type NodeViewProps,
 } from '@tiptap/react';
+import type { ComponentType } from 'react';
 import { Check, X, type LucideIcon } from 'lucide-react';
 import type { DosDontsCover, DosDontsVariant } from '@systembook/schema';
-import { DosDontsCoverField } from './DosDontsCover.js';
+import { DosDontsCoverView, type DosDontsCoverFieldProps } from './DosDontsCover.js';
+import type { VariantSwitcherProps } from './Callout.js';
 
 /**
  * Bloco de convenção de uso (Fase 8, TASK-72/73) — mesmo padrão NodeView React
  * estabelecido pelo `Callout` (TASK-28): extensão + view no mesmo arquivo,
  * attrs espelhados em `data-*`, switcher in-place preservando o conteúdo.
  *
- * `cover` (TASK-73) é opcional — imagem OU component-embed — e sua UI vive em
- * `DosDontsCover.tsx`.
+ * `cover` (TASK-73) é opcional — imagem OU component-embed. A renderização vem
+ * de `DosDontsCover.tsx`; o editor troca o campo pela versão editável via a
+ * opção `CoverField` (SYS-89), que depende do picker e da API do painel.
  */
+
+/** Campo de título injetado pelo editor; no read-only o título é texto. */
+export interface DosDontsTitleFieldProps {
+  titulo: string;
+  onChange: (titulo: string) => void;
+}
+
+export interface DosDontsOptions {
+  CoverField: ComponentType<DosDontsCoverFieldProps>;
+  VariantSwitcher: ComponentType<VariantSwitcherProps<DosDontsVariant>> | null;
+  TitleField: ComponentType<DosDontsTitleFieldProps> | null;
+}
 
 export const DOS_DONTS_VARIANTS = ['do', 'dont'] as const satisfies readonly DosDontsVariant[];
 
@@ -41,7 +56,8 @@ function parseCover(raw: string | null): DosDontsCover | null {
   }
 }
 
-function DosDontsView({ node, updateAttributes, editor }: NodeViewProps) {
+function DosDontsView({ node, updateAttributes, editor, extension }: NodeViewProps) {
+  const { CoverField, VariantSwitcher, TitleField } = extension.options as DosDontsOptions;
   const variant = node.attrs.variant as DosDontsVariant;
   const titulo = node.attrs.titulo as string;
   const cover = node.attrs.cover as DosDontsCover | null;
@@ -50,7 +66,7 @@ function DosDontsView({ node, updateAttributes, editor }: NodeViewProps) {
 
   return (
     <NodeViewWrapper className="sb-dos-donts" data-variant={variant}>
-      <DosDontsCoverField
+      <CoverField
         cover={cover}
         editable={editor.isEditable}
         onChange={(next) => updateAttributes({ cover: next })}
@@ -64,58 +80,30 @@ function DosDontsView({ node, updateAttributes, editor }: NodeViewProps) {
           <Icon aria-hidden size={17} />
         </span>
         <div className="sb-dos-donts-text">
-          {editor.isEditable ? (
-            <input
-              type="text"
-              className="sb-dos-donts-title-input"
-              placeholder="Title"
-              value={titulo}
-              aria-label="Do/Don't block title"
-              onChange={(e) => updateAttributes({ titulo: e.target.value })}
-            />
+          {editor.isEditable && TitleField ? (
+            <TitleField titulo={titulo} onChange={(next) => updateAttributes({ titulo: next })} />
           ) : (
             titulo && <strong className="sb-dos-donts-title">{titulo}</strong>
           )}
           <NodeViewContent className="sb-dos-donts-content" />
         </div>
       </div>
-      {editor.isEditable && (
-        // Overlay no canto superior direito (mesmo padrão do Callout, SYS-24)
-        // — não disputa espaço com ícone/título na linha do header.
-        <span
-          role="group"
-          aria-label="Variante do bloco Do/Don't"
-          className="sb-dos-donts-switcher"
-          contentEditable={false}
-        >
-          {DOS_DONTS_VARIANTS.map((v) => {
-            const SwitchIcon = DOS_DONTS_META[v].icon;
-            return (
-              <button
-                key={v}
-                type="button"
-                title={`Change to ${DOS_DONTS_META[v].label}`}
-                aria-pressed={v === variant}
-                className="sb-dos-donts-switch"
-                data-active={v === variant || undefined}
-                onClick={() => updateAttributes({ variant: v })}
-              >
-                <SwitchIcon aria-hidden size={12} />
-                {DOS_DONTS_META[v].label}
-              </button>
-            );
-          })}
-        </span>
+      {editor.isEditable && VariantSwitcher && (
+        <VariantSwitcher variant={variant} onChange={(v) => updateAttributes({ variant: v })} />
       )}
     </NodeViewWrapper>
   );
 }
 
-export const DosDonts = Node.create({
+export const DosDonts = Node.create<DosDontsOptions>({
   name: 'dosDonts',
   group: 'block',
   content: 'block+',
   defining: true,
+
+  addOptions() {
+    return { CoverField: DosDontsCoverView, VariantSwitcher: null, TitleField: null };
+  },
 
   addAttributes() {
     return {

@@ -1,7 +1,7 @@
 import { Link, NavLink } from 'react-router-dom';
 import type { PublicNavTree } from '@systembook/schema';
 import { PublicMenuNav } from './PublicMenuNav.js';
-import { usePublicSettings } from './docsQueries.js';
+import { usePublicSettings } from '../content/docsQueries.js';
 
 /**
  * Identidade da instância no topo da sidebar (SYS-39): logo enviado no CMS ou,

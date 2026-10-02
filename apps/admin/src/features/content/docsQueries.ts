@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import type { PublicPageRef } from '@systembook/schema';
+import type { ComponentPreviewRef, PublicPageRef } from '@systembook/schema';
 import { useDocsDataSource } from './dataSource.js';
 
 /**
@@ -16,6 +16,8 @@ export const docsQueryKeys = {
   pageById: (pageId: string) => [...docsQueryKeys.all, 'pageById', pageId] as const,
   resolvePath: (segments: string[]) => [...docsQueryKeys.all, 'resolvePath', segments] as const,
   search: (q: string) => [...docsQueryKeys.all, 'search', q] as const,
+  componentPreview: (ref: ComponentPreviewRef) =>
+    [...docsQueryKeys.all, 'componentPreview', ref] as const,
 };
 
 // Uma query por leitura do `DocsDataSource`. Os componentes públicos usam
@@ -71,5 +73,21 @@ export function usePublicSearch(q: string) {
     queryKey: docsQueryKeys.search(q),
     queryFn: () => ds.search(q),
     enabled: q.length > 0,
+  });
+}
+
+/** Um embed (ou cover) só tem preview a resolver com componente **e** variante escolhidos. */
+export function hasPreviewSelection(componentName: string, variantId: string | null): boolean {
+  return componentName.length > 0 && !!variantId;
+}
+
+/** Preview de uma variante; só dispara com componente e variante escolhidos. */
+export function useComponentPreview(componentName: string, variantId: string | null) {
+  const ds = useDocsDataSource();
+  const ref = { componentName, variantId: variantId ?? '' };
+  return useQuery({
+    queryKey: docsQueryKeys.componentPreview(ref),
+    queryFn: () => ds.getComponentPreview(ref),
+    enabled: hasPreviewSelection(componentName, variantId),
   });
 }

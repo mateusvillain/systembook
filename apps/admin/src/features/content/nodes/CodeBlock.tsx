@@ -1,4 +1,7 @@
-import { CodeBlockLowlight } from '@tiptap/extension-code-block-lowlight';
+import {
+  CodeBlockLowlight,
+  type CodeBlockLowlightOptions,
+} from '@tiptap/extension-code-block-lowlight';
 import {
   NodeViewContent,
   NodeViewWrapper,
@@ -6,7 +9,7 @@ import {
   type NodeViewProps,
 } from '@tiptap/react';
 import { Check, Copy, type LucideIcon } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ComponentType } from 'react';
 import { createLowlight } from 'lowlight';
 import { copyText } from '../../../lib/clipboard.js';
 import bash from 'highlight.js/lib/languages/bash';
@@ -71,7 +74,7 @@ const lowlight = createLowlight({
  * lowlight (ou um alias que ele resolve, como `html` → `xml`); `label` é o que
  * o leitor vê no bloco.
  */
-const LANGUAGES: { value: string; label: string }[] = [
+export const LANGUAGES: { value: string; label: string }[] = [
   { value: 'javascript', label: 'JavaScript' },
   { value: 'typescript', label: 'TypeScript' },
   { value: 'xml', label: 'HTML' },
@@ -90,9 +93,6 @@ const LANGUAGES: { value: string; label: string }[] = [
   { value: 'php', label: 'PHP' },
   { value: 'ruby', label: 'Ruby' },
 ];
-
-/** Valor do `<select>` para "sem linguagem" — o atributo em si é `null`. */
-const PLAIN = 'plain';
 
 function labelFor(language: unknown): string | null {
   if (typeof language !== 'string' || language === '') return null;
@@ -162,7 +162,8 @@ const COPY_LABELS: Record<
   },
 };
 
-function CodeBlockView({ node, updateAttributes, editor }: NodeViewProps) {
+function CodeBlockView({ node, updateAttributes, editor, extension }: NodeViewProps) {
+  const { LanguageSelect } = extension.options as CodeBlockOptions;
   const language = node.attrs.language as string | null;
   const [copyState, setCopyState] = useState<CopyState>('idle');
   const preRef = useRef<HTMLPreElement>(null);
@@ -222,22 +223,11 @@ function CodeBlockView({ node, updateAttributes, editor }: NodeViewProps) {
   return (
     <NodeViewWrapper className="sb-code-block" data-language={language ?? undefined}>
       <div className="sb-code-head" contentEditable={false}>
-        {editor.isEditable ? (
-          <select
-            className="sb-code-lang-select"
-            aria-label="Code language"
-            value={language ?? PLAIN}
-            onChange={(e) =>
-              updateAttributes({ language: e.target.value === PLAIN ? null : e.target.value })
-            }
-          >
-            <option value={PLAIN}>Plain text</option>
-            {LANGUAGES.map((l) => (
-              <option key={l.value} value={l.value}>
-                {l.label}
-              </option>
-            ))}
-          </select>
+        {editor.isEditable && LanguageSelect ? (
+          <LanguageSelect
+            language={language}
+            onChange={(next) => updateAttributes({ language: next })}
+          />
         ) : (
           <span className="sb-code-lang">{labelFor(language) ?? ''}</span>
         )}
@@ -273,15 +263,35 @@ function CodeBlockView({ node, updateAttributes, editor }: NodeViewProps) {
   );
 }
 
-export const CodeBlock = CodeBlockLowlight.extend({
+/** Seletor de linguagem injetado pelo editor (SYS-89); `null` no read-only. */
+export interface CodeLanguageSelectProps {
+  language: string | null;
+  onChange: (language: string | null) => void;
+}
+
+export interface CodeBlockOptions extends CodeBlockLowlightOptions {
+  LanguageSelect: ComponentType<CodeLanguageSelectProps> | null;
+}
+
+/**
+ * Sem `.configure` aqui: `createContentExtensions` configura `lowlight` e o
+ * `LanguageSelect` de quem monta (ver `codeBlockConfig`).
+ */
+export const CodeBlock = CodeBlockLowlight.extend<CodeBlockOptions>({
+  addOptions() {
+    return { ...this.parent!(), LanguageSelect: null };
+  },
+
   addNodeView() {
     return ReactNodeViewRenderer(CodeBlockView);
   },
-}).configure({
+});
+
+export const codeBlockConfig = {
   lowlight,
   // Sem `defaultLanguage` o plugin cai em `lowlight.highlightAuto` para todo
   // bloco sem linguagem — texto puro (saída de terminal, tabela ASCII) sai
   // colorido ao acaso, e o bloco fica sem label explicando de onde veio a cor.
   // `plaintext` mantém "Plain text" literalmente plano até o autor escolher.
   defaultLanguage: 'plaintext',
-});
+} satisfies Partial<CodeBlockOptions>;

@@ -1,7 +1,7 @@
 import { Link, useOutletContext } from 'react-router-dom';
 import type { PublicOutletContext } from './PublicLayout.js';
 import { PageRenderer } from './PageRenderer.js';
-import { useLanding } from './docsQueries.js';
+import { useLanding } from '../content/docsQueries.js';
 
 /**
  * Raiz da doc pública (`/docs`, TASK-56). Mostra a **página inicial

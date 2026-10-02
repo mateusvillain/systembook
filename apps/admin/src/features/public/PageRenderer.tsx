@@ -1,16 +1,16 @@
 import { useRef, useState } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import type { Block } from '@systembook/schema';
-import { editorExtensions } from '../editor/extensions.js';
+import { contentExtensions } from '../content/extensions.js';
 import { blocksToTiptapDoc } from '../revisions/blocksToTiptapDoc.js';
-import '../editor/editor.css';
+import '../content/content.css';
 
 /**
- * Renderer read-only de um `PageSnapshot` (TASK-50). Reaproveita o mesmo set de
- * extensões Tiptap do editor (TASK-25+) montado com `editable: false` — os
- * NodeViews React (callout, component-embed) renderizam igual, e o
- * component-embed detecta o modo read-only para esconder a (re)seleção
- * mantendo o iframe + painel de controles interativo (TASK-47/49).
+ * Renderer read-only de um `PageSnapshot` (TASK-50). Monta o conjunto de
+ * extensões de **conteúdo** (SYS-89, `features/content/extensions.ts`) com
+ * `editable: false` — os mesmos nós e NodeViews do editor, sem nenhum controle
+ * de edição: o component-embed mantém o iframe + painel de controles
+ * interativo (TASK-47/49), mas não tem como (re)selecionar componente.
  *
  * É a peça de renderização de conteúdo compartilhada entre o preview de
  * revisões do editor (TASK-35, `RevisionSnapshotPreview`) e a doc pública
@@ -19,7 +19,11 @@ import '../editor/editor.css';
  * omitida, gerencia a tab ativa internamente.
  */
 
-/** Forma estrutural comum aos snapshots vindos das queries de revisão. */
+/**
+ * Forma estrutural mínima de um snapshot renderizável: o `PageSnapshot` do
+ * contrato público e os snapshots que o admin recebe pelo wire (preview de
+ * rascunho e de revisões, com blocos ainda `unknown`).
+ */
 export interface RenderableSnapshot {
   tabs: { tabId: string; titulo: string; isPrimary?: boolean; blocks: unknown[] }[];
 }
@@ -30,10 +34,11 @@ export const BODY_VIEW_LABEL = 'Overview';
 function TabContent({ blocks }: { blocks: unknown[] }) {
   const editor = useEditor(
     {
-      extensions: editorExtensions,
-      // Cast: o output "como chega pelo wire" marca campos `unknown` como
-      // opcionais (nota em lib/trpc.ts), mas a forma real bate com `Block[]`,
-      // garantida pelo par tiptapDocToBlocks/blocksToTiptapDoc do server.
+      extensions: contentExtensions,
+      // Cast: snapshots do admin chegam pelo wire com os campos `unknown` dos
+      // blocos opcionais (nota em lib/trpc.ts), mas a forma real bate com
+      // `Block[]`, garantida pelo par tiptapDocToBlocks/blocksToTiptapDoc do
+      // server.
       content: blocksToTiptapDoc(blocks as Block[]),
       editable: false,
     },

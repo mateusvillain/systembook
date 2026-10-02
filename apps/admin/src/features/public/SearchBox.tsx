@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, X } from 'lucide-react';
-import { usePublicSearch } from './docsQueries.js';
+import { usePublicSearch } from '../content/docsQueries.js';
 
 // Delimitadores STX/ETX que o `snippet()` do FTS5 coloca ao redor dos termos
 // casados (ver SearchResult.snippet no server). Escritos como escapes \u para

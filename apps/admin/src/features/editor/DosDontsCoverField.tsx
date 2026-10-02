@@ -1,90 +1,20 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { Image as ImageIcon, Puzzle, X } from 'lucide-react';
-import type { DosDontsCover } from '@systembook/schema';
-import { useTRPC } from '../../../lib/trpc.js';
-import { ComponentEmbedPicker } from '../ComponentEmbedPicker.js';
+import {
+  EmbedCoverPreview,
+  type DosDontsCoverFieldProps,
+} from '../content/nodes/DosDontsCover.js';
+import { ComponentEmbedPicker } from './ComponentEmbedPicker.js';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 /**
- * UI de cover do bloco dos-donts (TASK-73): opcional, imagem OU
- * component-embed. A resolução do embed (loading/empty/live via
- * `componentPreviews.getLatest`) **duplica deliberadamente** a lógica de
- * `nodes/ComponentEmbed.tsx` (TASK-47/51) em vez de extrair um helper
- * compartilhado — a superfície do component-embed top-level já é validada
- * por E2E das TASK-47/48/51 e extrair alteraria seu DOM; mantenha os dois
- * em sincronia se a máquina de estados mudar. Diferente do embed top-level,
- * o cover não expõe o painel de controles interativos (`ControlsPanel`) —
- * é um slot de apoio visual, não o embed principal da página.
+ * Campo de cover **editável** do bloco dos-donts (TASK-73): adicionar, trocar e
+ * remover o cover. Injetado no NodeView de renderização pelo editor (SYS-89,
+ * `DosDonts.configure({ CoverField })`); a exibição do preview vem da camada de
+ * conteúdo (`EmbedCoverPreview`).
  */
-
-function EmbedCoverPreview({
-  componentName,
-  variantId,
-}: {
-  componentName: string;
-  variantId: string | null;
-}) {
-  const trpc = useTRPC();
-  const hasSelection = componentName.length > 0 && !!variantId;
-  const previewQuery = useQuery({
-    ...trpc.componentPreviews.getLatest.queryOptions({
-      componentName,
-      variantId: variantId ?? '',
-    }),
-    enabled: hasSelection,
-  });
-
-  if (!hasSelection) {
-    return (
-      <div className="sb-dos-donts-cover-embed" data-preview-state="unset">
-        Nenhum componente selecionado
-      </div>
-    );
-  }
-  if (previewQuery.isLoading) {
-    return (
-      <div className="sb-dos-donts-cover-embed" data-preview-state="loading">
-        Carregando preview…
-      </div>
-    );
-  }
-  if (previewQuery.isError || !previewQuery.data) {
-    return (
-      <div className="sb-dos-donts-cover-embed" data-preview-state="empty">
-        Nenhum preview publicado para{' '}
-        <strong>
-          {componentName} / {variantId}
-        </strong>{' '}
-        ainda.
-      </div>
-    );
-  }
-  return (
-    <iframe
-      className="sb-dos-donts-cover-embed-frame"
-      data-preview-state="live"
-      src={previewQuery.data.url}
-      title={`Cover of ${componentName} (${variantId})`}
-      loading="lazy"
-      // Mesma política de sandbox do component-embed top-level (TASK-47):
-      // allow-scripts sem allow-same-origin (artefato de terceiros opaco ao
-      // parent — sem acesso a cookies/DOM da sessão do painel).
-      sandbox="allow-scripts"
-    />
-  );
-}
-
-export function DosDontsCoverField({
-  cover,
-  editable,
-  onChange,
-}: {
-  cover: DosDontsCover | null;
-  editable: boolean;
-  onChange: (cover: DosDontsCover | null) => void;
-}) {
+export function DosDontsCoverField({ cover, editable, onChange }: DosDontsCoverFieldProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
 
   if (!cover) {

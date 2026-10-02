@@ -1,6 +1,6 @@
 import { useParams } from 'react-router-dom';
 import { PageRenderer } from '../features/public/PageRenderer.js';
-import { usePageById } from '../features/public/docsQueries.js';
+import { usePageById } from '../features/content/docsQueries.js';
 
 /**
  * Superfície pública de documentação de uma página (TASK-50). Renderiza o

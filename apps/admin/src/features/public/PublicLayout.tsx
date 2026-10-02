@@ -6,7 +6,7 @@ import { PublicSidebar } from './PublicSidebar.js';
 import { PublicMenuNav, useActiveMenu } from './PublicMenuNav.js';
 import { SearchBox } from './SearchBox.js';
 import { useTheme } from './useTheme.js';
-import { useNavTree } from './docsQueries.js';
+import { useNavTree } from '../content/docsQueries.js';
 import './public.css';
 
 /** Passado aos filhos via Outlet context (evita re-buscar a árvore). */
