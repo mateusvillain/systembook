@@ -39,7 +39,7 @@
   "scripts": {
     "prepack": "tsc -p tsconfig.build.json && node scripts/copy-css.mjs",
     "build": "tsc -p tsconfig.build.json && node scripts/copy-css.mjs",
-    "lint": "eslint src",
+    "lint": "eslint src test",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },

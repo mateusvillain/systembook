@@ -173,6 +173,7 @@ describe('siteDataFiles', () => {
       'settings.json',
       'nav.json',
       'landing.json',
+      'previews.json',
       'pages/components/actions/button.json',
       'pages/foundation/color/palette.json',
       'pages/foundation/color/tokens.json',
@@ -190,6 +191,7 @@ describe('siteDataFiles', () => {
       settings: JSON.parse(files.get('settings.json')!),
       nav: JSON.parse(files.get('nav.json')!),
       landing: JSON.parse(files.get('landing.json')!),
+      previews: JSON.parse(files.get('previews.json')!),
       pages: Object.fromEntries(Object.keys(data.pages).map((k) => [k, JSON.parse(files.get(`pages/${k}.json`)!)])),
     };
     expect(roundtrip).toEqual(data);

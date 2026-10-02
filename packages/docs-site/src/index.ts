@@ -24,6 +24,8 @@ export {
   useResolvedPath,
 } from './content/docsQueries.js';
 
+export { createStaticDataSource, type StaticDataSourceOptions } from './static/staticDataSource.js';
+
 // Conteúdo: extensões Tiptap, nós e utilitários
 export { createContentExtensions, contentExtensions } from './content/extensions.js';
 export {

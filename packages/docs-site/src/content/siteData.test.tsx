@@ -4,9 +4,11 @@ import { createRoot, type Root } from 'react-dom/client';
 import { getSchema } from '@tiptap/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, useRoutes } from 'react-router-dom';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { BlockType, DocsDataSource, PageSnapshot, StaticSiteData } from '@systembook/schema';
-import { buildContentTree, buildSiteData, pageKey } from '@systembook/content';
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { BlockType, PageSnapshot, StaticSiteData } from '@systembook/schema';
+import { buildContentTree, buildSiteData, siteDataFiles, STATIC_DATA_DIR } from '@systembook/content';
+import { createStaticDataSource } from '../static/staticDataSource.js';
+import { fsFetch, writeSiteDataDir } from '../../test/fsFetch.js';
 import { blocksToTiptapDoc } from './blocksToTiptapDoc.js';
 import { contentExtensions } from './extensions.js';
 import { DocsDataSourceProvider } from './dataSource.js';
@@ -15,10 +17,10 @@ import { createDocsRoute } from '../public/createDocsRoute.js';
 (globalThis as Record<string, unknown>).IS_REACT_ACT_ENVIRONMENT = true;
 
 /**
- * Os dados do site estático (SYS-96) são o que a doc pública vai ler no modo
+ * Os dados do site estático (SYS-96) são o que a doc pública lê no modo
  * estático. Aqui eles são gerados de um projeto fixture e conferidos do lado do
  * renderer: cada snapshot é válido no schema real, e a doc pública montada
- * sobre eles (com uma fonte em memória, prévia do `staticDataSource`)
+ * sobre o `staticDataSource` (SYS-98), lendo os JSONs escritos num diretório,
  * mostra navegação, páginas, tabs e os links reescritos.
  */
 const page = (title: string, body: string, extra = '') => `---\ntitle: ${title}\n${extra}---\n\n${body}\n`;
@@ -97,19 +99,10 @@ describe('dados do site estático ↔ schema do conteúdo', () => {
   });
 });
 
-/** Fonte em memória sobre `StaticSiteData` — a forma que o `staticDataSource` terá. */
-function memorySource(site: StaticSiteData): DocsDataSource {
-  return {
-    getNavTree: async () => site.nav,
-    getSettings: async () => site.settings,
-    getLanding: async () => site.landing,
-    getPageBySlug: async (ref) => site.pages[pageKey(ref)] ?? null,
-    getPageById: async () => null,
-    resolvePath: async () => null,
-    search: async () => [],
-    getComponentPreview: async () => null,
-  };
-}
+/** Os JSONs de `siteDataFiles` num diretório temporário, servidos em `/_systembook/data/`. */
+const { dir: dataDir, cleanup } = writeSiteDataDir(siteDataFiles(data));
+afterAll(cleanup);
+const DATA_URL = `/${STATIC_DATA_DIR}`;
 
 describe('doc pública sobre os dados gerados', () => {
   let container: HTMLDivElement;
@@ -130,11 +123,15 @@ describe('doc pública sobre os dados gerados', () => {
     return useRoutes([createDocsRoute('')]);
   }
 
-  async function render(at: string) {
+  /** Monta a doc em `at` e espera `ready` aparecer (as leituras vêm do disco). */
+  async function render(at: string, ready: string) {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     await act(async () => {
       root.render(
-        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-          <DocsDataSourceProvider dataSource={memorySource(data)}>
+        <QueryClientProvider client={client}>
+          <DocsDataSourceProvider
+            dataSource={createStaticDataSource({ dataUrl: DATA_URL, fetch: fsFetch(dataDir, DATA_URL) })}
+          >
             <MemoryRouter initialEntries={[at]}>
               <Site />
             </MemoryRouter>
@@ -143,12 +140,14 @@ describe('doc pública sobre os dados gerados', () => {
       );
     });
     await act(async () => {
-      await new Promise((r) => setTimeout(r, 0));
+      await vi.waitFor(() => {
+        if (!container.querySelector(ready)) throw new Error(`esperando ${ready} em ${at}`);
+      });
     });
   }
 
   it('landing com o link reescrito para a URL da página', async () => {
-    await render('/');
+    await render('/', '[data-testid=landing-published]');
     expect(container.querySelector('[data-testid=landing-published] a[href]')?.getAttribute('href')).toBe(
       '/foundation/color/palette',
     );
@@ -159,7 +158,7 @@ describe('doc pública sobre os dados gerados', () => {
   });
 
   it('página com tabs: título, tab Overview e a tab "Uso" com URL pelo slug', async () => {
-    await render('/foundation/color/tokens');
+    await render('/foundation/color/tokens', '.sb-callout');
     expect(container.querySelector('.sb-public-title')?.textContent).toBe('Tokens');
     expect([...container.querySelectorAll('[role=tab]')].map((t) => t.textContent)).toEqual(['Overview', 'Uso']);
     expect(container.querySelector('.sb-callout')).not.toBeNull();
@@ -167,19 +166,19 @@ describe('doc pública sobre os dados gerados', () => {
   });
 
   it('imagem com o src no site', async () => {
-    await render('/foundation/color/palette');
+    await render('/foundation/color/palette', '.sb-public-content img');
     expect(container.querySelector('.sb-public-content img')?.getAttribute('src')).toBe('/foundation/color/p.png');
   });
 
   it('cover de imagem do dos-donts com o src no site', async () => {
-    await render('/components/actions/button');
+    await render('/components/actions/button', '.sb-public-content img');
     expect([...container.querySelectorAll('.sb-public-content img')].map((i) => i.getAttribute('src'))).toEqual([
       '/components/actions/dont.png',
     ]);
   });
 
   it('a tab abre pela URL', async () => {
-    await render('/foundation/color/tokens/usage');
+    await render('/foundation/color/tokens/usage', '.sb-code-block');
     expect(container.querySelector('[role=tab][aria-selected=true]')?.textContent).toBe('Uso');
     expect(container.querySelector('.sb-code-block')).not.toBeNull();
   });

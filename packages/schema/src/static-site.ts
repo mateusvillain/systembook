@@ -1,5 +1,5 @@
 import type { PageSnapshot } from './block.js';
-import type { PublicNavTree, PublicSettings, PublishedPage } from './public-docs.js';
+import type { PublicComponentPreview, PublicNavTree, PublicSettings, PublishedPage } from './public-docs.js';
 
 /**
  * Dados do site estático (SYS-96): o que o build gera a partir do conteúdo em
@@ -14,4 +14,6 @@ export interface StaticSiteData {
   landing: PageSnapshot | null;
   /** Páginas por endereço canônico (`menu/seção/página`). */
   pages: Record<string, PublishedPage>;
+  /** Previews de componente por par (`componente/variante`); vazio sem previews. */
+  previews: Record<string, PublicComponentPreview>;
 }
