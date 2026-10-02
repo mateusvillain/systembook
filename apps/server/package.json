@@ -29,6 +29,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@systembook/content": "workspace:*",
     "@types/better-sqlite3": "^7.6.12",
     "@types/busboy": "^1.5.4",
     "@types/node": "^22.13.0",
