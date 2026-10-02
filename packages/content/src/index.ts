@@ -23,3 +23,4 @@ export {
   type ParseOptions,
 } from './parse/index.js';
 export { MARK_ORDER, normalizeLanguage } from './parse/toTiptap.js';
+export * from './tree/index.js';

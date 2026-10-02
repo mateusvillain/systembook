@@ -67,7 +67,12 @@ Regras:
 - Uma página com pasta precisa ter `index.mdx`/`index.md`; os outros arquivos da
   pasta viram tabs. Subpasta dentro da pasta de uma página é erro.
 - Arquivos e pastas que começam com `_` ou `.` são ignorados, exceto
-  `_menu.yml` e `_section.yml`.
+  `_menu.yml` (na pasta do menu) e `_section.yml` (na pasta da seção). Um
+  desses fora do lugar é erro.
+- `index` só existe na raiz (landing) e dentro da pasta de uma página (corpo).
+  Um `index` solto numa seção é erro.
+- Extensão em maiúsculas (`.MDX`) é erro: renomeie para minúsculas.
+- Imagens e outros arquivos podem morar junto do conteúdo; a árvore os ignora.
 - Menus e seções sem nenhuma página não aparecem (igual ao CMS).
 
 ## Slugs e URLs
