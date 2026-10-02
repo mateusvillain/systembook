@@ -42,7 +42,7 @@ export function parseDocument<K extends DocumentKind>(
   options: ParseOptions<K>,
 ): ParsedDocument<K> {
   const bag = new DiagnosticBag(options.file);
-  const references: ContentReferences = { images: [], links: [] };
+  const references: ContentReferences = { images: [], links: [], components: [] };
   const empty: TiptapDoc = { type: 'doc', content: [] };
 
   const processor = unified().use(remarkParse).use(remarkFrontmatter, ['yaml']).use(remarkGfm);

@@ -45,7 +45,7 @@ describe('systembook build', { timeout: 60_000 }, () => {
     expect(result).toEqual({ ok: true, outDir: config.outDir, routes: 5 });
 
     const files = tree(config.outDir);
-    const html = [...files.keys()].filter((f) => f.endsWith('.html')).sort();
+    const html = [...files.keys()].filter((f) => f.endsWith('.html') && !f.startsWith('_systembook/')).sort();
     expect(html).toEqual([
       '404.html',
       'components/actions/button/index.html',
@@ -93,6 +93,62 @@ describe('systembook build', { timeout: 60_000 }, () => {
     }
     // Os links entre páginas nos dados também levam a base.
     expect(files.get('_systembook/data/landing.json')).toContain('"href":"/acme-ds/foundation/color/palette"');
+
+    // Previews (SYS-100): artefato sob a base, assets absolutos, e o mapa nos dados.
+    const previews = JSON.parse(files.get('_systembook/data/previews.json')!);
+    expect(Object.keys(previews)).toEqual(['Button/disabled', 'Button/primary']);
+    expect(previews['Button/primary'].url).toBe('/acme-ds/_systembook/previews/button--primary/index.html');
+    expect(previews['Button/primary'].config.component).toBe('Button');
+    const previewHtml = files.get('_systembook/previews/button--primary/index.html')!;
+    for (const ref of [...previewHtml.matchAll(/(?:src|href)="([^"]+)"/g)].map((m) => m[1]!)) {
+      expect(ref.startsWith('/acme-ds/_systembook/previews/assets/'), ref).toBe(true);
+      expect(files.has(ref.slice('/acme-ds/'.length)), ref).toBe(true);
+    }
+    expect(files.get('_headers')).toBe('/_systembook/previews/*\n  Access-Control-Allow-Origin: *\n');
+    expect(JSON.parse(files.get('serve.json')!).headers[0].source).toBe('_systembook/previews/**');
+
+    // Imagens e logo copiados com hash no nome, com o src/url reescrito.
+    const media = [...files.keys()].filter((f) => f.startsWith('_systembook/media/')).sort();
+    expect(media.map((f) => f.replace(/-[0-9a-f]{8}\./, '-#.'))).toEqual([
+      '_systembook/media/dont-#.png',
+      '_systembook/media/logo-#.svg',
+      '_systembook/media/palette-#.png',
+    ]);
+    const settings = JSON.parse(files.get('_systembook/data/settings.json')!);
+    expect(settings).toEqual({ nomeDesignSystem: 'Acme DS', logoUrl: `/acme-ds/${media[1]}`, logoDarkUrl: null });
+    expect(files.get('_systembook/data/pages/foundation/color/palette.json')).toContain(`"src":"/acme-ds/${media[2]}"`);
+    expect(files.get('_systembook/data/pages/components/actions/button.json')).toContain(`"src":"/acme-ds/${media[0]}"`);
+  });
+
+  it('referências quebradas: imagem, par de preview e logo — todas com posição, sem gerar nada', async () => {
+    const config = await fixtureConfig('/');
+    const button = path.join(config.contentDir, 'components/actions/button.mdx');
+    writeFileSync(
+      button,
+      readFileSync(button, 'utf8') +
+        '\n![x](./nao-existe.png)\n\n<ComponentEmbed component="Button" variant="ghost" />\n\n<ComponentEmbed component="Card" variant="x" />\n',
+    );
+    const result = await buildStaticSite({ ...config, logo: './brand/sumiu.svg' });
+    expect(result.ok).toBe(false);
+    expect(!result.ok && result.problems).toEqual([
+      'systembook.config.ts: "logo": arquivo não encontrado (./brand/sumiu.svg).',
+      'docs/components/actions/button.mdx:19:1  variante "ghost" de "Button" não existe nos *.preview.tsx — variantes: primary, disabled.',
+      'docs/components/actions/button.mdx:21:1  componente "Card" não tem *.preview.tsx — componentes com preview: Button.',
+      'docs/components/actions/button.mdx:17:1  imagem "./nao-existe.png" não encontrada.',
+    ]);
+    expect(() => readdirSync(config.outDir)).toThrow();
+  });
+
+  it('com previews: false, embeds não são conferidos e nada de preview é gerado', async () => {
+    const config = await fixtureConfig('/');
+    const button = path.join(config.contentDir, 'components/actions/button.mdx');
+    writeFileSync(button, readFileSync(button, 'utf8') + '\n<ComponentEmbed component="Card" variant="x" />\n');
+    const result = await buildStaticSite({ ...config, previews: false });
+    expect(result.ok).toBe(true);
+    const files = tree(config.outDir);
+    expect([...files.keys()].some((f) => f.startsWith('_systembook/previews/'))).toBe(false);
+    expect(files.has('_headers')).toBe(false);
+    expect(files.get('_systembook/data/previews.json')).toBe('{}\n');
   });
 
   it('na raiz, e a mesma entrada gera os mesmos bytes', async () => {
@@ -103,7 +159,9 @@ describe('systembook build', { timeout: 60_000 }, () => {
     const filesA = tree(a.outDir);
     expect(filesA.get('index.html')).toMatch(/src="\/_systembook\/assets\/index-[\w-]+\.js"/);
     expect(filesA.get('_systembook/data/landing.json')).toContain('"href":"/foundation/color/palette"');
-    expect([...filesA]).toEqual([...tree(b.outDir)]);
+    const filesB = tree(b.outDir);
+    const differing = [...new Set([...filesA.keys(), ...filesB.keys()])].filter((k) => filesA.get(k) !== filesB.get(k));
+    expect(differing).toEqual([]);
   });
 
   it('erro de conteúdo: lista todos com o caminho a partir da raiz, sem gerar nada', async () => {

@@ -37,6 +37,13 @@ export interface BuildOptions {
   root?: string;
   /** Destino do artefato estático; default `<root>/.systembook/dist`. */
   outDir?: string;
+  /**
+   * Base dos assets nos HTMLs; default `./` (relativa, para o artefato ser
+   * re-hospedado em qualquer path da instância). O build estático passa a URL
+   * absoluta da pasta de previews no site, que não depende de como o host trata
+   * a barra final da URL do iframe.
+   */
+  base?: string;
 }
 
 export interface BuildResult {
@@ -97,7 +104,7 @@ export async function buildEntries(
       // emitiria jsx-dev-runtime no bundle
       mode: 'production',
       root: entriesDir,
-      base: './',
+      base: options.base ?? './',
       logLevel: 'warn',
       plugins: [react()],
       resolve: {

@@ -39,6 +39,8 @@ export interface SourcePoint {
 export interface ContentReferences {
   images: ({ src: string } & SourcePoint)[];
   links: ({ href: string } & SourcePoint)[];
+  /** Pares componente/variante de `<ComponentEmbed>` e do cover de `<DosDonts>`. */
+  components: ({ componentName: string; variantId: string } & SourcePoint)[];
 }
 
 interface ConvertContext {
@@ -256,6 +258,8 @@ function component(el: JsxElement, ctx: ConvertContext): TiptapNode | null {
     bag: ctx.bag,
     convertChildren: (children) => blocks(children, ctx),
     addImage: (src, at) => ctx.refs.images.push({ src, ...pointOf(at) }),
+    addComponent: (componentName, variantId, at) =>
+      ctx.refs.components.push({ componentName, variantId, ...pointOf(at) }),
   });
 }
 

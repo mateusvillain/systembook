@@ -40,9 +40,12 @@ systembook-dist/
 ├── foundation/color/tokens/usage/index.html   # uma por página e por tab
 ├── 404.html
 ├── .nojekyll                        # o GitHub Pages ignora pastas com _ sem ele
+├── _headers, serve.json             # CORS dos previews (Netlify/Cloudflare, npx serve)
 └── _systembook/
     ├── assets/                      # bundle da doc
-    └── data/                        # nav, settings e uma página por JSON
+    ├── data/                        # nav, settings, previews e uma página por JSON
+    ├── media/                       # imagens do conteúdo e logos, com hash no nome
+    └── previews/                    # artefato do `previews build`, quando há *.preview.tsx
 ```
 
 Cada `index.html` traz o `<title>` e a meta description da página (o
@@ -51,8 +54,22 @@ com `arquivo:linha:coluna`, e o comando termina com código ≠ 0 sem gerar nada
 O formato do conteúdo e da config está em
 [`docs/static-format.md`](https://github.com/mateusvillain/systembook/blob/main/docs/static-format.md).
 
-O `outDir` é apagado a cada build; por isso ele não pode ser a raiz do
-projeto nem conter (ou ficar dentro de) a pasta de conteúdo.
+Com `*.preview.tsx` no repo (e `previews` diferente de `false` na config), o
+build roda o `previews build` junto, e todo `<ComponentEmbed>` e cover de
+`<DosDonts>` precisa apontar para um par componente/variante que exista.
+Imagens do conteúdo e os logos da config são copiados com hash no nome;
+imagem ou logo que não existe é erro.
+
+**Previews e CORS.** O iframe do preview é isolado (`sandbox`, origem opaca),
+e o navegador só carrega os scripts dele se o host mandar
+`Access-Control-Allow-Origin: *` em `_systembook/previews/` — o mesmo que o
+server do modo CMS faz. O GitHub Pages já manda; no Netlify e no Cloudflare
+Pages o `_headers` gerado cuida disso, e no `npx serve`, o `serve.json`. Na
+Vercel, no S3 e em outros hosts, configure o cabeçalho para esse caminho.
+
+O `outDir` é apagado a cada build; por isso ele precisa ser uma pasta própria
+dentro do projeto — não a raiz, nem a pasta de conteúdo, `.git` ou
+`node_modules`.
 
 ## Vindo do `@systembook/connector`
 

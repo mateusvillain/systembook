@@ -133,6 +133,17 @@ describe('props e uso inválidos viram erro com posição', () => {
     expect(diagnostics.map((d) => [d.line, d.column])).toEqual([[4, 3]]);
   });
 
+  it('registra os pares componente/variante do embed e do cover, com posição', () => {
+    const { references, diagnostics } = mdx(
+      '<ComponentEmbed component="Button" variant="primary" />\n\n<DosDonts variant="do" coverComponent="Card" coverVariant="default">\n  Ok.\n</DosDonts>',
+    );
+    expect(diagnostics).toEqual([]);
+    expect(references.components).toEqual([
+      { componentName: 'Button', variantId: 'primary', line: 1, column: 1 },
+      { componentName: 'Card', variantId: 'default', line: 3, column: 24 },
+    ]);
+  });
+
   it('cover de imagem de um bloco recusado não vira referência', () => {
     const { references, diagnostics } = mdx('<DosDonts variant="do" coverImage="./a.png" coverAlt="a"></DosDonts>');
     expect(diagnostics.map((d) => d.message)).toEqual(['<DosDonts> vazio — escreva a explicação entre as tags.']);

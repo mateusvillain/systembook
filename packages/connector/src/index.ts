@@ -9,6 +9,7 @@ export { previewConfigSchema } from './preview-config-schema.js';
 export { registerPreviewCommands } from './commands.js';
 export {
   generateEntries,
+  previewEntryName,
   type GeneratedEntry,
   type GenerateOptions,
 } from './generate.js';
