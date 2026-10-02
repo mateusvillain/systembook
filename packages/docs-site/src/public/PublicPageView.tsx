@@ -98,6 +98,7 @@ export function PublicPageView() {
           onSelectTab={(nextTabId) =>
             navigate(
               paths.page(
+                // A rota exige os três params, e aqui a página já resolveu por eles.
                 { menuSlug: menuSlug!, sectionSlug: sectionSlug!, pageSlug: pageSlug! },
                 nextTabId === primaryTabId ? null : nextTabId,
               ),

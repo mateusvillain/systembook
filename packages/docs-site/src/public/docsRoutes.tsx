@@ -12,9 +12,10 @@ import type { PublicPageRef } from '@systembook/schema';
  * - **prefixo das rotas da doc**: `/docs` no modo CMS (o painel ocupa a raiz)
  *   e vazio no modo estático (a doc *é* o site).
  *
- * Sem provider, o prefixo é `/docs` — o comportamento do modo CMS.
+ * Quem monta as rotas com `createDocsRoute(prefix)` já recebe o provider com o
+ * mesmo prefixo. Sem provider, a doc fica na raiz.
  */
-const DocsRoutesContext = createContext('/docs');
+const DocsRoutesContext = createContext('');
 
 /** Normaliza o prefixo: começa com `/` e nunca termina com `/` (`''` = raiz). */
 function normalizePrefix(prefix: string): string {
@@ -35,7 +36,11 @@ export interface DocsPaths {
   page(ref: PublicPageRef, tabId?: string | null): string;
   /** Endereço sem o menu (forma anterior à SYS-37), que o redirect legado resolve. */
   legacyPage(sectionSlug: string, pageSlug: string): string;
-  /** Segmentos do `pathname` (relativo ao `basename`) abaixo da raiz da doc. */
+  /**
+   * Segmentos do `pathname` (relativo ao `basename`) abaixo da raiz da doc.
+   * Um `pathname` fora do prefixo é devolvido inteiro — não acontece com as
+   * rotas de `createDocsRoute`, que só casam dentro dele.
+   */
   segments(pathname: string): string[];
 }
 

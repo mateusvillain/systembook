@@ -90,8 +90,8 @@ export function SearchBox() {
     return () => document.removeEventListener('mousedown', onDown);
   }, [open]);
 
-  // Atalho global ⌘K / Ctrl+K (SYS-40): foca a busca de qualquer ponto de
-  // da doc. No mobile o campo só existe dentro do overlay, então o atalho
+  // Atalho global ⌘K / Ctrl+K (SYS-40): foca a busca de qualquer ponto da
+  // doc. No mobile o campo só existe dentro do overlay, então o atalho
   // abre o overlay antes de focar.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
