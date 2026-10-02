@@ -12,7 +12,7 @@ import { TableControls } from './TableControls.js';
 import { EditorEmptyState } from './EditorEmptyState.js';
 import { ComponentEmbedPicker, type ComponentEmbedSelection } from './ComponentEmbedPicker.js';
 import { insertComponentEmbed } from './blockInsert.js';
-import '../content/content.css';
+import '@systembook/docs-site/content.css';
 import './editor.css';
 
 declare global {

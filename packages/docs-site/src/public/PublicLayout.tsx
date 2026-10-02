@@ -16,8 +16,8 @@ export interface PublicOutletContext {
 }
 
 /**
- * Shell da documentação pública (TASK-52) — completamente separado do
- * `AdminLayout`: sem nav de admin, sem toolbar/edição, sem auth. Busca a árvore
+ * Shell da documentação pública (TASK-52) — completamente separado do painel
+ * admin: sem nav de admin, sem toolbar/edição, sem auth. Busca a árvore
  * de navegação (`DocsDataSource.getNavTree`) uma vez e a expõe à sidebar e às rotas
  * filhas.
  */

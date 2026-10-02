@@ -2,12 +2,12 @@ import { useRef, useState } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import type { Block } from '@systembook/schema';
 import { contentExtensions } from '../content/extensions.js';
-import { blocksToTiptapDoc } from '../revisions/blocksToTiptapDoc.js';
+import { blocksToTiptapDoc } from '../content/blocksToTiptapDoc.js';
 import '../content/content.css';
 
 /**
  * Renderer read-only de um `PageSnapshot` (TASK-50). Monta o conjunto de
- * extensões de **conteúdo** (SYS-89, `features/content/extensions.ts`) com
+ * extensões de **conteúdo** (SYS-89, `content/extensions.ts`) com
  * `editable: false` — os mesmos nós e NodeViews do editor, sem nenhum controle
  * de edição: o component-embed mantém o iframe + painel de controles
  * interativo (TASK-47/49), mas não tem como (re)selecionar componente.
@@ -36,7 +36,7 @@ function TabContent({ blocks }: { blocks: unknown[] }) {
     {
       extensions: contentExtensions,
       // Cast: snapshots do admin chegam pelo wire com os campos `unknown` dos
-      // blocos opcionais (nota em lib/trpc.ts), mas a forma real bate com
+      // blocos opcionais (nota em `lib/trpc.ts` do admin), mas a forma real bate com
       // `Block[]`, garantida pelo par tiptapDocToBlocks/blocksToTiptapDoc do
       // server.
       content: blocksToTiptapDoc(blocks as Block[]),

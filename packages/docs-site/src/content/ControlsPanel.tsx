@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { PreviewControl, PreviewUpdatePropsMessage } from '@systembook/schema';
-import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
+import { Input } from '../ui/input.js';
+import { Switch } from '../ui/switch.js';
 
 /**
  * Painel de controles interativos do preview (TASK-49). Renderiza um input por
@@ -13,7 +13,7 @@ import { Switch } from '@/components/ui/switch';
  */
 
 /**
- * Valor de `type` da mensagem (o admin não depende de preview-kit; o literal é
+ * Valor de `type` da mensagem (o docs-site não depende de preview-kit; o literal é
  * anotado contra o tipo do schema para não divergir — mesma convenção do
  * server com BLOCK_TYPES). O preview-kit exporta o mesmo literal.
  */

@@ -1,9 +1,6 @@
 import { useState } from 'react';
 import { Image as ImageIcon, Puzzle, X } from 'lucide-react';
-import {
-  EmbedCoverPreview,
-  type DosDontsCoverFieldProps,
-} from '../content/nodes/DosDontsCover.js';
+import { EmbedCoverPreview, type DosDontsCoverFieldProps } from '@systembook/docs-site';
 import { ComponentEmbedPicker } from './ComponentEmbedPicker.js';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

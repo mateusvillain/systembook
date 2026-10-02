@@ -17,6 +17,11 @@
 @import 'tailwindcss/utilities.css' layer(utilities);
 @import 'tw-animate-css';
 
+/* A doc pública e a renderização de conteúdo vivem em `@systembook/docs-site`
+   (SYS-90), fora da raiz deste app: sem isto o Tailwind não acha as utilities
+   usadas lá (`sr-only` do code block, `Input`/`Switch` do painel de controles). */
+@source '../../../packages/docs-site/src';
+
 /* Tokens do shadcn/ui (base color: neutral). Só definições de variáveis —
    seguras globalmente, pois só têm efeito via utilities (bg-background etc.). */
 :root {

@@ -1,6 +1,6 @@
 /*
  * Estilos que só existem na superfície de edição (SYS-89). O conteúdo em si
- * vem de `features/content/content.css`, que precisa ser importado **antes**
+ * vem de `@systembook/docs-site/content.css`, que precisa ser importado **antes**
  * deste — várias regras daqui dependem de vir depois na cascata (ver a nota de
  * `.sb-diff-block`).
  */

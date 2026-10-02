@@ -3,7 +3,8 @@
  * documento precisa para ser exibido, editável ou não (SYS-89). O que só
  * existe editando (handle de bloco, menu "/", switchers de variante, seletor
  * de linguagem, botões de (re)seleção de embed, seleção de nó/célula) fica em
- * `features/editor/editor.css`, carregado **depois** deste.
+ * `editor.css` do painel admin (`apps/admin/src/features/editor/`),
+ * carregado **depois** deste.
  *
  * O escopo continua sendo `.sb-editor` — é a classe do container de conteúdo
  * nas três superfícies (editor, doc pública, diff de revisões).

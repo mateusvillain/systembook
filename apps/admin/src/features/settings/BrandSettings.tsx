@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { queryClient, useTRPC } from '../../lib/trpc.js';
-import { docsQueryKeys } from '../content/docsQueries.js';
+import { docsQueryKeys } from '@systembook/docs-site';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';

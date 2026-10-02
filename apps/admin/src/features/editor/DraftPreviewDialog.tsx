@@ -2,13 +2,16 @@ import { useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Eye, Moon, Sun, X } from 'lucide-react';
 import { useTRPC } from '../../lib/trpc.js';
-import { PageRenderer, type RenderableSnapshot } from '../public/PageRenderer.js';
-import { TableOfContents } from '../public/TableOfContents.js';
-import { useHeadingIds } from '../public/useHeadingIds.js';
-import { useTheme } from '../public/useTheme.js';
+import {
+  PageRenderer,
+  TableOfContents,
+  useHeadingIds,
+  useTheme,
+  type RenderableSnapshot,
+} from '@systembook/docs-site';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
-import '../public/public.css';
+import '@systembook/docs-site/public.css';
 
 /**
  * Preview do rascunho (SYS-58): mostra a página **como o leitor a veria** se

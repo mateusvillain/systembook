@@ -40,7 +40,7 @@ const TABLE_CELL_CONTENT = '(paragraph | heading | bulletList | orderedList | co
  * Este é o conjunto de **conteúdo** (SYS-89): o que é preciso para exibir um
  * documento — nós, marks e NodeViews. Renderiza sozinho a doc pública, o
  * preview de revisões e o diff (`editable: false`). O editor parte daqui e
- * acrescenta o que só faz sentido editando (`features/editor/extensions.ts`),
+ * acrescenta o que só faz sentido editando (`editorExtensions`, no admin),
  * inclusive os controles de edição que cada NodeView recebe por opção
  * (switchers de variante, seletor de linguagem, (re)seleção de embed, cover). Mesmo modelo de conteúdo nos dois lados.
  */
