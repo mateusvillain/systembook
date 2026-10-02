@@ -1,6 +1,7 @@
 import { TRPCError } from '@trpc/server';
 import { and, asc, eq, max, ne, sql } from 'drizzle-orm';
 import { z } from 'zod';
+import type { PublicNavTree } from '@systembook/schema';
 import { LANDING_PAGE_ID, LANDING_SECTION_ID } from '../../db/landing.js';
 import { menus, pages, revisions, sections } from '../../db/schema.js';
 import { generateUniqueSectionSlug } from '../../db/sections.js';
@@ -46,7 +47,7 @@ export const sectionsRouter = router({
    * Continua sendo um número **constante** de queries (menus + sections +
    * páginas publicadas), agrupadas em memória — sem N+1 por menu ou seção.
    */
-  listPublic: publicProcedure.query(({ ctx }) => {
+  listPublic: publicProcedure.query(({ ctx }): PublicNavTree => {
     const publishedPages = ctx.db
       .select({
         id: pages.id,

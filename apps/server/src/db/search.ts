@@ -1,4 +1,4 @@
-import type { BlockType, PageSnapshot } from '@systembook/schema';
+import type { BlockType, PageSnapshot, PublicSearchResult } from '@systembook/schema';
 import { and, asc, eq, ne, sql } from 'drizzle-orm';
 import type { Db, DbTx } from './client.js';
 import { LANDING_PAGE_ID, LANDING_SECTION_ID } from './landing.js';
@@ -104,22 +104,12 @@ export function reindexPageFts(db: Db | DbTx, pageId: string, snapshot: PageSnap
   );
 }
 
-export interface SearchResult {
-  pageId: string;
-  pageTitulo: string;
-  pageSlug: string;
-  sectionTitulo: string;
-  sectionSlug: string | null;
-  /** Menu dono da seção (SYS-37): compõe a URL pública canônica do resultado. */
-  menuSlug: string | null;
-  /**
-   * Trecho do conteúdo com os termos casados delimitados pelos caracteres de
-   * controle STX (``, abre) e ETX (``, fecha) — não `<mark>`, para
-   * o cliente conseguir escapar o texto do conteúdo (untrusted) e só então
-   * envolver os trechos casados, sem risco de injeção de HTML.
-   */
-  snippet: string;
-}
+/**
+ * Resultado da busca pública. O contrato vive em `@systembook/schema`
+ * (`PublicSearchResult`, SYS-87) — é o mesmo que a doc pública consome por
+ * `DocsDataSource.search`, inclusive a semântica STX/ETX do `snippet`.
+ */
+export type SearchResult = PublicSearchResult;
 
 /** Delimitadores de destaque no `snippet` (ver {@link SearchResult.snippet}). */
 export const SNIPPET_MATCH_OPEN = '';

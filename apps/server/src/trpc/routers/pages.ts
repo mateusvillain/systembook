@@ -1,7 +1,7 @@
 import { TRPCError } from '@trpc/server';
 import { and, asc, desc, eq, max, sql } from 'drizzle-orm';
 import { z } from 'zod';
-import type { PageSnapshot } from '@systembook/schema';
+import type { PageSnapshot, PublishedPage, ResolvedPublicPath } from '@systembook/schema';
 import type { Db } from '../../db/client.js';
 import { isUniqueViolation } from '../../db/errors.js';
 import { buildPageSnapshot, createRevision, restoreRevision } from '../../db/revisions.js';
@@ -41,13 +41,11 @@ function pageNotFound(): TRPCError {
   return new TRPCError({ code: 'NOT_FOUND', message: 'Page not found' });
 }
 
-/** Path de `/docs` já na forma canônica `menu/section/page[/tab]` (SYS-37). */
-export interface PublicPathResolution {
-  menuSlug: string;
-  sectionSlug: string;
-  pageSlug: string;
-  tabId: string | null;
-}
+/**
+ * Path de `/docs` já na forma canônica `menu/section/page[/tab]` (SYS-37).
+ * Contrato em `@systembook/schema` (`ResolvedPublicPath`, SYS-87).
+ */
+export type PublicPathResolution = ResolvedPublicPath;
 
 /**
  * Localiza uma página pelos slugs de menu + seção + página. `null` quando
@@ -489,7 +487,7 @@ export const pagesRouter = router({
         pageSlug: z.string(),
       }),
     )
-    .query(({ ctx, input }) => {
+    .query(({ ctx, input }): PublishedPage | null => {
       const page = ctx.db
         .select({ id: pages.id, titulo: pages.titulo, subtitulo: pages.subtitulo })
         .from(pages)
