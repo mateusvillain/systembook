@@ -38,7 +38,7 @@ import { useEffect, useRef } from 'react';
  * `dataUpdatedAt` da query, então **qualquer refetch** cunhava uma chave nova e
  * disparava um segundo `scrollIntoView`, puxando de volta um leitor que já
  * tinha rolado para outro lugar. Hoje isso é raro porque o painel roda com
- * `refetchOnWindowFocus: false` (`lib/trpc.ts`) — era uma armadilha esperando a
+ * `refetchOnWindowFocus: false` (`lib/trpc.ts` do admin) — era uma armadilha esperando a
  * primeira invalidação de cache, não um bug visível.
  */
 export function useHashScroll(contentKey: string, generation: number) {

@@ -1,6 +1,6 @@
 import { useParams } from 'react-router-dom';
-import { PageRenderer } from '../features/public/PageRenderer.js';
-import { usePageById } from '../features/content/docsQueries.js';
+import { PageRenderer } from './PageRenderer.js';
+import { usePageById } from '../content/docsQueries.js';
 
 /**
  * Superfície pública de documentação de uma página (TASK-50). Renderiza o
@@ -8,7 +8,7 @@ import { usePageById } from '../features/content/docsQueries.js';
  * autenticação. Rota provisória `/p/:pageId` — a hierarquia por slug
  * (`/:section/:page`) e o chrome de layout vêm com a TASK-52 (Fase 6).
  */
-export function PublicPage() {
+export function PublicPageById() {
   const { pageId } = useParams<{ pageId: string }>();
   const query = usePageById(pageId);
 

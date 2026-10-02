@@ -4,13 +4,12 @@ import { EditorContent, useEditor } from '@tiptap/react';
 import type { Block } from '@systembook/schema';
 import { ArrowLeftRight, Minus, PenLine, Plus, X } from 'lucide-react';
 import { useTRPC, type RouterOutput } from '../../lib/trpc.js';
-import { blocksToTiptapDoc } from './blocksToTiptapDoc.js';
-import { contentExtensions } from '../content/extensions.js';
+import { blocksToTiptapDoc, contentExtensions } from '@systembook/docs-site';
 import { Button } from '@/components/ui/button';
 import { adminTypography } from '../../lib/typography.js';
 import { cn } from '@/lib/utils';
 // Conteúdo primeiro: `.sb-diff-block` (editor.css) precisa vencer na cascata.
-import '../content/content.css';
+import '@systembook/docs-site/content.css';
 import '../editor/editor.css';
 
 type Diff = RouterOutput['revisions']['diff'];

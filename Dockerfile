@@ -13,6 +13,7 @@ COPY apps/admin/package.json apps/admin/
 COPY packages/schema/package.json packages/schema/
 COPY packages/preview-kit/package.json packages/preview-kit/
 COPY packages/connector/package.json packages/connector/
+COPY packages/docs-site/package.json packages/docs-site/
 RUN pnpm install --frozen-lockfile
 
 COPY . .

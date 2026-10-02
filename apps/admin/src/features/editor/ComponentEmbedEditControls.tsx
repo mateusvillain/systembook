@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { ComponentEmbedEditControlsProps } from '../content/nodes/ComponentEmbed.js';
+import type { ComponentEmbedEditControlsProps } from '@systembook/docs-site';
 import { ComponentEmbedPicker } from './ComponentEmbedPicker.js';
 
 /**

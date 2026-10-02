@@ -11,7 +11,7 @@ import {
 import { Check, Copy, type LucideIcon } from 'lucide-react';
 import { useEffect, useRef, useState, type ComponentType } from 'react';
 import { createLowlight } from 'lowlight';
-import { copyText } from '../../../lib/clipboard.js';
+import { copyText } from '../clipboard.js';
 import bash from 'highlight.js/lib/languages/bash';
 import css from 'highlight.js/lib/languages/css';
 import diff from 'highlight.js/lib/languages/diff';

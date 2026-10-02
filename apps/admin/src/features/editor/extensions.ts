@@ -1,5 +1,5 @@
 import { Dropcursor, Gapcursor, UndoRedo } from '@tiptap/extensions';
-import { createContentExtensions } from '../content/extensions.js';
+import { createContentExtensions } from '@systembook/docs-site';
 import { ComponentEmbedEditControls } from './ComponentEmbedEditControls.js';
 import { DosDontsCoverField } from './DosDontsCoverField.js';
 import {
@@ -11,7 +11,7 @@ import {
 
 /**
  * Extensões do editor (SYS-89): o conjunto de conteúdo
- * (`features/content/extensions.ts`) com os controles de edição injetados nos
+ * (`createContentExtensions`, de `@systembook/docs-site`) com os controles de edição injetados nos
  * NodeViews, mais o que só existe editando — histórico e cursores de
  * arrastar/gap. As que dependem de estado React (menu "/", Cmd/Ctrl+K) são
  * acrescentadas pelo próprio `ContentEditor`.

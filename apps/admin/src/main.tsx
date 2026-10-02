@@ -5,7 +5,6 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { queryClient, trpcClient, TRPCProvider } from './lib/trpc.js';
 import { trpcDataSource } from './lib/trpcDataSource.js';
-import { DocsDataSourceProvider } from './features/content/dataSource.js';
 import { LoginPage } from './pages/LoginPage.js';
 import { DashboardPage } from './pages/DashboardPage.js';
 import { UsersPage } from './pages/UsersPage.js';
@@ -16,11 +15,14 @@ import { BrandSettingsPage } from './pages/BrandSettingsPage.js';
 import { PageContentPage } from './pages/PageContentPage.js';
 import { PageHistoryPage } from './pages/PageHistoryPage.js';
 import { GlobalHistoryPage } from './pages/GlobalHistoryPage.js';
-import { PublicPage } from './pages/PublicPage.js';
-import { PublicLayout } from './features/public/PublicLayout.js';
-import { PublicHome } from './features/public/PublicHome.js';
-import { PublicPageView } from './features/public/PublicPageView.js';
-import { LegacyDocsRedirect } from './features/public/LegacyDocsRedirect.js';
+import {
+  DocsDataSourceProvider,
+  LegacyDocsRedirect,
+  PublicHome,
+  PublicLayout,
+  PublicPageById,
+  PublicPageView,
+} from '@systembook/docs-site';
 import { AdminLayout } from './components/AdminLayout.js';
 import { Toaster } from './components/ui/sonner.js';
 
@@ -44,7 +46,7 @@ const router = createBrowserRouter([
     ],
   },
   // Link direto por id (TASK-50) — mantido para bookmarks/preview sem slug.
-  { path: '/p/:pageId', element: <PublicPage /> },
+  { path: '/p/:pageId', element: <PublicPageById /> },
   {
     path: '/',
     element: <AdminLayout />,

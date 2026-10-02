@@ -1,5 +1,5 @@
 import type { RouterOutput } from '../../lib/trpc.js';
-import { PageRenderer } from '../public/PageRenderer.js';
+import { PageRenderer } from '@systembook/docs-site';
 
 type PageSnapshot = RouterOutput['revisions']['getById']['snapshot'];
 

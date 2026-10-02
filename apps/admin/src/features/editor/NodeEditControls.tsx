@@ -2,18 +2,17 @@ import type { CalloutVariant, DosDontsVariant } from '@systembook/schema';
 import {
   CALLOUT_META,
   CALLOUT_VARIANTS,
-  type VariantSwitcherProps,
-} from '../content/nodes/Callout.js';
-import { LANGUAGES, type CodeLanguageSelectProps } from '../content/nodes/CodeBlock.js';
-import {
   DOS_DONTS_META,
   DOS_DONTS_VARIANTS,
+  LANGUAGES,
+  type CodeLanguageSelectProps,
   type DosDontsTitleFieldProps,
-} from '../content/nodes/DosDonts.js';
+  type VariantSwitcherProps,
+} from '@systembook/docs-site';
 
 /**
  * Controles de edição inline dos nós de conteúdo (SYS-89). Os NodeViews vivem
- * em `features/content/` e só renderizam; o editor injeta estes controles por
+ * em `@systembook/docs-site` e só renderizam; o editor injeta estes controles por
  * opção da extensão (`features/editor/extensions.ts`), e eles só aparecem com
  * o editor editável.
  */

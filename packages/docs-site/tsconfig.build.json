@@ -1,0 +1,18 @@
+{
+  // Idêntico nos três pacotes, e de propósito. Tentar extrair para um
+  // `tsconfig.build.base.json` na raiz não funciona: `include`, `exclude`,
+  // `rootDir` e `outDir` resolvem relativo ao arquivo que os *declara*, não ao
+  // que faz `extends` — na raiz eles apontariam para `../../src` e `../../dist`.
+  // Sobrariam quatro flags compartilháveis, o que não paga o arquivo a mais.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": "dist",
+    "rootDir": "src",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
+}

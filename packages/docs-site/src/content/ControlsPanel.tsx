@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { PreviewControl, PreviewUpdatePropsMessage } from '@systembook/schema';
-import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
+import { Input } from '../ui/input.js';
+import { Switch } from '../ui/switch.js';
 
 /**
  * Painel de controles interativos do preview (TASK-49). Renderiza um input por
