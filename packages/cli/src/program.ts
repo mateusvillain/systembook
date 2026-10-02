@@ -2,6 +2,7 @@ import path from 'node:path';
 import { Command } from 'commander';
 import { registerPreviewCommands } from '@systembook/connector';
 import { buildStaticSite } from './build/index.js';
+import { checkSite } from './check.js';
 import { ConfigError, loadConfig } from './config.js';
 
 /**
@@ -34,6 +35,23 @@ export function createProgram(): Command {
       const shown = path.relative(process.cwd(), result.outDir);
       console.log(
         `Site estático em ${shown.startsWith('..') ? result.outDir : shown || '.'} — ${result.routes} rota(s), base ${config.base}`,
+      );
+    });
+
+  program
+    .command('check')
+    .description('valida conteúdo, config e referências sem gerar o site (para rodar em PR)')
+    .option('--root <dir>', 'raiz do projeto, onde está a config', process.cwd())
+    .action(async (options: { root: string }) => {
+      const config = await loadProjectConfig(options.root);
+      if (!config) return;
+      const result = await checkSite(config);
+      if (!result.ok) {
+        reportProblems(result.problems);
+        return;
+      }
+      console.log(
+        `✓ Sem erros — ${result.pages} página(s), ${result.images} imagem(ns), ${result.previews} variante(s) de preview.`,
       );
     });
 

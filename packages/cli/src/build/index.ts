@@ -141,7 +141,7 @@ export async function buildStaticSite(config: ResolvedConfig): Promise<BuildResu
  * do projeto — nem a raiz, nem fora dela, nem a pasta de conteúdo (ou dentro
  * dela, ou contendo-a), nem `.git`/`node_modules`.
  */
-function unsafeOutDir({ root, outDir, contentDir, file }: ResolvedConfig): string | null {
+export function unsafeOutDir({ root, outDir, contentDir, file }: ResolvedConfig): string | null {
   const inside = (child: string, parent: string) => {
     const rel = path.relative(parent, child);
     return rel === '' || (rel !== '..' && !rel.startsWith(`..${path.sep}`) && !path.isAbsolute(rel));
