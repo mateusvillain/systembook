@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { createDocsRoute, createStaticDataSource, DocsDataSourceProvider } from '@systembook/docs-site';
 import { STATIC_DATA_DIR } from '@systembook/content/site';
+import './styles.css';
 
 /**
  * O site do modo estático (SYS-99): a doc pública na raiz, sob a base de

@@ -54,6 +54,8 @@ export interface ComponentContext {
   convertChildren: (children: RootContent[]) => TiptapNode[];
   /** Registra uma imagem para o build resolver. */
   addImage: (src: string, at: Positioned) => void;
+  /** Registra um par componente/variante para o build conferir nos previews. */
+  addComponent: (componentName: string, variantId: string, at: Positioned) => void;
 }
 
 interface PropSpec {
@@ -159,6 +161,7 @@ function componentEmbed(el: JsxElement, ctx: ComponentContext): TiptapNode | nul
     return null;
   }
   if (!props) return null;
+  ctx.addComponent(props.component!.value, props.variant!.value, el);
   return {
     type: 'componentEmbed',
     attrs: { componentName: props.component!.value, variantId: props.variant!.value },
@@ -206,6 +209,7 @@ function dosDonts(el: JsxElement, ctx: ComponentContext): TiptapNode | null {
     ctx.addImage(coverImage.value, coverImage.at);
     cover = { kind: 'image', src: coverImage.value, alt: coverAlt.value };
   } else if (coverComponent && coverVariant) {
+    ctx.addComponent(coverComponent.value, coverVariant.value, coverComponent.at);
     cover = { kind: 'component-embed', componentName: coverComponent.value, variantId: coverVariant.value };
   }
   return {

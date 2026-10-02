@@ -45,11 +45,13 @@
     "@systembook/content": "workspace:^",
     "@systembook/docs-site": "workspace:^",
     "@systembook/schema": "workspace:^",
+    "@tailwindcss/vite": "^4.3.3",
     "@tanstack/react-query": "^5.101.2",
     "@vitejs/plugin-react": "^4.7.0",
     "commander": "^14.0.0",
     "esbuild": "^0.25.0",
     "react-router-dom": "^7.18.1",
+    "tailwindcss": "^4.3.3",
     "vite": "^6.4.3",
     "zod": "^4.4.3"
   },

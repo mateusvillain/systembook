@@ -50,9 +50,8 @@ export async function generateEntries(
   const dirNameOwners = new Map<string, string>();
 
   for (const preview of previews) {
-    const componentSlug = slugify(preview.config.component);
     for (const variant of preview.config.variants) {
-      const dirName = `${componentSlug}--${slugify(variant.id)}`;
+      const dirName = previewEntryName(preview.config.component, variant.id);
       const owner = dirNameOwners.get(dirName);
       if (owner !== undefined) {
         throw new Error(
@@ -79,6 +78,15 @@ export async function generateEntries(
   }
 
   return entries;
+}
+
+/**
+ * Diretório da entrada (e do artefato) de uma variante: `button--primary`.
+ * Exportado para quem precisa da URL do artefato antes de gerá-lo (o build
+ * estático do `@systembook/cli`).
+ */
+export function previewEntryName(componentName: string, variantId: string): string {
+  return `${slugify(componentName)}--${slugify(variantId)}`;
 }
 
 /** Nome seguro para diretório: minúsculas, [a-z0-9-], sem dashes duplicados. */
