@@ -27,10 +27,7 @@ export function PublicPageView() {
   const navigate = useNavigate();
   const bodyRef = useRef<HTMLElement>(null);
 
-  const query = usePageBySlug(
-    { menuSlug: menuSlug ?? '', sectionSlug: sectionSlug ?? '', pageSlug: pageSlug ?? '' },
-    !!menuSlug && !!sectionSlug && !!pageSlug,
-  );
+  const query = usePageBySlug({ menuSlug, sectionSlug, pageSlug });
 
   const basePath = `/docs/${menuSlug}/${sectionSlug}/${pageSlug}`;
 

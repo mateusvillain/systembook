@@ -10,7 +10,7 @@ import { usePageById } from '../features/public/docsQueries.js';
  */
 export function PublicPage() {
   const { pageId } = useParams<{ pageId: string }>();
-  const query = usePageById(pageId ?? '', !!pageId);
+  const query = usePageById(pageId);
 
   const container = (children: React.ReactNode) => (
     <main
