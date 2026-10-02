@@ -12,17 +12,27 @@ const FILES = {
     '![Paleta](./img/palette.png "Cores")\n\nVolte para os [tokens](./tokens/index.mdx#uso), o [uso](tokens/usage.mdx), o [início](../../index.mdx), o [site](/foundation) ou [fora](https://x.dev).',
     'subtitle: As cores.\norder: 1\n',
   ),
-  'foundation/color/tokens/index.mdx': page('Tokens', 'Corpo.\n\n<Callout>Ver [paleta](../palette.mdx).</Callout>', 'order: 2\n'),
+  'foundation/color/tokens/index.mdx': page('Tokens', 'Corpo.\n\n<Callout>Ver [paleta](../palette.mdx).</Callout>\n\n![T](./t.png)', 'order: 2\n'),
   'foundation/color/tokens/usage.mdx': page('Uso', '![](https://cdn.x.dev/a.png)\n\n![b](/shared/b.png)'),
   'components/actions/button.mdx': page('Button', '<DosDonts variant="do" coverImage="../../img/do.png" coverAlt="Certo">Ok.</DosDonts>'),
 };
 
 const settings = { nomeDesignSystem: 'Acme DS', logoUrl: null, logoDarkUrl: null };
 
-function build(base = '/meu-repo/', files: Record<string, string> = FILES) {
+function build(base = '/meu-repo/', files: Record<string, string> = FILES, imageUrl?: (path: string) => string) {
   const tree = buildContentTree(Object.entries(files).map(([path, source]) => ({ path, source })));
   expect(tree.diagnostics).toEqual([]);
-  return buildSiteData(tree, { settings, base });
+  return buildSiteData(tree, { settings, base, imageUrl });
+}
+
+/** Todos os `src` de imagem (bloco e cover) de um conjunto de blocos. */
+function srcs(value: unknown): string[] {
+  const out: string[] = [];
+  JSON.stringify(value, (key, v) => {
+    if (key === 'src' && typeof v === 'string') out.push(v);
+    return v;
+  });
+  return out;
 }
 
 /** Todos os hrefs de links de um conjunto de blocos. */
@@ -109,12 +119,38 @@ describe('buildSiteData', () => {
 
   it('imagens listadas com o caminho resolvido no diretório de conteúdo', () => {
     // na ordem da navegação
-    expect(images.map(({ file, src, path }) => [file, src, path])).toEqual([
-      ['components/actions/button.mdx', '../../img/do.png', 'img/do.png'],
-      ['foundation/color/palette.mdx', './img/palette.png', 'foundation/color/img/palette.png'],
-      ['foundation/color/tokens/usage.mdx', 'https://cdn.x.dev/a.png', null],
-      ['foundation/color/tokens/usage.mdx', '/shared/b.png', 'shared/b.png'],
+    expect(images.map(({ file, src, path, url }) => [file, src, path, url])).toEqual([
+      ['components/actions/button.mdx', '../../img/do.png', 'img/do.png', '/meu-repo/img/do.png'],
+      ['foundation/color/palette.mdx', './img/palette.png', 'foundation/color/img/palette.png', '/meu-repo/foundation/color/img/palette.png'],
+      ['foundation/color/tokens/index.mdx', './t.png', 'foundation/color/tokens/t.png', '/meu-repo/foundation/color/tokens/t.png'],
+      ['foundation/color/tokens/usage.mdx', 'https://cdn.x.dev/a.png', null, 'https://cdn.x.dev/a.png'],
+      ['foundation/color/tokens/usage.mdx', '/shared/b.png', 'shared/b.png', '/meu-repo/shared/b.png'],
     ]);
+  });
+
+  it('src das imagens e do cover reescrito para a URL no site', () => {
+    expect(srcs(data.pages['components/actions/button'])).toEqual(['/meu-repo/img/do.png']);
+    expect(srcs(data.pages['foundation/color/palette'])).toEqual(['/meu-repo/foundation/color/img/palette.png']);
+    // corpo de página com tabs: a URL é /…/tokens, então o relativo cru resolveria uma pasta acima
+    expect(srcs(data.pages['foundation/color/tokens'])).toEqual([
+      '/meu-repo/foundation/color/tokens/t.png',
+      'https://cdn.x.dev/a.png',
+      '/meu-repo/shared/b.png',
+    ]);
+  });
+
+  it('imageUrl troca a URL das imagens (o build usa para o nome com hash)', () => {
+    const { data, images } = build('/', FILES, (path) => `/assets/${path.replaceAll('/', '-')}`);
+    expect(srcs(data.pages['foundation/color/palette'])).toEqual(['/assets/foundation-color-img-palette.png']);
+    expect(images.find((i) => i.path === null)!.url).toBe('https://cdn.x.dev/a.png');
+  });
+
+  it('imagem fora do diretório de conteúdo vira erro com posição', () => {
+    const tree = buildContentTree([{ path: 'm/s/p.mdx', source: page('P', '![x](../../../fora.png)') }]);
+    const result = buildSiteData(tree, { settings });
+    expect(result.diagnostics.map((d) => `${d.file}:${d.line}:${d.column}`)).toEqual(['m/s/p.mdx:5:1']);
+    expect(result.diagnostics[0]!.message).toContain('fora do diretório de conteúdo');
+    expect(result.images).toEqual([]);
   });
 
   it('link relativo para arquivo que não é página vira erro com posição', () => {

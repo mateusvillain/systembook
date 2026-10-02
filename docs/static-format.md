@@ -181,9 +181,10 @@ sem realce. Sem info string, o bloco é texto puro.
 Imagens: são sempre um bloco. A imagem precisa estar sozinha no parágrafo, e
 pode ficar em qualquer lugar que aceite blocos (corpo, item de lista, callout,
 dos-donts). Imagem com texto no mesmo parágrafo, ou dentro de célula de tabela,
-é erro. O caminho relativo é resolvido a partir do arquivo, e o build copia a
-imagem para o site. Imagem que não existe é erro. URL absoluta (`https://…`) é
-mantida como está.
+é erro. O caminho relativo é resolvido a partir do arquivo (`/x.png`, a partir
+da raiz do conteúdo), e o build copia a imagem para o site e reescreve o `src`
+para a URL dela. Imagem que não existe, ou fora do diretório de conteúdo, é
+erro. URL absoluta (`https://…`) é mantida como está.
 
 Links:
 - URL absoluta e `#âncora` sozinha são mantidas como estão.

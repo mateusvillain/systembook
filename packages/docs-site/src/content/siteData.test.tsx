@@ -5,7 +5,7 @@ import { getSchema } from '@tiptap/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, useRoutes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { DocsDataSource, PageSnapshot, StaticSiteData } from '@systembook/schema';
+import type { BlockType, DocsDataSource, PageSnapshot, StaticSiteData } from '@systembook/schema';
 import { buildContentTree, buildSiteData, pageKey } from '@systembook/content';
 import { blocksToTiptapDoc } from './blocksToTiptapDoc.js';
 import { contentExtensions } from './extensions.js';
@@ -32,7 +32,11 @@ const FILES: Record<string, string> = {
   'foundation/color/tokens/usage.mdx': page('Uso', '1. um\n   - dois\n\n```ts\nconst a = 1\n```'),
   'components/actions/button.mdx': page(
     'Button',
-    '<DosDonts variant="do" title="Verbo" coverComponent="Button" coverVariant="primary">\n  Use <u>verbos</u>.\n</DosDonts>',
+    [
+      '<ComponentEmbed component="Button" variant="secondary" />',
+      '<DosDonts variant="do" title="Verbo" coverComponent="Button" coverVariant="primary">\n  Use <u>verbos</u>.\n</DosDonts>',
+      '<DosDonts variant="dont" coverImage="./dont.png" coverAlt="Errado">\n  Sem verbo.\n</DosDonts>',
+    ].join('\n\n'),
   ),
 };
 
@@ -53,6 +57,22 @@ describe('dados do site estático ↔ schema do conteúdo', () => {
   it('conteúdo e dados sem diagnósticos', () => {
     expect(tree.diagnostics).toEqual([]);
     expect(diagnostics).toEqual([]);
+  });
+
+  it('o fixture cobre todos os tipos de bloco', () => {
+    const all: Record<BlockType, true> = {
+      heading: true,
+      paragraph: true,
+      list: true,
+      code: true,
+      image: true,
+      table: true,
+      callout: true,
+      'component-embed': true,
+      'dos-donts': true,
+    };
+    const types = new Set(snapshots(data).flatMap(([, s]) => s.tabs.flatMap((t) => t.blocks.map((b) => b.type))));
+    expect([...types].sort()).toEqual(Object.keys(all).sort());
   });
 
   it('cada tab de cada snapshot é válida no schema e já normalizada', () => {
@@ -144,6 +164,18 @@ describe('doc pública sobre os dados gerados', () => {
     expect([...container.querySelectorAll('[role=tab]')].map((t) => t.textContent)).toEqual(['Overview', 'Uso']);
     expect(container.querySelector('.sb-callout')).not.toBeNull();
     expect(container.querySelector('.sb-callout a')?.getAttribute('href')).toBe('/foundation/color/tokens/usage');
+  });
+
+  it('imagem com o src no site', async () => {
+    await render('/foundation/color/palette');
+    expect(container.querySelector('.sb-public-content img')?.getAttribute('src')).toBe('/foundation/color/p.png');
+  });
+
+  it('cover de imagem do dos-donts com o src no site', async () => {
+    await render('/components/actions/button');
+    expect([...container.querySelectorAll('.sb-public-content img')].map((i) => i.getAttribute('src'))).toEqual([
+      '/components/actions/dont.png',
+    ]);
   });
 
   it('a tab abre pela URL', async () => {

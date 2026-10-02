@@ -25,4 +25,4 @@ export {
 export { MARK_ORDER, normalizeLanguage } from './parse/toTiptap.js';
 export * from './tree/index.js';
 export { buildSiteData, siteDataFiles, BODY_TAB_ID, type BuildSiteOptions, type SiteBuild, type SiteImage } from './site/build.js';
-export { pageKey, staticDataPaths } from './site/paths.js';
+export { pageKey, parsePageKey, sitePath, staticDataPaths } from './site/paths.js';

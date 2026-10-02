@@ -9,14 +9,15 @@ import type {
 import { tiptapDocToBlocks, type TiptapDoc, type TiptapNode } from '../blocks.js';
 import type { Diagnostic } from '../diagnostics.js';
 import type { ContentDocument, ContentTree } from '../tree/types.js';
-import { pageKey, staticDataPaths } from './paths.js';
+import { pageKey, parsePageKey, sitePath, staticDataPaths } from './paths.js';
 
 /**
  * Árvore de conteúdo → dados do site estático (SYS-96): a navegação, as
  * settings, a landing e um `PublishedPage` por página, no formato que o
  * `DocsDataSource` devolve. Também resolve os links relativos entre arquivos
- * (`../color/palette.mdx#uso` → URL da página) e lista as imagens que o build
- * precisa copiar. Puro e determinístico: mesma árvore, mesmos dados.
+ * (`../color/palette.mdx#uso` → URL da página), reescreve o `src` das imagens
+ * para a URL no site e lista as imagens que o build precisa copiar. Puro e
+ * determinístico: mesma árvore, mesmos dados.
  */
 
 /** Id da tab primária (o corpo) no modo estático — reservado, nenhuma tab pode usá-lo. */
@@ -32,12 +33,19 @@ export interface SiteImage {
   src: string;
   /** Caminho relativo ao diretório de conteúdo; `null` para URL absoluta. */
   path: string | null;
+  /** `src` que o conteúdo gerado usa (a URL absoluta fica como está). */
+  url: string;
 }
 
 export interface BuildSiteOptions {
   settings: PublicSettings;
-  /** Base de publicação (`/`, `/meu-repo/`), para os links entre páginas. */
+  /** Base de publicação (`/`, `/meu-repo/`), para os links entre páginas e as imagens. */
   base?: string;
+  /**
+   * URL de uma imagem a partir do caminho no diretório de conteúdo. Padrão:
+   * o mesmo caminho sob a base. O build troca para o nome com hash (SYS-100).
+   */
+  imageUrl?: (path: string) => string;
 }
 
 export interface SiteBuild {
@@ -73,25 +81,45 @@ function dirOf(file: string): string {
   return i === -1 ? '' : file.slice(0, i);
 }
 
-/** Aplica `rewrite` ao `href` de cada mark de link do doc (cópia; o original não muda). */
-function rewriteLinks(doc: TiptapDoc, rewrite: (href: string) => string): TiptapDoc {
-  const visit = (node: TiptapNode): TiptapNode => ({
-    ...node,
-    ...(node.marks && {
-      marks: node.marks.map((mark) => {
-        const m = mark as { type: string; attrs?: Record<string, unknown> };
-        return m.type === 'link' && typeof m.attrs?.href === 'string'
-          ? { ...m, attrs: { ...m.attrs, href: rewrite(m.attrs.href) } }
-          : mark;
+interface DocRewrite {
+  href: (href: string) => string;
+  src: (src: string) => string;
+}
+
+/**
+ * Reescreve o `href` dos links, o `src` das imagens e o do cover de imagem do
+ * dos-donts (cópia; o original não muda).
+ */
+function rewriteDoc(doc: TiptapDoc, rewrite: DocRewrite): TiptapDoc {
+  const visit = (node: TiptapNode): TiptapNode => {
+    let attrs = node.attrs;
+    if (node.type === 'image' && typeof attrs?.src === 'string') {
+      attrs = { ...attrs, src: rewrite.src(attrs.src) };
+    }
+    const cover = attrs?.cover as { kind?: string; src?: unknown } | null | undefined;
+    if (node.type === 'dosDonts' && cover?.kind === 'image' && typeof cover.src === 'string') {
+      attrs = { ...attrs, cover: { ...cover, src: rewrite.src(cover.src) } };
+    }
+    return {
+      ...node,
+      ...(attrs && { attrs }),
+      ...(node.marks && {
+        marks: node.marks.map((mark) => {
+          const m = mark as { type: string; attrs?: Record<string, unknown> };
+          return m.type === 'link' && typeof m.attrs?.href === 'string'
+            ? { ...m, attrs: { ...m.attrs, href: rewrite.href(m.attrs.href) } }
+            : mark;
+        }),
       }),
-    }),
-    ...(node.content && { content: node.content.map(visit) }),
-  });
+      ...(node.content && { content: node.content.map(visit) }),
+    };
+  };
   return { ...doc, ...(doc.content && { content: doc.content.map(visit) }) };
 }
 
 export function buildSiteData(tree: ContentTree, options: BuildSiteOptions): SiteBuild {
   const base = normalizeBase(options.base ?? '/');
+  const imageUrl = options.imageUrl ?? ((path: string) => `${base}/${path}`);
   const diagnostics: Diagnostic[] = [];
   const images: SiteImage[] = [];
 
@@ -101,24 +129,34 @@ export function buildSiteData(tree: ContentTree, options: BuildSiteOptions): Sit
   for (const menu of tree.menus) {
     for (const section of menu.sections) {
       for (const page of section.pages) {
-        const pageUrl = `${base}/${menu.slug}/${section.slug}/${page.slug}`;
-        urlOf.set(page.body.file, pageUrl);
-        for (const tab of page.tabs) urlOf.set(tab.file, `${pageUrl}/${tab.slug}`);
+        const ref = { menuSlug: menu.slug, sectionSlug: section.slug, pageSlug: page.slug };
+        urlOf.set(page.body.file, `${base}${sitePath(ref)}`);
+        for (const tab of page.tabs) urlOf.set(tab.file, `${base}${sitePath(ref, tab.slug)}`);
       }
     }
   }
 
-  /** Resolve links relativos e coleta imagens de um documento; devolve o doc reescrito. */
+  /** Resolve links relativos e imagens de um documento; devolve o doc reescrito. */
   function resolve(document: ContentDocument): TiptapDoc {
+    const srcs = new Map<string, string>();
     for (const ref of document.references.images) {
-      const external = EXTERNAL.test(ref.src);
-      images.push({
-        file: document.file,
-        line: ref.line,
-        column: ref.column,
-        src: ref.src,
-        path: external ? null : ref.src.startsWith('/') ? joinPath('', ref.src) : joinPath(dirOf(document.file), ref.src),
-      });
+      const at = { file: document.file, line: ref.line, column: ref.column };
+      if (EXTERNAL.test(ref.src)) {
+        images.push({ ...at, src: ref.src, path: null, url: ref.src });
+        continue;
+      }
+      // `/x.png` é relativo à raiz do conteúdo; o resto, ao arquivo.
+      const path = joinPath(ref.src.startsWith('/') ? '' : dirOf(document.file), ref.src.split(/[?#]/)[0]!);
+      if (!path) {
+        diagnostics.push({
+          ...at,
+          message: `imagem "${ref.src}" fica fora do diretório de conteúdo — mova-a para dentro dele.`,
+        });
+        continue;
+      }
+      const url = imageUrl(path);
+      images.push({ ...at, src: ref.src, path, url });
+      srcs.set(ref.src, url);
     }
 
     const resolved = new Map<string, string>();
@@ -144,7 +182,9 @@ export function buildSiteData(tree: ContentTree, options: BuildSiteOptions): Sit
       }
       resolved.set(href, anchor ? `${url}#${anchor}` : url);
     }
-    return resolved.size ? rewriteLinks(document.doc, (href) => resolved.get(href) ?? href) : document.doc;
+    return resolved.size || srcs.size
+      ? rewriteDoc(document.doc, { href: (href) => resolved.get(href) ?? href, src: (src) => srcs.get(src) ?? src })
+      : document.doc;
   }
 
   /** Blocos de uma tab do snapshot, com ids determinísticos. */
@@ -210,8 +250,7 @@ export function siteDataFiles(data: StaticSiteData): Map<string, string> {
     [staticDataPaths.landing, json(data.landing)],
   ]);
   for (const key of Object.keys(data.pages).sort()) {
-    const [menuSlug = '', sectionSlug = '', pageSlug = ''] = key.split('/');
-    files.set(staticDataPaths.page({ menuSlug, sectionSlug, pageSlug }), json(data.pages[key]));
+    files.set(staticDataPaths.page(parsePageKey(key)), json(data.pages[key]));
   }
   return files;
 }
