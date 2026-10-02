@@ -4,9 +4,14 @@ import { createRoot, type Root } from 'react-dom/client';
 import { getSchema } from '@tiptap/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, useRoutes } from 'react-router-dom';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { BlockType, DocsDataSource, PageSnapshot, StaticSiteData } from '@systembook/schema';
-import { buildContentTree, buildSiteData, pageKey } from '@systembook/content';
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
+import type { BlockType, PageSnapshot, StaticSiteData } from '@systembook/schema';
+import { buildContentTree, buildSiteData, siteDataFiles } from '@systembook/content';
+import { createStaticDataSource } from '../static/staticDataSource.js';
+import { fsFetch } from '../../test/fsFetch.js';
 import { blocksToTiptapDoc } from './blocksToTiptapDoc.js';
 import { contentExtensions } from './extensions.js';
 import { DocsDataSourceProvider } from './dataSource.js';
@@ -15,10 +20,10 @@ import { createDocsRoute } from '../public/createDocsRoute.js';
 (globalThis as Record<string, unknown>).IS_REACT_ACT_ENVIRONMENT = true;
 
 /**
- * Os dados do site estático (SYS-96) são o que a doc pública vai ler no modo
+ * Os dados do site estático (SYS-96) são o que a doc pública lê no modo
  * estático. Aqui eles são gerados de um projeto fixture e conferidos do lado do
  * renderer: cada snapshot é válido no schema real, e a doc pública montada
- * sobre eles (com uma fonte em memória, prévia do `staticDataSource`)
+ * sobre o `staticDataSource` (SYS-98), lendo os JSONs escritos num diretório,
  * mostra navegação, páginas, tabs e os links reescritos.
  */
 const page = (title: string, body: string, extra = '') => `---\ntitle: ${title}\n${extra}---\n\n${body}\n`;
@@ -97,19 +102,13 @@ describe('dados do site estático ↔ schema do conteúdo', () => {
   });
 });
 
-/** Fonte em memória sobre `StaticSiteData` — a forma que o `staticDataSource` terá. */
-function memorySource(site: StaticSiteData): DocsDataSource {
-  return {
-    getNavTree: async () => site.nav,
-    getSettings: async () => site.settings,
-    getLanding: async () => site.landing,
-    getPageBySlug: async (ref) => site.pages[pageKey(ref)] ?? null,
-    getPageById: async () => null,
-    resolvePath: async () => null,
-    search: async () => [],
-    getComponentPreview: async () => null,
-  };
+/** Os JSONs de `siteDataFiles` num diretório temporário, servidos em `/_systembook/data/`. */
+const dataDir = mkdtempSync(join(tmpdir(), 'systembook-data-'));
+for (const [path, json] of siteDataFiles(data)) {
+  mkdirSync(dirname(join(dataDir, path)), { recursive: true });
+  writeFileSync(join(dataDir, path), json);
 }
+afterAll(() => rmSync(dataDir, { recursive: true, force: true }));
 
 describe('doc pública sobre os dados gerados', () => {
   let container: HTMLDivElement;
@@ -131,10 +130,13 @@ describe('doc pública sobre os dados gerados', () => {
   }
 
   async function render(at: string) {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     await act(async () => {
       root.render(
-        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-          <DocsDataSourceProvider dataSource={memorySource(data)}>
+        <QueryClientProvider client={client}>
+          <DocsDataSourceProvider
+            dataSource={createStaticDataSource({ dataUrl: '/_systembook/data/', fetch: fsFetch(dataDir, '/_systembook/data/') })}
+          >
             <MemoryRouter initialEntries={[at]}>
               <Site />
             </MemoryRouter>
@@ -142,9 +144,14 @@ describe('doc pública sobre os dados gerados', () => {
         </QueryClientProvider>,
       );
     });
-    await act(async () => {
-      await new Promise((r) => setTimeout(r, 0));
-    });
+    // As leituras vêm do disco e encadeiam (a página espera a nav): espera o
+    // cliente ficar ocioso por alguns ciclos seguidos.
+    for (let idle = 0, i = 0; idle < 3 && i < 100; i++) {
+      await act(async () => {
+        await new Promise((r) => setTimeout(r, 5));
+      });
+      idle = client.isFetching() === 0 ? idle + 1 : 0;
+    }
   }
 
   it('landing com o link reescrito para a URL da página', async () => {

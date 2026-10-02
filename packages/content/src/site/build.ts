@@ -1,6 +1,7 @@
 import type {
   Block,
   PageSnapshot,
+  PublicComponentPreview,
   PublicNavTree,
   PublicSettings,
   PublishedPage,
@@ -46,6 +47,8 @@ export interface BuildSiteOptions {
    * o mesmo caminho sob a base. O build troca para o nome com hash (SYS-100).
    */
   imageUrl?: (path: string) => string;
+  /** Previews publicados no site, por `previewKey` (SYS-100). Padrão: nenhum. */
+  previews?: Record<string, PublicComponentPreview>;
 }
 
 export interface SiteBuild {
@@ -235,7 +238,7 @@ export function buildSiteData(tree: ContentTree, options: BuildSiteOptions): Sit
     ? { tabs: [{ tabId: BODY_TAB_ID, titulo: 'Overview', isPrimary: true, blocks: blocksFor('', BODY_TAB_ID, resolve(tree.landing)) }] }
     : null;
 
-  return { data: { settings: options.settings, nav, landing, pages }, images, diagnostics };
+  return { data: { settings: options.settings, nav, landing, pages, previews: options.previews ?? {} }, images, diagnostics };
 }
 
 /**
@@ -248,9 +251,15 @@ export function siteDataFiles(data: StaticSiteData): Map<string, string> {
     [staticDataPaths.settings, json(data.settings)],
     [staticDataPaths.nav, json(data.nav)],
     [staticDataPaths.landing, json(data.landing)],
+    [staticDataPaths.previews, json(sortedRecord(data.previews))],
   ]);
   for (const key of Object.keys(data.pages).sort()) {
     files.set(staticDataPaths.page(parsePageKey(key)), json(data.pages[key]));
   }
   return files;
+}
+
+/** Cópia com as chaves em ordem, para o JSON não depender da ordem de inserção. */
+function sortedRecord<T>(record: Record<string, T>): Record<string, T> {
+  return Object.fromEntries(Object.keys(record).sort().map((key) => [key, record[key]!]));
 }
