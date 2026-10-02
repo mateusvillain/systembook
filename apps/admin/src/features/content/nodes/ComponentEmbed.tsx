@@ -2,7 +2,7 @@ import { useRef, type ComponentType } from 'react';
 import { mergeAttributes, Node } from '@tiptap/core';
 import { NodeViewWrapper, ReactNodeViewRenderer, type NodeViewProps } from '@tiptap/react';
 import { Puzzle, TriangleAlert } from 'lucide-react';
-import { useComponentPreview } from '../../public/docsQueries.js';
+import { hasPreviewSelection, useComponentPreview } from '../docsQueries.js';
 import { ControlsPanel } from '../ControlsPanel.js';
 
 /**
@@ -28,7 +28,7 @@ export interface ComponentEmbedEditControlsProps {
   variantId: string | null;
   state: ComponentEmbedState;
   /** Nova tentativa de resolver o preview (estado `empty`). */
-  retry: () => void;
+  onRetry: () => void;
   retrying: boolean;
   onSelect: (selection: { componentName: string; variantId: string }) => void;
 }
@@ -70,7 +70,7 @@ function ComponentEmbedView({ node, updateAttributes, editor, extension }: NodeV
   const variantId = node.attrs.variantId as string | null;
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  const hasSelection = componentName.length > 0 && !!variantId && variantId.length > 0;
+  const hasSelection = hasPreviewSelection(componentName, variantId);
 
   const previewQuery = useComponentPreview(componentName, variantId);
 
@@ -92,7 +92,7 @@ function ComponentEmbedView({ node, updateAttributes, editor, extension }: NodeV
         componentName={componentName}
         variantId={variantId}
         state={state}
-        retry={() => void previewQuery.refetch()}
+        onRetry={() => void previewQuery.refetch()}
         retrying={previewQuery.isFetching}
         onSelect={(selection) =>
           updateAttributes({
@@ -142,6 +142,7 @@ function ComponentEmbedView({ node, updateAttributes, editor, extension }: NodeV
   // Selecionado mas sem artefato publicável (nunca publicado, ou referência
   // defasada/renomeada) — estado visualmente distinto do "não selecionado"
   // (TASK-51). Nunca renderiza um iframe com src inválido.
+  // `!data` é só para o TS estreitar o tipo — em `live` ele sempre existe.
   if (state === 'empty' || !previewQuery.data) {
     return (
       <NodeViewWrapper

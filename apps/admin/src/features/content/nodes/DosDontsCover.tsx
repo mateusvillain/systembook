@@ -1,5 +1,5 @@
 import type { DosDontsCover } from '@systembook/schema';
-import { useComponentPreview } from '../../public/docsQueries.js';
+import { hasPreviewSelection, useComponentPreview } from '../docsQueries.js';
 
 /**
  * Renderização do cover do bloco dos-donts (TASK-73, separada da edição na
@@ -20,7 +20,7 @@ export function EmbedCoverPreview({
   componentName: string;
   variantId: string | null;
 }) {
-  const hasSelection = componentName.length > 0 && !!variantId;
+  const hasSelection = hasPreviewSelection(componentName, variantId);
   const previewQuery = useComponentPreview(componentName, variantId);
 
   if (!hasSelection) {

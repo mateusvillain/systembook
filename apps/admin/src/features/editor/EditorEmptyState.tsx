@@ -12,8 +12,9 @@ import { cn } from '@/lib/utils';
 export function EditorEmptyState() {
   return (
     // contentEditable={false}: o hint não faz parte do documento editável.
-    // Mesmo padding do `.sb-editor .ProseMirror` (`.sb-editor-empty-hint` em
-    // editor.css) pra a linha cair exatamente sobre a primeira linha vazia.
+    // Mesmo padding do `.sb-editor .ProseMirror` (content.css) — a regra do
+    // hint, `.sb-editor-empty-hint`, fica em editor.css — pra a linha cair
+    // exatamente sobre a primeira linha vazia.
     <div contentEditable={false} className="sb-editor-empty-hint pointer-events-none absolute inset-0">
       <p className={cn(adminTypography.body, 'text-muted-foreground/70')}>
         Start typing, or type &quot;/&quot; to open the block menu. Markdown works

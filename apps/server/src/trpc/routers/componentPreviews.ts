@@ -10,14 +10,6 @@ import { readPreviewConfig, resolvePreviewEntry } from '../../previews/entry.js'
 import { PREVIEWS_URL_PREFIX } from '../../previews/serve.js';
 import { protectedProcedure, publicProcedure, router } from '../init.js';
 
-/**
- * Resolução de previews de componente para o editor (TASK-47). `getLatest`
- * mapeia um par (componente, variante) para a URL servível do artefato mais
- * recente (rota da TASK-46), que o `component-embed` usa como `src` de iframe.
- *
- * protectedProcedure: é conteúdo do editor (admin + editor têm acesso, mesma
- * decisão de escopo de blocks/revisions).
- */
 /** Metadados do artefato que vão além do contrato público. */
 interface PreviewMeta {
   componentName: string;
@@ -26,6 +18,14 @@ interface PreviewMeta {
   publicadoEm: string;
 }
 
+/**
+ * Resolução de previews de componente para o editor (TASK-47). `getLatest`
+ * mapeia um par (componente, variante) para a URL servível do artefato mais
+ * recente (rota da TASK-46), que o `component-embed` usa como `src` de iframe.
+ *
+ * protectedProcedure: é conteúdo do editor (admin + editor têm acesso, mesma
+ * decisão de escopo de blocks/revisions).
+ */
 export const componentPreviewsRouter = router({
   /** Componentes selecionáveis no picker (TASK-48) — só os já publicados. */
   listComponents: protectedProcedure.query(({ ctx }) => listComponentNames(ctx.db)),

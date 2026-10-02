@@ -76,6 +76,11 @@ export function usePublicSearch(q: string) {
   });
 }
 
+/** Um embed (ou cover) só tem preview a resolver com componente **e** variante escolhidos. */
+export function hasPreviewSelection(componentName: string, variantId: string | null): boolean {
+  return componentName.length > 0 && !!variantId;
+}
+
 /** Preview de uma variante; só dispara com componente e variante escolhidos. */
 export function useComponentPreview(componentName: string, variantId: string | null) {
   const ds = useDocsDataSource();
@@ -83,6 +88,6 @@ export function useComponentPreview(componentName: string, variantId: string | n
   return useQuery({
     queryKey: docsQueryKeys.componentPreview(ref),
     queryFn: () => ds.getComponentPreview(ref),
-    enabled: componentName.length > 0 && !!variantId,
+    enabled: hasPreviewSelection(componentName, variantId),
   });
 }

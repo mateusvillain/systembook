@@ -1,3 +1,4 @@
+import type { ComponentType } from 'react';
 import { mergeAttributes, Node } from '@tiptap/core';
 import {
   NodeViewContent,
@@ -22,11 +23,22 @@ export const CALLOUT_META: Record<CalloutVariant, { icon: LucideIcon; label: str
   tip: { icon: Lightbulb, label: 'Tip', border: '#5fbf7a', bg: '#ecf8f0' },
 };
 
+/** Troca de variante injetada pelo editor (SYS-89); `null` no read-only. */
+export interface VariantSwitcherProps<V extends string> {
+  variant: V;
+  onChange: (variant: V) => void;
+}
+
+export interface CalloutOptions {
+  VariantSwitcher: ComponentType<VariantSwitcherProps<CalloutVariant>> | null;
+}
+
 function isVariant(value: unknown): value is CalloutVariant {
   return CALLOUT_VARIANTS.includes(value as CalloutVariant);
 }
 
-function CalloutView({ node, updateAttributes, editor }: NodeViewProps) {
+function CalloutView({ node, updateAttributes, editor, extension }: NodeViewProps) {
+  const { VariantSwitcher } = extension.options as CalloutOptions;
   const variant = node.attrs.variant as CalloutVariant;
   const meta = CALLOUT_META[variant];
   const Icon = meta.icon;
@@ -41,31 +53,8 @@ function CalloutView({ node, updateAttributes, editor }: NodeViewProps) {
         <Icon aria-hidden size={18} />
       </span>
       <NodeViewContent className="sb-callout-content" />
-      {editor.isEditable && (
-        <span
-          role="group"
-          aria-label="Variante do callout"
-          className="sb-callout-switcher"
-          contentEditable={false}
-        >
-          {CALLOUT_VARIANTS.map((v) => {
-            const SwitchIcon = CALLOUT_META[v].icon;
-            return (
-              <button
-                key={v}
-                type="button"
-                title={`Change to ${CALLOUT_META[v].label.toLowerCase()}`}
-                aria-pressed={v === variant}
-                className="sb-callout-switch"
-                data-active={v === variant || undefined}
-                onClick={() => updateAttributes({ variant: v })}
-              >
-                <SwitchIcon aria-hidden size={12} />
-                {CALLOUT_META[v].label}
-              </button>
-            );
-          })}
-        </span>
+      {editor.isEditable && VariantSwitcher && (
+        <VariantSwitcher variant={variant} onChange={(v) => updateAttributes({ variant: v })} />
       )}
     </NodeViewWrapper>
   );
@@ -81,11 +70,15 @@ function CalloutView({ node, updateAttributes, editor }: NodeViewProps) {
 const CALLOUT_CONTENT =
   '(paragraph | heading | bulletList | orderedList | codeBlock | callout | dosDonts | componentEmbed)+';
 
-export const Callout = Node.create({
+export const Callout = Node.create<CalloutOptions>({
   name: 'callout',
   group: 'block',
   content: CALLOUT_CONTENT,
   defining: true,
+
+  addOptions() {
+    return { VariantSwitcher: null };
+  },
 
   addAttributes() {
     return {

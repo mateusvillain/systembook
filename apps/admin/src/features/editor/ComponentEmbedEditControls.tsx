@@ -12,7 +12,7 @@ export function ComponentEmbedEditControls({
   componentName,
   variantId,
   state,
-  retry,
+  onRetry,
   retrying,
   onSelect,
 }: ComponentEmbedEditControlsProps) {
@@ -27,7 +27,7 @@ export function ComponentEmbedEditControls({
           data-testid="component-embed-retry"
           disabled={retrying}
           onMouseDown={(e) => e.preventDefault()}
-          onClick={retry}
+          onClick={onRetry}
           className="sb-embed-action-btn"
         >
           {retrying ? 'Checking…' : 'Try again'}

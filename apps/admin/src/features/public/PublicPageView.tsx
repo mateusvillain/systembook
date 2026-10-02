@@ -8,7 +8,7 @@ import { BlockAnchors } from './BlockAnchors.js';
 import { useBlockAnchorIds } from './useBlockAnchorIds.js';
 import { useHashScroll } from './useHashScroll.js';
 import { LegacyDocsRedirect } from './LegacyDocsRedirect.js';
-import { usePageBySlug } from './docsQueries.js';
+import { usePageBySlug } from '../content/docsQueries.js';
 
 /**
  * Conteúdo de uma página na doc pública (TASK-52): resolve

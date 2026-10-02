@@ -1,6 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { DocsNotFound } from './DocsNotFound.js';
-import { useResolvedPath } from './docsQueries.js';
+import { useResolvedPath } from '../content/docsQueries.js';
 
 /**
  * Compatibilidade das URLs de `/docs` publicadas antes de o menu entrar no

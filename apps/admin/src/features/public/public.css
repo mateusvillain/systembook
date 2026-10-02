@@ -1,7 +1,7 @@
 /* Documentação pública (TASK-52) com tema claro/escuro + tipografia (TASK-55).
    Chrome próprio, separado do painel admin. As cores vivem em tokens (custom
    properties) definidos no root `.sb-public` por tema (`data-theme`), e o
-   conteúdo Tiptap (editor.css) lê os mesmos tokens via `var(--…, fallback)`. */
+   conteúdo Tiptap (content.css) lê os mesmos tokens via `var(--…, fallback)`. */
 
 /* Sem o preflight do Tailwind (deliberado, ver `index.css`), `.sb-public`
    nunca ganhou `box-sizing: border-box` — só `.sb-admin` tem esse reset.
@@ -373,7 +373,7 @@
   line-height: 1.7;
 
   /* Dentro do cartão, "fundo da superfície" é o branco do cartão: os blocos
-     de conteúdo em `editor.css` (code block, embed, botões de copiar) leem
+     de conteúdo em `content.css` (code block, embed, botões de copiar) leem
      `var(--sb-bg)` como a cor da página onde estão desenhados. Sem este
      rebind eles herdariam o cinza da moldura. */
   --sb-bg: var(--sb-card);
@@ -989,7 +989,7 @@
 }
 
 /* Code block no tema escuro (SYS-28): só a paleta de sintaxe muda — a estrutura
-   do cartão vive em `editor.css` e já lê `--sb-code-bg`/`--sb-border` por tema,
+   do cartão vive em `content.css` e já lê `--sb-code-bg`/`--sb-border` por tema,
    como o callout (TASK-55). Valores conferidos ≥4.5:1 sobre `--sb-code-bg`
    escuro (#161b22). */
 .sb-public[data-theme='dark'] .sb-editor .ProseMirror .sb-code-block {
@@ -1019,7 +1019,7 @@
 }
 
 /* Grid "clean" na leitura (SYS-32): só divisores horizontais entre linhas,
-   sem bordas verticais entre colunas. O grid completo de `editor.css` (borda em
+   sem bordas verticais entre colunas. O grid completo de `content.css` (borda em
    todos os lados de cada célula) lê como planilha; na doc pública a tabela é
    texto de referência, e as colunas já são separadas pelo próprio espaçamento.
    Override escopado a `.sb-public` — o editor admin mantém o grid completo, que
@@ -1051,7 +1051,7 @@
 
 /* ---- Tabelas (3.2): header destacado + hover de linha sutil ---- */
 /* Sem as verticais, o destaque do header fica todo no par fundo + linha de 2px
-   (o `--sb-th-bg` vem de `editor.css`) — é o que separa cabeçalho de dado agora
+   (o `--sb-th-bg` vem de `content.css`) — é o que separa cabeçalho de dado agora
    que não há mais grade. */
 .sb-public .sb-editor .ProseMirror th {
   border-bottom-width: 2px;
@@ -1072,7 +1072,7 @@
   max-width: 100%;
 }
 
-/* ---- Callouts por variante no tema escuro (editor.css tem o claro) ---- */
+/* ---- Callouts por variante no tema escuro (content.css tem o claro) ---- */
 .sb-public[data-theme='dark'] .sb-editor .sb-callout[data-variant='info'] {
   --sb-callout-border: #4b7bd6;
   --sb-callout-bg: #16233b;
@@ -1091,7 +1091,7 @@
   color: #c3eccf;
 }
 
-/* ---- Dos and Don'ts por variante no tema escuro (Fase 8, editor.css tem o claro) ---- */
+/* ---- Dos and Don'ts por variante no tema escuro (Fase 8, content.css tem o claro) ---- */
 .sb-public[data-theme='dark'] .sb-editor .sb-dos-donts[data-variant='do'] {
   --sb-dos-donts-border: #3f9a5c;
   --sb-dos-donts-bg: #12271a;
