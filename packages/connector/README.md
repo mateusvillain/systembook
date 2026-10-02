@@ -1,5 +1,10 @@
 # @systembook/connector
 
+> **Depreciado como CLI.** Use o [`@systembook/cli`](../cli): os mesmos
+> comandos estão em `systembook previews <comando>`. O bin
+> `systembook-connector` continua funcionando, com um aviso; o pacote segue
+> como a biblioteca que o `@systembook/cli` usa.
+
 CLI que conecta o repositório do seu design system ao
 [SystemBook](https://github.com/mateusvillain/systembook).
 

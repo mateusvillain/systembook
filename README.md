@@ -121,12 +121,12 @@ do volume antes de atualizar.
 
 ### 5. (Opcional) Conectar o pipeline de previews
 
-Para embutir os componentes reais do seu design system, instale o conector no
+Para embutir os componentes reais do seu design system, instale o CLI no
 repositório de componentes e publique os artefatos pelo CI:
 
 ```bash
-pnpm add -D @systembook/connector @systembook/schema   # ou npm i -D / yarn add -D
-npx systembook-connector build --root .
+pnpm add -D @systembook/cli @systembook/schema   # ou npm i -D / yarn add -D
+npx systembook previews build --root .
 ```
 
 O workflow completo de GitHub Actions está em

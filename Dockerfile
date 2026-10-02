@@ -15,6 +15,7 @@ COPY packages/preview-kit/package.json packages/preview-kit/
 COPY packages/connector/package.json packages/connector/
 COPY packages/docs-site/package.json packages/docs-site/
 COPY packages/content/package.json packages/content/
+COPY packages/cli/package.json packages/cli/
 RUN pnpm install --frozen-lockfile
 
 COPY . .
