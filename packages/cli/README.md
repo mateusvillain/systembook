@@ -80,7 +80,7 @@ o site. Lista todos os erros de uma vez, com `arquivo:linha:coluna`, e termina
 com código ≠ 0 se houver qualquer um:
 
 ```
-docs/components/actions/button.mdx:6:1   heading de nível 4 não é suportado — use até ###.
+docs/components/actions/button.mdx:6:1  heading de nível 4 não é suportado — use até ###.
 docs/components/actions/button.mdx:12:1  variante "ghost" de "Button" não existe nos *.preview.tsx — variantes: primary, disabled.
 
 2 erro(s).
@@ -92,28 +92,35 @@ Workflow de GitHub Actions que barra o PR com conteúdo quebrado
 ```yaml
 name: SystemBook check
 
-on:
-  pull_request:
-    paths: ['docs/**', 'systembook.config.*', '**/*.preview.tsx']
+# Sem filtro de `paths`: um check obrigatório filtrado fica pendente para
+# sempre nos PRs que não tocam os caminhos — e mudar um componente também pode
+# quebrar um preview que a doc usa.
+on: pull_request
 
 jobs:
   check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # Com npm ou yarn: remova este passo e o `cache: pnpm`, e troque o
+      # install por `npm ci` / `yarn install --frozen-lockfile`.
       - uses: pnpm/action-setup@v4
+        with:
+          version: 10 # dispensável se o package.json tiver `packageManager`
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
-      # Troque por npm ci / yarn install --frozen-lockfile se for o caso.
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec systembook check
 ```
 
 Os `*.preview.tsx` são compilados para ler o `PreviewConfig` de cada um (é o
 que permite conferir os pares), então as dependências do repo precisam estar
-instaladas.
+instaladas. O bundle final dos previews (Vite) só roda no `build`: um erro que
+apareça só ali — um import que o esbuild tolera e o Rollup não — passa pelo
+`check`. E uma config inválida para o comando nela: sem a config, não se sabe
+onde está o conteúdo.
 
 ## Vindo do `@systembook/connector`
 

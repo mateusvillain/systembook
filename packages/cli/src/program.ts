@@ -51,7 +51,7 @@ export function createProgram(): Command {
         return;
       }
       console.log(
-        `✓ Sem erros — ${result.pages} página(s), ${result.images} imagem(ns), ${result.previews} variante(s) de preview.`,
+        `✓ Sem erros — ${result.pages} página(s), ${result.images} imagem(ns), ${result.variants} variante(s) de preview.`,
       );
     });
 

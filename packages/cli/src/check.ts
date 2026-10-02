@@ -1,9 +1,8 @@
-import type { ResolvedConfig } from './config.js';
-import { unsafeOutDir } from './build/index.js';
+import { unsafeOutDir, type ResolvedConfig } from './config.js';
 import { prepareSite } from './build/prepare.js';
 
 export type CheckResult =
-  | { ok: true; pages: number; images: number; previews: number }
+  | { ok: true; pages: number; images: number; variants: number }
   | { ok: false; problems: string[] };
 
 /**
@@ -15,12 +14,12 @@ export type CheckResult =
 export async function checkSite(config: ResolvedConfig): Promise<CheckResult> {
   const unsafe = unsafeOutDir(config);
   const { site, previews, problems } = await prepareSite(config);
-  const all = unsafe ? [unsafe, ...problems] : problems;
-  if (all.length) return { ok: false, problems: all };
+  if (unsafe) problems.unshift(unsafe);
+  if (problems.length) return { ok: false, problems };
   return {
     ok: true,
     pages: Object.keys(site.data.pages).length,
     images: site.images.length,
-    previews: previews.reduce((n, p) => n + p.config.variants.length, 0),
+    variants: previews.reduce((n, p) => n + p.config.variants.length, 0),
   };
 }

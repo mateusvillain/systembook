@@ -36,7 +36,7 @@ describe('systembook check', { timeout: 60_000 }, () => {
     const root = project();
     const before = snapshot(root);
     const result = await checkSite(await loadConfig(root));
-    expect(result).toEqual({ ok: true, pages: 3, images: 2, previews: 2 });
+    expect(result).toEqual({ ok: true, pages: 3, images: 2, variants: 2 });
     expect(snapshot(root)).toEqual(before);
   });
 
@@ -73,15 +73,39 @@ describe('systembook check', { timeout: 60_000 }, () => {
 
     const errors: string[] = [];
     vi.spyOn(console, 'error').mockImplementation((...a) => void errors.push(a.join(' ')));
-    process.exitCode = undefined;
-    await createProgram().parseAsync(['check', '--root', root], { from: 'user' });
-    expect(process.exitCode).toBe(1);
-    process.exitCode = undefined;
-    vi.restoreAllMocks();
+    let exitCode: typeof process.exitCode;
+    try {
+      process.exitCode = undefined;
+      await createProgram().parseAsync(['check', '--root', root], { from: 'user' });
+      exitCode = process.exitCode;
+    } finally {
+      process.exitCode = undefined;
+      vi.restoreAllMocks();
+    }
+    expect(exitCode).toBe(1);
     expect(errors.at(-1)).toBe('\n5 erro(s).');
   });
 
-  it('config inválida também é erro do check', async () => {
+  it('config com campo inválido: o comando para nela (sem config não há conteúdo a ler)', async () => {
+    const root = project();
+    writeFileSync(path.join(root, 'systembook.config.ts'), "export default { name: '', titel: 'x' };\n");
+    const errors: string[] = [];
+    vi.spyOn(console, 'error').mockImplementation((...a) => void errors.push(a.join(' ')));
+    let exitCode: typeof process.exitCode;
+    try {
+      process.exitCode = undefined;
+      await createProgram().parseAsync(['check', '--root', root], { from: 'user' });
+      exitCode = process.exitCode;
+    } finally {
+      process.exitCode = undefined;
+      vi.restoreAllMocks();
+    }
+    expect(exitCode).toBe(1);
+    expect(errors.slice(0, -1).every((e) => e.startsWith('systembook.config.ts:'))).toBe(true);
+    expect(errors.at(-1)).toBe('\n2 erro(s).');
+  });
+
+  it('outDir perigoso é erro do check, junto dos de conteúdo', async () => {
     const root = project();
     writeFileSync(path.join(root, 'systembook.config.ts'), "export default { name: 'X', outDir: 'docs' };\n");
     const result = await checkSite(await loadConfig(root));
