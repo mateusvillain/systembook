@@ -3,9 +3,9 @@
 Este guia mostra como o repositório do seu design system publica previews de
 componentes na sua instância SystemBook a cada push. O fluxo tem três partes:
 
-1. **Build** — o `systembook-connector` descobre os arquivos `*.preview.tsx`
-   do repo, gera um entrypoint por variante e builda tudo com Vite num
-   artefato estático em `.systembook/dist/`.
+1. **Build** — o `systembook previews` (do `@systembook/cli`) descobre os
+   arquivos `*.preview.tsx` do repo, gera um entrypoint por variante e builda
+   tudo com Vite num artefato estático em `.systembook/dist/`.
 2. **Upload** — para cada variante, o job envia um `tar.gz` autenticado para
    `POST /api/previews` da instância, com `component_name`, `variant_id` e
    `commit_sha`.
@@ -76,13 +76,13 @@ jobs:
           node-version: 22
 
       # Instale as dependências do SEU repo (troque por npm/yarn se for o caso).
-      # O @systembook/connector deve estar nas devDependencies.
+      # O @systembook/cli deve estar nas devDependencies.
       - run: pnpm install --frozen-lockfile
 
       # discover → generate → build: falha o job se qualquer *.preview.tsx
       # for inválido ou não compilar (sem artefato parcial).
       - name: Build dos previews
-        run: npx systembook-connector build --root .
+        run: npx systembook previews build --root .
 
       # Um upload por variante: o manifest.json do artefato mapeia cada
       # diretório de variante ao par canônico (component, variantId).
@@ -114,7 +114,7 @@ jobs:
 
 ### O que cada parte faz
 
-- **`systembook-connector build --root .`** — varre o repo por
+- **`systembook previews build --root .`** — varre o repo por
   `*.preview.tsx` (ignorando `node_modules`), valida cada `PreviewConfig`,
   gera os entrypoints em `.systembook/entries/` e builda com Vite para
   `.systembook/dist/`. O diretório `.systembook/` é descartável — adicione-o
@@ -140,9 +140,15 @@ jobs:
 
 ### Notas
 
+- **Compatibilidade:** workflows que usam `npx systembook-connector build`
+  com o `@systembook/connector` continuam funcionando — os comandos e o
+  artefato são os mesmos. O bin antigo só imprime um aviso de depreciação;
+  migre trocando a dependência por `@systembook/cli` e o comando por
+  `systembook previews build`.
+
 - Rodando localmente num macOS para testar, use `COPYFILE_DISABLE=1 tar -czf …`
   para o tar não incluir arquivos AppleDouble (`._*`). No `ubuntu-latest` do
   GitHub Actions (GNU tar) isso não acontece.
 - Dentro deste monorepo (desenvolvimento da própria plataforma), o equivalente
   do build sem passar pelo pacote publicado é
-  `pnpm --filter @systembook/connector cli build --root <dir>`.
+  `pnpm --filter @systembook/cli cli previews build --root <dir>`.

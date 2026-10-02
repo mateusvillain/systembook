@@ -1,5 +1,10 @@
 # @systembook/connector
 
+> **Depreciado como CLI.** Use o [`@systembook/cli`](../cli): os mesmos
+> comandos estão em `systembook previews <comando>`. O bin
+> `systembook-connector` continua funcionando, com um aviso; o pacote segue
+> como a biblioteca que o `@systembook/cli` usa.
+
 CLI que conecta o repositório do seu design system ao
 [SystemBook](https://github.com/mateusvillain/systembook).
 
@@ -8,6 +13,7 @@ um artefato estático que o CI envia para a sua instância — o SystemBook não
 compila o código de vocês, só hospeda o resultado.
 
 ```bash
+# prefira: npm i -D @systembook/cli @systembook/schema && npx systembook previews build
 npm i -D @systembook/connector @systembook/schema
 npx systembook-connector build
 ```

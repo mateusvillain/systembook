@@ -101,16 +101,16 @@ provisórias:
 
 ---
 
-## 3. Instalar o conector no repo do design system
+## 3. Instalar o CLI no repo do design system
 
-O `@systembook/connector` roda no **CI do seu repositório de componentes** (não na
-instância): ele descobre os arquivos `*.preview.tsx`, builda cada variante e envia o
-artefato estático para a instância.
+O `@systembook/cli` roda no **CI do seu repositório de componentes** (não na
+instância): o `systembook previews` descobre os arquivos `*.preview.tsx`, builda
+cada variante e o CI envia o artefato estático para a instância.
 
 No repositório do design system:
 
 ```bash
-pnpm add -D @systembook/connector @systembook/schema    # ou: npm i -D / yarn add -D
+pnpm add -D @systembook/cli @systembook/schema    # ou: npm i -D / yarn add -D
 ```
 
 O `@systembook/schema` entra explicitamente porque os `*.preview.tsx` importam
@@ -148,11 +148,15 @@ A referência completa de todos os campos (`PreviewConfig`, `PreviewVariant`, os
 tipos de `PreviewControl`) e o contrato de runtime estão em
 [o contrato do `*.preview.tsx`](./preview-tsx-schema.md).
 
-Valide localmente que o conector descobre e builda os previews:
+Valide localmente que o CLI descobre e builda os previews:
 
 ```bash
-npx systembook-connector build --root .
+npx systembook previews build --root .
 ```
+
+> Quem usa o `@systembook/connector` (bin `systembook-connector`) pode
+> continuar: os comandos são os mesmos, mas ele está depreciado em favor do
+> `@systembook/cli`.
 
 O build escreve o artefato em `.systembook/dist/` (adicione ao `.gitignore` do repo)
 com um `manifest.json` listando `{ component, variantId, entryDir }` por variante.
