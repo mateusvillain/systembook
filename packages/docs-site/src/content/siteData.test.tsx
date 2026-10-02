@@ -5,13 +5,10 @@ import { getSchema } from '@tiptap/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, useRoutes } from 'react-router-dom';
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
 import type { BlockType, PageSnapshot, StaticSiteData } from '@systembook/schema';
-import { buildContentTree, buildSiteData, siteDataFiles } from '@systembook/content';
+import { buildContentTree, buildSiteData, siteDataFiles, STATIC_DATA_DIR } from '@systembook/content';
 import { createStaticDataSource } from '../static/staticDataSource.js';
-import { fsFetch } from '../../test/fsFetch.js';
+import { fsFetch, writeSiteDataDir } from '../../test/fsFetch.js';
 import { blocksToTiptapDoc } from './blocksToTiptapDoc.js';
 import { contentExtensions } from './extensions.js';
 import { DocsDataSourceProvider } from './dataSource.js';
@@ -103,12 +100,9 @@ describe('dados do site estático ↔ schema do conteúdo', () => {
 });
 
 /** Os JSONs de `siteDataFiles` num diretório temporário, servidos em `/_systembook/data/`. */
-const dataDir = mkdtempSync(join(tmpdir(), 'systembook-data-'));
-for (const [path, json] of siteDataFiles(data)) {
-  mkdirSync(dirname(join(dataDir, path)), { recursive: true });
-  writeFileSync(join(dataDir, path), json);
-}
-afterAll(() => rmSync(dataDir, { recursive: true, force: true }));
+const { dir: dataDir, cleanup } = writeSiteDataDir(siteDataFiles(data));
+afterAll(cleanup);
+const DATA_URL = `/${STATIC_DATA_DIR}`;
 
 describe('doc pública sobre os dados gerados', () => {
   let container: HTMLDivElement;
@@ -129,13 +123,14 @@ describe('doc pública sobre os dados gerados', () => {
     return useRoutes([createDocsRoute('')]);
   }
 
-  async function render(at: string) {
+  /** Monta a doc em `at` e espera `ready` aparecer (as leituras vêm do disco). */
+  async function render(at: string, ready: string) {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     await act(async () => {
       root.render(
         <QueryClientProvider client={client}>
           <DocsDataSourceProvider
-            dataSource={createStaticDataSource({ dataUrl: '/_systembook/data/', fetch: fsFetch(dataDir, '/_systembook/data/') })}
+            dataSource={createStaticDataSource({ dataUrl: DATA_URL, fetch: fsFetch(dataDir, DATA_URL) })}
           >
             <MemoryRouter initialEntries={[at]}>
               <Site />
@@ -144,18 +139,15 @@ describe('doc pública sobre os dados gerados', () => {
         </QueryClientProvider>,
       );
     });
-    // As leituras vêm do disco e encadeiam (a página espera a nav): espera o
-    // cliente ficar ocioso por alguns ciclos seguidos.
-    for (let idle = 0, i = 0; idle < 3 && i < 100; i++) {
-      await act(async () => {
-        await new Promise((r) => setTimeout(r, 5));
+    await act(async () => {
+      await vi.waitFor(() => {
+        if (!container.querySelector(ready)) throw new Error(`esperando ${ready} em ${at}`);
       });
-      idle = client.isFetching() === 0 ? idle + 1 : 0;
-    }
+    });
   }
 
   it('landing com o link reescrito para a URL da página', async () => {
-    await render('/');
+    await render('/', '[data-testid=landing-published]');
     expect(container.querySelector('[data-testid=landing-published] a[href]')?.getAttribute('href')).toBe(
       '/foundation/color/palette',
     );
@@ -166,7 +158,7 @@ describe('doc pública sobre os dados gerados', () => {
   });
 
   it('página com tabs: título, tab Overview e a tab "Uso" com URL pelo slug', async () => {
-    await render('/foundation/color/tokens');
+    await render('/foundation/color/tokens', '.sb-callout');
     expect(container.querySelector('.sb-public-title')?.textContent).toBe('Tokens');
     expect([...container.querySelectorAll('[role=tab]')].map((t) => t.textContent)).toEqual(['Overview', 'Uso']);
     expect(container.querySelector('.sb-callout')).not.toBeNull();
@@ -174,19 +166,19 @@ describe('doc pública sobre os dados gerados', () => {
   });
 
   it('imagem com o src no site', async () => {
-    await render('/foundation/color/palette');
+    await render('/foundation/color/palette', '.sb-public-content img');
     expect(container.querySelector('.sb-public-content img')?.getAttribute('src')).toBe('/foundation/color/p.png');
   });
 
   it('cover de imagem do dos-donts com o src no site', async () => {
-    await render('/components/actions/button');
+    await render('/components/actions/button', '.sb-public-content img');
     expect([...container.querySelectorAll('.sb-public-content img')].map((i) => i.getAttribute('src'))).toEqual([
       '/components/actions/dont.png',
     ]);
   });
 
   it('a tab abre pela URL', async () => {
-    await render('/foundation/color/tokens/usage');
+    await render('/foundation/color/tokens/usage', '.sb-code-block');
     expect(container.querySelector('[role=tab][aria-selected=true]')?.textContent).toBe('Uso');
     expect(container.querySelector('.sb-code-block')).not.toBeNull();
   });

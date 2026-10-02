@@ -1,5 +1,7 @@
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
 
 /**
  * `fetch` de teste que serve os arquivos de `dir` sob o prefixo de URL
@@ -25,4 +27,14 @@ export function fsFetch(dir: string, prefix: string, { spaFallback = false } = {
       : new Response('not found', { status: 404 });
   };
   return Object.assign(doFetch as typeof fetch, { requests });
+}
+
+/** Escreve os arquivos de `siteDataFiles` num diretório temporário; devolve o caminho e a limpeza. */
+export function writeSiteDataDir(files: Map<string, string>): { dir: string; cleanup: () => void } {
+  const dir = mkdtempSync(join(tmpdir(), 'systembook-data-'));
+  for (const [path, json] of files) {
+    mkdirSync(dirname(join(dir, path)), { recursive: true });
+    writeFileSync(join(dir, path), json);
+  }
+  return { dir, cleanup: () => rmSync(dir, { recursive: true, force: true }) };
 }

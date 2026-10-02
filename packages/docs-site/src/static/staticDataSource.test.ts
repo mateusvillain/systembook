@@ -1,9 +1,6 @@
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { buildContentTree, buildSiteData, siteDataFiles } from '@systembook/content';
-import { fsFetch } from '../../test/fsFetch.js';
+import { buildContentTree, buildSiteData, siteDataFiles, STATIC_DATA_DIR } from '@systembook/content';
+import { fsFetch, writeSiteDataDir } from '../../test/fsFetch.js';
 import { createStaticDataSource } from './staticDataSource.js';
 
 const page = (title: string, body: string) => `---\ntitle: ${title}\n---\n\n${body}\n`;
@@ -20,14 +17,10 @@ const { data } = buildSiteData(tree, {
   previews: { 'Button/primary': preview },
 });
 
-const dir = mkdtempSync(join(tmpdir(), 'systembook-data-'));
-for (const [path, json] of siteDataFiles(data)) {
-  mkdirSync(dirname(join(dir, path)), { recursive: true });
-  writeFileSync(join(dir, path), json);
-}
-afterAll(() => rmSync(dir, { recursive: true, force: true }));
+const { dir, cleanup } = writeSiteDataDir(siteDataFiles(data));
+afterAll(cleanup);
 
-const DATA_URL = '/meu-repo/_systembook/data/';
+const DATA_URL = `/meu-repo/${STATIC_DATA_DIR}`;
 
 function source(options: { spaFallback?: boolean } = {}) {
   const fetch = fsFetch(dir, DATA_URL, options);
@@ -76,6 +69,8 @@ describe('staticDataSource', () => {
     const { ds } = source();
     expect(await ds.getPageById('foundation/color/palette')).toEqual(data.pages['foundation/color/palette']!.snapshot);
     expect(await ds.getPageById('nao/existe/mesmo')).toBeNull();
+    expect(await ds.getPageById('foundation/color/palette/extra')).toBeNull();
+    expect(await ds.getPageById('foundation/color')).toBeNull();
   });
 
   it('previews pelo par componente/variante', async () => {
@@ -88,6 +83,18 @@ describe('staticDataSource', () => {
     const { ds } = source();
     expect(await ds.resolvePath(['color', 'palette'])).toBeNull();
     expect(await ds.search('cores')).toEqual([]);
+  });
+
+  it('arquivo de dados que volta como HTML (fallback de SPA) é erro com a URL', async () => {
+    const fetch = (async () => new Response('<!doctype html>', { status: 200 })) as typeof globalThis.fetch;
+    await expect(createStaticDataSource({ dataUrl: DATA_URL, fetch }).getNavTree()).rejects.toThrow(
+      `${DATA_URL}nav.json não é JSON`,
+    );
+  });
+
+  it('dataUrl relativa é recusada', () => {
+    expect(() => createStaticDataSource({ dataUrl: STATIC_DATA_DIR })).toThrow('precisa ser absoluta');
+    expect(() => createStaticDataSource({ dataUrl: 'https://cdn.x.dev/data/' })).not.toThrow();
   });
 
   it('falha de leitura vira erro com a URL, e a próxima chamada tenta de novo', async () => {
