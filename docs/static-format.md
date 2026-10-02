@@ -11,6 +11,24 @@ visual e mesmos previews de componente. Por isso o formato só aceita o que o
 CMS consegue representar, e qualquer coisa fora dele **falha o build** com
 `arquivo:linha:coluna`. Nada é descartado em silêncio.
 
+## Decisões
+
+Fechadas no PRD do modo estático (Linear, projeto "Modo estático", §9):
+
+1. Conteúdo em `docs/` (configurável por `contentDir`) e configuração em
+   `systembook.config.{ts,js,mjs,json}`.
+2. O parser vive no pacote `@systembook/content`, compartilhado pelo CLI, pelo
+   export/import e pelo server.
+3. `status` referencia uma lista fechada de tags definida na config.
+4. No modo estático as rotas ficam na raiz do site.
+5. Importar arquivos numa instância CMS (`systembook import`) **falha** se um
+   slug já existir, listando os conflitos; sobrescrever exige `--overwrite`.
+
+Dois recursos do formato dependem de o renderer ganhar suporte: **imagem como
+bloco** e **código inline**. Hoje o conjunto de conteúdo não tem nó `image` nem
+mark `code`, e a SYS-93 acrescenta os dois, que passam a renderizar também no
+modo CMS.
+
 ## Estrutura de pastas
 
 A hierarquia vem das pastas e espelha o modelo do CMS
@@ -47,7 +65,7 @@ Regras:
 - Arquivo `.md`/`.mdx` solto na raiz (fora o `index`) ou dentro de um menu
   (fora de uma seção) é erro: toda página precisa de menu e seção.
 - Uma página com pasta precisa ter `index.mdx`/`index.md`; os outros arquivos da
-  pasta viram tabs.
+  pasta viram tabs. Subpasta dentro da pasta de uma página é erro.
 - Arquivos e pastas que começam com `_` ou `.` são ignorados, exceto
   `_menu.yml` e `_section.yml`.
 - Menus e seções sem nenhuma página não aparecem (igual ao CMS).
@@ -55,9 +73,10 @@ Regras:
 ## Slugs e URLs
 
 O slug de cada nível é o **nome da pasta ou do arquivo**, sem extensão. Ele
-precisa ser um slug válido: `a-z`, `0-9` e hífens, sem hífen nas pontas
-(`get-started`, `button-group`). Nome fora disso é erro. Renomeie o arquivo ou
-defina `slug` no frontmatter (só páginas e tabs).
+precisa casar com `^[a-z0-9]+(-[a-z0-9]+)*$`: minúsculas, dígitos e hífens
+simples entre eles (`get-started`, `button-group`). Nome fora disso é erro.
+Renomeie, ou defina `slug` no frontmatter (páginas e tabs) ou no
+`_menu.yml`/`_section.yml` (menus e seções).
 
 As URLs ficam na raiz do site, sob o `base` de publicação:
 
@@ -68,10 +87,10 @@ As URLs ficam na raiz do site, sob o `base` de publicação:
 ```
 
 No modo estático, o id de uma tab é o slug dela (`usage`), não um UUID como
-no CMS.
+no CMS. `index` é reservado ao corpo da página e não pode ser slug de tab.
 
 Slug repetido no mesmo nível é erro (duas páginas `button` na mesma seção,
-`button.mdx` e `button/` juntos, duas tabs com o mesmo slug).
+`button.mdx` e `button/` juntos, duas tabs com o mesmo slug na mesma página).
 
 ## Frontmatter
 
@@ -90,24 +109,29 @@ status: Stable
 | --- | --- | --- | --- |
 | `title` | string, **obrigatório** | página, tab | Título exibido. Na tab, é o rótulo dela. |
 | `subtitle` | string | página (`index` da pasta, se tiver tabs) | Introdução abaixo do título. |
-| `order` | inteiro | página, tab | Ordem dentro do nível (menor primeiro). |
-| `status` | string | página | Nome de uma tag de `statusTags` da config. |
+| `order` | inteiro | página, tab | Ordem dentro do nível (menor primeiro). No `index` de uma pasta, ordena a página. |
+| `status` | string | página | `titulo` de uma tag de `statusTags` da config. |
 | `slug` | string | página, tab | Sobrescreve o slug vindo do nome do arquivo. |
 
 Campo desconhecido, tipo errado, `title` ausente e `status` que não existe na
-config são erros.
+config são erros. `subtitle` e `status` em arquivo de tab são erro.
 
-Na landing (`docs/index.mdx`) o frontmatter é opcional. Só `title` é lido, e
-vira o `<title>` do HTML.
+O `status` é metadado da página: o build o valida e o leva adiante, mas a doc
+pública não o exibe hoje, igual ao modo CMS.
+
+Na landing (`docs/index.mdx`) o frontmatter é opcional e aceita só `title`, que
+vira o `<title>` do HTML. Qualquer outro campo é erro.
 
 O corpo da página (o `index` de uma pasta com tabs, ou o arquivo de uma página
-sem tabs) aparece como a tab **Overview**, igual ao CMS.
+sem tabs) aparece como a visão **Overview**, sempre a primeira, igual ao CMS.
+As tabs vêm depois, na ordem da regra abaixo.
 
 ## `_menu.yml` e `_section.yml`
 
 ```yaml
-title: Foundation   # opcional; padrão: nome da pasta humanizado ("get-started" → "Get started")
+title: Foundation   # opcional; padrão: slug humanizado ("get-started" → "Get started")
 order: 1            # opcional
+slug: foundation    # opcional; padrão: nome da pasta
 ```
 
 ## Ordenação
@@ -124,8 +148,8 @@ também são aceitos os componentes da seção seguinte.
 | --- | --- |
 | `# Título` a `### Título` | heading níveis 1 a 3 |
 | parágrafo | paragraph |
-| `- item` / `1. item` (com aninhamento) | lista (o número inicial é preservado) |
-| ` ```tsx ` … ` ``` ` | bloco de código; a info string é a linguagem |
+| `- item` / `1. item` | lista (o número inicial é preservado) |
+| ` ```ts ` … ` ``` ` | bloco de código; a info string é a linguagem |
 | `![alt](./imagem.png "legenda")` sozinho num parágrafo | imagem (`src`, `alt`, `caption`) |
 | tabela GFM | tabela; a primeira linha vira cabeçalho |
 
@@ -139,14 +163,29 @@ Marks inline:
 | `[texto](url)` | link |
 | `<u>texto</u>` (só `.mdx`) | sublinhado |
 
-Imagens: o caminho relativo é resolvido a partir do arquivo `.mdx`, e o build
-copia o arquivo para o site. Imagem que não existe é erro. URL absoluta
-(`https://…`) é mantida como está. Imagem misturada com texto no mesmo
-parágrafo é erro: imagem é sempre um bloco.
+Itens de lista começam por um parágrafo e podem conter, indentados, os mesmos
+blocos do corpo da página (outra lista, código, imagem, componentes MDX), como
+no editor do CMS.
 
-Links: URL absoluta é mantida. Link relativo para outro `.mdx`
-(`../color/palette.mdx`) é resolvido para a URL da página, e é erro se o
-arquivo não existir.
+Linguagem do bloco de código: a info string é usada em minúsculas, e os
+apelidos comuns viram o nome que o realce de sintaxe conhece (`ts`/`tsx` →
+`typescript`, `js`/`jsx` → `javascript`, `html` → `xml`, `sh` → `bash`, `yml`
+→ `yaml`, `md` → `markdown`). Outros nomes são mantidos como estão e exibidos
+sem realce. Sem info string, o bloco é texto puro.
+
+Imagens: são sempre um bloco. A imagem precisa estar sozinha no parágrafo, e
+pode ficar em qualquer lugar que aceite blocos (corpo, item de lista, callout,
+dos-donts). Imagem com texto no mesmo parágrafo, ou dentro de célula de tabela,
+é erro. O caminho relativo é resolvido a partir do arquivo, e o build copia a
+imagem para o site. Imagem que não existe é erro. URL absoluta (`https://…`) é
+mantida como está.
+
+Links:
+- URL absoluta e `#âncora` sozinha são mantidas como estão.
+- Link relativo para outro `.md`/`.mdx` vira a URL daquele destino: o arquivo
+  de página leva à página, o `index` de uma pasta leva à página dela, e o
+  arquivo de tab leva à tab. Uma `#âncora` no fim é preservada.
+- Link relativo para arquivo que não existe, ou que não é página/tab, é erro.
 
 **Não suportado** (erro, com a sugestão do que usar):
 
@@ -198,8 +237,9 @@ Conteúdo: parágrafos, headings, listas, código, `<Callout>`, `<DosDonts>` e
 | `component` | sim | Nome do componente no `PreviewConfig` (`component`). |
 | `variant` | sim | Id da variante (`variants[].id`). |
 
-Sempre auto-fechado. O par precisa existir nos `*.preview.tsx` do repo; o build
-avisa quando não existe.
+Sempre auto-fechado. As duas props são obrigatórias, o que é mais estrito que o
+CMS, onde o embed pode ficar sem variante. Com previews habilitados, o par
+precisa existir nos `*.preview.tsx` do repo; se não existir, é erro.
 
 ### `<DosDonts>`
 
@@ -236,8 +276,10 @@ Segue as mesmas regras do editor do CMS:
 | `<Callout>` | tabela |
 | célula de tabela | tabela, `<Callout>` |
 
-Uma célula de tabela GFM só tem conteúdo inline. Por isso o resto já fica de fora
-pela sintaxe do Markdown.
+A sintaxe de tabela do GFM só comporta conteúdo inline na célula (texto com
+marks e links). O CMS aceita mais coisas dentro de célula (listas, código,
+componentes), mas o formato de arquivo fica, de propósito, com esse
+subconjunto: não existe sintaxe Markdown legível para o resto.
 
 ## Configuração: `systembook.config.{ts,js,mjs,json}`
 
@@ -254,8 +296,8 @@ export default {
   outDir: 'systembook-dist',
   base: '/acme-ds/',
   statusTags: [
-    { nome: 'Stable', cor: '#2e7d32' },
-    { nome: 'Beta', cor: '#ed6c02' },
+    { titulo: 'Stable', cor: '#2e7d32' },
+    { titulo: 'Beta', cor: '#ed6c02' },
   ],
 } satisfies SystemBookConfig;
 ```
@@ -267,7 +309,7 @@ export default {
 | `contentDir` | `docs` | Pasta do conteúdo. |
 | `outDir` | `systembook-dist` | Pasta do site gerado. |
 | `base` | `/` | Base de publicação (`/repo/` no GitHub Pages de projeto). |
-| `statusTags` | `[]` | Tags que o frontmatter `status` pode usar. |
+| `statusTags` | `[]` | Tags que o frontmatter `status` pode usar (`titulo` + `cor`, como no CMS). |
 | `previews` | `true` se houver `*.preview.tsx` | Builda os previews de componente junto. |
 
 Campo desconhecido é erro.
