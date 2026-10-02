@@ -10,6 +10,14 @@ import type {
 } from 'mdast';
 import type { TiptapNode } from '../blocks.js';
 import type { DiagnosticBag, Positioned } from '../diagnostics.js';
+import {
+  ACCEPTED_COMPONENTS,
+  blockComponent,
+  componentMessage,
+  isBlockComponent,
+  meaningful,
+  type JsxElement,
+} from './components.js';
 
 /**
  * mdast → nós Tiptap (SYS-93), no formato **canônico** que o editor do CMS
@@ -120,29 +128,14 @@ function mergeText(nodes: TiptapNode[]): TiptapNode[] {
 /** Nó mdast que este módulo não conhece pelo tipo (MDX, extensões). */
 type AnyNode = { type: string } & Positioned;
 
-/** Shape mínimo de um elemento JSX do remark-mdx (`<u>`, `<Callout>`…). */
-interface JsxElement {
-  name: string | null;
-  attributes: unknown[];
-  children: unknown[];
-}
-
-const ACCEPTED_COMPONENTS = '<Callout>, <ComponentEmbed>, <DosDonts> ou <u>';
-
-function componentMessage(name: string | null): string {
-  return name
-    ? `<${name}> não é um componente aceito — use ${ACCEPTED_COMPONENTS}.`
-    : `fragmento JSX (<>…</>) não é aceito — use ${ACCEPTED_COMPONENTS}.`;
-}
-
 const UNSUPPORTED_BLOCK: Record<string, string> = {
   blockquote: 'citação (`>`) não é suportada — use <Callout>.',
   thematicBreak: 'linha horizontal (`---`) não é suportada — use um heading para separar o conteúdo.',
-  html: 'HTML não é suportado — use Markdown ou os componentes <Callout>, <ComponentEmbed>, <DosDonts> e <u>.',
+  html: `HTML não é suportado — use Markdown ou os componentes ${ACCEPTED_COMPONENTS}.`,
   definition: 'definição de link não é suportada — escreva o link no próprio texto: [texto](url).',
   footnoteDefinition: 'nota de rodapé não é suportada.',
   mdxjsEsm: '`import`/`export` não são permitidos em .mdx — o conteúdo é analisado, não executado.',
-  mdxFlowExpression: 'expressões `{…}` não são permitidas em .mdx.',
+  mdxFlowExpression: 'expressões `{…}` não são permitidas em .mdx (nem comentários `{/* … */}`).',
 };
 
 const UNSUPPORTED_INLINE: Record<string, string> = {
@@ -152,7 +145,7 @@ const UNSUPPORTED_INLINE: Record<string, string> = {
   footnoteReference: 'nota de rodapé não é suportada.',
   linkReference: 'link por referência não é suportado — escreva [texto](url).',
   imageReference: 'imagem por referência não é suportada — escreva ![alt](caminho).',
-  mdxTextExpression: 'expressões `{…}` não são permitidas em .mdx.',
+  mdxTextExpression: 'expressões `{…}` não são permitidas em .mdx (nem comentários `{/* … */}`).',
 };
 
 function inline(
@@ -208,6 +201,10 @@ function inline(
         break;
       case 'mdxJsxTextElement': {
         const jsx = node as unknown as JsxElement;
+        if (isBlockComponent(jsx.name)) {
+          ctx.bag.report(node, `<${jsx.name}> é um bloco — deixe-o sozinho, fora do texto do parágrafo.`);
+          break;
+        }
         if (jsx.name !== 'u') {
           ctx.bag.report(node, componentMessage(jsx.name));
           break;
@@ -227,9 +224,9 @@ function inline(
 
 /** Parágrafo cujo único conteúdo (fora espaços) é uma imagem. */
 function soloImage(node: Paragraph) {
-  const meaningful = node.children.filter((c) => !(c.type === 'text' && c.value.trim() === ''));
-  const [only] = meaningful;
-  return meaningful.length === 1 && only?.type === 'image' ? only : null;
+  const children = meaningful(node.children);
+  const [only] = children;
+  return children.length === 1 && only?.type === 'image' ? only : null;
 }
 
 function heading(node: Heading, ctx: ConvertContext): TiptapNode | null {
@@ -245,7 +242,26 @@ function heading(node: Heading, ctx: ConvertContext): TiptapNode | null {
     : { type: 'heading', attrs: { level: node.depth } };
 }
 
+/** Parágrafo que é só um componente de bloco escrito numa linha (`<Callout>…</Callout>`). */
+function soloComponent(node: Paragraph): JsxElement | null {
+  const children = meaningful(node.children);
+  const [only] = children as unknown as JsxElement[];
+  return children.length === 1 && only?.type === 'mdxJsxTextElement' && isBlockComponent(only.name)
+    ? only
+    : null;
+}
+
+function component(el: JsxElement, ctx: ConvertContext): TiptapNode | null {
+  return blockComponent(el, {
+    bag: ctx.bag,
+    convertChildren: (children) => blocks(children, ctx),
+    addImage: (src, at) => ctx.refs.images.push({ src, ...pointOf(at) }),
+  });
+}
+
 function paragraph(node: Paragraph, ctx: ConvertContext): TiptapNode | null {
+  const single = soloComponent(node);
+  if (single) return component(single, ctx);
   const image = soloImage(node);
   if (image) {
     ctx.refs.images.push({ src: image.url, ...pointOf(image) });
@@ -307,13 +323,35 @@ function table(node: Table, ctx: ConvertContext): TiptapNode {
   return { type: 'table', content: rows };
 }
 
-/** Converte uma sequência de blocos mdast em nós Tiptap. */
-export function blocks(
-  nodes: RootContent[],
-  ctx: { bag: DiagnosticBag; refs: ContentReferences },
-): TiptapNode[] {
-  const out: TiptapNode[] = [];
+/** Tipos inline do mdast — aparecem soltos como filhos de um componente de uma linha. */
+const PHRASING = new Set([
+  'text', 'emphasis', 'strong', 'inlineCode', 'link', 'image', 'break', 'delete', 'html',
+  'mdxJsxTextElement', 'mdxTextExpression', 'footnoteReference', 'linkReference', 'imageReference',
+]);
+
+/** Agrupa filhos inline soltos em parágrafos, para converter como blocos. */
+function asBlocks(nodes: RootContent[]): RootContent[] {
+  const out: RootContent[] = [];
+  let run: PhrasingContent[] = [];
+  const flush = () => {
+    if (run.length) out.push({ type: 'paragraph', children: run, position: run[0]!.position } as Paragraph);
+    run = [];
+  };
   for (const node of nodes) {
+    if (PHRASING.has(node.type)) run.push(node as PhrasingContent);
+    else {
+      flush();
+      out.push(node);
+    }
+  }
+  flush();
+  return out;
+}
+
+/** Converte uma sequência de blocos mdast em nós Tiptap. */
+export function blocks(nodes: RootContent[], ctx: ConvertContext): TiptapNode[] {
+  const out: TiptapNode[] = [];
+  for (const node of asBlocks(nodes)) {
     let converted: TiptapNode | null = null;
     switch (node.type) {
       case 'yaml':
@@ -353,6 +391,10 @@ export function blocks(
               if (content.length) out.push({ type: 'paragraph', content });
             }
             continue;
+          }
+          if (isBlockComponent(jsx.name)) {
+            converted = component(node as unknown as JsxElement, ctx);
+            break;
           }
           ctx.bag.report(node, componentMessage(jsx.name));
         } else ctx.bag.report(node, `elemento "${type}" não é suportado.`);

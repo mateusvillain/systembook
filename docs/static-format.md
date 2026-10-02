@@ -206,8 +206,15 @@ o Markdown e viram espaço.
 ## Componentes MDX
 
 Só em arquivos `.mdx`. **Lista fechada**, com **props literais**: string entre
-aspas, sem `{expressões}`. Qualquer outro JSX, prop desconhecida, prop
-obrigatória faltando, valor fora do permitido ou expressão é erro. O conteúdo
+aspas, sem `{expressões}`. Qualquer outro JSX, prop desconhecida, repetida ou
+vazia (exceto `title`), prop obrigatória faltando, valor fora do permitido ou
+expressão é erro. Comentários `{/* … */}` também são expressões e não são
+aceitos.
+
+Um componente de bloco pode ficar numa linha só (`<Callout>Texto.</Callout>`)
+ou em várias. Com várias linhas, quebre a linha logo depois da tag de
+abertura: texto na mesma linha da abertura que continua nas linhas seguintes
+é erro de sintaxe do MDX. O conteúdo
 é analisado estaticamente, e nenhum código do `.mdx` roda no build nem no site.
 `import`/`export` em `.mdx` também são erro.
 
@@ -237,7 +244,7 @@ Conteúdo: parágrafos, headings, listas, código, `<Callout>`, `<DosDonts>` e
 | `component` | sim | Nome do componente no `PreviewConfig` (`component`). |
 | `variant` | sim | Id da variante (`variants[].id`). |
 
-Sempre auto-fechado. As duas props são obrigatórias, o que é mais estrito que o
+Sem conteúdo (use a forma auto-fechada). As duas props são obrigatórias e não podem ser vazias, o que é mais estrito que o
 CMS, onde o embed pode ficar sem variante. Com previews habilitados, o par
 precisa existir nos `*.preview.tsx` do repo; se não existir, é erro.
 
@@ -273,7 +280,7 @@ Segue as mesmas regras do editor do CMS:
 
 | Dentro de | Não pode |
 | --- | --- |
-| `<Callout>` | tabela |
+| `<Callout>` (filho direto) | tabela — numa lista ou num `<DosDonts>` dentro do callout, pode |
 | célula de tabela | tabela, `<Callout>` |
 
 A sintaxe de tabela do GFM só comporta conteúdo inline na célula (texto com
