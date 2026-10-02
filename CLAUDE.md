@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## O que é
 
-SystemBook: CMS open source self-hosted para documentação de design systems (estilo Material/Atlassian docs). Backend real (não Git-based), container Docker único, 1 instância = 1 design system. PRD completo em `.prd/PRD.md` (resumo em `.prd/SUMMARY.md`); backlog em `.prd/tasks.json` com specs por task em `.prd/tasks/TASK-*.json` (campo `passes` marca conclusão). O log de desenvolvimento vivo do agente fica em `.prd/memory.md` — leia-o no início e mantenha-o atualizado.
+SystemBook: CMS open source self-hosted para documentação de design systems (estilo Material/Atlassian docs). Backend real (não Git-based), container Docker único, 1 instância = 1 design system. PRDs, épicos e tasks vivem no **Linear** (time Systembook, issues `SYS-NN`; cada iniciativa é um projeto com o PRD como documento). A pasta `.prd/` (PRD original, backlog legado `TASK-*` e o log do agente em `.prd/memory.md`) é **local e não versionada** (`.gitignore`) — se existir na máquina, leia o `memory.md` no início e mantenha-o atualizado; num clone novo ela não existe.
 
 ## Comandos
 
