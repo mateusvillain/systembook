@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import type { PublicComponentPreview } from '@systembook/schema';
 import { discoverPreviews, previewEntryName, type DiscoveredPreview } from '@systembook/connector';
@@ -34,7 +34,7 @@ export interface PreparedSite {
   site: SiteBuild;
   /** Previews descobertos; vazio com previews desabilitados ou sem `*.preview.tsx`. */
   previews: DiscoveredPreview[];
-  /** Imagens e logos a copiar, sem repetição, em ordem estável. */
+  /** Imagens e logos a copiar, um por destino, em ordem estável. */
   media: MediaFile[];
   /** Todos os problemas (conteúdo, referências, config), já formatados. */
   problems: string[];
@@ -49,18 +49,21 @@ export interface PreparedSite {
 export async function prepareSite(config: ResolvedConfig): Promise<PreparedSite> {
   const problems: string[] = [];
   const contentDiagnostics: Diagnostic[] = [];
+  /** Por destino: arquivos iguais (mesmo nome e conteúdo) viram um só. */
   const media = new Map<string, MediaFile>();
+  const targets = new Map<string, string>();
 
   /** Copia `source` com hash do conteúdo no nome; devolve a URL no site. */
   const mediaUrl = (source: string) => {
-    let file = media.get(source);
-    if (!file) {
+    let target = targets.get(source);
+    if (!target) {
       const hash = createHash('sha256').update(readFileSync(source)).digest('hex').slice(0, 8);
       const { name, ext } = path.parse(source);
-      file = { source, target: `${MEDIA_DIR}/${name}-${hash}${ext}` };
-      media.set(source, file);
+      target = `${MEDIA_DIR}/${name}-${hash}${ext}`;
+      targets.set(source, target);
+      if (!media.has(target)) media.set(target, { source, target });
     }
-    return `${config.base}${file.target}`;
+    return `${config.base}${target}`;
   };
 
   const tree = buildContentTree(await readContentDir(config.contentDir), {
@@ -82,9 +85,21 @@ export async function prepareSite(config: ResolvedConfig): Promise<PreparedSite>
   if (checkPreviews) contentDiagnostics.push(...missingPreviews(tree, previews));
 
   const previewMap: Record<string, PublicComponentPreview> = {};
+  const entryOwners = new Map<string, string>();
   for (const preview of previews) {
     for (const variant of preview.config.variants) {
       const entry = previewEntryName(preview.config.component, variant.id);
+      // O artefato de cada variante é uma pasta com este nome: dois pares que
+      // dão o mesmo nome (o mesmo componente em dois arquivos, `Foo Bar` e
+      // `foo-bar`) se sobrescreveriam.
+      const owner = entryOwners.get(entry);
+      if (owner) {
+        problems.push(
+          `${relative(config, preview.filePath)}  "${preview.config.component}" / "${variant.id}" gera o mesmo preview (${entry}) que ${owner} — renomeie o componente ou a variante.`,
+        );
+        continue;
+      }
+      entryOwners.set(entry, relative(config, preview.filePath));
       previewMap[previewKey({ componentName: preview.config.component, variantId: variant.id })] = {
         url: `${config.base}${PREVIEWS_DIR}/${entry}/index.html`,
         config: preview.config,
@@ -96,9 +111,14 @@ export async function prepareSite(config: ResolvedConfig): Promise<PreparedSite>
   const logo = (field: 'logo' | 'logoDark'): string | null => {
     const value = config[field];
     if (!value) return null;
-    if (/^[a-z][a-z0-9+.-]*:/i.test(value)) return value;
+    // URL (`https://…`, `//cdn…`) fica como está; o resto é arquivo do projeto.
+    if (/^(https?:)?\/\//i.test(value)) return value;
     const source = path.resolve(config.root, value);
-    if (!existsSync(source)) {
+    if (relative(config, source).startsWith('../') || path.isAbsolute(relative(config, source))) {
+      problems.push(`${config.file}: "${field}": o arquivo precisa estar dentro do projeto (${value}).`);
+      return null;
+    }
+    if (!isFile(source)) {
       problems.push(`${config.file}: "${field}": arquivo não encontrado (${value}).`);
       return null;
     }
@@ -114,12 +134,12 @@ export async function prepareSite(config: ResolvedConfig): Promise<PreparedSite>
     imageUrl: (relativePath) => {
       const source = path.join(config.contentDir, relativePath);
       // Inexistente: a URL não importa, o build para no erro abaixo.
-      return existsSync(source) ? mediaUrl(source) : `${config.base}${relativePath}`;
+      return isFile(source) ? mediaUrl(source) : `${config.base}${relativePath}`;
     },
   });
   contentDiagnostics.push(...site.diagnostics);
   for (const image of site.images) {
-    if (image.path !== null && !existsSync(path.join(config.contentDir, image.path))) {
+    if (image.path !== null && !isFile(path.join(config.contentDir, image.path))) {
       contentDiagnostics.push({
         file: image.file,
         line: image.line,
@@ -129,10 +149,11 @@ export async function prepareSite(config: ResolvedConfig): Promise<PreparedSite>
     }
   }
 
-  const contentDir = path.relative(config.root, config.contentDir).split(path.sep).join('/');
-  const formatted = contentDiagnostics.map((d) =>
-    formatDiagnostic({ ...d, file: contentDir ? `${contentDir}/${d.file}` : d.file }),
-  );
+  const contentDir = relative(config, config.contentDir);
+  // Por arquivo e posição, não por tipo de verificação: lê-se de cima a baixo.
+  const formatted = contentDiagnostics
+    .sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line || a.column - b.column)
+    .map((d) => formatDiagnostic({ ...d, file: contentDir ? `${contentDir}/${d.file}` : d.file }));
 
   return {
     tree,
@@ -143,8 +164,13 @@ export async function prepareSite(config: ResolvedConfig): Promise<PreparedSite>
   };
 }
 
-function relative(config: ResolvedConfig, file: string): string {
+/** Caminho relativo à raiz do projeto, com `/` em qualquer sistema. */
+export function relative(config: ResolvedConfig, file: string): string {
   return path.relative(config.root, file).split(path.sep).join('/');
+}
+
+function isFile(file: string): boolean {
+  return statSync(file, { throwIfNoEntry: false })?.isFile() ?? false;
 }
 
 /** Todos os documentos da árvore (landing, corpos e tabs). */

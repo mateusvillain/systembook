@@ -132,11 +132,27 @@ describe('systembook build', { timeout: 60_000 }, () => {
     expect(result.ok).toBe(false);
     expect(!result.ok && result.problems).toEqual([
       'systembook.config.ts: "logo": arquivo não encontrado (./brand/sumiu.svg).',
+      'docs/components/actions/button.mdx:17:1  imagem "./nao-existe.png" não encontrada.',
       'docs/components/actions/button.mdx:19:1  variante "ghost" de "Button" não existe nos *.preview.tsx — variantes: primary, disabled.',
       'docs/components/actions/button.mdx:21:1  componente "Card" não tem *.preview.tsx — componentes com preview: Button.',
-      'docs/components/actions/button.mdx:17:1  imagem "./nao-existe.png" não encontrada.',
     ]);
     expect(() => readdirSync(config.outDir)).toThrow();
+  });
+
+  it('imagem que é pasta, logo fora do projeto e previews com o mesmo nome de artefato', async () => {
+    const config = await fixtureConfig('/');
+    const button = path.join(config.contentDir, 'components/actions/button.mdx');
+    writeFileSync(button, readFileSync(button, 'utf8') + '\n![x](../../foundation/color/img)\n');
+    writeFileSync(
+      path.join(config.root, 'src/outro.preview.tsx'),
+      "export function Preview() { return null; }\nexport default { component: 'button', variants: [{ id: 'Primary', label: 'P', props: {} }], controls: [] };\n",
+    );
+    const result = await buildStaticSite({ ...config, logo: '../fora.svg' });
+    expect(!result.ok && result.problems).toEqual([
+      'src/outro.preview.tsx  "button" / "Primary" gera o mesmo preview (button--primary) que src/button.preview.tsx — renomeie o componente ou a variante.',
+      'systembook.config.ts: "logo": o arquivo precisa estar dentro do projeto (../fora.svg).',
+      'docs/components/actions/button.mdx:17:1  imagem "../../foundation/color/img" não encontrada.',
+    ]);
   });
 
   it('com previews: false, embeds não são conferidos e nada de preview é gerado', async () => {

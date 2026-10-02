@@ -22,15 +22,20 @@ const APP_DIR = fileURLToPath(new URL('../../app', import.meta.url));
  * é resolvido aqui e anexado ao `app/styles.css` antes do Tailwind processá-lo.
  */
 function docsSiteSource(): Plugin {
-  const entry = createRequire(import.meta.url).resolve('@systembook/docs-site');
-  let dir = path.dirname(entry);
-  while (!existsSync(path.join(dir, 'package.json'))) dir = path.dirname(dir);
-  const source = path.join(dir, 'src').split(path.sep).join('/');
+  const posix = (file: string) => file.split(path.sep).join('/');
+  let dir = path.dirname(createRequire(import.meta.url).resolve('@systembook/docs-site'));
+  while (!existsSync(path.join(dir, 'package.json'))) {
+    if (path.dirname(dir) === dir) throw new Error('package.json do @systembook/docs-site não encontrado');
+    dir = path.dirname(dir);
+  }
+  const source = posix(path.join(dir, 'src'));
+  // Os ids do Vite usam `/` em qualquer sistema (e podem trazer `?query`).
+  const stylesId = posix(path.join(APP_DIR, 'styles.css'));
   return {
     name: 'systembook:docs-site-source',
     enforce: 'pre',
     transform(code, id) {
-      if (!id.startsWith(path.join(APP_DIR, 'styles.css'))) return null;
+      if (!id.startsWith(stylesId)) return null;
       return `${code}\n@source ${JSON.stringify(source)};\n`;
     },
   };
@@ -63,7 +68,9 @@ export async function buildStaticSite(config: ResolvedConfig): Promise<BuildResu
   await rm(config.outDir, { recursive: true, force: true });
   // O Vite só assume produção com o NODE_ENV vazio; com outro valor (um
   // `development` herdado do shell, o `test` do vitest) o bundle sairia com o
-  // React e o JSX de desenvolvimento — e caminhos absolutos da máquina.
+  // React e o JSX de desenvolvimento — e caminhos absolutos da máquina. É
+  // estado global do processo: dois builds simultâneos no mesmo processo não
+  // são suportados.
   const nodeEnv = process.env.NODE_ENV;
   process.env.NODE_ENV = 'production';
   try {
