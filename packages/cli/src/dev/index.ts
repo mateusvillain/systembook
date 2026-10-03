@@ -40,6 +40,9 @@ const WEIGHT: Record<Change, number> = { content: 0, code: 1, config: 2 };
 /** Arquivos que podem mudar os previews: o `*.preview.tsx` e o que ele importa. */
 const CODE_FILE = /\.(tsx?|jsx?|[mc][jt]s|css|scss|sass|less|json)$/i;
 
+/** Teto para esperar a varredura inicial do watcher (projetos enormes). */
+const WATCH_READY_TIMEOUT_MS = 15_000;
+
 /** Agrupa os eventos de um "salvar" (editores gravam em mais de um passo). */
 const DEBOUNCE_MS = 80;
 
@@ -67,6 +70,7 @@ export async function startDevServer(root: string, options: DevOptions = {}): Pr
   let server: ViteDevServer;
   let port = options.port ?? 4000;
   let strictPort = false;
+  let watching: Promise<unknown> = Promise.resolve();
 
   const logger = createLogger('info', { prefix: '[systembook]' });
 
@@ -136,6 +140,13 @@ export async function startDevServer(root: string, options: DevOptions = {}): Pr
       // Quem abre (ou recarrega) a página com erro pendente também vê o overlay.
       vite.ws.on('connection', () => {
         if (problems().length) sendProblems();
+      });
+      // Antes do `ready` inicial, a raiz entra na varredura dele: esperar o
+      // `ready` garante que um save logo após a subida não se perde (no Linux
+      // a varredura do inotify leva um tempo; no macOS é quase instantânea).
+      watching = new Promise((resolve) => {
+        vite.watcher.once('ready', resolve);
+        setTimeout(resolve, WATCH_READY_TIMEOUT_MS).unref();
       });
       vite.watcher.add(root);
       vite.watcher.on('all', (_event, file) => onFileChange(file));
@@ -306,6 +317,7 @@ export async function startDevServer(root: string, options: DevOptions = {}): Pr
       },
     });
     await server.listen();
+    await watching;
     // Depois da 1ª vez, a porta é fixa: o navegador reconecta na mesma.
     port = (server.httpServer!.address() as AddressInfo).port;
     strictPort = true;
