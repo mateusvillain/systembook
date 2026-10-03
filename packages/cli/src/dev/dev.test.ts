@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, describe, expect, it } from 'vitest';
@@ -41,7 +41,7 @@ async function devFixture() {
 
 describe('systembook dev', { timeout: 60_000 }, () => {
   it('serve o site e os dados em memória, e acompanha o conteúdo', async () => {
-    const { server, first, edit, next, get } = await devFixture();
+    const { root, server, first, edit, next, get } = await devFixture();
     expect(first).toEqual([]);
     expect(server.url).toMatch(/^http:\/\/localhost:\d+\/acme-ds\/$/);
 
@@ -67,6 +67,18 @@ describe('systembook dev', { timeout: 60_000 }, () => {
     expect(await updated).toEqual([]);
     expect(JSON.stringify(await palette())).toContain('Cores ao vivo');
 
+    // Salvar o *.preview.tsx rebuilda o preview servido ao iframe.
+    const bundle = () =>
+      readdirSync(path.join(root, '.systembook/dev/previews'), { recursive: true, encoding: 'utf8' })
+        .filter((file) => file.endsWith('.js'))
+        .map((file) => readFileSync(path.join(root, '.systembook/dev/previews', file), 'utf8'))
+        .join('\n');
+    expect(bundle()).not.toContain('Salvar ao vivo');
+    const rebuilt = next();
+    edit('src/button.preview.tsx', (text) => text.replace("?? 'Salvar')", "?? 'Salvar ao vivo')"));
+    expect(await rebuilt).toEqual([]);
+    expect(bundle()).toContain('Salvar ao vivo');
+
     // Arquivo inexistente na pasta de dados é 404, não o index.html do SPA.
     expect((await get('_systembook/data/pages/nao/existe/mesmo.json')).status).toBe(404);
   });
@@ -90,6 +102,11 @@ describe('systembook dev', { timeout: 60_000 }, () => {
     edit('systembook.config.ts', (text) => text.replace("name: 'Acme DS'", "name: ''"));
     expect(await updated).toEqual(['systembook.config.ts: "name": é obrigatório']);
     expect((await get('')).status).toBe(200);
+
+    // Salvar conteúdo com a config ainda inválida não esconde o erro dela.
+    updated = next();
+    edit('docs/foundation/color/palette.mdx', (text) => text.replace('## Cores', '## Cores de novo'));
+    expect(await updated).toEqual(['systembook.config.ts: "name": é obrigatório']);
 
     updated = next();
     edit('systembook.config.ts', (text) => text.replace("name: ''", "name: 'Acme Vivo'"));

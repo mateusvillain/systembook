@@ -81,8 +81,9 @@ ocupada, ele tenta a seguinte) e acompanha o projeto: salvar um `.mdx`, um
 arquivo que ele importa — recarrega o navegador, sem reiniciar o comando.
 
 Erros de conteúdo aparecem no terminal e num overlay no navegador, com
-`arquivo:linha:coluna`, como no `check`. O servidor continua de pé mostrando o
-último estado: corrija e salve, e o overlay some. Uma config inválida também
+`arquivo:linha:coluna`, como no `check`. O servidor continua de pé, com o que
+deu para gerar (e os previews do último build que passou): corrija e salve, e o
+overlay some. Uma config inválida também
 vira erro no overlay (o servidor segue com a última config válida); só a
 primeira carga, sem config válida, encerra o comando.
 

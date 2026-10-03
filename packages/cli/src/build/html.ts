@@ -69,6 +69,11 @@ export function routeMetas(data: StaticSiteData, landingTitle: string | null): R
   return routes;
 }
 
+/** O `<head>` de uma URL que não é rota do site (o `404.html`). */
+export function notFoundHead(name: string): Pick<RouteMeta, 'title' | 'description'> {
+  return { title: `Page not found · ${name}`, description: name };
+}
+
 const escapeHtml = (text: string) =>
   text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 

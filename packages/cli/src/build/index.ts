@@ -4,8 +4,8 @@ import { build as viteBuild } from 'vite';
 import { siteDataFiles, STATIC_DATA_DIR } from '@systembook/content';
 import { appViteConfig, buildPreviews, withProductionEnv } from '../app.js';
 import { unsafeOutDir, type ResolvedConfig } from '../config.js';
-import { META_FILE, renderHtml, routeMetas } from './html.js';
-import { prepareSite, PREVIEWS_DIR } from './prepare.js';
+import { META_FILE, notFoundHead, renderHtml, routeMetas } from './html.js';
+import { prepareSite, PREVIEWS_DIR, previewsBase } from './prepare.js';
 
 /** Onde o Vite põe JS/CSS: sob o `_`, fora do espaço de slugs, como os dados. */
 const ASSETS_DIR = '_systembook/assets';
@@ -35,7 +35,7 @@ export async function buildStaticSite(config: ResolvedConfig): Promise<BuildResu
   if (previews.length) {
     await buildPreviews(config, previews, {
       outDir: path.join(config.outDir, PREVIEWS_DIR),
-      base: `${config.base}${PREVIEWS_DIR}/`,
+      base: previewsBase(config),
     });
   }
   await withProductionEnv(() =>
@@ -64,10 +64,7 @@ export async function buildStaticSite(config: ResolvedConfig): Promise<BuildResu
   for (const route of routes) await write(path.join(route.path, 'index.html'), renderHtml(template, route));
   // O mesmo `<head>` para o app atualizar ao navegar sem recarregar a página.
   await write(path.join(STATIC_DATA_DIR, META_FILE), `${JSON.stringify(routes)}\n`);
-  await write(
-    '404.html',
-    renderHtml(template, { title: `Page not found · ${config.name}`, description: config.name }),
-  );
+  await write('404.html', renderHtml(template, notFoundHead(config.name)));
   // O GitHub Pages (Jekyll) ignora pastas com `_` sem isto.
   await write('.nojekyll', '');
   if (previews.length) {

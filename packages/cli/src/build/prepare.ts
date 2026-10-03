@@ -24,6 +24,8 @@ import type { ResolvedConfig } from '../config.js';
 
 /** Pasta dos artefatos de preview no site, relativa à base. */
 export const PREVIEWS_DIR = '_systembook/previews';
+/** URL da pasta de previews no site, com a base. */
+export const previewsBase = (config: ResolvedConfig) => `${config.base}${PREVIEWS_DIR}/`;
 /** Pasta das imagens do conteúdo e dos logos, relativa à base. */
 export const MEDIA_DIR = '_systembook/media';
 
@@ -127,7 +129,7 @@ export async function prepareSite(config: ResolvedConfig, options: PrepareOption
       }
       entryOwners.set(entry, relative(config, preview.filePath));
       previewMap[previewKey({ componentName: preview.config.component, variantId: variant.id })] = {
-        url: `${config.base}${PREVIEWS_DIR}/${entry}/index.html`,
+        url: `${previewsBase(config)}${entry}/index.html`,
         config: preview.config,
       };
     }
