@@ -1,3 +1,4 @@
+import { readdirSync } from 'node:fs';
 import { rename, rm } from 'node:fs/promises';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
@@ -41,7 +42,7 @@ const WEIGHT: Record<Change, number> = { content: 0, code: 1, config: 2 };
 const CODE_FILE = /\.(tsx?|jsx?|[mc][jt]s|css|scss|sass|less|json)$/i;
 
 /** Teto para esperar a varredura inicial do watcher (projetos enormes). */
-const WATCH_READY_TIMEOUT_MS = 15_000;
+const WATCH_TIMEOUT_MS = 15_000;
 
 /** Agrupa os eventos de um "salvar" (editores gravam em mais de um passo). */
 const DEBOUNCE_MS = 80;
@@ -141,14 +142,8 @@ export async function startDevServer(root: string, options: DevOptions = {}): Pr
       vite.ws.on('connection', () => {
         if (problems().length) sendProblems();
       });
-      // Antes do `ready` inicial, a raiz entra na varredura dele: esperar o
-      // `ready` garante que um save logo após a subida não se perde (no Linux
-      // a varredura do inotify leva um tempo; no macOS é quase instantânea).
-      watching = new Promise((resolve) => {
-        vite.watcher.once('ready', resolve);
-        setTimeout(resolve, WATCH_READY_TIMEOUT_MS).unref();
-      });
       vite.watcher.add(root);
+      watching = untilWatched(vite.watcher, projectDirs(root, [config.outDir, path.join(root, '.systembook')]));
       vite.watcher.on('all', (_event, file) => onFileChange(file));
     },
     transformIndexHtml: {
@@ -357,6 +352,38 @@ export async function startDevServer(root: string, options: DevOptions = {}): Pr
       await server.close();
     },
   };
+}
+
+/** Pastas do projeto que o watcher precisa cobrir (as que ele não ignora). */
+function projectDirs(root: string, ignored: string[]): string[] {
+  const skip = new Set(['node_modules', '.git', 'test-results']);
+  const dirs = [root];
+  for (const entry of readdirSync(root, { recursive: true, withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const dir = path.join(entry.parentPath, entry.name);
+    const parts = path.relative(root, dir).split(path.sep);
+    if (parts.some((part) => skip.has(part))) continue;
+    if (ignored.some((other) => dir === other || dir.startsWith(`${other}${path.sep}`))) continue;
+    dirs.push(dir);
+  }
+  return dirs;
+}
+
+/**
+ * Espera o watcher cobrir todas as `dirs`. O `add` da raiz é assíncrono, e o
+ * `ready` do chokidar não espera pela varredura de um caminho acrescentado
+ * depois do início: sem isto, um save logo após a subida podia cair antes de a
+ * pasta ser vigiada e se perder (no Linux, sob carga, isso acontecia). Num
+ * projeto enorme, desiste depois de `WATCH_TIMEOUT_MS` — o pior caso volta a
+ * ser o de antes.
+ */
+async function untilWatched(watcher: ViteDevServer['watcher'], dirs: string[]): Promise<void> {
+  const deadline = Date.now() + WATCH_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    const watched = watcher.getWatched();
+    if (dirs.every((dir) => watched[dir] !== undefined)) return;
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
 }
 
 /** Uma impressão do site servido, para recarregar o navegador só quando algo mudou. */
