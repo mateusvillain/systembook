@@ -192,10 +192,13 @@ async function updatePackageJson(
   }
   next.scripts = scripts;
 
-  // O `init` costuma rodar por `npx`: o CLI ainda não está no projeto.
-  if (!next.dependencies?.['@systembook/cli'] && !next.devDependencies?.['@systembook/cli']) {
-    next.devDependencies = { ...next.devDependencies, '@systembook/cli': `^${cliVersion()}` };
-    added.push('@systembook/cli');
+  // O `init` costuma rodar por `npx`: o CLI ainda não está no projeto. E o
+  // react/react-dom são peer dependencies dele, que o yarn 1 não instala.
+  const wanted: Record<string, string> = { '@systembook/cli': `^${cliVersion()}`, react: '^19.0.0', 'react-dom': '^19.0.0' };
+  for (const [name, range] of Object.entries(wanted)) {
+    if (next.dependencies?.[name] || next.devDependencies?.[name]) continue;
+    next.devDependencies = { ...next.devDependencies, [name]: range };
+    added.push(name);
   }
 
   if (!added.length) {

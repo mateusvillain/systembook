@@ -13,8 +13,9 @@ no GitHub Pages deste repositório: <https://mateusvillain.github.io/systembook/
 ## Antes: o CLI no projeto
 
 Os hosts rodam o build no projeto, então o `@systembook/cli` precisa estar nas
-`devDependencies` (o `npx @systembook/cli init` já o acrescenta; ou
-`npm i -D @systembook/cli`). Faça commit do lockfile.
+`devDependencies`, junto do `react` e do `react-dom` (o
+`npx @systembook/cli init` já os acrescenta; ou
+`npm i -D @systembook/cli react react-dom`). Faça commit do lockfile.
 
 ## O que o host precisa fazer
 
