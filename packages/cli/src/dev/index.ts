@@ -1,3 +1,4 @@
+import { readdirSync } from 'node:fs';
 import { rename, rm } from 'node:fs/promises';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
@@ -41,7 +42,7 @@ const WEIGHT: Record<Change, number> = { content: 0, code: 1, config: 2 };
 const CODE_FILE = /\.(tsx?|jsx?|[mc][jt]s|css|scss|sass|less|json)$/i;
 
 /** Teto para esperar a varredura inicial do watcher (projetos enormes). */
-const WATCH_READY_TIMEOUT_MS = 15_000;
+const WATCH_TIMEOUT_MS = 15_000;
 
 /** Agrupa os eventos de um "salvar" (editores gravam em mais de um passo). */
 const DEBOUNCE_MS = 80;
@@ -141,14 +142,8 @@ export async function startDevServer(root: string, options: DevOptions = {}): Pr
       vite.ws.on('connection', () => {
         if (problems().length) sendProblems();
       });
-      // Antes do `ready` inicial, a raiz entra na varredura dele: esperar o
-      // `ready` garante que um save logo após a subida não se perde (no Linux
-      // a varredura do inotify leva um tempo; no macOS é quase instantânea).
-      watching = new Promise((resolve) => {
-        vite.watcher.once('ready', resolve);
-        setTimeout(resolve, WATCH_READY_TIMEOUT_MS).unref();
-      });
       vite.watcher.add(root);
+      watching = untilWatched(vite.watcher, projectDirs(root, [config.outDir, path.join(root, '.systembook')]));
       vite.watcher.on('all', (_event, file) => onFileChange(file));
     },
     transformIndexHtml: {
@@ -357,6 +352,60 @@ export async function startDevServer(root: string, options: DevOptions = {}): Pr
       await server.close();
     },
   };
+}
+
+/** Pastas do projeto que o watcher precisa cobrir (as que ele não ignora). */
+function projectDirs(root: string, ignored: string[]): string[] {
+  // Os mesmos que o Vite ignora, podados antes de descer (não enumera o node_modules).
+  const skip = new Set(['node_modules', '.git', 'test-results']);
+  const dirs: string[] = [];
+  const walk = (dir: string) => {
+    dirs.push(dir);
+    let entries;
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return; // sem permissão: o chokidar também ignora (ignorePermissionErrors)
+    }
+    for (const entry of entries) {
+      if (!entry.isDirectory() || skip.has(entry.name)) continue;
+      const child = path.join(dir, entry.name);
+      if (ignored.some((other) => child === other || child.startsWith(`${other}${path.sep}`))) continue;
+      walk(child);
+    }
+  };
+  walk(root);
+  return dirs;
+}
+
+/** O que o `getWatched()` público não diz: se o `fs.watch` de cada pasta já existe. */
+interface ChokidarInternals {
+  _closers?: unknown;
+  options?: { useFsEvents?: boolean };
+}
+
+/**
+ * Espera o watcher cobrir todas as `dirs`. O `add` da raiz é assíncrono, e o
+ * `ready` do chokidar não espera pela varredura de um caminho acrescentado
+ * depois do início: sem isto, um save logo após a subida podia cair antes de a
+ * pasta ser vigiada e se perder (no Linux, sob carga, isso acontecia).
+ *
+ * A pasta aparece no `getWatched()` antes do `fs.watch` dela (o chokidar lê a
+ * pasta no meio). Com um watcher por pasta (Linux, Windows, polling), o sinal
+ * de que ele existe é o `closer` registrado — interno do chokidar 3 que o Vite
+ * 6 embute, por isso lido com cautela e, se mudar, cai no `getWatched()`. No
+ * macOS (fsevents), um único stream na raiz cobre as subpastas desde o início.
+ * Num projeto enorme, desiste depois de `WATCH_TIMEOUT_MS`.
+ */
+async function untilWatched(watcher: ViteDevServer['watcher'], dirs: string[]): Promise<void> {
+  const internals = watcher as unknown as ChokidarInternals;
+  const closers = internals._closers instanceof Map && internals.options?.useFsEvents === false ? internals._closers : null;
+  const deadline = Date.now() + WATCH_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    const watched = watcher.getWatched();
+    if (dirs.every((dir) => watched[dir] !== undefined && (!closers || closers.has(dir)))) return;
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
 }
 
 /** Uma impressão do site servido, para recarregar o navegador só quando algo mudou. */
