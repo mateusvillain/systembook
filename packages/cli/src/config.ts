@@ -9,17 +9,18 @@ import { z } from 'zod';
  * `systembook.config.{ts,js,mjs,json}` (SYS-99), o formato de
  * `docs/static-format.md`. Campo desconhecido é erro.
  */
+const baseSchema = z
+  .string()
+  .regex(/^\//, 'precisa começar com "/" (ex.: "/meu-repo/")')
+  .transform((base) => (base.endsWith('/') ? base : `${base}/`));
+
 const configSchema = z.strictObject({
   name: z.string().trim().min(1, 'é obrigatório'),
   logo: z.string().min(1).optional(),
   logoDark: z.string().min(1).optional(),
   contentDir: z.string().min(1).default('docs'),
   outDir: z.string().min(1).default('systembook-dist'),
-  base: z
-    .string()
-    .regex(/^\//, 'precisa começar com "/" (ex.: "/meu-repo/")')
-    .default('/')
-    .transform((base) => (base.endsWith('/') ? base : `${base}/`)),
+  base: baseSchema.default('/'),
   statusTags: z
     .array(z.strictObject({ titulo: z.string().trim().min(1), cor: z.string().min(1) }))
     .default([]),
@@ -78,6 +79,17 @@ export async function loadConfig(root: string): Promise<ResolvedConfig> {
     contentDir: path.resolve(root, contentDir),
     outDir: path.resolve(root, outDir),
   };
+}
+
+/**
+ * A config com outra `base` — o `--base` do `build`, para o CI publicar num
+ * subpath que só ele conhece (o `base_path` do GitHub Pages).
+ */
+export function withBase(config: ResolvedConfig, base: string): ResolvedConfig {
+  const parsed = baseSchema.safeParse(base);
+  if (!parsed.success) throw new ConfigError([`--base: ${parsed.error.issues[0]!.message}`]);
+  // Barras repetidas (`/repo//`, de uma concatenação no workflow) viram uma.
+  return { ...config, base: parsed.data.replace(/\/{2,}/g, '/') };
 }
 
 async function readRaw(file: string): Promise<unknown> {

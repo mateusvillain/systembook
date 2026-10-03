@@ -1,10 +1,12 @@
 import path from 'node:path';
+import { createInterface, type Interface } from 'node:readline/promises';
 import { Command, InvalidArgumentError } from 'commander';
 import { registerPreviewCommands } from '@systembook/connector';
 import { buildStaticSite } from './build/index.js';
 import { checkSite } from './check.js';
-import { ConfigError, loadConfig } from './config.js';
+import { ConfigError, loadConfig, withBase } from './config.js';
 import { startDevServer } from './dev/index.js';
+import { initProject, PAGES_WORKFLOW_FILE } from './init.js';
 
 /**
  * O programa `systembook`. Os comandos de preview vêm do connector, que é a
@@ -22,12 +24,61 @@ export function createProgram(): Command {
   );
 
   program
+    .command('init')
+    .description('prepara o projeto para o modo estático: config, docs/, scripts e .gitignore')
+    .option('--root <dir>', 'raiz do projeto', process.cwd())
+    .option('--github-pages', 'também cria o workflow de deploy no GitHub Pages')
+    .option('--no-github-pages', 'não cria o workflow (sem perguntar)')
+    .option('-f, --force', 'sobrescreve arquivos existentes sem perguntar')
+    .action(async (options: { root: string; githubPages?: boolean; force?: boolean }) => {
+      const root = path.resolve(options.root);
+      // Perguntas só num terminal; em CI/pipe, o padrão é não sobrescrever nada.
+      const prompt = process.stdin.isTTY ? createInterface({ input: process.stdin, output: process.stdout }) : null;
+      // Ctrl+C aborta o init inteiro (não vale como "não" e segue escrevendo).
+      prompt?.on('SIGINT', () => {
+        prompt.close();
+        process.stdout.write('\n');
+        process.exit(130);
+      });
+      try {
+        const githubPages =
+          options.githubPages ?? (prompt ? await ask(prompt, 'Criar o workflow de deploy no GitHub Pages?') : false);
+        const result = await initProject(root, {
+          githubPages,
+          force: options.force,
+          confirm: prompt ? (file) => ask(prompt, `${file} já existe. Sobrescrever?`) : undefined,
+        });
+        for (const step of result.steps) {
+          console.log(`  ${step.status.padEnd(11)} ${step.file}${step.note ? `  (${step.note})` : ''}`);
+        }
+        const pm = result.packageManager;
+        console.log(`\nPróximos passos:\n  ${pm.install}\n  ${pm.run} docs:dev`);
+        const workflow = result.steps.find((s) => s.file.endsWith(PAGES_WORKFLOW_FILE));
+        if (workflow && workflow.status !== 'mantido') {
+          console.log('\nNo GitHub: Settings → Pages → Source: "GitHub Actions". Faça commit do lockfile.');
+        }
+      } finally {
+        prompt?.close();
+      }
+    });
+
+  program
     .command('build')
     .description('gera o site estático a partir do conteúdo em arquivos (systembook.config.*)')
     .option('--root <dir>', 'raiz do projeto, onde está a config', process.cwd())
-    .action(async (options: { root: string }) => {
-      const config = await loadProjectConfig(options.root);
+    .option('--base <path>', 'sobrescreve a base da config (ex.: o base_path do GitHub Pages no CI)')
+    .action(async (options: { root: string; base?: string }) => {
+      let config = await loadProjectConfig(options.root);
       if (!config) return;
+      if (options.base !== undefined) {
+        try {
+          config = withBase(config, options.base);
+        } catch (error) {
+          if (!(error instanceof ConfigError)) throw error;
+          reportProblems(error.problems);
+          return;
+        }
+      }
       const result = await buildStaticSite(config);
       if (!result.ok) {
         reportProblems(result.problems);
@@ -71,6 +122,12 @@ export function createProgram(): Command {
     });
 
   return program;
+}
+
+/** Pergunta sim/não; Ctrl+D (fim da entrada) vale como "não". */
+async function ask(prompt: Interface, question: string): Promise<boolean> {
+  const answer = await prompt.question(`${question} (s/N) `).catch(() => '');
+  return /^s/i.test(answer.trim());
 }
 
 function parsePort(value: string): number {
