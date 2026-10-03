@@ -356,32 +356,54 @@ export async function startDevServer(root: string, options: DevOptions = {}): Pr
 
 /** Pastas do projeto que o watcher precisa cobrir (as que ele não ignora). */
 function projectDirs(root: string, ignored: string[]): string[] {
+  // Os mesmos que o Vite ignora, podados antes de descer (não enumera o node_modules).
   const skip = new Set(['node_modules', '.git', 'test-results']);
-  const dirs = [root];
-  for (const entry of readdirSync(root, { recursive: true, withFileTypes: true })) {
-    if (!entry.isDirectory()) continue;
-    const dir = path.join(entry.parentPath, entry.name);
-    const parts = path.relative(root, dir).split(path.sep);
-    if (parts.some((part) => skip.has(part))) continue;
-    if (ignored.some((other) => dir === other || dir.startsWith(`${other}${path.sep}`))) continue;
+  const dirs: string[] = [];
+  const walk = (dir: string) => {
     dirs.push(dir);
-  }
+    let entries;
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return; // sem permissão: o chokidar também ignora (ignorePermissionErrors)
+    }
+    for (const entry of entries) {
+      if (!entry.isDirectory() || skip.has(entry.name)) continue;
+      const child = path.join(dir, entry.name);
+      if (ignored.some((other) => child === other || child.startsWith(`${other}${path.sep}`))) continue;
+      walk(child);
+    }
+  };
+  walk(root);
   return dirs;
+}
+
+/** O que o `getWatched()` público não diz: se o `fs.watch` de cada pasta já existe. */
+interface ChokidarInternals {
+  _closers?: unknown;
+  options?: { useFsEvents?: boolean };
 }
 
 /**
  * Espera o watcher cobrir todas as `dirs`. O `add` da raiz é assíncrono, e o
  * `ready` do chokidar não espera pela varredura de um caminho acrescentado
  * depois do início: sem isto, um save logo após a subida podia cair antes de a
- * pasta ser vigiada e se perder (no Linux, sob carga, isso acontecia). Num
- * projeto enorme, desiste depois de `WATCH_TIMEOUT_MS` — o pior caso volta a
- * ser o de antes.
+ * pasta ser vigiada e se perder (no Linux, sob carga, isso acontecia).
+ *
+ * A pasta aparece no `getWatched()` antes do `fs.watch` dela (o chokidar lê a
+ * pasta no meio). Com um watcher por pasta (Linux, Windows, polling), o sinal
+ * de que ele existe é o `closer` registrado — interno do chokidar 3 que o Vite
+ * 6 embute, por isso lido com cautela e, se mudar, cai no `getWatched()`. No
+ * macOS (fsevents), um único stream na raiz cobre as subpastas desde o início.
+ * Num projeto enorme, desiste depois de `WATCH_TIMEOUT_MS`.
  */
 async function untilWatched(watcher: ViteDevServer['watcher'], dirs: string[]): Promise<void> {
+  const internals = watcher as unknown as ChokidarInternals;
+  const closers = internals._closers instanceof Map && internals.options?.useFsEvents === false ? internals._closers : null;
   const deadline = Date.now() + WATCH_TIMEOUT_MS;
   while (Date.now() < deadline) {
     const watched = watcher.getWatched();
-    if (dirs.every((dir) => watched[dir] !== undefined)) return;
+    if (dirs.every((dir) => watched[dir] !== undefined && (!closers || closers.has(dir)))) return;
     await new Promise((resolve) => setTimeout(resolve, 20));
   }
 }
