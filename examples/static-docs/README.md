@@ -82,6 +82,8 @@ O formato completo está em [`docs/static-format.md`](../../docs/static-format.m
 
 ## `base`
 
-A config lê `SYSTEMBOOK_BASE` (padrão `/`). Um site de projeto do GitHub Pages
-fica num subpath (`/<repo>/`), então o build para lá usa
-`SYSTEMBOOK_BASE=/<repo>/`.
+A config não fixa `base` (padrão `/`, como no `systembook dev`). Este exemplo é
+publicado no GitHub Pages do repositório, num subpath (`/systembook/`): o
+workflow (`.github/workflows/pages.yml`) passa o subpath no build, com
+`systembook build --base`. O passo a passo para outros hosts está em
+[`docs/deploy-static.md`](../../docs/deploy-static.md).

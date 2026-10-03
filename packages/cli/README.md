@@ -98,6 +98,10 @@ server do modo CMS faz. O GitHub Pages já manda; no Netlify e no Cloudflare
 Pages o `_headers` gerado cuida disso, e no `npx serve`, o `serve.json`. Na
 Vercel, no S3 e em outros hosts, configure o cabeçalho para esse caminho.
 
+O passo a passo de publicação (GitHub Pages, Vercel, Netlify e outros hosts)
+está em
+[`docs/deploy-static.md`](https://github.com/mateusvillain/systembook/blob/main/docs/deploy-static.md).
+
 `--base <path>` sobrescreve a `base` da config só naquele build. É o que o
 workflow do GitHub Pages usa: o subpath de um site de projeto (`/<repo>/`) vem
 do próprio Pages (`steps.pages.outputs.base_path`), sem precisar estar na config.
