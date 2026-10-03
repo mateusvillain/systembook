@@ -15,6 +15,7 @@ resolvível a partir do seu código.
 
 | Comando | O que faz |
 |---|---|
+| `dev` | Servidor local do site, que recarrega ao salvar (ver abaixo) |
 | `build` | Gera o site estático do modo estático em `outDir` (ver abaixo) |
 | `check` | Valida conteúdo, config e referências sem gerar o site (para PR) |
 | `previews discover` | Lista os `*.preview.tsx` encontrados e os que falharam na validação |
@@ -71,6 +72,23 @@ Vercel, no S3 e em outros hosts, configure o cabeçalho para esse caminho.
 O `outDir` é apagado a cada build; por isso ele precisa ser uma pasta própria
 dentro do projeto — não a raiz, nem a pasta de conteúdo, `.git` ou
 `node_modules`.
+
+## Escrever localmente: `systembook dev`
+
+Sobe o site em `http://localhost:4000/<base>` (`--port <n>` para outra porta;
+ocupada, ele tenta a seguinte) e acompanha o projeto: salvar um `.mdx`, um
+`_menu.yml`/`_section.yml`, uma imagem, a config ou um `*.preview.tsx` — ou um
+arquivo que ele importa — recarrega o navegador, sem reiniciar o comando.
+
+Erros de conteúdo aparecem no terminal e num overlay no navegador, com
+`arquivo:linha:coluna`, como no `check`. O servidor continua de pé mostrando o
+último estado: corrija e salve, e o overlay some. Uma config inválida também
+vira erro no overlay (o servidor segue com a última config válida); só a
+primeira carga, sem config válida, encerra o comando.
+
+Nada é escrito no `outDir`: os dados são gerados em memória. Os previews são
+buildados a cada mudança de código em `.systembook/dev/` (a mesma pasta
+ignorável das entradas dos previews).
 
 ## Validar em PR: `systembook check`
 

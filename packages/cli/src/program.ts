@@ -1,9 +1,10 @@
 import path from 'node:path';
-import { Command } from 'commander';
+import { Command, InvalidArgumentError } from 'commander';
 import { registerPreviewCommands } from '@systembook/connector';
 import { buildStaticSite } from './build/index.js';
 import { checkSite } from './check.js';
 import { ConfigError, loadConfig } from './config.js';
+import { startDevServer } from './dev/index.js';
 
 /**
  * O programa `systembook`. Os comandos de preview vêm do connector, que é a
@@ -55,7 +56,29 @@ export function createProgram(): Command {
       );
     });
 
+  program
+    .command('dev')
+    .description('servidor local do site estático, que recarrega ao salvar conteúdo, config ou *.preview.tsx')
+    .option('--root <dir>', 'raiz do projeto, onde está a config', process.cwd())
+    .option('--port <port>', 'porta (ocupada, tenta a seguinte)', parsePort, 4000)
+    .action(async (options: { root: string; port: number }) => {
+      try {
+        await startDevServer(path.resolve(options.root), { port: options.port });
+      } catch (error) {
+        if (!(error instanceof ConfigError)) throw error;
+        reportProblems(error.problems);
+      }
+    });
+
   return program;
+}
+
+function parsePort(value: string): number {
+  const port = Number(value);
+  if (!Number.isInteger(port) || port < 0 || port > 65535) {
+    throw new InvalidArgumentError('precisa ser um número de porta.');
+  }
+  return port;
 }
 
 /** Carrega a config; problemas são reportados e viram exit code 1. */

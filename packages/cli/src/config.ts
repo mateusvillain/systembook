@@ -46,7 +46,8 @@ export class ConfigError extends Error {
   }
 }
 
-const CONFIG_FILES = ['systembook.config.ts', 'systembook.config.js', 'systembook.config.mjs', 'systembook.config.json'];
+/** Nomes aceitos para a config, na raiz do projeto. */
+export const CONFIG_FILES = ['systembook.config.ts', 'systembook.config.js', 'systembook.config.mjs', 'systembook.config.json'];
 
 /** Acha, carrega e valida a config na raiz do projeto. */
 export async function loadConfig(root: string): Promise<ResolvedConfig> {
