@@ -48,6 +48,8 @@ describe('systembook init', { timeout: 60_000 }, () => {
     const pkg = pkgOf(root);
     expect(pkg.scripts).toEqual(INIT_SCRIPTS);
     expect(pkg.devDependencies!['@systembook/cli']).toMatch(/^\^\d+\.\d+\.\d+/);
+    // Peers do CLI que o yarn 1 não instalaria.
+    expect(pkg.devDependencies).toMatchObject({ react: '^19.0.0', 'react-dom': '^19.0.0' });
     expect(read(root, '.gitignore')).toBe('# SystemBook\nsystembook-dist/\n.systembook/\n');
 
     const config = await loadConfig(root);

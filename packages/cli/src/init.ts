@@ -165,10 +165,9 @@ function parsePackageJson(text: string): PackageJson {
   }
 }
 
-/** Versão deste CLI, para a dependência que o `init` acrescenta. */
-function cliVersion(): string {
-  const own = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as { version: string };
-  return own.version;
+/** O `package.json` deste CLI: a versão e os peers que o `init` acrescenta. */
+function cliPackage(): { version: string; peerDependencies: Record<string, string> } {
+  return JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as ReturnType<typeof cliPackage>;
 }
 
 async function updatePackageJson(
@@ -192,10 +191,18 @@ async function updatePackageJson(
   }
   next.scripts = scripts;
 
-  // O `init` costuma rodar por `npx`: o CLI ainda não está no projeto.
-  if (!next.dependencies?.['@systembook/cli'] && !next.devDependencies?.['@systembook/cli']) {
-    next.devDependencies = { ...next.devDependencies, '@systembook/cli': `^${cliVersion()}` };
-    added.push('@systembook/cli');
+  // O `init` costuma rodar por `npx`: o CLI ainda não está no projeto. E o
+  // react/react-dom são peer dependencies dele, que o yarn 1 não instala.
+  const cli = cliPackage();
+  const wanted: Record<string, string> = {
+    '@systembook/cli': `^${cli.version}`,
+    react: cli.peerDependencies.react!,
+    'react-dom': cli.peerDependencies['react-dom']!,
+  };
+  for (const [name, range] of Object.entries(wanted)) {
+    if (next.dependencies?.[name] || next.devDependencies?.[name]) continue;
+    next.devDependencies = { ...next.devDependencies, [name]: range };
+    added.push(name);
   }
 
   if (!added.length) {

@@ -96,16 +96,25 @@ export async function prepareSite(config: ResolvedConfig, options: PrepareOption
       problems.push(`${relative(config, failure.filePath)}  ${failure.message.split('\n').join('\n  ')}`);
     }
   }
-  // O build dos previews monta com o react/react-dom do projeto: sem eles, o
-  // `build` falharia — o `check` acusa antes.
-  if (previews.length) {
-    const projectRequire = createRequire(path.join(config.root, 'package.json'));
-    for (const pkg of ['react', 'react-dom']) {
+  // O site é um app React, e os previews montam com o react/react-dom do
+  // projeto. Eles são peer dependencies do CLI, que o yarn 1 (e o npm com
+  // --legacy-peer-deps) não instalam: sem eles o `build` falharia com um erro
+  // do Rollup — o `check` acusa antes, com o que fazer.
+  const resolvers = [createRequire(import.meta.url)];
+  if (previews.length) resolvers.push(createRequire(path.join(config.root, 'package.json')));
+  for (const pkg of ['react', 'react-dom']) {
+    const missing = resolvers.some((resolve) => {
       try {
-        projectRequire.resolve(`${pkg}/package.json`);
+        resolve.resolve(`${pkg}/package.json`);
+        return false;
       } catch {
-        problems.push(`${pkg} não está instalado no projeto — os previews de componente precisam dele.`);
+        return true;
       }
+    });
+    if (missing) {
+      problems.push(
+        `${pkg} não está instalado no projeto — o site e os previews precisam dele. Instale react e react-dom (o yarn 1 não instala peer dependencies).`,
+      );
     }
   }
   // Com previews (habilitados e existentes), todo par referenciado precisa existir.

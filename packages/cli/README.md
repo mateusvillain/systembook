@@ -43,7 +43,9 @@ Num repo existente (ou numa pasta vazia), cria:
   `systembook-docs/` (e a config aponta para lá); com uma config existente, vai
   para a `contentDir` dela, e só se ela ainda não tiver conteúdo;
 - os scripts `docs:dev`, `docs:check` e `docs:build` e o `@systembook/cli` em
-  `devDependencies` no `package.json` (que é criado, se não existir);
+  `devDependencies` no `package.json` (que é criado, se não existir), com o
+  `react` e o `react-dom` se faltarem — são peer dependencies do CLI, e o yarn 1
+  não as instala sozinho;
 - `systembook-dist/` e `.systembook/` no `.gitignore`;
 - com `--github-pages` (ou respondendo "s" à pergunta), o workflow
   `.github/workflows/systembook-pages.yml` na raiz do repositório git, com os
