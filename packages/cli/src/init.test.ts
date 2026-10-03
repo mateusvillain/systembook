@@ -138,6 +138,12 @@ describe('systembook init', { timeout: 60_000 }, () => {
     await initProject(yarn4, { githubPages: true });
     expect(read(yarn4, PAGES_WORKFLOW)).toContain('run: yarn install --immutable');
 
+    // O guia de deploy mostra este workflow: ele não pode divergir do que o init gera.
+    const guide = readFileSync(fileURLToPath(new URL('../../../docs/deploy-static.md', import.meta.url)), 'utf8');
+    const documented = /```yaml\n(name: Docs\n[\s\S]*?)```/.exec(guide)?.[1];
+    const generated = read(npm, PAGES_WORKFLOW).slice(read(npm, PAGES_WORKFLOW).indexOf('name: Docs'));
+    expect(documented).toBe(generated);
+
     const berry = project({ 'yarn.lock': '', '.yarnrc.yml': '' });
     await initProject(berry, { githubPages: true });
     expect(read(berry, PAGES_WORKFLOW)).toContain('run: corepack enable');

@@ -10,6 +10,12 @@ O [projeto de exemplo](../examples/static-docs) é publicado assim, de verdade,
 no GitHub Pages deste repositório: <https://mateusvillain.github.io/systembook/>
 (workflow em [`.github/workflows/pages.yml`](../.github/workflows/pages.yml)).
 
+## Antes: o CLI no projeto
+
+Os hosts rodam o build no projeto, então o `@systembook/cli` precisa estar nas
+`devDependencies` (o `npx @systembook/cli init` já o acrescenta; ou
+`npm i -D @systembook/cli`). Faça commit do lockfile.
+
 ## O que o host precisa fazer
 
 O build já resolve quase tudo, e quase nada depende do host:
@@ -41,7 +47,7 @@ Actions**.
 O jeito mais curto é pelo próprio CLI:
 
 ```bash
-npx systembook init --github-pages
+npx @systembook/cli init --github-pages
 ```
 
 Ele escreve `.github/workflows/systembook-pages.yml` na raiz do repositório com
@@ -49,8 +55,10 @@ os comandos do seu gerenciador de pacotes (pelo lockfile), a branch atual e o
 `outDir` da config. Faça commit do lockfile: sem ele, o workflow instala sem
 travar versões e sem cache.
 
-O workflow equivalente, para escrever à mão (npm; com pnpm ou yarn, troque o
-install e o `npx`):
+O workflow que ele gera para um projeto com npm (é a fonte canônica: um teste
+do CLI garante que este bloco é igual à saída do `init`). Com pnpm ou yarn, o
+`init` acrescenta os passos de cada um (`pnpm/action-setup`, `corepack enable`)
+e troca o install, o `npx` e o `cache`; prefira gerar com ele a adaptar à mão:
 
 ```yaml
 name: Docs
@@ -65,6 +73,7 @@ permissions:
   pages: write
   id-token: write
 
+# Um deploy por vez; um push novo não cancela o que já está publicando.
 concurrency:
   group: pages
   cancel-in-progress: false
@@ -106,15 +115,18 @@ jobs:
 | `concurrency` | Um deploy por vez, sem cancelar o que já está publicando. |
 
 Projeto numa subpasta do repositório (um monorepo): o workflow continua na raiz
-(`.github/` só é lido lá); acrescente `working-directory: <pasta>` aos passos
-`run` e prefixe o `path` do upload com a pasta. O `init --root <pasta>` já
-escreve assim.
+(`.github/` só é lido lá), com `working-directory: <pasta>` nos passos `run`, o
+`path` do upload prefixado com a pasta e `cache-dependency-path` apontando para
+o lockfile dela. O `init --root <pasta>` escreve assim.
 
 ### 3. Publicar
 
 Faça push na branch do workflow. A URL aparece no job `deploy` e em
-**Settings → Pages**. O `.nojekyll` gerado pelo build impede o Jekyll de esconder
-as pastas `_systembook/`.
+**Settings → Pages**.
+
+Com a Source "GitHub Actions" o Jekyll não roda. Se você publicar pela outra
+Source (*Deploy from a branch*, commitando a pasta gerada), o `.nojekyll` que o
+build escreve impede o Jekyll de esconder as pastas `_systembook/`.
 
 ## Vercel
 
