@@ -71,14 +71,29 @@ describe('uploadTokens (TASK-44)', () => {
     const caller = callerFor(db, admin);
     const { id, token } = await caller.uploadTokens.create({ label: 'CI' });
 
-    expect(findActiveUploadToken(db, token)?.id).toBe(id);
-    expect(findActiveUploadToken(db, generateUploadToken())).toBeNull();
+    expect(findActiveUploadToken(db, token, 'previews')?.id).toBe(id);
+    expect(findActiveUploadToken(db, generateUploadToken(), 'previews')).toBeNull();
 
     await caller.uploadTokens.revoke({ tokenId: id });
-    expect(findActiveUploadToken(db, token)).toBeNull();
+    expect(findActiveUploadToken(db, token, 'previews')).toBeNull();
 
     const listed = await caller.uploadTokens.list();
     expect(listed[0]?.revogadoEm).toBeInstanceOf(Date);
+  });
+
+  it('escopo (SYS-110): previews por padrão, migration sob pedido, e o criador fica registrado', async () => {
+    const caller = callerFor(db, admin);
+    const ci = await caller.uploadTokens.create({ label: 'CI' });
+    const migration = await caller.uploadTokens.create({ label: 'Export', escopo: 'migration' });
+    expect(ci.escopo).toBe('previews');
+    expect(migration.escopo).toBe('migration');
+
+    expect(findActiveUploadToken(db, migration.token, 'migration')?.criadoPor).toBe(admin.userId);
+    expect(findActiveUploadToken(db, migration.token, 'previews')).toBeNull();
+    expect(findActiveUploadToken(db, ci.token, 'migration')).toBeNull();
+
+    const listed = await caller.uploadTokens.list();
+    expect(listed.map((t) => t.escopo).sort()).toEqual(['migration', 'previews']);
   });
 
   it('revoke é idempotente e mantém o timestamp original', async () => {

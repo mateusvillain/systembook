@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { memberships, sessions } from '../db/schema.js';
 import { parseCookies, SESSION_COOKIE } from '../auth/cookies.js';
+import { parseBearer } from '../auth/uploadTokens.js';
 
 export interface AuthUser {
   userId: string;
@@ -22,6 +23,12 @@ export interface TrpcContext {
    * (só os testes de preview a fornecem).
    */
   previewsRoot?: string;
+  /**
+   * Token do header `Authorization: Bearer …` (SYS-110), validado só pelas
+   * rotas que aceitam token (`migrationProcedure`). Opcional pelo mesmo motivo
+   * do `previewsRoot`.
+   */
+  apiToken?: string | null;
 }
 
 type ReqLike = Pick<IncomingMessage, 'headers'>;
@@ -63,5 +70,5 @@ export function createContext(
   res: ServerResponse | null,
   previewsRoot?: string,
 ): TrpcContext {
-  return { db, res, user: resolveUser(db, req), previewsRoot };
+  return { db, res, user: resolveUser(db, req), previewsRoot, apiToken: parseBearer(req.headers) };
 }
