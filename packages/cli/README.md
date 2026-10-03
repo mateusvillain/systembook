@@ -19,11 +19,12 @@ resolvível a partir do seu código.
 | `dev` | Servidor local do site, que recarrega ao salvar (ver abaixo) |
 | `build` | Gera o site estático do modo estático em `outDir` (ver abaixo) |
 | `check` | Valida conteúdo, config e referências sem gerar o site (para PR) |
+| `export` | Converte uma instância do modo CMS num projeto do modo estático (ver abaixo) |
 | `previews discover` | Lista os `*.preview.tsx` encontrados e os que falharam na validação |
 | `previews generate` | Escreve as entradas sintéticas em `.systembook/entries` |
 | `previews build` | `generate` + build Vite, produzindo `.systembook/dist/` e `manifest.json` |
 
-Todos aceitam `--root <dir>` (default: o diretório atual). O contrato dos
+Todos, menos o `export`, aceitam `--root <dir>` (default: o diretório atual). O contrato dos
 arquivos `*.preview.tsx` está em
 [`docs/preview-tsx-schema.md`](https://github.com/mateusvillain/systembook/blob/main/docs/preview-tsx-schema.md),
 e o workflow de CI em
@@ -179,6 +180,30 @@ instaladas. O bundle final dos previews (Vite) só roda no `build`: um erro que
 apareça só ali — um import que o esbuild tolera e o Rollup não — passa pelo
 `check`. E uma config inválida para o comando nela: sem a config, não se sabe
 onde está o conteúdo.
+
+## Vindo do modo CMS: `systembook export`
+
+Converte uma instância do modo CMS num projeto do modo estático: `docs/` com um
+`.mdx` por página e tab, `_menu.yml`/`_section.yml`, a `systembook.config.ts`
+(nome, logos e status tags) e as imagens hospedadas na instância.
+
+```bash
+# Token de escopo "Migration", gerado por um admin em Settings → Tokens.
+SYSTEMBOOK_TOKEN=… npx systembook export --from https://docs.acme.dev --out docs-estatico
+npx systembook check --root docs-estatico
+```
+
+| Opção | O que faz |
+|---|---|
+| `--from <url>` | URL da instância (obrigatória) |
+| `--token <token>` | Token de migração; sem ela, vale a variável `SYSTEMBOOK_TOKEN` (que não fica no histórico do shell) |
+| `--out <dir>` | Pasta do projeto (default: `systembook-export`) |
+| `-f, --force` | Escreve numa pasta que já tem arquivos, por cima dos de mesmo nome. Não apaga nada: um `.mdx` que sobrou de um export anterior continua lá |
+
+Vai só o conteúdo **publicado**. As páginas nunca publicadas são listadas no
+fim, e o que precisou ser simplificado para caber no formato de arquivo sai
+como aviso, com o arquivo. O mapeamento completo está em
+[`docs/migration.md`](https://github.com/mateusvillain/systembook/blob/main/docs/migration.md).
 
 ## Vindo do `@systembook/connector`
 

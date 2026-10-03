@@ -7,6 +7,7 @@ export * from './blocks.js';
 export { formatDiagnostic, type Diagnostic } from './diagnostics.js';
 export {
   landingFrontmatterSchema,
+  SLUG_PATTERN,
   pageFrontmatterSchema,
   tabFrontmatterSchema,
   type DocumentKind,

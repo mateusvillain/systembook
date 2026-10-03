@@ -5,10 +5,9 @@ Os dois modos do SystemBook usam o mesmo modelo de conteúdo
 pública. Trocar de modo é, portanto, mover o conteúdo de um lugar para o outro.
 Não há conversão de formato.
 
-> **Status:** a migração automática — `systembook export` (instância CMS →
-> arquivos `.mdx`) e `systembook import` (arquivos → instância CMS) — está
-> planejada e ainda não existe. Hoje a migração é manual, com o mapeamento
-> abaixo.
+> **Status:** CMS → estático é automático com `systembook export`. Estático →
+> CMS (`systembook import`) está planejado; até lá, essa direção é manual, com o
+> mapeamento abaixo.
 
 ## Como cada coisa corresponde
 
@@ -34,26 +33,54 @@ O formato completo (frontmatter, blocos e componentes, com exemplos) está em
 
 ## CMS → estático
 
-1. Rode `npx @systembook/cli init` no repositório do design system.
-2. Copie nome, logos e status tags da instância para a config.
-3. Recrie a árvore de pastas de `docs/` a partir da navegação da instância, e o
-   conteúdo publicado de cada página como `.mdx` (as imagens vão junto, num
-   caminho relativo ao arquivo).
-4. Rode `systembook check`: ele aponta, com `arquivo:linha:coluna`, tudo o que
-   não ficou no formato.
+1. Como admin, gere um token de escopo **Migration** em Settings → Tokens. Ele
+   lê o conteúdo inteiro da instância: não o coloque no CI, e revogue-o depois
+   da migração.
+2. Rode o export no repositório do design system:
+
+   ```bash
+   SYSTEMBOOK_TOKEN=… npx @systembook/cli export --from https://docs.acme.dev --out .
+   ```
+
+   Sem `--out`, o projeto vai para `systembook-export/`. Numa pasta que já tem
+   arquivos (como a raiz do repo), o comando só escreve com `--force`, e aí
+   sobrescreve os arquivos de mesmo nome (`systembook.config.ts`, `docs/…`).
+   O resto fica como estava.
+3. Rode `systembook check`. Se o export não deu aviso, ele passa.
+4. Para o projeto ficar completo, rode `npx @systembook/cli init` (scripts,
+   `.gitignore` e, se quiser, o workflow do GitHub Pages). O `init` mantém a
+   config e o conteúdo exportados.
 5. Publique ([`deploy-static.md`](./deploy-static.md)).
 
-O que **não** acompanha: o histórico de revisões, os rascunhos não publicados e
-os usuários. O histórico passa a ser o do git.
+O que o export gera:
 
-Algumas construções do editor do CMS não têm sintaxe de arquivo e precisam ser
-simplificadas (o `check` acusa todas):
+- `docs/index.mdx`, com a landing publicada;
+- uma pasta por menu e por seção, com `_menu.yml`/`_section.yml` (título e
+  ordem). Menus e seções sem página publicada ficam de fora, como na doc;
+- um `.mdx` por página, ou uma pasta `<página>/` com `index.mdx` e um arquivo
+  por tab. O frontmatter traz título, subtítulo, ordem e status. Tabs com o
+  mesmo título ganham slugs distintos (`codigo`, `codigo-2`);
+- `systembook.config.ts` com o nome, os logos (em `brand/`) e as status tags;
+- os links entre páginas (`/docs/menu/seção/página`) reescritos para o caminho
+  relativo do `.mdx` de destino;
+- as imagens hospedadas na própria instância, baixadas para `docs/_images/`.
+  Imagens de outros endereços continuam apontando para a URL original.
+
+O que **não** acompanha: rascunhos e páginas nunca publicadas (o comando as
+lista no fim), o histórico de revisões e os usuários. O histórico passa a ser
+o do git.
+
+Algumas construções do editor do CMS não têm sintaxe de arquivo. O export as
+simplifica para o equivalente mais próximo e avisa cada uma, com o arquivo:
 
 - conteúdo de bloco dentro de célula de tabela (heading, listas, código,
-  do/don't, componentes) — no arquivo, a célula aceita só texto com marcas e
-  links;
-- `<ComponentEmbed>` sem variante escolhida — no arquivo, `variant` é
-  obrigatória.
+  do/don't, componentes) vira texto corrido: no arquivo, a célula aceita só
+  texto com marcas e links;
+- tabela sem linha de cabeçalho, células mescladas e larguras de coluna;
+- `<ComponentEmbed>` sem variante escolhida é removido, porque no arquivo
+  `variant` é obrigatória;
+- heading de nível 4 vira nível 3;
+- formatação colada em pontuação de um jeito que o Markdown não representa.
 
 ## Estático → CMS
 
