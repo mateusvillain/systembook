@@ -1,0 +1,26 @@
+import type { PreviewConfig } from '@systembook/schema';
+import { Button, type ButtonVariant } from './Button';
+
+/** O que o iframe do preview renderiza, com as props da variante e dos controles. */
+export function Preview(props: Record<string, unknown>) {
+  return (
+    <Button variant={props.variant as ButtonVariant} disabled={Boolean(props.disabled)}>
+      {String(props.children ?? 'Salvar')}
+    </Button>
+  );
+}
+
+export default {
+  component: 'Button',
+  variants: [
+    { id: 'primary', label: 'Primary', props: { variant: 'primary', children: 'Salvar alterações' } },
+    { id: 'secondary', label: 'Secondary', props: { variant: 'secondary', children: 'Cancelar' } },
+    { id: 'danger', label: 'Danger', props: { variant: 'danger', children: 'Excluir projeto' } },
+    { id: 'disabled', label: 'Disabled', props: { variant: 'primary', children: 'Salvar', disabled: true } },
+  ],
+  controls: [
+    { kind: 'text', propName: 'children', label: 'Rótulo' },
+    { kind: 'select', propName: 'variant', label: 'Variante', options: ['primary', 'secondary', 'danger'] },
+    { kind: 'boolean', propName: 'disabled', label: 'Desabilitado' },
+  ],
+} satisfies PreviewConfig;

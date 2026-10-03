@@ -29,3 +29,8 @@ jobs:
 
       - name: Test
         run: pnpm -r --if-present run test
+
+      # O exemplo do modo estático (examples/static-docs) é a fixture de
+      # ponta a ponta: conteúdo → check → site, com previews.
+      - name: Build do exemplo estático
+        run: pnpm --filter @systembook/example-static-docs build

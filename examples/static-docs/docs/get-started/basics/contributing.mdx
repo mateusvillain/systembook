@@ -1,0 +1,25 @@
+---
+title: Contribuindo
+order: 2
+---
+
+## Fluxo de mudança
+
+3. Abra uma issue descrevendo o problema.
+4. Crie uma branch a partir da `main`.
+5. Abra o PR com a documentação atualizada junto do código.
+
+A numeração acima começa em 3 de propósito: listas ordenadas preservam o número inicial.
+
+## Como a documentação é validada
+
+Todo PR roda `systembook check`, que valida o conteúdo, os links entre páginas, as imagens e os previews:
+
+```yaml
+- run: pnpm install --frozen-lockfile
+- run: pnpm exec systembook check
+```
+
+<Callout variant="tip">
+  Rode `systembook dev` localmente: salvar um arquivo recarrega o navegador, e erros aparecem num overlay.
+</Callout>

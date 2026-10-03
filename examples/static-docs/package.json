@@ -1,0 +1,24 @@
+{
+  "name": "@systembook/example-static-docs",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Projeto de exemplo do modo est\u00e1tico do SystemBook.",
+  "type": "module",
+  "scripts": {
+    "dev": "systembook dev",
+    "build": "systembook build",
+    "check": "systembook check",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@systembook/cli": "workspace:^",
+    "@systembook/schema": "workspace:^",
+    "@types/node": "^22.13.0",
+    "@types/react": "^19.0.0",
+    "typescript": "^5.7.3"
+  }
+}
