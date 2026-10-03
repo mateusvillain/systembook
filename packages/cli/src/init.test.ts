@@ -5,16 +5,22 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { buildStaticSite } from './build/index.js';
 import { checkSite } from './check.js';
 import { loadConfig, withBase } from './config.js';
-import { initProject, INIT_SCRIPTS, PAGES_WORKFLOW } from './init.js';
+import { initProject, INIT_SCRIPTS, PAGES_WORKFLOW_FILE as PAGES_WORKFLOW } from './init.js';
 
 const TMP = fileURLToPath(new URL('../.tmp', import.meta.url));
 mkdirSync(TMP, { recursive: true });
 const temps: string[] = [];
 afterAll(() => temps.forEach((dir) => rmSync(dir, { recursive: true, force: true })));
 
-function project(files: Record<string, string> = {}): string {
+/**
+ * Projeto temporário num repo git próprio: sem o `.git`, a raiz git seria a do
+ * monorepo, e o workflow iria parar no `.github/` dele.
+ */
+function project(files: Record<string, string> = {}, branch = 'main'): string {
   const root = mkdtempSync(path.join(TMP, 'init-'));
   temps.push(root);
+  mkdirSync(path.join(root, '.git'));
+  writeFileSync(path.join(root, '.git/HEAD'), `ref: refs/heads/${branch}\n`);
   for (const [name, content] of Object.entries(files)) {
     mkdirSync(path.dirname(path.join(root, name)), { recursive: true });
     writeFileSync(path.join(root, name), content);
@@ -29,7 +35,7 @@ describe('systembook init', { timeout: 60_000 }, () => {
   it('repo vazio: cria tudo, e o resultado passa no check e no build', async () => {
     const root = project();
     const { steps, packageManager } = await initProject(root);
-    expect(packageManager).toBe('npm');
+    expect(packageManager.name).toBe('npm');
     expect(steps.map((s) => [s.file, s.status])).toEqual([
       ['systembook.config.ts', 'criado'],
       ['docs/index.mdx', 'criado'],
@@ -66,7 +72,7 @@ describe('systembook init', { timeout: 60_000 }, () => {
         return false;
       },
     });
-    expect(packageManager).toBe('pnpm');
+    expect(packageManager.name).toBe('pnpm');
     expect(asked).toEqual(['docs/index.mdx']);
     expect(read(root, 'docs/index.mdx')).toBe('# Minha landing\n');
     expect(steps.find((s) => s.file === 'docs/index.mdx')).toMatchObject({ status: 'mantido' });
@@ -101,7 +107,7 @@ describe('systembook init', { timeout: 60_000 }, () => {
   });
 
   it('workflow do GitHub Pages com os comandos do gerenciador do projeto', async () => {
-    const pnpm = project({ 'package.json': '{"packageManager":"pnpm@10.0.0"}' });
+    const pnpm = project({ 'package.json': '{"packageManager":"pnpm@10.0.0"}', 'pnpm-lock.yaml': '' });
     await initProject(pnpm, { githubPages: true });
     const workflow = read(pnpm, PAGES_WORKFLOW);
     expect(workflow).toContain('uses: pnpm/action-setup@v4\n      - uses: actions/setup-node@v4');
@@ -116,10 +122,71 @@ describe('systembook init', { timeout: 60_000 }, () => {
     expect(read(npm, PAGES_WORKFLOW)).toContain('run: npx systembook build --base');
     expect(read(npm, PAGES_WORKFLOW)).not.toContain('pnpm');
 
+    // Sem lockfile: sem `npm ci` e sem cache (que falhariam sem ele).
+    const fresh = project();
+    await initProject(fresh, { githubPages: true });
+    expect(read(fresh, PAGES_WORKFLOW)).toContain('run: npm install\n');
+    expect(read(fresh, PAGES_WORKFLOW)).not.toContain('cache:');
+
+    // pnpm sem `packageManager`: a action precisa da versão.
+    const loosePnpm = project({ 'pnpm-lock.yaml': '' });
+    await initProject(loosePnpm, { githubPages: true });
+    expect(read(loosePnpm, PAGES_WORKFLOW)).toContain('uses: pnpm/action-setup@v4\n        with:\n          version: 10');
+
+    // Yarn 4 não cria .yarnrc.yml: vale o packageManager.
+    const yarn4 = project({ 'yarn.lock': '', 'package.json': '{"packageManager":"yarn@4.5.0"}' });
+    await initProject(yarn4, { githubPages: true });
+    expect(read(yarn4, PAGES_WORKFLOW)).toContain('run: yarn install --immutable');
+
     const berry = project({ 'yarn.lock': '', '.yarnrc.yml': '' });
     await initProject(berry, { githubPages: true });
     expect(read(berry, PAGES_WORKFLOW)).toContain('run: corepack enable');
     expect(read(berry, PAGES_WORKFLOW)).toContain('run: yarn install --immutable');
+  });
+
+  it('existente: docs/ com outra documentação, config existente, subpasta do repo e branch', async () => {
+    // docs/ já tem outra doc: o conteúdo vai para systembook-docs/, e a config aponta para lá.
+    const withDocs = project({ 'docs/ci.md': '# CI\n', 'docs/index.md': '# Docs\n' }, 'master');
+    const { steps } = await initProject(withDocs, { githubPages: true });
+    expect(steps.filter((s) => s.status === 'criado').map((s) => s.file)).toContain('systembook-docs/index.mdx');
+    expect(read(withDocs, 'docs/index.md')).toBe('# Docs\n');
+    const config = await loadConfig(withDocs);
+    expect(path.relative(withDocs, config.contentDir)).toBe('systembook-docs');
+    expect(await checkSite(config)).toMatchObject({ ok: true });
+    expect(read(withDocs, PAGES_WORKFLOW)).toContain('branches: [master]');
+
+    // Config existente: o conteúdo segue a contentDir dela, e o workflow publica o outDir dela.
+    const configured = project({
+      'systembook.config.json': '{ "name": "X", "contentDir": "content", "outDir": "public-docs" }',
+      'content/a/b/page.md': '---\ntitle: P\n---\n',
+    });
+    const kept = await initProject(configured, { githubPages: true });
+    expect(kept.steps.filter((s) => s.file.startsWith('content/')).map((s) => s.status)).toEqual(['mantido', 'mantido']);
+    expect(read(configured, PAGES_WORKFLOW)).toContain('path: public-docs');
+
+    // Projeto numa subpasta do repo: o workflow vai para a raiz do git e roda na subpasta.
+    const repo = project({ 'site/package-lock.json': '{}' });
+    const site = path.join(repo, 'site');
+    const nested = await initProject(site, { githubPages: true });
+    expect(nested.steps.at(-1)).toEqual({ file: `../${PAGES_WORKFLOW}`, status: 'criado' });
+    const workflow = read(repo, PAGES_WORKFLOW);
+    expect(workflow).toContain('- run: npm ci\n        working-directory: site');
+    expect(workflow).toContain('cache-dependency-path: site/package-lock.json');
+    expect(workflow).toContain('path: site/systembook-dist');
+  });
+
+  it('package.json inválido é erro claro; CRLF e .gitignore vazio são preservados', async () => {
+    await expect(initProject(project({ 'package.json': '{ nope' }))).rejects.toThrow('package.json inválido');
+
+    const root = project({ 'package.json': '{\r\n  "name": "x"\r\n}\r\n', '.gitignore': '' });
+    await initProject(root);
+    expect(read(root, 'package.json')).toMatch(/^\{\r\n {2}"name": "x",\r\n/);
+    expect(read(root, '.gitignore')).toBe('# SystemBook\nsystembook-dist/\n.systembook/\n');
+
+    // Negação e padrão com /** contam como presentes.
+    const ignored = project({ '.gitignore': '!systembook-dist/\n.systembook/**\n' });
+    const { steps } = await initProject(ignored);
+    expect(steps.find((s) => s.file === '.gitignore')).toMatchObject({ status: 'mantido' });
   });
 });
 

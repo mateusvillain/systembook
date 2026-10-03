@@ -1,12 +1,12 @@
 import path from 'node:path';
+import { createInterface, type Interface } from 'node:readline/promises';
 import { Command, InvalidArgumentError } from 'commander';
 import { registerPreviewCommands } from '@systembook/connector';
 import { buildStaticSite } from './build/index.js';
 import { checkSite } from './check.js';
-import { createInterface } from 'node:readline/promises';
 import { ConfigError, loadConfig, withBase } from './config.js';
 import { startDevServer } from './dev/index.js';
-import { initProject, packageManagerCommands, PAGES_WORKFLOW } from './init.js';
+import { initProject, PAGES_WORKFLOW_FILE } from './init.js';
 
 /**
  * O programa `systembook`. Os comandos de preview vêm do connector, que é a
@@ -34,23 +34,28 @@ export function createProgram(): Command {
       const root = path.resolve(options.root);
       // Perguntas só num terminal; em CI/pipe, o padrão é não sobrescrever nada.
       const prompt = process.stdin.isTTY ? createInterface({ input: process.stdin, output: process.stdout }) : null;
-      // Ctrl+D/Ctrl+C na pergunta vale como "não".
-      const ask = async (question: string) =>
-        /^s/i.test((await prompt!.question(`${question} (s/N) `).catch(() => '')).trim());
+      // Ctrl+C aborta o init inteiro (não vale como "não" e segue escrevendo).
+      prompt?.on('SIGINT', () => {
+        prompt.close();
+        process.stdout.write('\n');
+        process.exit(130);
+      });
       try {
-        const githubPages = options.githubPages ?? (prompt ? await ask('Criar o workflow de deploy no GitHub Pages?') : false);
+        const githubPages =
+          options.githubPages ?? (prompt ? await ask(prompt, 'Criar o workflow de deploy no GitHub Pages?') : false);
         const result = await initProject(root, {
           githubPages,
           force: options.force,
-          confirm: prompt ? (file) => ask(`${file} já existe. Sobrescrever?`) : undefined,
+          confirm: prompt ? (file) => ask(prompt, `${file} já existe. Sobrescrever?`) : undefined,
         });
         for (const step of result.steps) {
           console.log(`  ${step.status.padEnd(11)} ${step.file}${step.note ? `  (${step.note})` : ''}`);
         }
-        const pm = packageManagerCommands(result.packageManager);
+        const pm = result.packageManager;
         console.log(`\nPróximos passos:\n  ${pm.install}\n  ${pm.run} docs:dev`);
-        if (githubPages && result.steps.some((s) => s.file === PAGES_WORKFLOW && s.status !== 'mantido')) {
-          console.log('\nNo GitHub: Settings → Pages → Source: "GitHub Actions".');
+        const workflow = result.steps.find((s) => s.file.endsWith(PAGES_WORKFLOW_FILE));
+        if (workflow && workflow.status !== 'mantido') {
+          console.log('\nNo GitHub: Settings → Pages → Source: "GitHub Actions". Faça commit do lockfile.');
         }
       } finally {
         prompt?.close();
@@ -117,6 +122,12 @@ export function createProgram(): Command {
     });
 
   return program;
+}
+
+/** Pergunta sim/não; Ctrl+D (fim da entrada) vale como "não". */
+async function ask(prompt: Interface, question: string): Promise<boolean> {
+  const answer = await prompt.question(`${question} (s/N) `).catch(() => '');
+  return /^s/i.test(answer.trim());
 }
 
 function parsePort(value: string): number {

@@ -39,17 +39,21 @@ Num repo existente (ou numa pasta vazia), cria:
 
 - `systembook.config.ts`, com o nome tirado do `package.json` (ou da pasta);
 - `docs/index.mdx` (landing) e `docs/guide/basics/introduction.mdx` (uma página
-  de exemplo);
+  de exemplo). Se `docs/` já guarda outra documentação, o conteúdo vai para
+  `systembook-docs/` (e a config aponta para lá); com uma config existente, vai
+  para a `contentDir` dela, e só se ela ainda não tiver conteúdo;
 - os scripts `docs:dev`, `docs:check` e `docs:build` e o `@systembook/cli` em
   `devDependencies` no `package.json` (que é criado, se não existir);
 - `systembook-dist/` e `.systembook/` no `.gitignore`;
 - com `--github-pages` (ou respondendo "s" à pergunta), o workflow
-  `.github/workflows/systembook-pages.yml`, com os comandos do gerenciador do
-  projeto (detectado pelo lockfile).
+  `.github/workflows/systembook-pages.yml` na raiz do repositório git, com os
+  comandos do gerenciador do projeto (lockfile ou `packageManager`), a branch
+  atual e o `outDir` da config. Faça commit do lockfile: sem ele, o workflow
+  instala sem travar versões e sem cache.
 
 Arquivo existente não é sobrescrito sem confirmação: num terminal, o comando
 pergunta arquivo a arquivo; fora dele (CI, pipe), mantém o existente. `--force`
-sobrescreve sem perguntar. O `package.json` e o `.gitignore` nunca são
+sobrescreve sem perguntar; Ctrl+C aborta. O `package.json` e o `.gitignore` nunca são
 substituídos, só complementados: um script com o mesmo nome e outro comando fica
 como está. O resultado passa no `check` e no `build` sem mais nada.
 
