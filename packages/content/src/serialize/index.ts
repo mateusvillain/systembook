@@ -1,5 +1,6 @@
 import { stringify as stringifyYaml } from 'yaml';
-import { blocksToTiptapDoc, type BlockData, type TiptapDoc, type TiptapNode } from '../blocks.js';
+import type { DosDontsCover } from '@systembook/schema';
+import { blocksToTiptapDoc, codeText, type BlockData, type TiptapDoc, type TiptapNode } from '../blocks.js';
 import { bracketText, destination, quotedTitle, serializeInline, type InlineOptions } from './inline.js';
 
 /**
@@ -42,7 +43,7 @@ function indent(text: string, prefix: string): string {
 }
 
 /** Valor de prop JSX entre aspas. O MDX decodifica entidades em props. */
-function prop(name: string, value: string): string {
+function jsxProp(name: string, value: string): string {
   const safe = value.replace(/&(?=#?[a-zA-Z0-9]+;)/g, '&amp;');
   if (!safe.includes('"')) return `${name}="${safe}"`;
   if (!safe.includes("'")) return `${name}='${safe}'`;
@@ -50,7 +51,7 @@ function prop(name: string, value: string): string {
 }
 
 function heading(node: TiptapNode, ctx: Context): string {
-  let level = Number(node.attrs?.level ?? 1);
+  let level = Math.max(1, Number(node.attrs?.level) || 1);
   if (level > 3) {
     ctx.warn(`heading de nível ${level} virou nível 3: o formato de arquivo vai até ###.`);
     level = 3;
@@ -60,7 +61,7 @@ function heading(node: TiptapNode, ctx: Context): string {
 }
 
 function codeBlock(node: TiptapNode, ctx: Context): string {
-  const code = (node.content ?? []).map((child) => child.text ?? '').join('');
+  const code = codeText(node);
   let language = (node.attrs?.language as string | null | undefined) ?? '';
   if (/[\s`]/.test(language)) {
     ctx.warn(`a linguagem "${language}" do bloco de código foi removida: o formato não aceita espaço ou crase no nome.`);
@@ -87,12 +88,15 @@ function image(node: TiptapNode, ctx: Context): string | null {
 function list(node: TiptapNode, ctx: Context, alternate: boolean): string | null {
   const ordered = node.type === 'orderedList';
   const start = Number(node.attrs?.start ?? 1);
+  if (ordered && node.attrs?.type) {
+    ctx.warn(`a numeração "${String(node.attrs.type)}" da lista virou números: o formato de arquivo só numera com algarismos.`);
+  }
   const items: string[] = [];
   for (const item of node.content ?? []) {
     const [first, ...rest] = item.content ?? [];
     const lead = first?.type === 'paragraph' ? serializeInline(first.content, ctx) : '';
     if (!lead) {
-      ctx.warn('item de lista sem texto no início foi removido: no arquivo, todo item começa com um parágrafo.');
+      ctx.warn('item de lista sem texto no início foi removido, com o que havia dentro dele: no arquivo, todo item começa com um parágrafo.');
       continue;
     }
     const marker = ordered ? `${start + items.length}${alternate ? ')' : '.'}` : alternate ? '*' : '-';
@@ -120,7 +124,7 @@ function cellText(cell: TiptapNode, ctx: Context): string {
     for (const node of nodes) {
       if (node.type === 'paragraph' || node.type === 'heading') parts.push(serializeInline(node.content, inline));
       else if (node.type === 'codeBlock') {
-        const code = (node.content ?? []).map((c) => c.text ?? '').join('').replace(/\n/g, ' ');
+        const code = codeText(node).replace(/\n/g, ' ');
         if (code) parts.push(serializeInline([{ type: 'text', text: code, marks: [{ type: 'code' }] }], inline));
       } else collect(node.content ?? []);
     }
@@ -132,26 +136,32 @@ function cellText(cell: TiptapNode, ctx: Context): string {
 function table(node: TiptapNode, ctx: Context): string | null {
   const rows = node.content ?? [];
   if (!rows.length) return null;
-  let spanned = false;
-  let widths = false;
-  let headerColumn = false;
+  let hasMergedCells = false;
+  let hasColumnWidths = false;
+  let hasHeaderOutsideFirstRow = false;
   const cells = rows.map((row, r) =>
     (row.content ?? []).map((cell) => {
-      if (Number(cell.attrs?.colspan ?? 1) > 1 || Number(cell.attrs?.rowspan ?? 1) > 1) spanned = true;
-      if (cell.attrs?.colwidth) widths = true;
-      if (r > 0 && cell.type === 'tableHeader') headerColumn = true;
+      if (Number(cell.attrs?.colspan ?? 1) > 1 || Number(cell.attrs?.rowspan ?? 1) > 1) hasMergedCells = true;
+      if (cell.attrs?.colwidth) hasColumnWidths = true;
+      if (r > 0 && cell.type === 'tableHeader') hasHeaderOutsideFirstRow = true;
       return cellText(cell, ctx);
     }),
   );
   if ((rows[0]!.content ?? []).some((cell) => cell.type !== 'tableHeader')) {
     ctx.warn('tabela sem linha de cabeçalho: no arquivo, a primeira linha vira o cabeçalho.');
   }
-  if (headerColumn) ctx.warn('célula de cabeçalho fora da primeira linha virou célula comum.');
-  if (spanned) ctx.warn('células mescladas da tabela foram separadas: o formato de arquivo não mescla células.');
-  if (widths) ctx.warn('as larguras de coluna da tabela não são guardadas no arquivo.');
+  if (hasHeaderOutsideFirstRow) ctx.warn('célula de cabeçalho fora da primeira linha virou célula comum.');
+  if (hasMergedCells) ctx.warn('células mescladas da tabela foram separadas: o formato de arquivo não mescla células.');
+  // O GFM alinha a coluna inteira pelo cabeçalho; a leitura copia esse
+  // alinhamento para todas as células da coluna.
+  const columnAlign = (rows[0]!.content ?? []).map((cell) => cell.attrs?.align ?? null);
+  if (rows.some((row) => (row.content ?? []).some((cell, c) => (cell.attrs?.align ?? null) !== (columnAlign[c] ?? null)))) {
+    ctx.warn('o alinhamento de células da tabela virou o da coluna: no arquivo, o alinhamento vem do cabeçalho.');
+  }
+  if (hasColumnWidths) ctx.warn('as larguras de coluna da tabela não são guardadas no arquivo.');
 
   const columns = Math.max(...cells.map((row) => row.length));
-  const align = Array.from({ length: columns }, (_, c) => rows[0]!.content?.[c]?.attrs?.align ?? null);
+  const align = Array.from({ length: columns }, (_, c) => columnAlign[c] ?? null);
   const width = Array.from({ length: columns }, (_, c) =>
     Math.max(3, ...cells.map((row) => [...(row[c] ?? '')].length)),
   );
@@ -176,7 +186,7 @@ function container(openTag: string, name: string, children: readonly TiptapNode[
 
 function callout(node: TiptapNode, ctx: Context): string | null {
   const variant = String(node.attrs?.variant ?? 'info');
-  const tag = variant === 'info' ? '<Callout>' : `<Callout ${prop('variant', variant)}>`;
+  const tag = variant === 'info' ? '<Callout>' : `<Callout ${jsxProp('variant', variant)}>`;
   const out = container(tag, 'Callout', node.content ?? [], ctx);
   if (!out) ctx.warn('callout vazio foi removido.');
   return out;
@@ -193,27 +203,23 @@ function componentEmbed(node: TiptapNode, ctx: Context): string | null {
     );
     return null;
   }
-  return `<ComponentEmbed ${prop('component', component)} ${prop('variant', variant)} />`;
+  return `<ComponentEmbed ${jsxProp('component', component)} ${jsxProp('variant', variant)} />`;
 }
-
-type Cover =
-  | { kind: 'image'; src: string; alt: string }
-  | { kind: 'component-embed'; componentName: string; variantId: string | null };
 
 function dosDonts(node: TiptapNode, ctx: Context): string | null {
   const title = String(node.attrs?.titulo ?? '');
-  const props = [prop('variant', String(node.attrs?.variant ?? 'do'))];
-  if (title) props.push(prop('title', title));
-  const cover = node.attrs?.cover as Cover | null | undefined;
+  const props = [jsxProp('variant', String(node.attrs?.variant ?? 'do'))];
+  if (title) props.push(jsxProp('title', title));
+  const cover = node.attrs?.cover as DosDontsCover | null | undefined;
   if (cover?.kind === 'image' && cover.src) {
     let alt = cover.alt;
     if (!alt.trim()) {
       alt = title || 'Imagem';
       ctx.warn(`o cover do do/don't "${title}" não tinha texto alternativo e recebeu "${alt}": no arquivo, coverAlt é obrigatório.`);
     }
-    props.push(prop('coverImage', cover.src), prop('coverAlt', alt));
+    props.push(jsxProp('coverImage', cover.src), jsxProp('coverAlt', alt));
   } else if (cover?.kind === 'component-embed' && cover.componentName && cover.variantId) {
-    props.push(prop('coverComponent', cover.componentName), prop('coverVariant', cover.variantId));
+    props.push(jsxProp('coverComponent', cover.componentName), jsxProp('coverVariant', cover.variantId));
   } else if (cover) {
     ctx.warn(`o cover do do/don't "${title}" foi removido: o componente ou a variante não estavam escolhidos.`);
   }

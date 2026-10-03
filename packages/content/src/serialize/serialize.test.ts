@@ -273,6 +273,11 @@ describe('escapes', () => {
     expectRoundTrip({ type: 'doc', content: [p(text('t', [link('./a b (c).mdx', 'diz "oi"')]))] });
   });
 
+  it('exclamação antes de link e contrabarra no destino', () => {
+    expectRoundTrip({ type: 'doc', content: [p(text('Novo!'), text('Button', [link('./b.mdx'), code]))] });
+    expectRoundTrip({ type: 'doc', content: [p(text('x', [link('C:\\docs\\.env')]), text(' e a\\*b!'))] });
+  });
+
   it('imagem com colchete no alt e aspas na legenda', () => {
     expectRoundTrip({
       type: 'doc',
@@ -378,13 +383,32 @@ describe('o que o formato não representa vira aviso', () => {
     expect(warnings).toEqual([expect.stringContaining('texto alternativo'), expect.stringContaining('sem descrição')]);
   });
 
+  it('alinhamento por célula diferente do cabeçalho', () => {
+    const { warnings } = warn([
+      {
+        type: 'table',
+        content: [
+          { type: 'tableRow', content: [cell('tableHeader', [text('A')])] },
+          { type: 'tableRow', content: [cell('tableCell', [text('1')], 'center')] },
+        ],
+      },
+    ]);
+    expect(warnings).toEqual([expect.stringContaining('alinhamento')]);
+  });
+
+  it('lista numerada com letras', () => {
+    const { warnings } = warn([{ type: 'orderedList', attrs: { start: 1, type: 'a' }, content: [item(p(text('a')))] }]);
+    expect(warnings).toEqual([expect.stringContaining('"a"')]);
+  });
+
   it('URL solta vira link', () => {
     const { warnings } = warn([p(text('veja https://x.dev'))]);
     expect(warnings).toEqual([expect.stringContaining('vira link')]);
   });
 
   it('negrito colado em pontuação', () => {
-    const { warnings } = warn([p(text('a'), text('"b"', [bold]), text('c'))]);
+    const { warnings } = warn([p(text('a'), text('"b"', [bold]), text('c e d'), text('"e"', [italic]), text('f'))]);
+    // Um aviso por trecho, não um por delimitador.
     expect(warnings).toEqual([expect.stringContaining('pontuação')]);
   });
 
@@ -402,5 +426,59 @@ describe('o que o formato não representa vira aviso', () => {
 
   it('parágrafos vazios somem sem aviso', () => {
     expect(warn([{ type: 'paragraph' }, p(text('a')), { type: 'paragraph' }])).toEqual({ source: 'a\n', warnings: [] });
+  });
+});
+
+/**
+ * Texto aleatório com marks (semente fixa, reprodutível): ou o serializer
+ * avisa, ou a leitura devolve exatamente o mesmo conteúdo. Pega combinações de
+ * escape e de delimitadores que os casos escritos à mão não cobrem.
+ */
+describe('texto aleatório: sem aviso, sem perda', () => {
+  let seed = 42;
+  const random = () => ((seed = (seed * 1103515245 + 12345) % 2 ** 31) / 2 ** 31);
+  const pick = <T,>(items: readonly T[]): T => items[Math.floor(random() * items.length)]!;
+  const ALPHABET = 'aZ9 _*`[]<>{}#&|~!\\-+.()"\':;/@';
+  const MARK_SETS = [[], [bold], [italic], [underline], [code], [bold, italic], [link('./a.mdx')], [link('./a.mdx'), bold], [italic, code]];
+
+  const word = () => {
+    let w = '';
+    const length = 1 + Math.floor(random() * 6);
+    for (let i = 0; i < length; i++) w += pick([...ALPHABET]);
+    return w.trim() || 'x';
+  };
+
+  /** Funde texto vizinho com os mesmos marks, como o parser faz. */
+  const merge = (nodes: TiptapNode[]) =>
+    nodes.reduce<TiptapNode[]>((out, node) => {
+      const last = out[out.length - 1];
+      if (last && JSON.stringify(last.marks ?? []) === JSON.stringify(node.marks ?? [])) last.text += node.text!;
+      else out.push({ ...node });
+      return out;
+    }, []);
+
+  it('500 parágrafos', () => {
+    let warned = 0;
+    for (let n = 0; n < 500; n++) {
+      const runs: TiptapNode[] = [];
+      const count = 1 + Math.floor(random() * 5);
+      for (let i = 0; i < count; i++) {
+        if (i > 0 && random() < 0.5) runs.push(text(' '));
+        const marks = pick(MARK_SETS);
+        runs.push(text(word(), marks.length ? marks : undefined));
+      }
+      const content = merge(runs);
+      const { source, warnings } = serializeDocument({ type: 'doc', content: [p(...content)] });
+      if (warnings.length) {
+        warned++;
+        continue;
+      }
+      const back = parse(source);
+      expect(back.diagnostics, source).toEqual([]);
+      expect(back.doc.content, source).toEqual([p(...content)]);
+    }
+    // O alfabeto é hostil de propósito (só pontuação e delimitadores); ainda
+    // assim a maioria tem que sair sem aviso.
+    expect(warned).toBeLessThan(50);
   });
 });

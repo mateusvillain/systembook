@@ -83,7 +83,7 @@ export function normalizeLanguage(lang: string | null | undefined): string | nul
  * `@systembook/docs-site` confere esta lista contra o schema real.
  */
 export const MARK_ORDER = ['link', 'bold', 'italic', 'underline', 'code'] as const;
-type MarkType = (typeof MARK_ORDER)[number];
+export type MarkType = (typeof MARK_ORDER)[number];
 type Mark = { type: MarkType; attrs?: Record<string, unknown> };
 
 /** Attrs que o mark `link` do Tiptap grava (padrões de `@tiptap/extension-link`). */
