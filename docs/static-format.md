@@ -331,7 +331,8 @@ Campo desconhecido é erro.
 
 Todo erro de conteúdo traz o arquivo e a posição, e o comando (`systembook
 build` ou `systembook check`, que valida sem gerar o site) lista **todos** de
-uma vez:
+uma vez. No `systembook dev`, os mesmos erros aparecem no terminal e num
+overlay no navegador, sem derrubar o servidor:
 
 ```
 docs/components/actions/button.mdx:14:1  <Badge> não é um componente aceito. Use <Callout>, <ComponentEmbed>, <DosDonts> ou <u>.

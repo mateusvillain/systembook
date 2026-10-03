@@ -1,45 +1,11 @@
-import { existsSync } from 'node:fs';
 import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
-import { createRequire } from 'node:module';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import tailwindcss from '@tailwindcss/vite';
-import react from '@vitejs/plugin-react';
-import { build as viteBuild, type Plugin } from 'vite';
-import { buildEntries, generateEntries } from '@systembook/connector';
+import { build as viteBuild } from 'vite';
 import { siteDataFiles, STATIC_DATA_DIR } from '@systembook/content';
+import { appViteConfig, buildPreviews, withProductionEnv } from '../app.js';
 import { unsafeOutDir, type ResolvedConfig } from '../config.js';
-import { META_FILE, renderHtml, routeMetas } from './html.js';
-import { prepareSite, PREVIEWS_DIR } from './prepare.js';
-
-/** O app React que vira o site (`app/` do pacote), igual em `src/` e `dist/`. */
-const APP_DIR = fileURLToPath(new URL('../../app', import.meta.url));
-
-/**
- * O Tailwind do app precisa varrer o `docs-site` (o painel de controles do
- * component-embed usa utilities e tokens do shadcn), e o `@systembook/docs-site`
- * mora num lugar diferente em cada gerenciador de pacotes. O caminho absoluto
- * é resolvido aqui e anexado ao `app/styles.css` antes do Tailwind processá-lo.
- */
-function docsSiteSource(): Plugin {
-  const posix = (file: string) => file.split(path.sep).join('/');
-  let dir = path.dirname(createRequire(import.meta.url).resolve('@systembook/docs-site'));
-  while (!existsSync(path.join(dir, 'package.json'))) {
-    if (path.dirname(dir) === dir) throw new Error('package.json do @systembook/docs-site não encontrado');
-    dir = path.dirname(dir);
-  }
-  const source = posix(path.join(dir, 'src'));
-  // Os ids do Vite usam `/` em qualquer sistema (e podem trazer `?query`).
-  const stylesId = posix(path.join(APP_DIR, 'styles.css'));
-  return {
-    name: 'systembook:docs-site-source',
-    enforce: 'pre',
-    transform(code, id) {
-      if (!id.startsWith(stylesId)) return null;
-      return `${code}\n@source ${JSON.stringify(source)};\n`;
-    },
-  };
-}
+import { META_FILE, notFoundHead, renderHtml, routeMetas } from './html.js';
+import { prepareSite, PREVIEWS_DIR, previewsBase } from './prepare.js';
 
 /** Onde o Vite põe JS/CSS: sob o `_`, fora do espaço de slugs, como os dados. */
 const ASSETS_DIR = '_systembook/assets';
@@ -66,37 +32,20 @@ export async function buildStaticSite(config: ResolvedConfig): Promise<BuildResu
   if (problems.length) return { ok: false, problems };
 
   await rm(config.outDir, { recursive: true, force: true });
-  // O Vite só assume produção com o NODE_ENV vazio; com outro valor (um
-  // `development` herdado do shell, o `test` do vitest) o bundle sairia com o
-  // React e o JSX de desenvolvimento — e caminhos absolutos da máquina. É
-  // estado global do processo: dois builds simultâneos no mesmo processo não
-  // são suportados.
-  const nodeEnv = process.env.NODE_ENV;
-  process.env.NODE_ENV = 'production';
-  try {
-    if (previews.length) {
-      const entries = await generateEntries(previews, { root: config.root });
-      await buildEntries(entries, {
-        root: config.root,
-        outDir: path.join(config.outDir, PREVIEWS_DIR),
-        base: `${config.base}${PREVIEWS_DIR}/`,
-      });
-    }
-    await viteBuild({
-      configFile: false,
-      root: APP_DIR,
-      base: config.base,
+  if (previews.length) {
+    await buildPreviews(config, previews, {
+      outDir: path.join(config.outDir, PREVIEWS_DIR),
+      base: previewsBase(config),
+    });
+  }
+  await withProductionEnv(() =>
+    viteBuild({
+      ...appViteConfig(config),
       logLevel: 'warn',
-      cacheDir: path.join(config.root, 'node_modules/.cache/systembook-vite'),
-      plugins: [react(), docsSiteSource(), tailwindcss()],
-      resolve: { dedupe: ['react', 'react-dom', 'react-router-dom', '@tanstack/react-query'] },
       // O bundle leva o Tiptap read-only (~300 kB gzip), o que o PRD aceita no MVP.
       build: { outDir: config.outDir, emptyOutDir: false, assetsDir: ASSETS_DIR, chunkSizeWarningLimit: 1500 },
-    });
-  } finally {
-    if (nodeEnv === undefined) delete process.env.NODE_ENV;
-    else process.env.NODE_ENV = nodeEnv;
-  }
+    }),
+  );
 
   const write = async (relative: string, content: string) => {
     const file = path.join(config.outDir, relative);
@@ -115,10 +64,7 @@ export async function buildStaticSite(config: ResolvedConfig): Promise<BuildResu
   for (const route of routes) await write(path.join(route.path, 'index.html'), renderHtml(template, route));
   // O mesmo `<head>` para o app atualizar ao navegar sem recarregar a página.
   await write(path.join(STATIC_DATA_DIR, META_FILE), `${JSON.stringify(routes)}\n`);
-  await write(
-    '404.html',
-    renderHtml(template, { title: `Page not found · ${config.name}`, description: config.name }),
-  );
+  await write('404.html', renderHtml(template, notFoundHead(config.name)));
   // O GitHub Pages (Jekyll) ignora pastas com `_` sem isto.
   await write('.nojekyll', '');
   if (previews.length) {

@@ -3,7 +3,12 @@ import { readFileSync, statSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import type { PublicComponentPreview } from '@systembook/schema';
-import { discoverPreviews, previewEntryName, type DiscoveredPreview } from '@systembook/connector';
+import {
+  discoverPreviews,
+  previewEntryName,
+  type DiscoveredPreview,
+  type DiscoveryResult,
+} from '@systembook/connector';
 import {
   buildContentTree,
   buildSiteData,
@@ -19,6 +24,8 @@ import type { ResolvedConfig } from '../config.js';
 
 /** Pasta dos artefatos de preview no site, relativa à base. */
 export const PREVIEWS_DIR = '_systembook/previews';
+/** URL da pasta de previews no site, com a base. */
+export const previewsBase = (config: ResolvedConfig) => `${config.base}${PREVIEWS_DIR}/`;
 /** Pasta das imagens do conteúdo e dos logos, relativa à base. */
 export const MEDIA_DIR = '_systembook/media';
 
@@ -41,13 +48,21 @@ export interface PreparedSite {
   problems: string[];
 }
 
+export interface PrepareOptions {
+  /**
+   * Resultado de um `discoverPreviews` já feito: o `systembook dev` reaproveita
+   * a descoberta quando só o conteúdo mudou (ela carrega cada `*.preview.tsx`).
+   */
+  discovery?: DiscoveryResult;
+}
+
 /**
  * Tudo o que o build precisa saber antes de escrever um byte (SYS-100), e o
  * que o `systembook check` valida: a árvore e os dados do conteúdo, os
  * previews descobertos, as imagens e os logos referenciados — e todos os
  * problemas de uma vez, com `arquivo:linha:coluna`.
  */
-export async function prepareSite(config: ResolvedConfig): Promise<PreparedSite> {
+export async function prepareSite(config: ResolvedConfig, options: PrepareOptions = {}): Promise<PreparedSite> {
   const problems: string[] = [];
   const contentDiagnostics: Diagnostic[] = [];
   /** Por destino: arquivos iguais (mesmo nome e conteúdo) viram um só. */
@@ -75,7 +90,7 @@ export async function prepareSite(config: ResolvedConfig): Promise<PreparedSite>
   // ---- previews ----
   let previews: DiscoveredPreview[] = [];
   if (config.previews !== false) {
-    const discovery = await discoverPreviews({ root: config.root });
+    const discovery = options.discovery ?? (await discoverPreviews({ root: config.root }));
     previews = discovery.previews;
     for (const failure of discovery.failures) {
       problems.push(`${relative(config, failure.filePath)}  ${failure.message.split('\n').join('\n  ')}`);
@@ -114,7 +129,7 @@ export async function prepareSite(config: ResolvedConfig): Promise<PreparedSite>
       }
       entryOwners.set(entry, relative(config, preview.filePath));
       previewMap[previewKey({ componentName: preview.config.component, variantId: variant.id })] = {
-        url: `${config.base}${PREVIEWS_DIR}/${entry}/index.html`,
+        url: `${previewsBase(config)}${entry}/index.html`,
         config: preview.config,
       };
     }
