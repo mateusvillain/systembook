@@ -1,0 +1,55 @@
+# Publica o projeto de exemplo do modo estático (examples/static-docs) no
+# GitHub Pages do repositório: https://mateusvillain.github.io/systembook/
+# É a prova de ponta a ponta do guia docs/deploy-static.md.
+name: Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # A versão do pnpm vem do campo packageManager do package.json
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - id: pages
+        uses: actions/configure-pages@v5
+
+      # Site de projeto fica em /systembook/: o base_path vem do próprio Pages.
+      - run: pnpm exec systembook build --base "${{ steps.pages.outputs.base_path }}/"
+        working-directory: examples/static-docs
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: examples/static-docs/systembook-dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
