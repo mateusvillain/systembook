@@ -38,9 +38,12 @@ repositório): <https://mateusvillain.github.io/systembook/>
 | **Hospedagem** | Um servidor seu rodando o container | Qualquer host estático (GitHub Pages, Vercel, Netlify, S3…) |
 | **Custo** | O servidor (VPS, container) | Gratuito nos hosts estáticos comuns |
 | **Publicar** | Botão "Publicar" no painel | Merge na branch + build no CI |
-| **Histórico** | Revisões por página, comparação e restauração | O histórico do git |
-| **Recursos só deste modo** | Editor visual, rascunho com autosave, revisões e diff, usuários e papéis, dashboard de atividade | Review em PR, `systembook check` no CI, `systembook dev` com reload, site sem servidor |
-| **Nos dois** | A mesma doc pública: menus, seções, páginas com tabs, previews interativos com controles, do/don't, callouts, código com realce, busca, tema escuro | ← |
+| **Histórico** | Revisões por página, com comparação por bloco e restauração | O histórico do git |
+| **Recursos só deste modo** | Editor visual, rascunho com autosave, revisões, usuários e papéis, dashboard de atividade | Review em PR, `systembook check` no CI, `systembook dev` com reload, imagem como bloco, site sem servidor |
+
+Nos dois modos, a doc pública é a mesma: menus, seções, páginas com tabs,
+previews interativos com controles, do/don't, callouts, código com realce,
+busca e tema escuro.
 
 Use o **CMS** quando quem escreve a doc não vive no repositório (design,
 conteúdo) e precisa publicar sozinho. Use o **estático** quando a doc deve andar
@@ -182,7 +185,8 @@ npm run docs:dev             # http://localhost:4000, recarrega ao salvar
 ```
 
 O `init` pergunta se deve criar o workflow de deploy no GitHub Pages
-(`--github-pages` para não perguntar). A partir daí:
+(`--github-pages` ou `--no-github-pages` para não perguntar). Se `docs/` já
+guarda outra documentação, o conteúdo vai para `systembook-docs/`. A partir daí:
 
 | Comando | O que faz |
 | --- | --- |

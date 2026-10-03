@@ -24,7 +24,8 @@ Não há conversão de formato.
 | Título, subtítulo, status, ordem | frontmatter: `title`, `subtitle`, `status`, `order` |
 | Slug | nome do arquivo ou da pasta (ou `slug` no frontmatter) |
 | Blocos de texto, listas, código, tabela | Markdown |
-| Imagem | `![alt](./arquivo.png "legenda")`, com o arquivo copiado para junto do conteúdo |
+| Cover de imagem do do/don't (URL) | `coverImage` + `coverAlt` no `<DosDonts>` |
+| — (o editor do CMS não insere imagem solta) | Imagem como bloco: `![alt](./arquivo.png "legenda")` |
 | Callout, componente, do/don't | `<Callout>`, `<ComponentEmbed>`, `<DosDonts>` |
 | Previews (`*.preview.tsx` enviados pelo CI) | os mesmos `*.preview.tsx`, buildados pelo `systembook build` |
 
@@ -48,8 +49,9 @@ os usuários. O histórico passa a ser o do git.
 Algumas construções do editor do CMS não têm sintaxe de arquivo e precisam ser
 simplificadas (o `check` acusa todas):
 
-- conteúdo de bloco dentro de célula de tabela (listas, código, componentes) —
-  no arquivo, a célula aceita só texto com marcas e links;
+- conteúdo de bloco dentro de célula de tabela (heading, listas, código,
+  do/don't, componentes) — no arquivo, a célula aceita só texto com marcas e
+  links;
 - `<ComponentEmbed>` sem variante escolhida — no arquivo, `variant` é
   obrigatória.
 
@@ -62,5 +64,8 @@ simplificadas (o `check` acusa todas):
 4. Configure o CI de previews ([`ci-example.md`](./ci-example.md)): os mesmos
    `*.preview.tsx` passam a ser enviados para a instância.
 
-Todo conteúdo do modo estático cabe no CMS: o formato de arquivo é um
-subconjunto do que o editor representa.
+Quase todo conteúdo do modo estático cabe no CMS, com uma exceção: **imagem
+como bloco**. O CMS renderiza o bloco, mas o editor ainda não tem como inserir
+uma imagem solta nem hospeda o arquivo. Na migração manual, troque a imagem por
+um texto ou use-a como cover de um `<DosDonts>` com a URL de onde ela estiver
+publicada.

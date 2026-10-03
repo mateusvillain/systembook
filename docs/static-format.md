@@ -21,13 +21,13 @@ Fechadas no PRD do modo estático (Linear, projeto "Modo estático", §9):
    export/import e pelo server.
 3. `status` referencia uma lista fechada de tags definida na config.
 4. No modo estático as rotas ficam na raiz do site.
-5. Importar arquivos numa instância CMS (`systembook import`) **falha** se um
-   slug já existir, listando os conflitos; sobrescrever exige `--overwrite`.
+5. Importar arquivos numa instância CMS (`systembook import`, planejado — ver
+   [migração entre modos](./migration.md)) vai **falhar** se um slug já existir,
+   listando os conflitos; sobrescrever vai exigir `--overwrite`.
 
-Dois recursos do formato dependem de o renderer ganhar suporte: **imagem como
-bloco** e **código inline**. Hoje o conjunto de conteúdo não tem nó `image` nem
-mark `code`, e a SYS-93 acrescenta os dois, que passam a renderizar também no
-modo CMS.
+**Imagem como bloco** e **código inline** entraram no conjunto de conteúdo com o
+formato (SYS-93) e renderizam também no modo CMS. O editor do CMS ainda não tem
+como *inserir* uma imagem solta: ela vem só de arquivos.
 
 ## Estrutura de pastas
 
