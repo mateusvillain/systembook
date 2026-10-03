@@ -144,7 +144,8 @@ export function createProgram(): Command {
             console.warn(`  ${page.menu}/${page.section}/${page.slug}  (${page.titulo})`);
           }
         }
-        const shown = path.relative(process.cwd(), result.out) || '.';
+        const relative = path.relative(process.cwd(), result.out);
+        const shown = relative.startsWith('..') ? result.out : relative || '.';
         console.log(
           `\nProjeto em ${shown} — ${result.pages} página(s), ${result.images} imagem(ns) baixada(s), ${result.warnings.length} aviso(s).`,
         );

@@ -200,7 +200,99 @@ describe('systembook export', { timeout: 60_000 }, () => {
     const result = await exportProject({ from: ORIGIN, token: 't', out, fetch: fakeInstance(payload).fetch });
     expect(result.warnings).toEqual([
       expect.stringMatching(/^docs\/index\.mdx: o link "\/docs\/componentes\/acoes\/rascunho"/),
-      expect.stringMatching(/^docs\/_images\/sumiu\.png: não foi possível baixar/),
+      expect.stringMatching(/^não foi possível baixar https:\/\/docs\.acme\.dev\/sumiu\.png \(HTTP 404\)/),
     ]);
+    // A imagem que não baixou aponta para a instância, e o projeto continua válido.
+    expect(readFileSync(path.join(out, 'docs/index.mdx'), 'utf8')).toContain('](https://docs.acme.dev/sumiu.png)');
+    expect(await checkSite(await loadConfig(out))).toMatchObject({ ok: true });
+  });
+
+  it('casos que o CMS aceita e o formato não: o projeto ainda passa no check', async () => {
+    const page = (titulo: string, slug: string, ordem: number, snap: PageSnapshot = snapshot(para(titulo || 'x'))) => ({
+      titulo,
+      slug,
+      subtitulo: null,
+      ordem,
+      status: null,
+      snapshot: snap,
+    });
+    const payload: InstanceExport = {
+      version: 1,
+      settings: {
+        nome: ' ',
+        logo: null,
+        logoDark: null,
+        statusTags: [
+          { titulo: 'Beta', cor: '#000000' },
+          { titulo: 'Beta', cor: '#111111' },
+          { titulo: ' ', cor: '#222222' },
+        ],
+      },
+      landing: null,
+      menus: [
+        {
+          titulo: ' ',
+          slug: 'Guia',
+          ordem: 0,
+          sections: [
+            {
+              titulo: 'Base',
+              slug: 'base',
+              ordem: 0,
+              pages: [
+                // `index` sem tabs: precisa da forma de pasta.
+                page('Index', 'index', 0),
+                // Slugs inválidos que colidem depois de corrigidos.
+                page('Foo', 'Foo', 0),
+                page('foo_', 'foo_', 0),
+                page(' ', 'em-branco', 0),
+                // Revisão antiga, sem tab primária.
+                page('Antiga', 'antiga', 0, {
+                  tabs: [
+                    { tabId: 'a', titulo: 'Usage', isPrimary: false, blocks: para('uso') },
+                    { tabId: 'b', titulo: ' ', isPrimary: false, blocks: para('sem título') },
+                  ],
+                }),
+              ],
+            },
+          ],
+        },
+        { titulo: 'Outro', slug: 'guia', ordem: 0, sections: [{ titulo: 'Base', slug: 'base', ordem: 0, pages: [page('X', 'x', 0)] }] },
+      ],
+      unpublished: [],
+    };
+    const out = path.join(tempDir(), 'casos');
+    const result = await exportProject({ from: ORIGIN, token: 't', out, fetch: fakeInstance(payload).fetch });
+    expect(await checkSite(await loadConfig(out))).toMatchObject({ ok: true, pages: 6 });
+
+    expect(existsSync(path.join(out, 'docs/guia/base/index/index.mdx'))).toBe(true);
+    expect(existsSync(path.join(out, 'docs/guia/base/foo.mdx'))).toBe(true);
+    expect(existsSync(path.join(out, 'docs/guia/base/foo-2.mdx'))).toBe(true);
+    // O menu "guia" do 2º menu colide com o "Guia" corrigido do 1º.
+    expect(existsSync(path.join(out, 'docs/guia-2/base/x.mdx'))).toBe(true);
+    expect(readFileSync(path.join(out, 'docs/guia/base/antiga/index.mdx'), 'utf8')).toContain('uso');
+    expect(readFileSync(path.join(out, 'docs/guia/base/antiga/tab-1.mdx'), 'utf8')).toContain('title: Tab 1');
+    // A ordem é a posição: `ordem` empatado no CMS não vira ordem alfabética.
+    const site = (await prepareSite(await loadConfig(out))).site;
+    expect(site.data.nav[0]!.sections[0]!.pages.map((p) => p.titulo)).toEqual(['Index', 'Foo', 'foo_', 'Página', 'Antiga']);
+    expect(readFileSync(path.join(out, 'systembook.config.ts'), 'utf8')).toContain('name: "Documentation"');
+    expect(result.warnings).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('"Foo" não é válido'),
+        expect.stringContaining('repetiu no mesmo nível'),
+        expect.stringContaining('título em branco'),
+        expect.stringContaining('virou o Overview'),
+        expect.stringContaining('"Beta" ficou de fora (nome repetido)'),
+        expect.stringContaining('nome da instância está em branco'),
+      ]),
+    );
+  });
+
+  it('--out apontando para um arquivo é erro legível', async () => {
+    const file = path.join(tempDir(), 'arquivo.txt');
+    writeFileSync(file, 'x');
+    await expect(exportProject({ from: ORIGIN, token: 't', out: file, fetch: fakeInstance().fetch })).rejects.toThrow(
+      /é um arquivo/,
+    );
   });
 });

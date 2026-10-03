@@ -198,7 +198,7 @@ npx systembook check --root docs-estatico
 | `--from <url>` | URL da instância (obrigatória) |
 | `--token <token>` | Token de migração; sem ela, vale a variável `SYSTEMBOOK_TOKEN` (que não fica no histórico do shell) |
 | `--out <dir>` | Pasta do projeto (default: `systembook-export`) |
-| `-f, --force` | Escreve numa pasta que já tem arquivos, por cima dos de mesmo nome |
+| `-f, --force` | Escreve numa pasta que já tem arquivos, por cima dos de mesmo nome. Não apaga nada: um `.mdx` que sobrou de um export anterior continua lá |
 
 Vai só o conteúdo **publicado**. As páginas nunca publicadas são listadas no
 fim, e o que precisou ser simplificado para caber no formato de arquivo sai

@@ -1,4 +1,4 @@
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync, statSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { InstanceExport, UnpublishedPageRef } from '@systembook/schema';
@@ -37,6 +37,9 @@ export class ExportError extends Error {}
  */
 export async function exportProject(options: ExportOptions): Promise<ExportResult> {
   const out = path.resolve(options.out);
+  if (existsSync(out) && !statSync(out).isDirectory()) {
+    throw new ExportError(`${options.out} é um arquivo — --out precisa ser uma pasta.`);
+  }
   if (existsSync(out) && readdirSync(out).length && !options.force) {
     throw new ExportError(`${options.out} já existe e não está vazia — escolha outra pasta com --out ou use --force para escrever por cima.`);
   }
@@ -49,17 +52,23 @@ export async function exportProject(options: ExportOptions): Promise<ExportResul
     throw new ExportError(`--from precisa ser a URL da instância (ex.: https://docs.acme.dev), não "${options.from}".`);
   }
   const data = await fetchExport(doFetch, base, options.token);
-  const project = buildExportProject(data, { origin: base.href });
 
+  // As imagens são baixadas antes de escrever: a que falhar continua
+  // apontando para a instância, e o projeto segue passando no `check`.
+  const planned = buildExportProject(data, { origin: base.href });
   const images: { path: string; content: Buffer }[] = [];
-  for (const download of project.downloads) {
+  const failed = new Set<string>();
+  const failures: string[] = [];
+  for (const download of planned.downloads) {
     const response = await doFetch(download.url).catch(() => null);
     if (!response?.ok) {
-      project.warnings.push(`${download.path}: não foi possível baixar ${download.url}${response ? ` (HTTP ${response.status})` : ''}.`);
+      failed.add(download.url);
+      failures.push(`não foi possível baixar ${download.url}${response ? ` (HTTP ${response.status})` : ''}; a imagem continua apontando para a instância.`);
       continue;
     }
     images.push({ path: download.path, content: Buffer.from(await response.arrayBuffer()) });
   }
+  const project = failed.size ? buildExportProject(data, { origin: base.href, failedDownloads: failed }) : planned;
 
   for (const file of [...project.files, ...images]) {
     const target = path.join(out, file.path);
@@ -72,7 +81,7 @@ export async function exportProject(options: ExportOptions): Promise<ExportResul
     files: project.files.length + images.length,
     pages: project.pages,
     images: images.length,
-    warnings: project.warnings,
+    warnings: [...project.warnings, ...failures],
     unpublished: data.unpublished,
   };
 }
