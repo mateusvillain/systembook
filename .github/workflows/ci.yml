@@ -21,10 +21,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Stress do dev (temporário)
-        run: |
-          for i in 1 2 3 4 5; do pnpm --filter @systembook/cli test 2>&1 | grep -E "Tests |×|systembook dev >" ; done
-
       - name: Lint
         run: pnpm -r --if-present run lint
 
