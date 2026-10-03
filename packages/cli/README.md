@@ -15,6 +15,7 @@ resolvível a partir do seu código.
 
 | Comando | O que faz |
 |---|---|
+| `init` | Prepara o repo para o modo estático: config, `docs/`, scripts e `.gitignore` (ver abaixo) |
 | `dev` | Servidor local do site, que recarrega ao salvar (ver abaixo) |
 | `build` | Gera o site estático do modo estático em `outDir` (ver abaixo) |
 | `check` | Valida conteúdo, config e referências sem gerar o site (para PR) |
@@ -27,6 +28,30 @@ arquivos `*.preview.tsx` está em
 [`docs/preview-tsx-schema.md`](https://github.com/mateusvillain/systembook/blob/main/docs/preview-tsx-schema.md),
 e o workflow de CI em
 [`docs/ci-example.md`](https://github.com/mateusvillain/systembook/blob/main/docs/ci-example.md).
+
+## Começar: `systembook init`
+
+```bash
+npx @systembook/cli init
+```
+
+Num repo existente (ou numa pasta vazia), cria:
+
+- `systembook.config.ts`, com o nome tirado do `package.json` (ou da pasta);
+- `docs/index.mdx` (landing) e `docs/guide/basics/introduction.mdx` (uma página
+  de exemplo);
+- os scripts `docs:dev`, `docs:check` e `docs:build` e o `@systembook/cli` em
+  `devDependencies` no `package.json` (que é criado, se não existir);
+- `systembook-dist/` e `.systembook/` no `.gitignore`;
+- com `--github-pages` (ou respondendo "s" à pergunta), o workflow
+  `.github/workflows/systembook-pages.yml`, com os comandos do gerenciador do
+  projeto (detectado pelo lockfile).
+
+Arquivo existente não é sobrescrito sem confirmação: num terminal, o comando
+pergunta arquivo a arquivo; fora dele (CI, pipe), mantém o existente. `--force`
+sobrescreve sem perguntar. O `package.json` e o `.gitignore` nunca são
+substituídos, só complementados: um script com o mesmo nome e outro comando fica
+como está. O resultado passa no `check` e no `build` sem mais nada.
 
 ## Modo estático: `systembook build`
 
@@ -68,6 +93,10 @@ e o navegador só carrega os scripts dele se o host mandar
 server do modo CMS faz. O GitHub Pages já manda; no Netlify e no Cloudflare
 Pages o `_headers` gerado cuida disso, e no `npx serve`, o `serve.json`. Na
 Vercel, no S3 e em outros hosts, configure o cabeçalho para esse caminho.
+
+`--base <path>` sobrescreve a `base` da config só naquele build. É o que o
+workflow do GitHub Pages usa: o subpath de um site de projeto (`/<repo>/`) vem
+do próprio Pages (`steps.pages.outputs.base_path`), sem precisar estar na config.
 
 O `outDir` é apagado a cada build; por isso ele precisa ser uma pasta própria
 dentro do projeto — não a raiz, nem a pasta de conteúdo, `.git` ou
