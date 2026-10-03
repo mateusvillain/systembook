@@ -50,7 +50,7 @@ export async function handlePreviewUpload(
   // Auth primeiro, antes de tocar no corpo — token inválido não ganha parse.
   const authHeader = req.headers.authorization ?? '';
   const bearer = authHeader.startsWith('Bearer ') ? authHeader.slice('Bearer '.length) : null;
-  const token = bearer ? findActiveUploadToken(deps.db, bearer) : null;
+  const token = bearer ? findActiveUploadToken(deps.db, bearer, 'previews') : null;
   if (!token) {
     sendJson(res, 401, { error: 'token de upload ausente, inválido ou revogado' });
     return;

@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { and, eq, isNull } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
-import { uploadTokens } from '../db/schema.js';
+import { uploadTokens, type TokenScope } from '../db/schema.js';
 
 /**
  * Token de CI: 32 bytes aleatórios em base64url (~256 bits de entropia).
@@ -21,14 +21,21 @@ export type UploadTokenRow = typeof uploadTokens.$inferSelect;
 
 /**
  * Resolve um token bruto (header Authorization do POST /api/previews,
- * TASK-43) para a linha ativa correspondente — null se desconhecido ou
- * revogado. Nunca logar o token recebido, nem em caso de erro.
+ * TASK-43, ou das rotas de migração, SYS-110) para a linha ativa do escopo
+ * pedido — null se desconhecido, revogado ou de outro escopo. Nunca logar o
+ * token recebido, nem em caso de erro.
  */
-export function findActiveUploadToken(db: Db, rawToken: string): UploadTokenRow | null {
+export function findActiveUploadToken(db: Db, rawToken: string, escopo: TokenScope): UploadTokenRow | null {
   const row = db
     .select()
     .from(uploadTokens)
-    .where(and(eq(uploadTokens.tokenHash, hashUploadToken(rawToken)), isNull(uploadTokens.revogadoEm)))
+    .where(
+      and(
+        eq(uploadTokens.tokenHash, hashUploadToken(rawToken)),
+        eq(uploadTokens.escopo, escopo),
+        isNull(uploadTokens.revogadoEm),
+      ),
+    )
     .get();
   return row ?? null;
 }

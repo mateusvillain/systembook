@@ -22,6 +22,12 @@ export interface TrpcContext {
    * (só os testes de preview a fornecem).
    */
   previewsRoot?: string;
+  /**
+   * Token do header `Authorization: Bearer …` (SYS-110), validado só pelas
+   * rotas que aceitam token (`migrationProcedure`). Opcional pelo mesmo motivo
+   * do `previewsRoot`.
+   */
+  apiToken?: string | null;
 }
 
 type ReqLike = Pick<IncomingMessage, 'headers'>;
@@ -63,5 +69,7 @@ export function createContext(
   res: ServerResponse | null,
   previewsRoot?: string,
 ): TrpcContext {
-  return { db, res, user: resolveUser(db, req), previewsRoot };
+  const authorization = req.headers.authorization ?? '';
+  const apiToken = authorization.startsWith('Bearer ') ? authorization.slice('Bearer '.length) : null;
+  return { db, res, user: resolveUser(db, req), previewsRoot, apiToken };
 }

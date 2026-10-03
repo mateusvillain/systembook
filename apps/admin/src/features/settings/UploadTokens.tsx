@@ -10,6 +10,22 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 type TokenRow = RouterOutput['uploadTokens']['list'][number];
+type TokenScope = TokenRow['escopo'];
+
+const selectClass =
+  'h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50';
+
+/** Rótulo e efeito da revogação de cada escopo (SYS-110). */
+const SCOPES: Record<TokenScope, { label: string; revokeEffect: string }> = {
+  previews: {
+    label: 'Preview upload (CI)',
+    revokeEffect: 'The CI using it will no longer be able to publish previews.',
+  },
+  migration: {
+    label: 'Migration (export/import)',
+    revokeEffect: 'The CLI using it will no longer be able to export or import content.',
+  },
+};
 
 /**
  * Gestão de tokens de upload de CI (TASK-44). O token em claro só existe na
@@ -37,10 +53,13 @@ export function UploadTokens() {
   return (
     <section className="grid gap-6">
       <div className="grid gap-1">
-        <h1 className="text-2xl font-semibold">Upload tokens</h1>
+        <h1 className="text-2xl font-semibold">Tokens</h1>
         <p className="text-muted-foreground text-sm">
-          Tokens authenticate the team CI when uploading preview artifacts (
-          <code>POST /api/previews</code>). Generate one per pipeline and revoke it if it leaks.
+          Each token does one thing. <strong>Preview upload</strong> tokens authenticate the team CI
+          when uploading preview artifacts (<code>POST /api/previews</code>).{' '}
+          <strong>Migration</strong> tokens let the <code>systembook</code> CLI export this instance
+          to files or import files into it — they read and write all content, so keep them out of
+          CI. Revoke any token that leaks.
         </p>
       </div>
 
@@ -66,6 +85,7 @@ export function UploadTokens() {
             <TableHeader>
               <TableRow>
                 <TableHead>Label</TableHead>
+                <TableHead>Scope</TableHead>
                 <TableHead>Created at</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
@@ -79,7 +99,7 @@ export function UploadTokens() {
                   onRevoke={() => {
                     if (
                       window.confirm(
-                        `Revoke the token "${token.label}"? The CI using it will no longer be able to publish previews.`,
+                        `Revoke the token "${token.label}"? ${SCOPES[token.escopo].revokeEffect}`,
                       )
                     ) {
                       revoke.mutate({ tokenId: token.id });
@@ -104,6 +124,7 @@ function TokenTableRow({ token, onRevoke }: { token: TokenRow; onRevoke: () => v
   return (
     <TableRow className={revogado ? 'opacity-60' : undefined}>
       <TableCell>{token.label}</TableCell>
+      <TableCell>{SCOPES[token.escopo].label}</TableCell>
       <TableCell>{new Date(token.criadoEm).toLocaleString('en-US')}</TableCell>
       <TableCell>
         {revogado ? (
@@ -172,6 +193,7 @@ function TokenReveal({
 function CreateTokenForm({ onCreated }: { onCreated: (r: { label: string; token: string }) => void }) {
   const trpc = useTRPC();
   const [label, setLabel] = useState('');
+  const [escopo, setEscopo] = useState<TokenScope>('previews');
   const create = useMutation(
     trpc.uploadTokens.create.mutationOptions({
       onSuccess: (created) => {
@@ -183,7 +205,7 @@ function CreateTokenForm({ onCreated }: { onCreated: (r: { label: string; token:
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    if (label.trim()) create.mutate({ label: label.trim() });
+    if (label.trim()) create.mutate({ label: label.trim(), escopo });
   };
 
   return (
@@ -196,6 +218,21 @@ function CreateTokenForm({ onCreated }: { onCreated: (r: { label: string; token:
           onChange={(event) => setLabel(event.target.value)}
           placeholder="e.g. design system GitHub Actions"
         />
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor="token-scope">Scope</Label>
+        <select
+          id="token-scope"
+          className={selectClass}
+          value={escopo}
+          onChange={(event) => setEscopo(event.target.value as TokenScope)}
+        >
+          {(Object.keys(SCOPES) as TokenScope[]).map((scope) => (
+            <option key={scope} value={scope}>
+              {SCOPES[scope].label}
+            </option>
+          ))}
+        </select>
       </div>
       <Button type="submit" disabled={create.isPending || !label.trim()}>
         Generate token

@@ -206,13 +206,27 @@ export const blocks = sqliteTable('blocks', {
  * (TASK-43) sem sessão de usuário. Só o hash SHA-256 persiste (o valor em
  * claro aparece uma única vez, na resposta do create); revogação é soft via
  * `revogado_em` para o painel continuar listando o histórico de tokens.
+ *
+ * `escopo` (SYS-110): um token serve a uma coisa só. `previews` é o do CI;
+ * `migration` lê e escreve o conteúdo inteiro da instância (export/import do
+ * modo estático), então não pode ser o mesmo valor que mora no CI. Tokens
+ * antigos viram `previews` pelo default. `criado_por` é o admin que gerou o
+ * token: o import registra as revisões em nome dele.
  */
+export const TOKEN_SCOPES = ['previews', 'migration'] as const;
+export type TokenScope = (typeof TOKEN_SCOPES)[number];
+
 export const uploadTokens = sqliteTable('upload_tokens', {
   id: text('id')
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
   tokenHash: text('token_hash').notNull().unique(),
   label: text('label').notNull(),
+  escopo: text('escopo', { enum: TOKEN_SCOPES }).notNull().default('previews'),
+  // Sem FK de propósito: o drizzle-kit gera o ADD COLUMN sem o ON DELETE SET
+  // NULL, e uma FK sem ação travaria a exclusão do usuário. Quem lê confere se
+  // o usuário ainda existe.
+  criadoPor: text('criado_por'),
   criadoEm: integer('criado_em', { mode: 'timestamp' })
     .notNull()
     .default(sql`(unixepoch())`),

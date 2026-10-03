@@ -2,7 +2,7 @@ import { TRPCError } from '@trpc/server';
 import { desc, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { generateUploadToken, hashUploadToken } from '../../auth/uploadTokens.js';
-import { uploadTokens } from '../../db/schema.js';
+import { TOKEN_SCOPES, uploadTokens } from '../../db/schema.js';
 import { adminProcedure, router } from '../init.js';
 
 /**
@@ -17,6 +17,7 @@ export const uploadTokensRouter = router({
       .select({
         id: uploadTokens.id,
         label: uploadTokens.label,
+        escopo: uploadTokens.escopo,
         criadoEm: uploadTokens.criadoEm,
         revogadoEm: uploadTokens.revogadoEm,
       })
@@ -26,13 +27,18 @@ export const uploadTokensRouter = router({
   ),
 
   create: adminProcedure
-    .input(z.object({ label: z.string().min(1) }))
+    .input(z.object({ label: z.string().min(1), escopo: z.enum(TOKEN_SCOPES).default('previews') }))
     .mutation(({ ctx, input }) => {
       const token = generateUploadToken();
       const row = ctx.db
         .insert(uploadTokens)
-        .values({ tokenHash: hashUploadToken(token), label: input.label })
-        .returning({ id: uploadTokens.id, label: uploadTokens.label })
+        .values({
+          tokenHash: hashUploadToken(token),
+          label: input.label,
+          escopo: input.escopo,
+          criadoPor: ctx.user.userId,
+        })
+        .returning({ id: uploadTokens.id, label: uploadTokens.label, escopo: uploadTokens.escopo })
         .get();
       // Única resposta que carrega o token em claro — nunca é armazenado nem
       // recuperável depois (só o hash persiste).
