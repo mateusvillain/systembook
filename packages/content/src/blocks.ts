@@ -42,7 +42,8 @@ export class UnknownNodeTypeError extends Error {
   }
 }
 
-function codeText(node: TiptapNode): string {
+/** Texto de um `codeBlock` (os filhos `text` concatenados). */
+export function codeText(node: TiptapNode): string {
   return (node.content ?? []).map((child) => child.text ?? '').join('');
 }
 

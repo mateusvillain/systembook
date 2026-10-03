@@ -23,6 +23,12 @@ export {
   type ParseOptions,
 } from './parse/index.js';
 export { MARK_ORDER, normalizeLanguage } from './parse/toTiptap.js';
+export {
+  serializeBlocks,
+  serializeDocument,
+  type SerializedDocument,
+  type SerializeOptions,
+} from './serialize/index.js';
 export * from './tree/index.js';
 export { buildSiteData, siteDataFiles, BODY_TAB_ID, type BuildSiteOptions, type SiteBuild, type SiteImage } from './site/build.js';
 export { pageKey, parsePageKey, previewKey, sitePath, STATIC_DATA_DIR, staticDataPaths } from './site/paths.js';
