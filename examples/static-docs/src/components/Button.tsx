@@ -1,6 +1,7 @@
 import type { ButtonHTMLAttributes, CSSProperties } from 'react';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'danger';
+export const BUTTON_VARIANTS = ['primary', 'secondary', 'danger'] as const;
+export type ButtonVariant = (typeof BUTTON_VARIANTS)[number];
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;

@@ -4,8 +4,8 @@ export default {
   name: 'Acme Design System',
   logo: './brand/logo.svg',
   logoDark: './brand/logo-dark.svg',
-  // O workflow do GitHub Pages sobrescreve com SYSTEMBOOK_BASE (site de projeto
-  // fica em /<repo>/); localmente, o site é servido na raiz.
+  // Site de projeto do GitHub Pages fica em /<repo>/: builde com
+  // SYSTEMBOOK_BASE=/<repo>/. Localmente, o site é servido na raiz.
   base: process.env.SYSTEMBOOK_BASE ?? '/',
   statusTags: [
     { titulo: 'Stable', cor: '#2e7d32' },

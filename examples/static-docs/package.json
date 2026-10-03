@@ -8,6 +8,7 @@
     "dev": "systembook dev",
     "build": "systembook build",
     "check": "systembook check",
+    "lint": "eslint src systembook.config.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
