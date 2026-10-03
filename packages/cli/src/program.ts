@@ -6,6 +6,7 @@ import { buildStaticSite } from './build/index.js';
 import { checkSite } from './check.js';
 import { ConfigError, loadConfig, withBase } from './config.js';
 import { startDevServer } from './dev/index.js';
+import { ExportError, exportProject } from './export/index.js';
 import { initProject, PAGES_WORKFLOW_FILE } from './init.js';
 
 /**
@@ -118,6 +119,39 @@ export function createProgram(): Command {
       } catch (error) {
         if (!(error instanceof ConfigError)) throw error;
         reportProblems(error.problems);
+      }
+    });
+
+  program
+    .command('export')
+    .description('converte uma instância CMS num projeto do modo estático (só o conteúdo publicado)')
+    .requiredOption('--from <url>', 'URL da instância CMS')
+    .option('--token <token>', 'token de escopo Migration (ou a variável SYSTEMBOOK_TOKEN)')
+    .option('--out <dir>', 'pasta do projeto gerado', 'systembook-export')
+    .option('-f, --force', 'escreve numa pasta que já tem arquivos, por cima dos de mesmo nome')
+    .action(async (options: { from: string; token?: string; out: string; force?: boolean }) => {
+      const token = options.token ?? process.env.SYSTEMBOOK_TOKEN;
+      if (!token) {
+        reportProblems(['informe o token com --token ou na variável SYSTEMBOOK_TOKEN.']);
+        return;
+      }
+      try {
+        const result = await exportProject({ from: options.from, token, out: options.out, force: options.force });
+        for (const warning of result.warnings) console.warn(`aviso: ${warning}`);
+        if (result.unpublished.length) {
+          console.warn(`\n${result.unpublished.length} página(s) nunca publicada(s) ficaram de fora:`);
+          for (const page of result.unpublished) {
+            console.warn(`  ${page.menu}/${page.section}/${page.slug}  (${page.titulo})`);
+          }
+        }
+        const shown = path.relative(process.cwd(), result.out) || '.';
+        console.log(
+          `\nProjeto em ${shown} — ${result.pages} página(s), ${result.images} imagem(ns) baixada(s), ${result.warnings.length} aviso(s).`,
+        );
+        console.log(`Próximo passo: systembook check --root ${shown}`);
+      } catch (error) {
+        if (!(error instanceof ExportError)) throw error;
+        reportProblems([error.message]);
       }
     });
 

@@ -51,3 +51,16 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
 }
+
+/* Sem o preflight, o margin padrão do navegador (~8px) no `body` fica e
+   desloca a doc em relação à do modo CMS — o mesmo reset de
+   apps/admin/src/index.css (que também guarda o espaço da barra de rolagem). */
+@layer base {
+  html {
+    scrollbar-gutter: stable;
+  }
+
+  body {
+    margin: 0;
+  }
+}
