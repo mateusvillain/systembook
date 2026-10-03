@@ -1,7 +1,8 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { and, eq, isNull } from 'drizzle-orm';
+import type { IncomingHttpHeaders } from 'node:http';
 import type { Db } from '../db/client.js';
-import { uploadTokens, type TokenScope } from '../db/schema.js';
+import { memberships, uploadTokens, type TokenScope } from '../db/schema.js';
 
 /**
  * Token de CI: 32 bytes aleatórios em base64url (~256 bits de entropia).
@@ -38,4 +39,27 @@ export function findActiveUploadToken(db: Db, rawToken: string, escopo: TokenSco
     )
     .get();
   return row ?? null;
+}
+
+/** O token do header `Authorization: Bearer …`, ou `null`. */
+export function parseBearer(headers: Pick<IncomingHttpHeaders, 'authorization'>): string | null {
+  const header = headers.authorization ?? '';
+  return header.startsWith('Bearer ') ? header.slice('Bearer '.length) : null;
+}
+
+/**
+ * Token de migração (SYS-110) válido **e** cujo criador ainda é admin — o
+ * token age em nome dele (lê e escreve o conteúdo inteiro), então não pode
+ * sobreviver à exclusão ou ao rebaixamento de quem o gerou. Devolve o id do
+ * criador, ou `null`.
+ */
+export function findMigrationTokenOwner(db: Db, rawToken: string): string | null {
+  const token = findActiveUploadToken(db, rawToken, 'migration');
+  if (!token?.criadoPor) return null;
+  const owner = db
+    .select({ userId: memberships.userId })
+    .from(memberships)
+    .where(and(eq(memberships.userId, token.criadoPor), eq(memberships.role, 'admin')))
+    .get();
+  return owner?.userId ?? null;
 }

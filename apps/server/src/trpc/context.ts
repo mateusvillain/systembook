@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { memberships, sessions } from '../db/schema.js';
 import { parseCookies, SESSION_COOKIE } from '../auth/cookies.js';
+import { parseBearer } from '../auth/uploadTokens.js';
 
 export interface AuthUser {
   userId: string;
@@ -69,7 +70,5 @@ export function createContext(
   res: ServerResponse | null,
   previewsRoot?: string,
 ): TrpcContext {
-  const authorization = req.headers.authorization ?? '';
-  const apiToken = authorization.startsWith('Bearer ') ? authorization.slice('Bearer '.length) : null;
-  return { db, res, user: resolveUser(db, req), previewsRoot, apiToken };
+  return { db, res, user: resolveUser(db, req), previewsRoot, apiToken: parseBearer(req.headers) };
 }

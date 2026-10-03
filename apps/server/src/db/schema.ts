@@ -225,7 +225,9 @@ export const uploadTokens = sqliteTable('upload_tokens', {
   escopo: text('escopo', { enum: TOKEN_SCOPES }).notNull().default('previews'),
   // Sem FK de propósito: o drizzle-kit gera o ADD COLUMN sem o ON DELETE SET
   // NULL, e uma FK sem ação travaria a exclusão do usuário. Quem lê confere se
-  // o usuário ainda existe.
+  // o usuário ainda existe (e, no token de migração, se ainda é admin). A
+  // tabela e o `findActiveUploadToken` mantêm o nome antigo: renomear mexeria
+  // em migration, router e admin para nada.
   criadoPor: text('criado_por'),
   criadoEm: integer('criado_em', { mode: 'timestamp' })
     .notNull()

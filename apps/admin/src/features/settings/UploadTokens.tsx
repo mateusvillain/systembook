@@ -7,13 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { nativeSelectClass } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 type TokenRow = RouterOutput['uploadTokens']['list'][number];
 type TokenScope = TokenRow['escopo'];
 
-const selectClass =
-  'h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50';
 
 /** Rótulo e efeito da revogação de cada escopo (SYS-110). */
 const SCOPES: Record<TokenScope, { label: string; revokeEffect: string }> = {
@@ -223,7 +222,7 @@ function CreateTokenForm({ onCreated }: { onCreated: (r: { label: string; token:
         <Label htmlFor="token-scope">Scope</Label>
         <select
           id="token-scope"
-          className={selectClass}
+          className={nativeSelectClass}
           value={escopo}
           onChange={(event) => setEscopo(event.target.value as TokenScope)}
         >

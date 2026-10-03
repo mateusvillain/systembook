@@ -8,6 +8,7 @@ import type { TiptapDoc } from '../blocks/serialize.js';
 import { createDb, type Db } from '../db/client.js';
 import { ensureLandingPage, LANDING_PAGE_ID, LANDING_TAB_ID } from '../db/landing.js';
 import { runMigrations } from '../db/migrate.js';
+import { eq } from 'drizzle-orm';
 import { DEFAULT_MENU_ID, memberships, users } from '../db/schema.js';
 import { ensureDefaultStatusTags } from '../db/statusTags.js';
 import { appRouter } from './router.js';
@@ -66,6 +67,38 @@ describe('migration.export (SYS-110)', () => {
     await expect(callerFor(db, null, token).migration.export()).resolves.toMatchObject({ version: 1 });
     await caller.uploadTokens.revoke({ tokenId: id });
     await expect(callerFor(db, null, token).migration.export()).rejects.toMatchObject(unauthorized);
+  });
+
+  it('o token deixa de valer quando o criador é rebaixado a editor ou excluído', async () => {
+    const token = await migrationToken();
+    const exporting = () => callerFor(db, null, token).migration.export();
+    await expect(exporting()).resolves.toMatchObject({ version: 1 });
+
+    db.update(memberships).set({ role: 'editor' }).where(eq(memberships.userId, admin.userId)).run();
+    await expect(exporting()).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
+
+    db.update(memberships).set({ role: 'admin' }).where(eq(memberships.userId, admin.userId)).run();
+    await expect(exporting()).resolves.toMatchObject({ version: 1 });
+
+    db.delete(users).where(eq(users.id, admin.userId)).run();
+    await expect(exporting()).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
+  });
+
+  it('uma revisão de restore é a publicada, como na doc pública', async () => {
+    const caller = callerFor(db, admin);
+    const section = await caller.sections.create({ menuId: DEFAULT_MENU_ID, titulo: 'Guia' });
+    const page = await caller.pages.create({ sectionId: section.id, titulo: 'Início', slug: 'inicio' });
+    const body = await caller.tabs.getPrimary({ pageId: page.id });
+    await caller.blocks.saveDraft({ tabId: body.id, doc: paragraph('primeira') });
+    const first = await caller.pages.publish({ pageId: page.id });
+    await caller.blocks.saveDraft({ tabId: body.id, doc: paragraph('segunda') });
+    await caller.pages.publish({ pageId: page.id });
+    await caller.pages.restoreRevision({ pageId: page.id, revisionId: first.id });
+
+    const exported = await callerFor(db, null, await migrationToken()).migration.export();
+    const [only] = exported.menus.flatMap((m) => m.sections.flatMap((s) => s.pages));
+    expect(only!.snapshot.tabs[0]!.blocks[0]!.content).toEqual({ body: [{ type: 'text', text: 'primeira' }] });
+    expect(only!.snapshot).toEqual(await callerFor(db, null).revisions.getLatestPublished({ pageId: page.id }));
   });
 
   it('o token de migração não serve para o upload de previews', async () => {

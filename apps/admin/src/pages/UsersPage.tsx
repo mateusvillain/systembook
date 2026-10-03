@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { nativeSelectClass } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 
@@ -17,8 +18,6 @@ interface OutletCtx {
 
 type Role = 'admin' | 'editor';
 
-const selectClass =
-  'h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50';
 
 export function UsersPage() {
   const { me } = useOutletContext<OutletCtx>();
@@ -123,7 +122,7 @@ function UserRow({ user, isSelf, onChangeRole, onDeactivate }: UserRowProps) {
       <TableCell>{user.email}</TableCell>
       <TableCell>
         <select
-          className={selectClass}
+          className={nativeSelectClass}
           value={user.role}
           disabled={isSelf}
           onChange={(e) => onChangeRole(e.target.value as Role)}
@@ -261,7 +260,7 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
             <Label htmlFor="cu-role">Role</Label>
             <select
               id="cu-role"
-              className={selectClass}
+              className={nativeSelectClass}
               value={role}
               onChange={(e) => setRole(e.target.value as Role)}
               name="role"

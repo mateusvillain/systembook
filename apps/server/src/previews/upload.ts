@@ -6,7 +6,7 @@ import path from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import busboy from 'busboy';
 import * as tar from 'tar';
-import { findActiveUploadToken } from '../auth/uploadTokens.js';
+import { findActiveUploadToken, parseBearer } from '../auth/uploadTokens.js';
 import type { Db } from '../db/client.js';
 import { insertComponentPreview } from '../db/componentPreviews.js';
 import { isSafeSegment, resolvePreviewPath } from './paths.js';
@@ -48,8 +48,7 @@ export async function handlePreviewUpload(
   deps: PreviewUploadDeps,
 ): Promise<void> {
   // Auth primeiro, antes de tocar no corpo — token inválido não ganha parse.
-  const authHeader = req.headers.authorization ?? '';
-  const bearer = authHeader.startsWith('Bearer ') ? authHeader.slice('Bearer '.length) : null;
+  const bearer = parseBearer(req.headers);
   const token = bearer ? findActiveUploadToken(deps.db, bearer, 'previews') : null;
   if (!token) {
     sendJson(res, 401, { error: 'token de upload ausente, inválido ou revogado' });
