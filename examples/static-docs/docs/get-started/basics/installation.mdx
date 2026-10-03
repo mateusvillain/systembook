@@ -1,0 +1,45 @@
+---
+title: Instalação
+subtitle: Como adicionar o Acme DS a um projeto React.
+order: 1
+status: Stable
+---
+
+## Pacotes
+
+Instale o pacote com o gerenciador do seu projeto:
+
+```bash
+npm install @acme/design-system
+```
+
+Depois, importe os componentes direto do pacote:
+
+```tsx
+import { Button } from '@acme/design-system';
+
+export function Toolbar() {
+  return <Button variant="primary">Salvar</Button>;
+}
+```
+
+## Requisitos
+
+- React 19 ou mais recente
+- Um bundler com suporte a ESM:
+  - Vite
+  - Next.js
+  - Webpack 5
+- Node.js 22 para os scripts de build
+
+<Callout variant="warning">
+  O Acme DS não traz um reset de CSS. Se o seu projeto já usa um, **mantenha-o**; se não, inclua o `modern-normalize`.
+</Callout>
+
+<Callout>
+  Sem `variant`, o callout é `info`.
+</Callout>
+
+## Próximo passo
+
+Continue em [Contribuindo](./contributing.mdx), ou veja as [cores](../../foundation/color/palette.mdx#paleta-base).

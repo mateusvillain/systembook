@@ -5,8 +5,10 @@ localmente, os checks esperados antes de um PR, e as convenções do repositóri
 
 O SystemBook é um CMS self-hosted para documentação de design systems: monorepo
 pnpm com um servidor Node/tRPC + SQLite (`apps/server`), um painel admin React
-(`apps/admin`) e pacotes compartilhados (`packages/*`). Uma instância = um design
-system, distribuída como um único container Docker.
+(`apps/admin`), pacotes compartilhados (`packages/*`) e exemplos (`examples/*`:
+o `examples/static-docs` é o projeto de referência do modo estático, buildado no
+CI e no `pnpm build` da raiz, que por isso também gera o site dele). Uma
+instância = um design system, distribuída como um único container Docker.
 
 ## Pré-requisitos
 

@@ -1,0 +1,41 @@
+---
+title: Contribuindo
+order: 2
+---
+
+## Fluxo de mudança
+
+3. Abra uma issue descrevendo o problema.
+4. Crie uma branch a partir da `main`.
+5. Abra o PR com a documentação atualizada junto do código.
+
+A numeração acima começa em 3 de propósito: listas ordenadas preservam o número inicial. A validação do PR está [logo abaixo](#como-a-documentação-é-validada).
+
+A mensagem de commit segue o Conventional Commits:
+
+```
+feat(button): variante danger
+```
+
+Itens de lista aceitam blocos dentro deles:
+
+- Confira se a cor nova está na paleta:
+
+  ![A paleta base](../../foundation/color/img/palette.svg)
+
+- Mostre o componente em uso:
+
+  <ComponentEmbed component="Button" variant="secondary" />
+
+## Como a documentação é validada
+
+Todo PR roda `systembook check`, que valida o conteúdo, os links entre páginas, as imagens e os previews:
+
+```yaml
+- run: pnpm install --frozen-lockfile
+- run: pnpm exec systembook check
+```
+
+<Callout variant="tip">
+  Rode `systembook dev` localmente: salvar um arquivo recarrega o navegador, e erros aparecem num overlay.
+</Callout>

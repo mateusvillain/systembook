@@ -1,0 +1,24 @@
+---
+title: Uso
+order: 1
+---
+
+## Pares aprovados
+
+| Texto | Fundo | Contraste |
+| --- | --- | --- |
+| `--acme-neutral` | `--acme-surface` | 12,6:1 |
+| branco | `--acme-primary` | 6,3:1 |
+| branco | `--acme-danger` | 4,8:1 |
+
+<DosDonts variant="do" title="Use o token do papel">
+  `color: var(--acme-danger)` continua certo quando o tema muda.
+</DosDonts>
+
+<DosDonts variant="dont" title="Não fixe o hexadecimal">
+  `color: #dc2626` fica errado no tema escuro.
+</DosDonts>
+
+<DosDonts variant="dont">
+  Um do/don't também pode ficar sem título.
+</DosDonts>

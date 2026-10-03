@@ -19,6 +19,9 @@
   "bugs": "https://github.com/mateusvillain/systembook/issues",
   "type": "module",
   "types": "./src/index.ts",
+  "bin": {
+    "systembook": "./bin/systembook.mjs"
+  },
   "exports": {
     ".": {
       "types": "./src/index.ts",

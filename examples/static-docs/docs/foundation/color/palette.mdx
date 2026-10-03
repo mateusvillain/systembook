@@ -1,0 +1,26 @@
+---
+title: Paleta
+subtitle: As cores base do sistema e quando usar cada uma.
+order: 1
+status: Stable
+---
+
+## Paleta base
+
+![As cinco cores da paleta base](./img/palette.svg "Paleta base do Acme DS")
+
+| Cor | Token | Uso |
+| --- | --- | --- |
+| Índigo | `--acme-primary` | Ação principal, links e foco |
+| Ardósia | `--acme-neutral` | Texto, bordas e superfícies |
+| Verde | `--acme-success` | Confirmação e estados positivos |
+| Âmbar | `--acme-warning` | Atenção, sem bloquear |
+| Vermelho | `--acme-danger` | Erros e ações **destrutivas** |
+
+## Contraste
+
+Todo texto sobre cor precisa de contraste mínimo de *4,5:1* (WCAG AA). Os pares aprovados estão em [Tokens › Uso](./tokens/usage.mdx).
+
+<Callout variant="tip">
+  Prefira sempre o token ao valor hexadecimal: o tema escuro troca o valor, não o nome.
+</Callout>
