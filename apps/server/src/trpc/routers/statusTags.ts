@@ -6,7 +6,7 @@ import { protectedProcedure, router } from '../init.js';
 import { assertCompleteReorder } from './reorder.js';
 
 // Cor no formato hex `#RRGGBB` — o seletor do painel e o seed usam esse formato.
-const HEX_COLOR = z
+export const HEX_COLOR = z
   .string()
   .regex(/^#[0-9a-fA-F]{6}$/, 'Color must be a hex #RRGGBB');
 

@@ -20,6 +20,7 @@ resolvível a partir do seu código.
 | `build` | Gera o site estático do modo estático em `outDir` (ver abaixo) |
 | `check` | Valida conteúdo, config e referências sem gerar o site (para PR) |
 | `export` | Converte uma instância do modo CMS num projeto do modo estático (ver abaixo) |
+| `import` | Envia o projeto do modo estático para uma instância CMS, que cria e publica tudo (ver abaixo) |
 | `previews discover` | Lista os `*.preview.tsx` encontrados e os que falharam na validação |
 | `previews generate` | Escreve as entradas sintéticas em `.systembook/entries` |
 | `previews build` | `generate` + build Vite, produzindo `.systembook/dist/` e `manifest.json` |
@@ -203,6 +204,31 @@ npx systembook check --root docs-estatico
 Vai só o conteúdo **publicado**. As páginas nunca publicadas são listadas no
 fim, e o que precisou ser simplificado para caber no formato de arquivo sai
 como aviso, com o arquivo. O mapeamento completo está em
+[`docs/migration.md`](https://github.com/mateusvillain/systembook/blob/main/docs/migration.md).
+
+## Indo para o modo CMS: `systembook import`
+
+Envia o projeto para uma instância CMS: ela cria os menus, as seções, as
+páginas e as tabs, guarda as imagens do projeto e **publica** tudo, numa
+transação — ou entra tudo, ou nada. As revisões ficam no nome do admin que
+gerou o token.
+
+```bash
+# Token de escopo "Migration", gerado por um admin em Settings → Tokens.
+SYSTEMBOOK_TOKEN=… npx systembook import --to https://docs.acme.dev
+```
+
+| Opção | O que faz |
+|---|---|
+| `--to <url>` | URL da instância (obrigatória) |
+| `--token <token>` | Token de migração; sem ela, vale a variável `SYSTEMBOOK_TOKEN` |
+| `--root <dir>` | Raiz do projeto, onde está a config (default: o diretório atual) |
+| `--overwrite` | Substitui as páginas (e a landing) que já existem na instância, em vez de falhar |
+
+O conteúdo passa pelas mesmas validações do `check` antes de sair da máquina.
+Se uma página do projeto já existe na instância (mesmo menu, seção e slug), o
+import falha listando todas, sem gravar nada; com `--overwrite`, elas são
+substituídas. Nada é renomeado sozinho. Detalhes em
 [`docs/migration.md`](https://github.com/mateusvillain/systembook/blob/main/docs/migration.md).
 
 ## Vindo do `@systembook/connector`

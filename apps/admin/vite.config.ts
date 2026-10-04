@@ -20,6 +20,8 @@ export default defineConfig({
       // Endpoint de upload de preview (TASK-43) — permite testar o publish de
       // artefatos apontando para o dev server pela mesma origin do painel.
       '/api/previews': `http://localhost:${process.env.PORT ?? 3000}`,
+      // Imagens do conteúdo importado (SYS-112) — `src` dos blocos de imagem.
+      '/api/media': `http://localhost:${process.env.PORT ?? 3000}`,
     },
   },
 });

@@ -50,7 +50,7 @@ export function buildPageSnapshot(db: Db | DbTx, pageId: string): PageSnapshot {
 
 /** Ponto de escrita em `revisions` usado pelo publish (TASK-34). */
 export function createRevision(
-  db: Db,
+  db: Db | DbTx,
   params: { pageId: string; autorId: string; mensagem?: string },
 ): RevisionRow {
   const snapshot = buildPageSnapshot(db, params.pageId);
