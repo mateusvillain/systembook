@@ -1,7 +1,7 @@
 import { eq, max, ne } from 'drizzle-orm';
 import type { ExportedFile, ImportResult, InstanceImport } from '@systembook/schema';
 import { tiptapDocToBlocks, type TiptapDoc, type TiptapNode } from '../blocks/serialize.js';
-import { ALLOWED_MEDIA_MIMES, MAX_MEDIA_BYTES, storeMedia } from '../media/serve.js';
+import { ALLOWED_MEDIA_MIMES, MAX_MEDIA_BYTES, storeMedia } from './media.js';
 import { contentMatchesMime } from '../media/signature.js';
 import { replaceBlocksForTabInTx } from './blocks.js';
 import type { Db, DbTx } from './client.js';
@@ -88,12 +88,13 @@ function rewriteDoc(doc: TiptapDoc, refs: { images: Map<string, string>; tabIds:
   const src = (value: string) => refs.images.get(value) ?? value;
   const href = (value: string) => {
     if (!value.startsWith(PUBLIC_PREFIX)) return value;
-    const [pathname = '', hash] = value.split('#', 2) as [string, string | undefined];
-    const segments = pathname.slice(PUBLIC_PREFIX.length).split('/');
+    const cut = value.search(/[?#]/);
+    const [pathname, suffix] = cut === -1 ? [value, ''] : [value.slice(0, cut), value.slice(cut)];
+    const segments = pathname.slice(PUBLIC_PREFIX.length).split('/').filter(Boolean);
     if (segments.length !== 4) return value;
     const tabId = refs.tabIds.get(segments.join('/'));
     if (!tabId) return value;
-    return `${PUBLIC_PREFIX}${[...segments.slice(0, 3), tabId].join('/')}${hash ? `#${hash}` : ''}`;
+    return `${PUBLIC_PREFIX}${[...segments.slice(0, 3), tabId].join('/')}${suffix}`;
   };
   const visit = (node: TiptapNode): TiptapNode => {
     const next: TiptapNode = { ...node };
@@ -118,7 +119,11 @@ function rewriteDoc(doc: TiptapDoc, refs: { images: Map<string, string>; tabIds:
   return { type: 'doc', content: (doc.content ?? []).map(visit) };
 }
 
-function nextOrdem(tx: DbTx, table: typeof menus | typeof sections | typeof pages, where?: ReturnType<typeof eq>) {
+function nextOrdem(
+  tx: DbTx,
+  table: typeof menus | typeof sections | typeof pages | typeof statusTags,
+  where?: ReturnType<typeof eq>,
+) {
   const row = tx.select({ value: max(table.ordem) }).from(table).where(where).get();
   return (row?.value ?? -1) + 1;
 }
@@ -126,17 +131,33 @@ function nextOrdem(tx: DbTx, table: typeof menus | typeof sections | typeof page
 export function importInstance(db: Db, input: InstanceImport, autorId: string): ImportResult {
   const { images, problems } = validateFiles(input);
 
-  // ---- slugs de seção: únicos na instância inteira ----
-  const importedSections = new Map<string, string>();
+  // ---- slugs repetidos no próprio projeto ----
+  // O de seção é único na instância inteira no CMS (no modo estático, só
+  // dentro do menu); os demais, no seu nível, como nos dois modos.
+  const repeated = (slugs: string[], what: (slug: string) => string) => {
+    const seen = new Set<string>();
+    for (const slug of slugs) {
+      if (seen.has(slug)) problems.push(what(slug));
+      seen.add(slug);
+    }
+  };
+  repeated(input.menus.map((menu) => menu.slug), (slug) => `o menu "${slug}" aparece mais de uma vez.`);
+  const sectionMenu = new Map<string, string>();
   for (const menu of input.menus) {
     for (const section of menu.sections) {
-      const other = importedSections.get(section.slug);
-      if (other !== undefined && other !== menu.slug) {
+      const other = sectionMenu.get(section.slug);
+      if (other === menu.slug) problems.push(`a seção "${menu.slug}/${section.slug}" aparece mais de uma vez.`);
+      else if (other !== undefined) {
         problems.push(
           `a seção "${section.slug}" aparece nos menus "${other}" e "${menu.slug}" — no CMS o slug de seção é único na instância; renomeie uma delas.`,
         );
       }
-      importedSections.set(section.slug, menu.slug);
+      sectionMenu.set(section.slug, menu.slug);
+      const at = `${menu.slug}/${section.slug}`;
+      repeated(section.pages.map((page) => page.slug), (slug) => `a página "${at}/${slug}" aparece mais de uma vez.`);
+      for (const page of section.pages) {
+        repeated(page.tabs.map((tab) => tab.slug), (slug) => `a tab "${at}/${page.slug}/${slug}" aparece mais de uma vez.`);
+      }
     }
   }
   if (problems.length) throw new ImportRejectedError('invalid', problems);
@@ -169,14 +190,14 @@ export function importInstance(db: Db, input: InstanceImport, autorId: string): 
       .map((page) => [`${page.sectionId}/${page.slug}`, page.id]),
   );
 
-  const hard: string[] = [];
+  const unresolvable: string[] = [];
   const pageConflicts: string[] = [];
   for (const menu of input.menus) {
     for (const section of menu.sections) {
       const existing = existingSections.get(section.slug);
       if (!existing) continue;
       if (existing.menuId !== existingMenus.get(menu.slug)) {
-        hard.push(
+        unresolvable.push(
           `a seção "${section.slug}" já existe na instância, no menu "${menuSlugById.get(existing.menuId) ?? existing.menuId}" — no CMS o slug de seção é único; renomeie a seção do projeto ou a da instância.`,
         );
         continue;
@@ -194,8 +215,9 @@ export function importInstance(db: Db, input: InstanceImport, autorId: string): 
       undefined;
   if (landingPublished) pageConflicts.push('a landing (/docs) já foi publicada.');
 
-  if (hard.length || (pageConflicts.length && !input.overwrite)) {
-    throw new ImportRejectedError('conflict', [...hard, ...(input.overwrite ? [] : pageConflicts)]);
+  // Seção em outro menu: `overwrite` não resolve, porque substitui páginas, não move seções.
+  if (unresolvable.length || (pageConflicts.length && !input.overwrite)) {
+    throw new ImportRejectedError('conflict', [...unresolvable, ...(input.overwrite ? [] : pageConflicts)]);
   }
 
   // Instância sem nenhuma página: o nome e os logos do projeto valem.
@@ -229,12 +251,16 @@ export function importInstance(db: Db, input: InstanceImport, autorId: string): 
         .where(eq(settings.id, SETTINGS_ID))
         .run();
     }
+    // Tags que faltam são criadas; com `overwrite`, as de mesmo nome ficam com a cor da config.
     const tagIds = new Map(tx.select().from(statusTags).all().map((tag) => [tag.titulo.trim(), tag.id]));
-    let tagOrdem = (tx.select({ value: max(statusTags.ordem) }).from(statusTags).get()?.value ?? -1) + 1;
     for (const tag of input.settings.statusTags) {
       const titulo = tag.titulo.trim();
-      if (tagIds.has(titulo)) continue;
-      const row = tx.insert(statusTags).values({ titulo, cor: tag.cor, ordem: tagOrdem++ }).returning().get();
+      const existing = tagIds.get(titulo);
+      if (existing) {
+        if (input.overwrite) tx.update(statusTags).set({ cor: tag.cor }).where(eq(statusTags.id, existing)).run();
+        continue;
+      }
+      const row = tx.insert(statusTags).values({ titulo, cor: tag.cor, ordem: nextOrdem(tx, statusTags) }).returning().get();
       tagIds.set(titulo, row.id);
     }
 
@@ -251,6 +277,7 @@ export function importInstance(db: Db, input: InstanceImport, autorId: string): 
 
     for (const menu of input.menus) {
       let menuId = existingMenus.get(menu.slug);
+      if (menuId && input.overwrite) tx.update(menus).set({ titulo: menu.titulo }).where(eq(menus.id, menuId)).run();
       if (!menuId) {
         menuId = tx
           .insert(menus)
@@ -262,6 +289,9 @@ export function importInstance(db: Db, input: InstanceImport, autorId: string): 
 
       for (const section of menu.sections) {
         let sectionId = existingSections.get(section.slug)?.id;
+        if (sectionId && input.overwrite) {
+          tx.update(sections).set({ titulo: section.titulo }).where(eq(sections.id, sectionId)).run();
+        }
         if (!sectionId) {
           sectionId = tx
             .insert(sections)
@@ -284,13 +314,17 @@ export function importInstance(db: Db, input: InstanceImport, autorId: string): 
           };
           let pageId = existingPages.get(`${sectionId}/${page.slug}`);
           let primaryTabId: string | undefined;
+          /** Tabs de usuário da página substituída, por título (as que sobrarem são apagadas). */
+          const reusable = new Map<string, string[]>();
           if (pageId) {
             // Substituição (`overwrite`): a página mantém id, posição e
-            // histórico; as tabs de usuário dão lugar às do projeto.
+            // histórico. As tabs passam a ser as do projeto, mas a de mesmo
+            // título mantém o id — e os links de outras páginas para ela.
             tx.update(pages).set(fields).where(eq(pages.id, pageId)).run();
-            const pageTabs = tx.select().from(tabs).where(eq(tabs.pageId, pageId)).all();
-            primaryTabId = pageTabs.find((tab) => tab.isPrimary)?.id;
-            for (const tab of pageTabs) if (tab.id !== primaryTabId) tx.delete(tabs).where(eq(tabs.id, tab.id)).run();
+            for (const tab of tx.select().from(tabs).where(eq(tabs.pageId, pageId)).orderBy(tabs.ordem).all()) {
+              if (tab.isPrimary) primaryTabId ??= tab.id;
+              else reusable.set(tab.titulo, [...(reusable.get(tab.titulo) ?? []), tab.id]);
+            }
             result.replaced++;
           } else {
             pageId = tx
@@ -308,14 +342,19 @@ export function importInstance(db: Db, input: InstanceImport, autorId: string): 
 
           const docs = [{ tabId: primaryTabId, doc: page.body as TiptapDoc }];
           page.tabs.forEach((tab, i) => {
-            const tabId = tx
-              .insert(tabs)
-              .values({ pageId: pageId!, titulo: tab.titulo, ordem: i + 1 })
-              .returning({ id: tabs.id })
-              .get().id;
+            const kept = reusable.get(tab.titulo)?.shift();
+            if (kept) tx.update(tabs).set({ ordem: i + 1 }).where(eq(tabs.id, kept)).run();
+            const tabId =
+              kept ??
+              tx
+                .insert(tabs)
+                .values({ pageId: pageId!, titulo: tab.titulo, ordem: i + 1 })
+                .returning({ id: tabs.id })
+                .get().id;
             tabIds.set(`${menu.slug}/${section.slug}/${page.slug}/${tab.slug}`, tabId);
             docs.push({ tabId, doc: tab.doc as TiptapDoc });
           });
+          for (const tabId of [...reusable.values()].flat()) tx.delete(tabs).where(eq(tabs.id, tabId)).run();
           toPublish.push({ pageId, docs });
         }
       }

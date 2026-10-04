@@ -133,11 +133,19 @@ export async function buildImportPayload(
     })),
   }));
 
+  const landing = site.data.landing ? docOf(site.data.landing.tabs[0]) : null;
+  const embeds = (JSON.stringify([landing, menus]).match(/"type":"componentEmbed"/g) ?? []).length;
+  if (embeds) {
+    warnings.push(
+      `o conteúdo tem ${embeds} embed(s) de componente: os previews não vão no import e aparecem como "no preview published" até o CI de previews enviá-los para a instância (docs/ci-example.md).`,
+    );
+  }
+
   return {
     payload: {
       version: 1,
       settings,
-      landing: site.data.landing ? docOf(site.data.landing.tabs[0]) : null,
+      landing,
       menus,
       images: [...images.values()],
       overwrite,

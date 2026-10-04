@@ -237,6 +237,58 @@ describe('migration.import (SYS-112)', () => {
     });
   });
 
+  it('slugs repetidos no mesmo nível do projeto são BAD_REQUEST, sem chegar ao banco', async () => {
+    const input = project();
+    const section = input.menus[0]!.sections[0]!;
+    input.menus[0]!.sections.push({ ...section });
+    section.pages.push({ ...section.pages[0]! });
+    input.menus.push({ ...input.menus[0]!, sections: [] });
+    const error = await importing(input).catch((e: unknown) => e);
+    expect(error).toMatchObject({ code: 'BAD_REQUEST' });
+    expect((error as Error).message.split('\n')).toEqual([
+      'o menu "componentes" aparece mais de uma vez.',
+      'a página "componentes/acoes/button" aparece mais de uma vez.',
+      'a seção "componentes/acoes" aparece mais de uma vez.',
+      'a página "componentes/acoes/button" aparece mais de uma vez.',
+    ]);
+  });
+
+  it('com overwrite, a tab de mesmo título mantém o id; título do menu e cor da tag seguem o projeto', async () => {
+    await importing(project());
+    const usageId = db.select().from(tabs).where(eq(tabs.titulo, 'Usage')).get()!.id;
+
+    const next = project({ overwrite: true });
+    next.menus[0]!.titulo = 'Components';
+    next.settings.statusTags[0]!.cor = '#000000';
+    next.menus[0]!.sections[0]!.pages[0]!.tabs = [
+      { titulo: 'Code', slug: 'code', doc: paragraph('código') },
+      { titulo: 'Usage', slug: 'usage', doc: paragraph('uso novo') },
+    ];
+    await importing(next);
+
+    const page = await callerFor(db, null).pages.getPublishedBySlug({
+      menuSlug: 'componentes',
+      sectionSlug: 'acoes',
+      pageSlug: 'button',
+    });
+    const [, code, usage] = page!.snapshot!.tabs;
+    expect([code!.titulo, usage!.titulo]).toEqual(['Code', 'Usage']);
+    expect(usage!.tabId).toBe(usageId);
+    const nav = await callerFor(db, null).sections.listPublic();
+    expect(nav.find((menu) => menu.slug === 'componentes')!.titulo).toBe('Components');
+    const tags = await callerFor(db, admin).statusTags.list();
+    expect(tags.find((tag) => tag.titulo === 'Stable')!.cor).toBe('#000000');
+  });
+
+  it('links para tab com query ou barra final também ganham o id da tab', async () => {
+    const input = project({ landing: link('uso', '/docs/componentes/acoes/button/usage/?v=1#x') });
+    await importing(input);
+    const usageId = db.select().from(tabs).where(eq(tabs.titulo, 'Usage')).get()!.id;
+    const landing = await callerFor(db, null).landing.get();
+    const body = landing.snapshot!.tabs[0]!.blocks[0]!.content as { body: { marks: { attrs: { href: string } }[] }[] };
+    expect(body.body[0]!.marks[0]!.attrs.href).toBe(`/docs/componentes/acoes/button/${usageId}?v=1#x`);
+  });
+
   it('imagem cujo conteúdo não bate com o tipo é BAD_REQUEST', async () => {
     const input = project({
       images: [{ ref: 'componentes/acoes/button.png', mime: 'image/png', base64: Buffer.from('<html>').toString('base64') }],

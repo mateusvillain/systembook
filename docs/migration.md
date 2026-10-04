@@ -116,14 +116,19 @@ O que o import faz, numa transação só (ou entra tudo, ou nada):
 ### Slugs que já existem
 
 Menus e seções com o mesmo slug de um que já existe na instância são
-reaproveitados: o conteúdo entra neles. Para páginas, a regra é:
+reaproveitados: o conteúdo entra neles. Slugs repetidos no próprio projeto
+(no mesmo nível) fazem o import falhar antes de gravar qualquer coisa. Para páginas, a regra é:
 
 - **por padrão, o import falha** se alguma página do projeto já existe (mesmo
   menu, seção e slug) ou se a landing da instância já foi publicada. A
   mensagem lista todos os conflitos de uma vez e nada é gravado;
 - com **`--overwrite`**, essas páginas são substituídas: mantêm o endereço e o
-  histórico, ganham o título, o conteúdo e as tabs do projeto (as tabs que só
-  existiam na instância somem) e uma revisão nova;
+  histórico, ganham o título, o conteúdo e as tabs do projeto e uma revisão
+  nova. Uma tab com o mesmo título de uma que já existia mantém o endereço
+  (links de outras páginas para ela continuam valendo); as tabs que só
+  existiam na instância somem, e links para elas quebram. O `--overwrite`
+  também aplica o título dos menus e seções reaproveitados, a cor das status
+  tags de mesmo nome e o nome e os logos da config;
 - nada é renomeado automaticamente.
 
 Um caso não tem `--overwrite` que resolva: no CMS o slug de **seção** é único

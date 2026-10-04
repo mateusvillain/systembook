@@ -119,6 +119,14 @@ describe('systembook import', { timeout: 60_000 }, () => {
     ]);
   });
 
+  it('avisa que os previews dos embeds de componente ficam por conta do CI', async () => {
+    const root = project({
+      'docs/componentes/acoes/link.mdx': '---\ntitle: Link\n---\n\n<ComponentEmbed component="Link" variant="default" />\n',
+    });
+    const { warnings } = await buildImportPayload(await loadConfig(root));
+    expect(warnings).toEqual([expect.stringContaining('1 embed(s) de componente')]);
+  });
+
   it('envia para a instância com o token e devolve o resumo', async () => {
     const { fetch, calls } = fakeInstance(OK);
     const result = await importProject(await loadConfig(project()), { to: `${ORIGIN}/`, token: 'tok', overwrite: true, fetch });

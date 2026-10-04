@@ -3,9 +3,10 @@ import { z } from 'zod';
 import type { ImportResult, InstanceExport, InstanceImport } from '@systembook/schema';
 import { UnknownNodeTypeError } from '../../blocks/serialize.js';
 import { exportInstance } from '../../db/export.js';
+import { isUniqueViolation } from '../../db/errors.js';
 import { importInstance, ImportRejectedError } from '../../db/import.js';
 import { MAX_LOGO_BYTES } from '../../db/settings.js';
-import { MAX_MEDIA_BYTES } from '../../media/serve.js';
+import { MAX_MEDIA_BYTES } from '../../db/media.js';
 import { migrationProcedure, router } from '../init.js';
 import { slugSchema } from './pages.js';
 import { HEX_COLOR } from './statusTags.js';
@@ -71,6 +72,8 @@ export const migrationRouter = router({
         throw new TRPCError({ code: error.kind === 'conflict' ? 'CONFLICT' : 'BAD_REQUEST', message: error.message });
       }
       if (error instanceof UnknownNodeTypeError) throw new TRPCError({ code: 'BAD_REQUEST', message: error.message });
+      // As checagens prévias cobrem os slugs; isto é a rede de segurança.
+      if (isUniqueViolation(error)) throw new TRPCError({ code: 'CONFLICT', message: 'A slug in the project already exists in the instance' });
       throw error;
     }
   }),
