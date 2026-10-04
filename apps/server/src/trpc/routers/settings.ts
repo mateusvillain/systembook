@@ -10,6 +10,7 @@ import {
   type LogoVariant,
 } from '../../db/settings.js';
 import { SETTINGS_ID, settings } from '../../db/schema.js';
+import { contentMatchesMime } from '../../media/signature.js';
 import { adminProcedure, publicProcedure, router } from '../init.js';
 
 /** Prefixo das URLs de logo servidas fora do tRPC (binário, não JSON). */
@@ -19,24 +20,6 @@ const variantSchema = z.enum(['light', 'dark']);
 
 function logoUrl(variant: LogoVariant, hash: string | null): string | null {
   return hash ? `${LOGO_URL_PREFIX}${variant}/${hash}` : null;
-}
-
-/**
- * O `mime` declarado pelo cliente é o que voltamos no `Content-Type` do
- * serving, então confiar nele cegamente deixaria alguém servir HTML como se
- * fosse imagem, na nossa origem. A checagem de assinatura amarra o tipo
- * declarado ao conteúdo real.
- */
-function contentMatchesMime(bytes: Buffer, mime: string): boolean {
-  if (mime === 'image/png') {
-    return bytes.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
-  }
-  if (mime === 'image/jpeg') {
-    return bytes.length > 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
-  }
-  // SVG é texto: exige que o primeiro elemento seja `<svg` ou um prólogo XML.
-  const head = bytes.subarray(0, 1024).toString('utf8').trimStart().toLowerCase();
-  return head.startsWith('<svg') || head.startsWith('<?xml') || head.startsWith('<!doctype svg');
 }
 
 /**

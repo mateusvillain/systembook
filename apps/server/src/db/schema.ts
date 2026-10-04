@@ -303,6 +303,22 @@ export const settings = sqliteTable('settings', {
 });
 
 /**
+ * Imagens do conteúdo (SYS-112): até aqui o CMS só guardava URLs, e o import
+ * de um projeto do modo estático traz os arquivos junto. BLOB no banco pelo
+ * mesmo motivo do logo (o `.db` fica autocontido e o backup leva tudo), com o
+ * hash do conteúdo como id: a URL é imutável e o mesmo arquivo importado duas
+ * vezes vira uma linha só.
+ */
+export const media = sqliteTable('media', {
+  hash: text('hash').primaryKey(),
+  mime: text('mime').notNull(),
+  bytes: blob('bytes', { mode: 'buffer' }).notNull(),
+  criadoEm: integer('criado_em', { mode: 'timestamp' })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
+/**
  * O que originou a revisão (SYS-69). Era derivado da `mensagem` no cliente
  * ("começa com 'Restored from…'"), o que é frágil por construção: a mensagem
  * do publish é **texto livre do usuário**, então bastava alguém escrever a

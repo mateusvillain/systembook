@@ -1,4 +1,4 @@
-import type { PageSnapshot } from './block.js';
+import type { PageSnapshot, TiptapJson } from './block.js';
 
 /**
  * Contrato do export de uma instância CMS (SYS-110), consumido pelo
@@ -60,4 +60,75 @@ export interface InstanceExport {
   /** Menus e seções em ordem; só com páginas publicadas (podem ficar vazios). */
   menus: ExportedMenu[];
   unpublished: UnpublishedPageRef[];
+}
+
+/**
+ * Contrato do import de um projeto do modo estático numa instância CMS
+ * (SYS-112), montado pelo `systembook import`. A árvore já vem validada pelo
+ * `check`; cada corpo/tab é um doc Tiptap.
+ *
+ * Endereços no conteúdo:
+ * - links entre páginas vêm como `/docs/<menu>/<seção>/<página>[/<slug da tab>]`
+ *   (a landing é `/docs`); a instância troca o slug da tab pelo id que criou;
+ * - imagens do projeto vêm com o `src` igual ao `ref` de uma entrada de
+ *   `images`, que a instância guarda e serve.
+ */
+export interface ImportedTab {
+  titulo: string;
+  slug: string;
+  doc: TiptapJson;
+}
+
+export interface ImportedPage {
+  titulo: string;
+  slug: string;
+  subtitulo: string | null;
+  /** `titulo` de uma das `statusTags`, ou `null`. */
+  status: string | null;
+  /** Corpo da página (a tab primária no CMS). */
+  body: TiptapJson;
+  tabs: ImportedTab[];
+}
+
+export interface ImportedSection {
+  titulo: string;
+  slug: string;
+  pages: ImportedPage[];
+}
+
+export interface ImportedMenu {
+  titulo: string;
+  slug: string;
+  sections: ImportedSection[];
+}
+
+export interface ImportedImage extends ExportedFile {
+  /** Como o `src` aparece no conteúdo. */
+  ref: string;
+}
+
+export interface InstanceImport {
+  version: 1;
+  settings: {
+    nome: string;
+    logo: ExportedFile | null;
+    logoDark: ExportedFile | null;
+    statusTags: { titulo: string; cor: string }[];
+  };
+  /** Corpo da landing, ou `null` (a instância mantém a dela). */
+  landing: TiptapJson | null;
+  /** Menus, seções e páginas na ordem do projeto. */
+  menus: ImportedMenu[];
+  images: ImportedImage[];
+  /** Substitui páginas (e a landing) que já existem, em vez de falhar. */
+  overwrite: boolean;
+}
+
+export interface ImportResult {
+  created: { menus: number; sections: number; pages: number };
+  /** Páginas que já existiam e foram substituídas (só com `overwrite`). */
+  replaced: number;
+  images: number;
+  /** Nome e logos aplicados (instância vazia ou `overwrite`). */
+  settingsApplied: boolean;
 }

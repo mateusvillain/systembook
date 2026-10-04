@@ -7,6 +7,7 @@ import { checkSite } from './check.js';
 import { ConfigError, loadConfig, withBase } from './config.js';
 import { startDevServer } from './dev/index.js';
 import { ExportError, exportProject } from './export/index.js';
+import { ImportError, importProject } from './import/index.js';
 import { initProject, PAGES_WORKFLOW_FILE } from './init.js';
 
 /**
@@ -153,6 +154,37 @@ export function createProgram(): Command {
       } catch (error) {
         if (!(error instanceof ExportError)) throw error;
         reportProblems([error.message]);
+      }
+    });
+
+  program
+    .command('import')
+    .description('envia o projeto do modo estático para uma instância CMS, que cria tudo e publica')
+    .requiredOption('--to <url>', 'URL da instância CMS')
+    .option('--token <token>', 'token de escopo Migration (ou a variável SYSTEMBOOK_TOKEN)')
+    .option('--root <dir>', 'raiz do projeto, onde está a config', process.cwd())
+    .option('--overwrite', 'substitui as páginas (e a landing) que já existem na instância, em vez de falhar')
+    .action(async (options: { to: string; token?: string; root: string; overwrite?: boolean }) => {
+      const token = options.token ?? process.env.SYSTEMBOOK_TOKEN;
+      if (!token) {
+        reportProblems(['informe o token com --token ou na variável SYSTEMBOOK_TOKEN.']);
+        return;
+      }
+      const config = await loadProjectConfig(options.root);
+      if (!config) return;
+      try {
+        const result = await importProject(config, { to: options.to, token, overwrite: options.overwrite });
+        for (const warning of result.warnings) console.warn(`aviso: ${warning}`);
+        const { menus, sections, pages } = result.created;
+        console.log(
+          `Importado em ${options.to} — criado(s): ${menus} menu(s), ${sections} seção(ões), ${pages} página(s); ${result.replaced} página(s) substituída(s); ${result.images} imagem(ns). Tudo publicado.`,
+        );
+        if (!result.settingsApplied) {
+          console.log('O nome e os logos da config não foram aplicados: a instância já tinha conteúdo (use --overwrite para aplicá-los).');
+        }
+      } catch (error) {
+        if (!(error instanceof ImportError)) throw error;
+        reportProblems(error.problems);
       }
     });
 

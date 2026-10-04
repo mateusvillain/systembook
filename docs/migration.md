@@ -5,9 +5,8 @@ Os dois modos do SystemBook usam o mesmo modelo de conteúdo
 pública. Trocar de modo é, portanto, mover o conteúdo de um lugar para o outro.
 Não há conversão de formato.
 
-> **Status:** CMS → estático é automático com `systembook export`. Estático →
-> CMS (`systembook import`) está planejado; até lá, essa direção é manual, com o
-> mapeamento abaixo.
+> **Status:** as duas direções são automáticas: CMS → estático com
+> `systembook export`, estático → CMS com `systembook import`.
 
 ## Como cada coisa corresponde
 
@@ -84,15 +83,51 @@ simplifica para o equivalente mais próximo e avisa cada uma, com o arquivo:
 
 ## Estático → CMS
 
-1. Suba uma instância ([guia de setup](./setup.md)).
-2. Configure nome, logos e status tags em Settings.
-3. Crie menus, seções e páginas na ordem da árvore de `docs/`, recrie o conteúdo de
-   cada arquivo no editor e publique.
-4. Configure o CI de previews ([`ci-example.md`](./ci-example.md)): os mesmos
-   `*.preview.tsx` passam a ser enviados para a instância.
+1. Suba uma instância ([guia de setup](./setup.md)) e, como admin, gere um
+   token de escopo **Migration** em Settings → Tokens. Ele escreve o conteúdo
+   inteiro da instância: não o coloque no CI, e revogue-o depois da migração.
+2. Rode o import na raiz do projeto:
 
-Quase todo conteúdo do modo estático cabe no CMS, com uma exceção: **imagem
-como bloco**. O CMS renderiza o bloco, mas o editor ainda não tem como inserir
-uma imagem solta nem hospeda o arquivo. Na migração manual, troque a imagem por
-um texto ou use-a como cover de um `<DosDonts>` com a URL de onde ela estiver
-publicada.
+   ```bash
+   SYSTEMBOOK_TOKEN=… npx @systembook/cli import --to https://docs.acme.dev
+   ```
+
+   O conteúdo passa pelas validações do `systembook check` antes de ser
+   enviado; com erro, nada sai da máquina.
+3. Configure o CI de previews ([`ci-example.md`](./ci-example.md)): os mesmos
+   `*.preview.tsx` passam a ser enviados para a instância. O import não leva
+   os previews — até o primeiro envio do CI, os embeds mostram "no preview
+   published".
+
+O que o import faz, numa transação só (ou entra tudo, ou nada):
+
+- cria os menus, as seções, as páginas e as tabs do projeto, na ordem dele, e
+  **publica** cada página e a landing. As revisões ficam no nome do admin que
+  gerou o token, com a mensagem "Imported from static mode";
+- guarda as imagens do projeto na instância (servidas em `/api/media/…`) e
+  aponta os blocos para elas. Imagens por URL continuam na URL;
+- mantém os links entre páginas e tabs funcionando com os endereços da
+  instância;
+- cria as status tags da config que a instância ainda não tem (pelo nome);
+- aplica o nome e os logos da config **se a instância não tem nenhuma
+  página** (ou com `--overwrite`). Logo por URL não é importado: envie-o em
+  Settings. No CMS o logo precisa ser PNG, JPEG ou SVG.
+
+### Slugs que já existem
+
+Menus e seções com o mesmo slug de um que já existe na instância são
+reaproveitados: o conteúdo entra neles. Para páginas, a regra é:
+
+- **por padrão, o import falha** se alguma página do projeto já existe (mesmo
+  menu, seção e slug) ou se a landing da instância já foi publicada. A
+  mensagem lista todos os conflitos de uma vez e nada é gravado;
+- com **`--overwrite`**, essas páginas são substituídas: mantêm o endereço e o
+  histórico, ganham o título, o conteúdo e as tabs do projeto (as tabs que só
+  existiam na instância somem) e uma revisão nova;
+- nada é renomeado automaticamente.
+
+Um caso não tem `--overwrite` que resolva: no CMS o slug de **seção** é único
+na instância inteira, enquanto no modo estático ele só precisa ser único
+dentro do menu. Se duas seções do projeto (em menus diferentes) têm o mesmo
+slug, ou se uma seção do projeto tem o slug de uma seção que mora em outro
+menu da instância, o import falha pedindo para renomear uma delas.

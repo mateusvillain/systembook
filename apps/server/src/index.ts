@@ -16,6 +16,7 @@ import { createContext } from './trpc/context.js';
 import { handlePreviewUpload } from './previews/upload.js';
 import { handlePreviewRequest, PREVIEWS_URL_PREFIX } from './previews/serve.js';
 import { handleLogoRequest, parseLogoPath } from './logo/serve.js';
+import { handleMediaRequest, parseMediaPath } from './media/serve.js';
 import { resolveAdminDist, serveStatic } from './static.js';
 
 // Verificação de resolução cross-package (TASK-3): o import de tipo abaixo
@@ -70,6 +71,13 @@ const server = createServer((req, res) => {
   const logoTarget = parseLogoPath(url.pathname);
   if (logoTarget) {
     handleLogoRequest(res, db, logoTarget);
+    return;
+  }
+
+  // Imagens do conteúdo importado (SYS-112): mesmo esquema do logo.
+  const mediaHash = parseMediaPath(url.pathname);
+  if (mediaHash) {
+    handleMediaRequest(res, db, mediaHash);
     return;
   }
 
