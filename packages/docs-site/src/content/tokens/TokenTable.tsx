@@ -1,6 +1,6 @@
 import { useCallback, useState, type ReactNode } from 'react';
 import type { Token } from '@systembook/schema';
-import { DEFAULT_TOKEN_MODE, toCssValue } from '@systembook/content/tokens';
+import { DEFAULT_TOKEN_MODE, toCssLines, toCssValue } from '@systembook/content/tokens';
 import { TokenCopy } from './TokenCopy.js';
 import '../content.css';
 
@@ -22,11 +22,32 @@ export interface TokenTableProps {
 }
 
 /**
+ * O valor escrito: uma linha só na maioria dos tipos; uma por propriedade na
+ * tipografia e uma por camada na sombra, onde uma linha esconderia algo
+ * (SYS-136 — é o que a tabela mostra também como fallback, sem amostra).
+ */
+function TokenValue({ lines }: { lines: string[] }) {
+  if (lines.length === 1) return <code className="sb-token-value">{lines[0]}</code>;
+  return (
+    <span className="sb-token-lines">
+      {lines.map((line, i) => (
+        <code key={i} className="sb-token-value">
+          {line}
+        </code>
+      ))}
+    </span>
+  );
+}
+
+/**
  * Tabela de tokens (SYS-133), a moldura de todos os renderers por tipo. Uma
  * linha por token: o caminho (cabeçalho da linha, só o nome e o selo de
  * deprecated — o leitor de tela o repete em cada célula), uma coluna por modo
  * com a amostra, o valor e o alias, e "Details" com a descrição e os botões de
  * copiar. Um modo só (`default`) não ganha cabeçalho de modo.
+ *
+ * Sem `preview`, é o renderer de fallback (SYS-136): serve a qualquer tipo,
+ * inclusive os que não têm amostra própria.
  */
 export function TokenTable({ tokens, modes, label, preview }: TokenTableProps) {
   const single = modes.length === 1 && modes[0] === DEFAULT_TOKEN_MODE;
@@ -69,7 +90,7 @@ export function TokenTable({ tokens, modes, label, preview }: TokenTableProps) {
                 return (
                   <td key={mode} className="sb-token-cell">
                     {preview?.(token, mode, css)}
-                    <code className="sb-token-value">{css ?? JSON.stringify(resolvedValue)}</code>
+                    <TokenValue lines={toCssLines(token.type, resolvedValue) ?? [css ?? JSON.stringify(resolvedValue)]} />
                     {aliasOf ? <span className="sb-token-alias">→ {aliasOf}</span> : null}
                   </td>
                 );

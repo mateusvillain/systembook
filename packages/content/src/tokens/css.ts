@@ -91,11 +91,34 @@ function gradient(v: TokenValue): string | null {
   return list === null ? null : `linear-gradient(90deg, ${list})`;
 }
 
-/** `font` não carrega `letter-spacing`: a amostra aplica os campos um a um. */
+/** Altura de linha: número puro fica sem unidade (relativo à fonte); dimensão como dimensão. */
+const lineHeight = (v: TokenValue) => (isNumber(v) ? num(v) : measure(v, 'px'));
+
+/** `font` não carrega `letter-spacing`: a amostra e o fallback usam `typographyProperties`. */
 function typography(v: TokenValue): string | null {
   if (!isObject(v)) return null;
-  const lineHeight = isNumber(v.lineHeight) ? num(v.lineHeight) : measure(v.lineHeight ?? null, 'px');
-  return join([fontWeight(v.fontWeight ?? null), `${measure(v.fontSize ?? null, 'px')}/${lineHeight}`, fontFamily(v.fontFamily ?? null)]);
+  return join([
+    fontWeight(v.fontWeight ?? null),
+    `${measure(v.fontSize ?? null, 'px')}/${lineHeight(v.lineHeight ?? null)}`,
+    fontFamily(v.fontFamily ?? null),
+  ]);
+}
+
+/**
+ * Os campos de uma tipografia como propriedades CSS (`font-family`,
+ * `letter-spacing`…), só os que convertem — para a amostra aplicar e o
+ * fallback listar.
+ */
+export function typographyProperties(value: TokenValue): Record<string, string> {
+  if (!isObject(value)) return {};
+  const fields: [string, string | null][] = [
+    ['font-family', fontFamily(value.fontFamily ?? null)],
+    ['font-size', measure(value.fontSize ?? null, 'px')],
+    ['font-weight', fontWeight(value.fontWeight ?? null)],
+    ['letter-spacing', measure(value.letterSpacing ?? null, 'px')],
+    ['line-height', lineHeight(value.lineHeight ?? null)],
+  ];
+  return Object.fromEntries(fields.filter((f): f is [string, string] => f[1] !== null));
 }
 
 const CONVERT: Record<TokenType, (v: TokenValue) => string | null> = {
@@ -119,4 +142,26 @@ const CONVERT: Record<TokenType, (v: TokenValue) => string | null> = {
 
 export function toCssValue(type: TokenType, value: TokenValue): string | null {
   return CONVERT[type](value);
+}
+
+/**
+ * O valor em mais de uma linha, quando uma linha só esconderia algo: a
+ * tipografia (o `font` perde o `letter-spacing`), as camadas de uma sombra e o
+ * traço com `dashArray` (que vira `dashed` no CSS). `null` para o resto, que
+ * cabe numa linha (`toCssValue`).
+ */
+export function toCssLines(type: TokenType, value: TokenValue): string[] | null {
+  if (type === 'typography') {
+    const lines = Object.entries(typographyProperties(value)).map(([property, css]) => `${property}: ${css}`);
+    return lines.length ? lines : null;
+  }
+  if (type === 'shadow' && Array.isArray(value) && value.length > 1) {
+    const layers = value.map((layer) => shadow(layer));
+    return layers.every((l): l is string => l !== null) ? layers : null;
+  }
+  if (type === 'strokeStyle' && isObject(value) && Array.isArray(value.dashArray)) {
+    const dashes = join(value.dashArray.map((d) => measure(d, 'px')));
+    return dashes === null || typeof value.lineCap !== 'string' ? null : [`dashArray: ${dashes}`, `lineCap: ${value.lineCap}`];
+  }
+  return null;
 }

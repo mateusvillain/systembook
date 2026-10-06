@@ -791,6 +791,14 @@
   overflow-wrap: anywhere;
 }
 
+.sb-token-lines {
+  display: block;
+}
+
+.sb-token-lines > * + * {
+  margin-top: 0.15rem;
+}
+
 .sb-token-alias {
   display: block;
   font-size: 0.75rem;
