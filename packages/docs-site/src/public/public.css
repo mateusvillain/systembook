@@ -650,7 +650,11 @@
 /* ---- Navegação (1.3) ---- */
 /* O espaçamento entre grupos vem do `gap: 24px` da sidebar (SYS-36). */
 .sb-public-section {
-  margin-bottom: 0;
+  /* Alinha o *texto* à borda esquerda do logo: título e itens têm 8px de
+     padding, e a seção sai 8px para fora do padding da sidebar. O fundo de
+     hover/ativo vaza esses 8px para além da coluna do logo, e o texto fica
+     sobre ela. */
+  margin: 0 -8px;
 }
 
 /* Título de seção (SYS-41): rótulo de agrupamento, não cabeçalho. Sai o
