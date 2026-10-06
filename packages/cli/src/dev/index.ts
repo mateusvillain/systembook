@@ -66,6 +66,8 @@ export async function startDevServer(root: string, options: DevOptions = {}): Pr
   let configProblems: string[] = [];
   /** Do conteúdo, das referências e do build dos previews. */
   let siteProblems: string[] = [];
+  /** Avisos da última preparação, para só repetir no terminal quando mudarem. */
+  let lastWarnings = '';
   const problems = () => [...configProblems, ...siteProblems];
   let discovery: DiscoveryResult | null = null;
   let server: ViteDevServer;
@@ -83,6 +85,11 @@ export async function startDevServer(root: string, options: DevOptions = {}): Pr
     }
     const prepared = await prepareSite(config, { discovery });
     const current = [...prepared.problems];
+    const warnings = prepared.warnings.join('\n');
+    if (warnings !== lastWarnings) {
+      for (const warning of prepared.warnings) logger.warn(`aviso: ${warning}`);
+      lastWarnings = warnings;
+    }
 
     if (change !== 'content') {
       // Os previews são o artefato do `previews build`, como no site final,

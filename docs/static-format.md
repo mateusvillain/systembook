@@ -325,6 +325,7 @@ export default {
 | `base` | `/` | Base de publicação (`/repo/` no GitHub Pages de projeto). |
 | `statusTags` | `[]` | Tags que o frontmatter `status` pode usar (`titulo` + `cor`, como no CMS). |
 | `previews` | `true` se houver `*.preview.tsx` | Builda os previews de componente junto. |
+| `tokens` | — | Arquivos DTCG de design tokens: um glob, uma lista, ou `{ files, modes }` — ver [`tokens.md`](./tokens.md#configuração). |
 
 Campo desconhecido é erro.
 

@@ -11,8 +11,8 @@ import { prepareSite, PREVIEWS_DIR, previewsBase } from './prepare.js';
 const ASSETS_DIR = '_systembook/assets';
 
 export type BuildResult =
-  | { ok: true; outDir: string; routes: number }
-  | { ok: false; problems: string[] };
+  | { ok: true; outDir: string; routes: number; warnings: string[] }
+  | { ok: false; problems: string[]; warnings: string[] };
 
 /**
  * `systembook build` (SYS-99): conteúdo → JSONs de dados → bundle Vite da doc
@@ -26,10 +26,10 @@ export type BuildResult =
  */
 export async function buildStaticSite(config: ResolvedConfig): Promise<BuildResult> {
   const unsafe = unsafeOutDir(config);
-  if (unsafe) return { ok: false, problems: [unsafe] };
+  if (unsafe) return { ok: false, problems: [unsafe], warnings: [] };
 
-  const { tree, site, previews, media, problems } = await prepareSite(config);
-  if (problems.length) return { ok: false, problems };
+  const { tree, site, previews, media, problems, warnings } = await prepareSite(config);
+  if (problems.length) return { ok: false, problems, warnings };
 
   await rm(config.outDir, { recursive: true, force: true });
   if (previews.length) {
@@ -79,5 +79,5 @@ export async function buildStaticSite(config: ResolvedConfig): Promise<BuildResu
     );
   }
 
-  return { ok: true, outDir: config.outDir, routes: routes.length };
+  return { ok: true, outDir: config.outDir, routes: routes.length, warnings };
 }

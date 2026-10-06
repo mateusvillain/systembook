@@ -14,6 +14,41 @@ const baseSchema = z
   .regex(/^\//, 'precisa começar com "/" (ex.: "/meu-repo/")')
   .transform((base) => (base.endsWith('/') ? base : `${base}/`));
 
+/** Um arquivo, um glob ou uma lista deles — relativos à raiz do projeto. */
+const tokenFilesSchema = z
+  .union([z.string().min(1), z.array(z.string().min(1))])
+  .transform((files) => (typeof files === 'string' ? [files] : files));
+
+/**
+ * Arquivos DTCG de design tokens (`docs/tokens.md`): só os base
+ * (`"tokens/*.json"`), ou `{ files, modes }` com os arquivos de cada modo.
+ */
+const tokensSchema = z
+  .union(
+    [
+      tokenFilesSchema,
+      z.strictObject({
+        files: tokenFilesSchema.optional(),
+        modes: z.record(z.string(), tokenFilesSchema).optional(),
+      }),
+    ],
+    { error: 'use um arquivo ou glob, uma lista deles, ou { files, modes }' },
+  )
+  .transform((tokens) =>
+    Array.isArray(tokens)
+      ? { files: tokens, modes: [] as [string, string[]][] }
+      : { files: tokens.files ?? [], modes: Object.entries(tokens.modes ?? {}) },
+  )
+  .superRefine((tokens, ctx) => {
+    if (!tokens.files.length && !tokens.modes.length) {
+      ctx.addIssue({ code: 'custom', message: 'informe ao menos um arquivo, em "files" ou em "modes"' });
+    }
+    for (const [mode, files] of tokens.modes) {
+      if (!mode.trim()) ctx.addIssue({ code: 'custom', path: ['modes'], message: `nome de modo vazio ("${mode}")` });
+      else if (!files.length) ctx.addIssue({ code: 'custom', path: ['modes', mode], message: 'a lista não pode ser vazia' });
+    }
+  });
+
 const configSchema = z.strictObject({
   name: z.string().trim().min(1, 'é obrigatório'),
   logo: z.string().min(1).optional(),
@@ -25,6 +60,7 @@ const configSchema = z.strictObject({
     .array(z.strictObject({ titulo: z.string().trim().min(1), cor: z.string().min(1) }))
     .default([]),
   previews: z.boolean().optional(),
+  tokens: tokensSchema.optional(),
 });
 
 /** O que o usuário escreve na config (`satisfies SystemBookConfig`). */

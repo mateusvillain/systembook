@@ -82,6 +82,7 @@ export function createProgram(): Command {
         }
       }
       const result = await buildStaticSite(config);
+      reportWarnings(result.warnings);
       if (!result.ok) {
         reportProblems(result.problems);
         return;
@@ -214,6 +215,11 @@ async function loadProjectConfig(root: string) {
     reportProblems(error.problems);
     return null;
   }
+}
+
+/** Avisos não falham o comando; saem antes, para o resumo ficar por último. */
+function reportWarnings(warnings: string[]): void {
+  for (const warning of warnings) console.warn(`aviso: ${warning}`);
 }
 
 function reportProblems(problems: string[]): void {

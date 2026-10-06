@@ -8,9 +8,42 @@ Este documento é a referência do formato que o parser
 (`@systembook/content/tokens`) aceita. Se os dois divergirem, o parser e os
 testes dele valem, e este documento precisa ser corrigido.
 
-> A configuração que aponta os arquivos (o campo `tokens` do
-> `systembook.config` e o comando de publicação no modo CMS) ainda está em
-> desenvolvimento e entra aqui quando chegar.
+> O comando de publicação no modo CMS ainda está em desenvolvimento e entra
+> aqui quando chegar.
+
+## Configuração
+
+No modo estático, o campo `tokens` do `systembook.config` aponta os arquivos,
+relativos à raiz do projeto. Aceita um arquivo, um glob ou uma lista:
+
+```ts
+export default {
+  name: 'Acme Design System',
+  tokens: 'tokens/**/*.json',
+} satisfies SystemBookConfig;
+```
+
+Com modos, `files` são os arquivos base e `modes` os de cada modo, na ordem em
+que a doc os mostra:
+
+```ts
+tokens: {
+  files: 'tokens/base/*.json',
+  modes: {
+    light: 'tokens/light.json',
+    dark: 'tokens/dark.json',
+  },
+},
+```
+
+`files` é opcional (um arquivo completo por modo, como o export do Figma, não
+precisa de base). Cada padrão precisa casar com algum arquivo dentro do
+projeto, e um arquivo é base ou de um modo, nunca os dois. `node_modules` fica
+de fora dos globs.
+
+`systembook build` e `systembook check` falham com qualquer erro nos tokens e
+listam os avisos sem falhar; no `systembook dev`, salvar um arquivo de tokens
+atualiza o site.
 
 ## Formato: DTCG
 

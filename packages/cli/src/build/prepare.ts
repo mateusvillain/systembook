@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync, statSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
-import type { PublicComponentPreview } from '@systembook/schema';
+import type { PublicComponentPreview, TokenSet } from '@systembook/schema';
 import {
   discoverPreviews,
   previewEntryName,
@@ -21,6 +21,7 @@ import {
 } from '@systembook/content';
 import { readContentDir } from '@systembook/content/node';
 import type { ResolvedConfig } from '../config.js';
+import { loadProjectTokens } from '../tokens.js';
 
 /** Pasta dos artefatos de preview no site, relativa à base. */
 export const PREVIEWS_DIR = '_systembook/previews';
@@ -44,8 +45,12 @@ export interface PreparedSite {
   previews: DiscoveredPreview[];
   /** Imagens e logos a copiar, um por destino, em ordem estável. */
   media: MediaFile[];
-  /** Todos os problemas (conteúdo, referências, config), já formatados. */
+  /** Design tokens válidos da config (SYS-128); `null` sem tokens. */
+  tokens: TokenSet | null;
+  /** Todos os problemas (conteúdo, referências, config, tokens), já formatados. */
   problems: string[];
+  /** O que não impede o build (avisos dos tokens), já formatado. */
+  warnings: string[];
 }
 
 export interface PrepareOptions {
@@ -163,6 +168,10 @@ export async function prepareSite(config: ResolvedConfig, options: PrepareOption
   };
   const settings = { nomeDesignSystem: config.name, logoUrl: logo('logo'), logoDarkUrl: logo('logoDark') };
 
+  // ---- tokens ----
+  const tokens = await loadProjectTokens(config);
+  problems.push(...tokens.problems);
+
   // ---- dados, com as imagens copiadas com hash ----
   const site = buildSiteData(tree, {
     settings,
@@ -197,7 +206,9 @@ export async function prepareSite(config: ResolvedConfig, options: PrepareOption
     site,
     previews,
     media: [...media.values()].sort((a, b) => a.target.localeCompare(b.target)),
+    tokens: tokens.set,
     problems: [...problems, ...formatted],
+    warnings: tokens.warnings,
   };
 }
 

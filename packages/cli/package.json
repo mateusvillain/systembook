@@ -55,6 +55,7 @@
     "esbuild": "^0.25.0",
     "react-router-dom": "^7.18.1",
     "tailwindcss": "^4.3.3",
+    "tinyglobby": "^0.2.17",
     "vite": "^6.4.3",
     "yaml": "^2.9.1",
     "zod": "^4.4.3"
