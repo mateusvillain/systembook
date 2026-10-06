@@ -63,7 +63,7 @@ export const tabsRouter = router({
     }),
 
   rename: protectedProcedure
-    .input(z.object({ id: z.string(), titulo: z.string().min(1) }))
+    .input(z.object({ id: z.string(), titulo: z.string().trim().min(1) }))
     .mutation(({ ctx, input }) => {
       const updated = ctx.db
         .update(tabs)

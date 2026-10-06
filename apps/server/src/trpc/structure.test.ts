@@ -251,6 +251,7 @@ describe('estrutura de navegação (sections/pages/tabs)', () => {
       const renamed = await caller.tabs.rename({ id: primary!.id, titulo: 'Visão geral' });
       expect(renamed).toMatchObject({ titulo: 'Visão geral', isPrimary: true });
       await expect(caller.tabs.rename({ id: primary!.id, titulo: '' })).rejects.toThrow();
+      await expect(caller.tabs.rename({ id: primary!.id, titulo: '   ' })).rejects.toThrow();
       await expect(caller.tabs.delete({ id: primary!.id })).rejects.toMatchObject({
         code: 'NOT_FOUND',
       });
