@@ -1,0 +1,70 @@
+// @vitest-environment jsdom
+import { describe, expect, it } from 'vitest';
+import { setupDom } from '../../../test/dom.js';
+import type { Token, TokenType, TokenValue } from '@systembook/schema';
+import { TokenTable } from './TokenTable.js';
+
+const dom = setupDom();
+
+const token = (type: TokenType, value: TokenValue): Token => ({
+  path: `t.${type}`,
+  type,
+  byMode: { default: { value, resolvedValue: value } },
+});
+
+/** Um token de cada tipo, com o que a tabela de fallback mostra. */
+const CASES: [TokenType, TokenValue, string[]][] = [
+  ['color', '#0a84ff', ['#0a84ff']],
+  ['dimension', 16, ['16px']],
+  ['fontFamily', ['Inter', 'sans-serif'], ['Inter, sans-serif']],
+  ['fontWeight', 'Semi Bold', ['600']],
+  ['duration', '200ms', ['200ms']],
+  ['cubicBezier', [0.2, 0, 0, 1], ['cubic-bezier(0.2, 0, 0, 1)']],
+  ['number', 1.5, ['1.5']],
+  ['strokeStyle', { dashArray: ['2px', '4px'], lineCap: 'round' }, ['stroke-dasharray: 2px 4px', 'stroke-linecap: round']],
+  ['border', { color: '#000', width: '1px', style: 'solid' }, ['1px solid #000']],
+  ['transition', { duration: '200ms', delay: '0ms', timingFunction: 'ease' }, ['200ms ease 0ms']],
+  [
+    'shadow',
+    [
+      { color: '#0002', offsetX: 0, offsetY: 1, blur: 2, spread: 0 },
+      { color: '#0001', offsetX: 0, offsetY: 4, blur: 8, spread: 0 },
+    ],
+    ['0 1px 2px 0 #0002', '0 4px 8px 0 #0001'],
+  ],
+  ['gradient', [{ color: '#000', position: 0 }, { color: '#fff', position: 1 }], ['linear-gradient(90deg, #000 0%, #fff 100%)']],
+  [
+    'typography',
+    { fontFamily: 'Inter', fontSize: '16px', fontWeight: 400, letterSpacing: '0px', lineHeight: 1.5 },
+    ['font-family: Inter', 'font-size: 16px', 'font-weight: 400', 'letter-spacing: 0px', 'line-height: 1.5'],
+  ],
+];
+
+describe('TokenTable como fallback (SYS-136)', () => {
+  it('renderiza qualquer tipo, com os compostos legíveis', () => {
+    dom.render((<TokenTable tokens={CASES.map(([type, value]) => token(type, value))} modes={['default']} />));
+    const rows = [...dom.container().querySelectorAll('tbody tr')];
+    expect(rows).toHaveLength(CASES.length);
+    rows.forEach((row, i) => {
+      const [type, , lines] = CASES[i]!;
+      expect(row.querySelector('th')!.textContent).toBe(`t.${type}`);
+      expect([...row.querySelectorAll('.sb-token-value')].map((c) => c.textContent)).toEqual(lines);
+    });
+    expect(dom.container().querySelector('.sb-token-swatch')).toBeNull();
+  });
+
+  it('mostra o tipo de cada token em Details', () => {
+    dom.render(<TokenTable tokens={[token('number', 1)]} modes={['default']} />);
+    expect(dom.container().querySelector('.sb-token-details .sb-token-type')!.textContent).toBe('number');
+  });
+
+  it('tipo fora de TokenType (schema mais novo) não derruba a tabela: o valor sai em JSON', () => {
+    dom.render(<TokenTable tokens={[token('futureType' as TokenType, { a: 1 }), token('number', 2)]} modes={['default']} />);
+    expect([...dom.container().querySelectorAll('.sb-token-value')].map((c) => c.textContent)).toEqual(['{"a":1}', '2']);
+  });
+
+  it('valor sem conversão cai no JSON', () => {
+    dom.render((<TokenTable tokens={[token('border', { color: '#000' })]} modes={['default']} />));
+    expect(dom.container().querySelector('.sb-token-value')!.textContent).toBe('{"color":"#000"}');
+  });
+});

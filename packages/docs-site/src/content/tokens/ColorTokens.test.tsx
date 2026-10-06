@@ -1,24 +1,12 @@
 // @vitest-environment jsdom
 import { act } from 'react';
-import { createRoot, type Root } from 'react-dom/client';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { setupDom } from '../../../test/dom.js';
 import type { Token } from '@systembook/schema';
 import { ColorTokens } from './ColorTokens.js';
 
-(globalThis as Record<string, unknown>).IS_REACT_ACT_ENVIRONMENT = true;
-
-let container: HTMLDivElement;
-let root: Root;
-beforeEach(() => {
-  container = document.createElement('div');
-  document.body.appendChild(container);
-  root = createRoot(container);
-});
-afterEach(() => {
-  act(() => root.unmount());
-  container.remove();
-  vi.restoreAllMocks();
-});
+const dom = setupDom();
+afterEach(() => vi.restoreAllMocks());
 
 const mode = (value: string, resolvedValue = value, aliasOf?: string) =>
   aliasOf ? { value, resolvedValue, aliasOf } : { value, resolvedValue };
@@ -41,12 +29,11 @@ const TOKENS: Token[] = [
   },
 ];
 
-const render = (node: React.ReactNode) => act(() => root.render(node));
 
 describe('ColorTokens', () => {
   it('uma coluna por modo, com swatch, valor e alias', () => {
-    render(<ColorTokens tokens={TOKENS} modes={['light', 'dark']} label="Cores" />);
-    const table = container.querySelector('table')!;
+    dom.render(<ColorTokens tokens={TOKENS} modes={['light', 'dark']} label="Cores" />);
+    const table = dom.container().querySelector('table')!;
     expect(table.getAttribute('aria-label')).toBe('Cores');
     expect([...table.querySelectorAll('thead th')].map((th) => th.textContent)).toEqual(['Token', 'light', 'dark', 'Details']);
 
@@ -72,29 +59,29 @@ describe('ColorTokens', () => {
   });
 
   it('modo único default: cabeçalho "Value"', () => {
-    render(<ColorTokens tokens={[{ path: 'c', type: 'color', byMode: { default: mode('#fff') } }]} modes={['default']} />);
-    expect([...container.querySelectorAll('thead th')].map((th) => th.textContent)).toEqual(['Token', 'Value', 'Details']);
+    dom.render(<ColorTokens tokens={[{ path: 'c', type: 'color', byMode: { default: mode('#fff') } }]} modes={['default']} />);
+    expect([...dom.container().querySelectorAll('thead th')].map((th) => th.textContent)).toEqual(['Token', 'Value', 'Details']);
   });
 
   it('cor sem conversão para CSS: sem swatch, com o JSON', () => {
     const value = { colorSpace: 'nope', components: [1, 0, 0] };
-    render(<ColorTokens tokens={[{ path: 'c', type: 'color', byMode: { default: { value, resolvedValue: value } } }]} modes={['default']} />);
-    expect(container.querySelector('.sb-token-swatch')).toBeNull();
-    expect(container.querySelector('.sb-token-value')!.textContent).toBe(JSON.stringify(value));
+    dom.render(<ColorTokens tokens={[{ path: 'c', type: 'color', byMode: { default: { value, resolvedValue: value } } }]} modes={['default']} />);
+    expect(dom.container().querySelector('.sb-token-swatch')).toBeNull();
+    expect(dom.container().querySelector('.sb-token-value')!.textContent).toBe(JSON.stringify(value));
   });
 
   it('copia a variável CSS, o acesso em JS e o caminho', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
-    render(<ColorTokens tokens={[TOKENS[0]!]} modes={['light', 'dark']} />);
+    dom.render(<ColorTokens tokens={[TOKENS[0]!]} modes={['light', 'dark']} />);
 
-    const buttons = [...container.querySelectorAll<HTMLButtonElement>('.sb-token-copy-button')];
+    const buttons = [...dom.container().querySelectorAll<HTMLButtonElement>('.sb-token-copy-button')];
     expect(buttons.map((b) => [b.textContent, b.title, b.getAttribute('aria-label')])).toEqual([
       ['CSS', 'var(--acme-primary)', 'CSS: copy CSS variable var(--acme-primary)'],
       ['JS', 'acme.primary', 'JS: copy JS path acme.primary'],
       ['Path', 'acme.primary', 'Path: copy token path acme.primary'],
     ]);
-    const status = () => container.querySelectorAll('[role="status"]');
+    const status = () => dom.container().querySelectorAll('[role="status"]');
     expect(status()).toHaveLength(1);
 
     await act(async () => buttons[0]!.click());
@@ -112,10 +99,10 @@ describe('ColorTokens', () => {
   it('falha ao copiar: o botão diz que falhou', async () => {
     Object.defineProperty(navigator, 'clipboard', { value: { writeText: vi.fn().mockRejectedValue(new Error('x')) }, configurable: true });
     document.execCommand = vi.fn().mockReturnValue(false);
-    render(<ColorTokens tokens={[TOKENS[0]!]} modes={['light', 'dark']} />);
-    const css = container.querySelector<HTMLButtonElement>('.sb-token-copy-button')!;
+    dom.render(<ColorTokens tokens={[TOKENS[0]!]} modes={['light', 'dark']} />);
+    const css = dom.container().querySelector<HTMLButtonElement>('.sb-token-copy-button')!;
     await act(async () => css.click());
     expect(css.textContent).toBe('Failed');
-    expect(container.querySelector('[role="status"]')!.textContent).toBe('Could not copy CSS variable — select var(--acme-primary) and copy it');
+    expect(dom.container().querySelector('[role="status"]')!.textContent).toBe('Could not copy CSS variable — select var(--acme-primary) and copy it');
   });
 });

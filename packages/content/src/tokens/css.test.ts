@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { TokenType, TokenValue } from '@systembook/schema';
-import { toCssValue } from './css.js';
+import { toCssLines, toCssValue, typographyProperties } from './css.js';
 
 describe('toCssValue', () => {
   it.each<[TokenType, TokenValue, string]>([
@@ -61,5 +61,47 @@ describe('toCssValue', () => {
     expect(toCssValue('color', { colorSpace: 'nope', components: [1, 1, 1], hex: '#fff' })).toBe('#fff');
     expect(toCssValue('border', { color: '#000', width: '1px' })).toBeNull();
     expect(toCssValue('number', 'x')).toBeNull();
+  });
+});
+
+describe('toCssLines', () => {
+  it('tipografia: uma propriedade CSS por linha, inclusive letter-spacing', () => {
+    expect(
+      toCssLines('typography', { fontFamily: ['Inter', 'sans-serif'], fontSize: '16px', fontWeight: 'bold', letterSpacing: '-0.5px', lineHeight: 1.5 }),
+    ).toEqual(['font-family: Inter, sans-serif', 'font-size: 16px', 'font-weight: 700', 'letter-spacing: -0.5px', 'line-height: 1.5']);
+    expect(typographyProperties({ fontSize: 14, lineHeight: '20px' })).toEqual({ 'font-size': '14px', 'line-height': '20px' });
+  });
+
+  it('tipografia com campo faltando ou que não converte: "—" e o valor cru', () => {
+    expect(toCssLines('typography', { fontFamily: 'Inter', fontSize: '16px', fontWeight: 'heavyish' })).toEqual([
+      'font-family: Inter',
+      'font-size: 16px',
+      'font-weight: "heavyish"',
+      'letter-spacing: —',
+      'line-height: —',
+    ]);
+  });
+
+  it('sombra em camadas, uma por linha; uma camada só cabe numa linha', () => {
+    const layer = { color: '#000', offsetX: 0, offsetY: 1, blur: 2, spread: 0 };
+    expect(toCssLines('shadow', [layer, { ...layer, inset: true }])).toEqual(['0 1px 2px 0 #000', 'inset 0 1px 2px 0 #000']);
+    expect(toCssLines('shadow', [layer])).toBeNull();
+    expect(toCssLines('shadow', layer)).toBeNull();
+  });
+
+  it('strokeStyle com dashArray mostra o padrão, que o CSS não expressa', () => {
+    expect(toCssLines('strokeStyle', { dashArray: ['2px', 4], lineCap: 'round' })).toEqual(['stroke-dasharray: 2px 4px', 'stroke-linecap: round']);
+    expect(toCssLines('strokeStyle', { dashArray: ['2px'] })).toEqual(['stroke-dasharray: 2px']);
+    expect(toCssLines('strokeStyle', 'solid')).toBeNull();
+  });
+
+  it('tipo fora de TokenType não quebra', () => {
+    expect(toCssValue('futureType' as TokenType, 1)).toBeNull();
+    expect(toCssLines('futureType' as TokenType, 1)).toBeNull();
+  });
+
+  it('o resto cabe numa linha', () => {
+    expect(toCssLines('color', '#fff')).toBeNull();
+    expect(toCssLines('border', { color: '#000', width: '1px', style: 'solid' })).toBeNull();
   });
 });

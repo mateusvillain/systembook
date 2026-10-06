@@ -725,6 +725,13 @@
   color: var(--sb-fg-muted, #59636e);
 }
 
+.sb-token-type {
+  display: inline-block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.6875rem;
+  color: var(--sb-fg-muted, #59636e);
+}
+
 .sb-token-description,
 .sb-token-deprecated-reason {
   display: block;
@@ -789,6 +796,14 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.8125rem;
   overflow-wrap: anywhere;
+}
+
+.sb-token-lines {
+  display: block;
+}
+
+.sb-token-lines > * + * {
+  margin-top: 0.15rem;
 }
 
 .sb-token-alias {
