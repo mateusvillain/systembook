@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync, mkdtempSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, describe, expect, it, vi } from 'vitest';
@@ -36,7 +36,7 @@ describe('systembook check', { timeout: 60_000 }, () => {
     const root = project();
     const before = snapshot(root);
     const result = await checkSite(await loadConfig(root));
-    expect(result).toEqual({ ok: true, pages: 3, images: 2, variants: 2 });
+    expect(result).toEqual({ ok: true, pages: 3, images: 2, variants: 2, tokens: 0, modes: 0, warnings: [] });
     expect(snapshot(root)).toEqual(before);
   });
 
@@ -103,6 +103,56 @@ describe('systembook check', { timeout: 60_000 }, () => {
     expect(exitCode).toBe(1);
     expect(errors.slice(0, -1).every((e) => e.startsWith('systembook.config.ts:'))).toBe(true);
     expect(errors.at(-1)).toBe('\n2 erro(s).');
+  });
+
+  it('tokens: erro sai com 1; só aviso sai com 0, listando os avisos e o resumo', async () => {
+    const root = project();
+    mkdirSync(path.join(root, 'tokens'));
+    const configFile = path.join(root, 'systembook.config.ts');
+    writeFileSync(
+      configFile,
+      readFileSync(configFile, 'utf8').replace(
+        /\} satisfies SystemBookConfig;/,
+        "  tokens: { files: 'tokens/base.json', modes: { light: 'tokens/light.json', dark: 'tokens/dark.json' } },\n} satisfies SystemBookConfig;",
+      ),
+    );
+    const write = (name: string, tokens: unknown) => writeFileSync(path.join(root, 'tokens', name), JSON.stringify(tokens));
+    write('base.json', { fg: { $type: 'color', $value: '{text}', $foo: 1 } });
+    write('light.json', { text: { $type: 'color', $value: '#111' } });
+    write('dark.json', { text: { $type: 'color', $value: 'nope' } });
+
+    const run = async () => {
+      const out: string[] = [];
+      const errors: string[] = [];
+      const warnings: string[] = [];
+      vi.spyOn(console, 'log').mockImplementation((...a) => void out.push(a.join(' ')));
+      vi.spyOn(console, 'error').mockImplementation((...a) => void errors.push(a.join(' ')));
+      vi.spyOn(console, 'warn').mockImplementation((...a) => void warnings.push(a.join(' ')));
+      try {
+        process.exitCode = undefined;
+        await createProgram().parseAsync(['check', '--root', root], { from: 'user' });
+        return { exitCode: process.exitCode, out, errors, warnings };
+      } finally {
+        process.exitCode = undefined;
+        vi.restoreAllMocks();
+      }
+    };
+
+    const failed = await run();
+    expect(failed.exitCode).toBe(1);
+    expect(failed.errors).toEqual([
+      'tokens/base.json  fg: o alias {text} aponta para um token com erro.',
+      'tokens/dark.json  text: "nope" não é uma cor ("#0a84ff", "rgb(…)", um nome CSS ou { colorSpace, components }) (modo dark).',
+      '\n2 erro(s).',
+    ]);
+
+    write('dark.json', { text: { $type: 'color', $value: '#eee' } });
+    const passed = await run();
+    expect(passed.exitCode).toBeUndefined();
+    expect(passed.warnings).toEqual(['aviso: tokens/base.json  fg: propriedade "$foo" não suportada; ignorada.']);
+    expect(passed.out).toEqual([
+      '✓ Sem erros (1 aviso(s)) — 3 página(s), 2 imagem(ns), 2 variante(s) de preview, 2 token(s) em 2 modo(s).',
+    ]);
   });
 
   it('outDir perigoso é erro do check, junto dos de conteúdo', async () => {

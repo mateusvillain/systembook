@@ -101,12 +101,15 @@ export function createProgram(): Command {
       const config = await loadProjectConfig(options.root);
       if (!config) return;
       const result = await checkSite(config);
+      reportWarnings(result.warnings);
       if (!result.ok) {
         reportProblems(result.problems);
         return;
       }
+      const tokens = result.tokens ? `, ${result.tokens} token(s) em ${result.modes} modo(s)` : '';
+      const warnings = result.warnings.length ? ` (${result.warnings.length} aviso(s))` : '';
       console.log(
-        `✓ Sem erros — ${result.pages} página(s), ${result.images} imagem(ns), ${result.variants} variante(s) de preview.`,
+        `✓ Sem erros${warnings} — ${result.pages} página(s), ${result.images} imagem(ns), ${result.variants} variante(s) de preview${tokens}.`,
       );
     });
 
