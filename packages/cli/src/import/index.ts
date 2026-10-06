@@ -125,6 +125,7 @@ export async function buildImportPayload(
           titulo: page.titulo,
           slug: page.slug,
           subtitulo: page.subtitulo,
+          overviewTitulo: page.overviewTitulo,
           status: page.status,
           body: docOf(body),
           tabs: page.tabs.map((tab, i) => ({ titulo: tab.titulo, slug: tab.slug, doc: docOf(tabs[i]) })),

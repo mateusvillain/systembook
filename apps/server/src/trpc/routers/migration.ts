@@ -39,6 +39,7 @@ const importSchema = z.object({
               titulo,
               slug: slugSchema,
               subtitulo: z.string().nullable(),
+              overviewTitulo: z.string().nullable().optional(),
               status: z.string().nullable(),
               body: docSchema,
               tabs: z.array(z.object({ titulo, slug: slugSchema, doc: docSchema })),

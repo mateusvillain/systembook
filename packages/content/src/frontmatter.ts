@@ -18,6 +18,7 @@ const title = z.string().trim().min(1, 'não pode ser vazio');
 export const pageFrontmatterSchema = z.strictObject({
   title,
   subtitle: z.string().optional(),
+  overviewTitle: title.optional(),
   order: order.optional(),
   status: z.string().optional(),
   slug: slug.optional(),

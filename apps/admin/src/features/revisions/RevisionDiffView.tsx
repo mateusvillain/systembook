@@ -4,7 +4,7 @@ import { EditorContent, useEditor } from '@tiptap/react';
 import type { Block } from '@systembook/schema';
 import { ArrowLeftRight, Minus, PenLine, Plus, X } from 'lucide-react';
 import { useTRPC, type RouterOutput } from '../../lib/trpc.js';
-import { blocksToTiptapDoc, contentExtensions } from '@systembook/docs-site';
+import { blocksToTiptapDoc, bodyViewLabel, contentExtensions } from '@systembook/docs-site';
 import { Button } from '@/components/ui/button';
 import { adminTypography } from '../../lib/typography.js';
 import { cn } from '@/lib/utils';
@@ -130,7 +130,7 @@ export function RevisionDiffView({
         return (
           <section key={tab.tabId} className="grid gap-3">
             <h3 className="flex items-center gap-2 text-sm font-semibold">
-              {tab.isPrimary ? 'Page body' : tab.titulo}
+              {tab.isPrimary ? `Page body (${bodyViewLabel(tab.titulo)})` : tab.titulo}
               {tab.status === 'added' && <StatusPill status="added" label="Tab added" />}
               {tab.status === 'removed' && <StatusPill status="removed" label="Tab removed" />}
             </h3>

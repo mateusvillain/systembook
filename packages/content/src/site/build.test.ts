@@ -198,3 +198,16 @@ describe('siteDataFiles', () => {
     expect(roundtrip).toEqual(data);
   });
 });
+
+describe('overviewTitle (SYS-117)', () => {
+  const doc = (front: string) => `---\ntitle: Button\n${front}---\n\nCorpo\n`;
+  const labelOf = (files: Record<string, string>) =>
+    Object.values(build('/', files).data.pages)[0]!.snapshot!.tabs.find((t) => t.isPrimary)!.titulo;
+
+  it('o corpo usa o overviewTitle do frontmatter, com "Overview" por padrão', () => {
+    expect(labelOf({ 'm/s/button/index.mdx': doc('overviewTitle: Visão geral\n'), 'm/s/button/usage.mdx': doc('') })).toBe(
+      'Visão geral',
+    );
+    expect(labelOf({ 'm/s/button/index.mdx': doc(''), 'm/s/button/usage.mdx': doc('') })).toBe('Overview');
+  });
+});

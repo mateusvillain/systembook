@@ -54,7 +54,7 @@ export { EmbedCoverPreview, type DosDontsCoverFieldProps } from './content/nodes
 export { blocksToTiptapDoc } from './content/blocksToTiptapDoc.js';
 
 // Doc pública
-export { PageRenderer, BODY_VIEW_LABEL, type RenderableSnapshot } from './public/PageRenderer.js';
+export { PageRenderer, BODY_VIEW_LABEL, bodyViewLabel, type RenderableSnapshot } from './public/PageRenderer.js';
 export { PublicLayout, type PublicOutletContext } from './public/PublicLayout.js';
 export { PublicHome } from './public/PublicHome.js';
 export { PublicPageView } from './public/PublicPageView.js';

@@ -11,11 +11,13 @@ function tabNotFound(): TRPCError {
 
 // Estruturalmente idêntico a pages.ts, menos slug (nota da TASK-22).
 //
-// Este router opera só sobre as tabs de **usuário** (is_primary=false). A tab
-// primária é o corpo da página (TASK-65/66): fica fora da listagem, do espaço
-// de ordenação (user tabs seguem 0-based ignorando a primária) e é protegida
-// de rename/delete — o `eq(isPrimary, false)` nos where's garante que um id de
-// primária cai em `tabNotFound()`, nunca alterando/removendo o corpo.
+// Este router opera sobre as tabs de **usuário** (is_primary=false), com uma
+// exceção. A tab primária é o corpo da página (TASK-65/66): fica fora da
+// listagem e do espaço de ordenação (user tabs seguem 0-based ignorando a
+// primária), e `delete`/`reorder` não a alcançam — o `eq(isPrimary, false)` nos
+// where's faz um id de primária cair em `tabNotFound()`. `rename` aceita a
+// primária: o `titulo` dela é o rótulo da visão do corpo no tab bar público
+// (SYS-117, default "Overview").
 export const tabsRouter = router({
   listByPage: protectedProcedure.input(z.object({ pageId: z.string() })).query(({ ctx, input }) =>
     ctx.db
@@ -61,12 +63,12 @@ export const tabsRouter = router({
     }),
 
   rename: protectedProcedure
-    .input(z.object({ id: z.string(), titulo: z.string().min(1) }))
+    .input(z.object({ id: z.string(), titulo: z.string().trim().min(1) }))
     .mutation(({ ctx, input }) => {
       const updated = ctx.db
         .update(tabs)
         .set({ titulo: input.titulo })
-        .where(and(eq(tabs.id, input.id), eq(tabs.isPrimary, false)))
+        .where(eq(tabs.id, input.id))
         .returning()
         .get();
       if (!updated) throw tabNotFound();

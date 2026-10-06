@@ -28,8 +28,17 @@ export interface RenderableSnapshot {
   tabs: { tabId: string; titulo: string; isPrimary?: boolean; blocks: unknown[] }[];
 }
 
-/** Rótulo da "visão" do corpo da página (a tab primária) no tab bar público. */
+/**
+ * Rótulo padrão da "visão" do corpo da página (a tab primária) no tab bar
+ * público. A página pode customizá-lo (`titulo` da tab primária, SYS-117);
+ * 'Conteúdo' é o valor legado gravado antes disso, nunca exibido.
+ */
 export const BODY_VIEW_LABEL = 'Overview';
+
+export function bodyViewLabel(titulo: string | undefined): string {
+  const t = titulo?.trim();
+  return t && t !== 'Conteúdo' ? t : BODY_VIEW_LABEL;
+}
 
 function TabContent({ blocks }: { blocks: unknown[] }) {
   const editor = useEditor(
@@ -68,9 +77,9 @@ export function PageRenderer({
   const primary = snapshot.tabs.find((t) => t.isPrimary);
   const userTabs = primary ? snapshot.tabs.filter((t) => !t.isPrimary) : snapshot.tabs;
 
-  // Visões do tab bar: "Visão geral" (corpo) primeiro, depois as tabs de usuário.
+  // Visões do tab bar: Corpo primeiro, depois as tabs de usuário.
   const views = [
-    ...(primary ? [{ tabId: primary.tabId, titulo: BODY_VIEW_LABEL, blocks: primary.blocks }] : []),
+    ...(primary ? [{ tabId: primary.tabId, titulo: bodyViewLabel(primary.titulo), blocks: primary.blocks }] : []),
     ...userTabs.map((t) => ({ tabId: t.tabId, titulo: t.titulo, blocks: t.blocks })),
   ];
 

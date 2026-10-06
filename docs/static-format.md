@@ -114,6 +114,7 @@ status: Stable
 | --- | --- | --- | --- |
 | `title` | string, **obrigatório** | página, tab | Título exibido. Na tab, é o rótulo dela. |
 | `subtitle` | string | página (`index` da pasta, se tiver tabs) | Introdução abaixo do título. Aceita markdown inline: `**negrito**`, `*itálico*`, `` `código` `` e `[link](url)` (use o caminho do site, `/foundation/color`; links relativos para `.mdx` só são resolvidos no corpo). |
+| `overviewTitle` | string | página | Rótulo da visão do corpo da página no tab bar. Padrão: `Overview`. Só aparece em página com tabs (pasta com `index.mdx` e outros arquivos); numa página de arquivo único não há tab bar. Em arquivo de tab é erro. |
 | `order` | inteiro | página, tab | Ordem dentro do nível (menor primeiro). No `index` de uma pasta, ordena a página. |
 | `status` | string | página | `titulo` de uma tag de `statusTags` da config. |
 | `slug` | string | página, tab | Sobrescreve o slug vindo do nome do arquivo. |
@@ -128,7 +129,7 @@ Na landing (`docs/index.mdx`) o frontmatter é opcional e aceita só `title`, qu
 vira o `<title>` do HTML. Qualquer outro campo é erro.
 
 O corpo da página (o `index` de uma pasta com tabs, ou o arquivo de uma página
-sem tabs) aparece como a visão **Overview**, sempre a primeira, igual ao CMS.
+sem tabs) aparece como a visão **Overview** (renomeável com `overviewTitle`), sempre a primeira, igual ao CMS.
 As tabs vêm depois, na ordem da regra abaixo.
 
 ## `_menu.yml` e `_section.yml`

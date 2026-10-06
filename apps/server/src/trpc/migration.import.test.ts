@@ -192,6 +192,23 @@ describe('migration.import (SYS-112)', () => {
     expect(db.select().from(revisions).all()).toHaveLength(before);
   });
 
+  it('overwrite de um CLI antigo (sem overviewTitulo) preserva o rótulo definido no CMS; null o redefine', async () => {
+    await importing(project());
+    const pageRow = db.select().from(pages).where(eq(pages.slug, 'button')).get()!;
+    const primary = await callerFor(db, admin).tabs.getPrimary({ pageId: pageRow.id });
+    await callerFor(db, admin).tabs.rename({ id: primary.id, titulo: 'Design' });
+    const label = () => db.select().from(tabs).where(eq(tabs.id, primary.id)).get()!.titulo;
+
+    const older = project({ overwrite: true }); // sem `overviewTitulo` no payload
+    await importing(older);
+    expect(label()).toBe('Design');
+
+    const withNull = project({ overwrite: true });
+    withNull.menus[0]!.sections[0]!.pages[0] = { ...withNull.menus[0]!.sections[0]!.pages[0]!, overviewTitulo: null };
+    await importing(withNull);
+    expect(label()).toBe('Overview');
+  });
+
   it('com overwrite, substitui a página (mesmo id, tabs do projeto) e publica de novo', async () => {
     await importing(project());
     const pageId = db.select().from(pages).where(eq(pages.slug, 'button')).get()!.id;
@@ -200,6 +217,7 @@ describe('migration.import (SYS-112)', () => {
     next.menus[0]!.sections[0]!.pages[0] = {
       ...next.menus[0]!.sections[0]!.pages[0]!,
       titulo: 'Button v2',
+      overviewTitulo: 'Visão geral',
       body: paragraph('novo corpo'),
       tabs: [{ titulo: 'Code', slug: 'code', doc: paragraph('código') }],
     };
@@ -213,7 +231,7 @@ describe('migration.import (SYS-112)', () => {
     });
     expect(page!.pageId).toBe(pageId);
     expect(page!.titulo).toBe('Button v2');
-    expect(page!.snapshot!.tabs.map((tab) => tab.titulo)).toEqual(['Conteúdo', 'Code']);
+    expect(page!.snapshot!.tabs.map((tab) => tab.titulo)).toEqual(['Visão geral', 'Code']);
     expect(db.select().from(tabs).where(eq(tabs.pageId, pageId)).all()).toHaveLength(2);
     expect(db.select().from(revisions).where(eq(revisions.pageId, pageId)).all()).toHaveLength(2);
     expect(db.select().from(revisions).where(eq(revisions.pageId, LANDING_PAGE_ID)).all()).toHaveLength(2);

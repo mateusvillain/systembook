@@ -85,6 +85,35 @@ describe('estrutura válida', () => {
   });
 });
 
+describe('overviewTitle (SYS-117)', () => {
+  const build = (entries: Record<string, string>) => buildContentTree(files(entries));
+
+  it('vira o rótulo do corpo na página com tabs e em página de arquivo único; ausente é null', () => {
+    const tree = build({
+      'm/s/with-tabs/index.mdx': page('Com tabs', 'overviewTitle: Visão geral\n'),
+      'm/s/with-tabs/usage.mdx': page('Uso'),
+      'm/s/single.mdx': page('Única', 'overviewTitle: Design\n'),
+      'm/s/plain.mdx': page('Simples'),
+    });
+    expect(messages(tree)).toEqual([]);
+    const pages = Object.fromEntries(tree.menus[0]!.sections[0]!.pages.map((p) => [p.slug, p.overviewTitulo]));
+    expect(pages).toEqual({ 'with-tabs': 'Visão geral', single: 'Design', plain: null });
+  });
+
+  it('em arquivo de tab é campo desconhecido', () => {
+    const tree = build({
+      'm/s/p/index.mdx': page('P'),
+      'm/s/p/usage.mdx': page('Uso', 'overviewTitle: Nope\n'),
+    });
+    expect(messages(tree).join('\n')).toContain('overviewTitle');
+  });
+
+  it('vazio é erro', () => {
+    const tree = build({ 'm/s/p.mdx': page('P', 'overviewTitle: ""\n') });
+    expect(messages(tree).join('\n')).toContain('overviewTitle');
+  });
+});
+
 describe('sem landing', () => {
   it('landing é null e não é erro', () => {
     const tree = buildContentTree(files({ 'm/s/p.mdx': page('P') }));

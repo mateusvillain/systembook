@@ -83,6 +83,8 @@ export interface ImportedPage {
   titulo: string;
   slug: string;
   subtitulo: string | null;
+  /** Rótulo da visão do corpo (padrão "Overview"); opcional por compat com CLIs antigos. */
+  overviewTitulo?: string | null;
   /** `titulo` de uma das `statusTags`, ou `null`. */
   status: string | null;
   /** Corpo da página (a tab primária no CMS). */

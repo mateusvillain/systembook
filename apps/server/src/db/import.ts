@@ -334,11 +334,19 @@ export function importInstance(db: Db, input: InstanceImport, autorId: string): 
               .get().id;
             result.created.pages++;
           }
-          primaryTabId ??= tx
-            .insert(tabs)
-            .values({ pageId, titulo: 'Conteúdo', ordem: 0, isPrimary: true })
-            .returning({ id: tabs.id })
-            .get().id;
+          // `undefined` = o CLI não conhece o campo (versão antiga): um rótulo que o
+          // editor definiu no CMS não deve voltar para "Overview" por causa disso.
+          // `null` = o projeto não define `overviewTitle`: os arquivos mandam.
+          const overviewTitulo = page.overviewTitulo?.trim() || 'Overview';
+          if (primaryTabId) {
+            if (page.overviewTitulo !== undefined)
+              tx.update(tabs).set({ titulo: overviewTitulo }).where(eq(tabs.id, primaryTabId)).run();
+          } else
+            primaryTabId = tx
+              .insert(tabs)
+              .values({ pageId, titulo: overviewTitulo, ordem: 0, isPrimary: true })
+              .returning({ id: tabs.id })
+              .get().id;
 
           const docs = [{ tabId: primaryTabId, doc: page.body as TiptapDoc }];
           page.tabs.forEach((tab, i) => {

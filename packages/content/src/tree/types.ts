@@ -26,6 +26,8 @@ export interface PageNode {
   slug: string;
   titulo: string;
   subtitulo: string | null;
+  /** Rótulo da visão do corpo (`overviewTitle`); `null` = "Overview". */
+  overviewTitulo: string | null;
   /** `titulo` de uma tag de `statusTags`, já validado. */
   status: string | null;
   order: number | undefined;
