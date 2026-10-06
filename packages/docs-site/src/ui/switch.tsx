@@ -7,13 +7,17 @@ import { cn } from './cn.js';
  * controles interativos do component-embed (`ControlsPanel`). O pacote não
  * pode depender dos componentes do admin; mantenha os dois em sincronia se o
  * visual mudar.
+ *
+ * `box-border p-0` no Root: sem o preflight do Tailwind (admin e app estático
+ * não o importam) o `<button>` herda o padding nativo do navegador (1px 6px),
+ * que desloca a bolinha para dentro da trilha e a faz vazar quando ligada.
  */
 function Switch({ className, ...props }: React.ComponentProps<typeof SwitchPrimitive.Root>) {
   return (
     <SwitchPrimitive.Root
       data-slot="switch"
       className={cn(
-        'peer data-[state=checked]:bg-primary data-[state=unchecked]:bg-input focus-visible:border-ring focus-visible:ring-ring/50 inline-flex h-[1.15rem] w-8 shrink-0 items-center rounded-full border border-transparent shadow-xs transition-all outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50',
+        'peer box-border p-0 data-[state=checked]:bg-primary data-[state=unchecked]:bg-input focus-visible:border-ring focus-visible:ring-ring/50 inline-flex h-[1.15rem] w-8 shrink-0 items-center rounded-full border border-transparent shadow-xs transition-all outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50',
         className,
       )}
       {...props}
