@@ -113,7 +113,7 @@ status: Stable
 | Campo | Tipo | Onde | O que é |
 | --- | --- | --- | --- |
 | `title` | string, **obrigatório** | página, tab | Título exibido. Na tab, é o rótulo dela. |
-| `subtitle` | string | página (`index` da pasta, se tiver tabs) | Introdução abaixo do título. Aceita markdown inline: `**negrito**`, `*itálico*`, `` `código` `` e `[link](url)`. |
+| `subtitle` | string | página (`index` da pasta, se tiver tabs) | Introdução abaixo do título. Aceita markdown inline: `**negrito**`, `*itálico*`, `` `código` `` e `[link](url)` (use o caminho do site, `/foundation/color`; links relativos para `.mdx` só são resolvidos no corpo). |
 | `order` | inteiro | página, tab | Ordem dentro do nível (menor primeiro). No `index` de uma pasta, ordena a página. |
 | `status` | string | página | `titulo` de uma tag de `statusTags` da config. |
 | `slug` | string | página, tab | Sobrescreve o slug vindo do nome do arquivo. |
