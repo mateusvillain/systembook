@@ -6,6 +6,7 @@ import type {
   PublicSettings,
   PublishedPage,
   StaticSiteData,
+  TokenSet,
 } from '@systembook/schema';
 import { tiptapDocToBlocks, type TiptapDoc, type TiptapNode } from '../blocks.js';
 import type { Diagnostic } from '../diagnostics.js';
@@ -50,6 +51,8 @@ export interface BuildSiteOptions {
   imageUrl?: (path: string) => string;
   /** Previews publicados no site, por `previewKey` (SYS-100). Padrão: nenhum. */
   previews?: Record<string, PublicComponentPreview>;
+  /** Design tokens já validados (SYS-130). Padrão: nenhum. */
+  tokens?: TokenSet | null;
 }
 
 export interface SiteBuild {
@@ -239,7 +242,9 @@ export function buildSiteData(tree: ContentTree, options: BuildSiteOptions): Sit
     ? { tabs: [{ tabId: BODY_TAB_ID, titulo: 'Overview', isPrimary: true, blocks: blocksFor('', BODY_TAB_ID, resolve(tree.landing)) }] }
     : null;
 
-  return { data: { settings: options.settings, nav, landing, pages, previews: options.previews ?? {} }, images, diagnostics };
+  // Lista vazia é `null`: o contrato do `getTokens` não distingue "sem tokens" de "nenhum válido".
+  const tokens = options.tokens?.tokens.length ? options.tokens : null;
+  return { data: { settings: options.settings, nav, landing, pages, previews: options.previews ?? {}, tokens }, images, diagnostics };
 }
 
 /**
@@ -253,6 +258,7 @@ export function siteDataFiles(data: StaticSiteData): Map<string, string> {
     [staticDataPaths.nav, json(data.nav)],
     [staticDataPaths.landing, json(data.landing)],
     [staticDataPaths.previews, json(sortedRecord(data.previews))],
+    [staticDataPaths.tokens, json(data.tokens)],
     [staticDataPaths.search, json(createSearchIndex(data))],
   ]);
   for (const key of Object.keys(data.pages).sort()) {

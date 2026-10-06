@@ -15,6 +15,10 @@ const { data } = buildSiteData(tree, {
   settings: { nomeDesignSystem: 'Acme', logoUrl: null, logoDarkUrl: null },
   base: '/meu-repo/',
   previews: { 'Button/primary': preview },
+  tokens: {
+    modes: ['default'],
+    tokens: [{ path: 'color.bg', type: 'color', byMode: { default: { value: '#fff', resolvedValue: '#fff' } } }],
+  },
 });
 
 const { dir, cleanup } = writeSiteDataDir(siteDataFiles(data));
@@ -46,6 +50,25 @@ describe('staticDataSource', () => {
     expect(requests.slice(2)).toEqual([`${DATA_URL}pages/foundation/color/tokens.json`]);
   });
 
+  it('tokens lidos uma vez do tokens.json', async () => {
+    const { ds, requests } = source();
+    await Promise.all([ds.getTokens(), ds.getTokens()]);
+    expect(await ds.getTokens()).toEqual(data.tokens);
+    expect(requests).toEqual([`${DATA_URL}tokens.json`]);
+  });
+
+  it('tokens.json com null ou lista vazia: getTokens é null', async () => {
+    for (const tokens of [null, { modes: ['default'], tokens: [] }]) {
+      const empty = writeSiteDataDir(siteDataFiles({ ...data, tokens }));
+      try {
+        const ds = createStaticDataSource({ dataUrl: DATA_URL, fetch: fsFetch(empty.dir, DATA_URL) });
+        expect(await ds.getTokens()).toBeNull();
+      } finally {
+        empty.cleanup();
+      }
+    }
+  });
+
   it('nenhuma requisição fora da pasta de dados', async () => {
     const { ds, requests } = source();
     await ds.getNavTree();
@@ -55,6 +78,7 @@ describe('staticDataSource', () => {
     await ds.getComponentPreview({ componentName: 'Button', variantId: 'primary' });
     await ds.search('cores');
     await ds.resolvePath(['color', 'palette']);
+    await ds.getTokens();
     expect(requests.every((url) => url.startsWith(DATA_URL))).toBe(true);
   });
 

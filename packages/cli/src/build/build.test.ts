@@ -65,6 +65,7 @@ describe('systembook build', { timeout: 60_000 }, () => {
       '_systembook/data/routes.json',
       '_systembook/data/search.json',
       '_systembook/data/settings.json',
+      '_systembook/data/tokens.json',
     ]);
 
     // Título e descrição por rota (subtítulo, ou 1º parágrafo), com escape.
@@ -209,6 +210,26 @@ describe('systembook build', { timeout: 60_000 }, () => {
     write({ ok: { $type: 'color', $value: '#fff', $foo: 1 } });
     const built = await buildStaticSite({ ...config, tokens: { files: ['tokens/*.json'], modes: [] } });
     expect(built).toMatchObject({ ok: true, warnings: ['tokens/color.json  ok: propriedade "$foo" não suportada; ignorada.'] });
+
+    expect(JSON.parse(tree(config.outDir).get('_systembook/data/tokens.json')!)).toMatchObject({
+      modes: ['default'],
+      tokens: [{ path: 'ok', type: 'color' }],
+    });
+
+    // Com modos: os valores de cada modo vão para o site.
+    mkdirSync(path.join(config.root, 'modes'));
+    writeFileSync(path.join(config.root, 'modes/light.json'), JSON.stringify({ text: { $type: 'color', $value: '#111' } }));
+    writeFileSync(path.join(config.root, 'modes/dark.json'), JSON.stringify({ text: { $type: 'color', $value: '#eee' } }));
+    const modes = [
+      { name: 'light', files: ['modes/light.json'] },
+      { name: 'dark', files: ['modes/dark.json'] },
+    ];
+    write({ fg: { $type: 'color', $value: '{text}' } });
+    expect(await buildStaticSite({ ...config, tokens: { files: ['tokens/*.json'], modes } })).toMatchObject({ ok: true });
+    const site = JSON.parse(tree(config.outDir).get('_systembook/data/tokens.json')!);
+    expect(site.modes).toEqual(['light', 'dark']);
+    const fg = site.tokens.find((t: { path: string }) => t.path === 'fg');
+    expect([fg.byMode.light.resolvedValue, fg.byMode.dark.resolvedValue]).toEqual(['#111', '#eee']);
 
     const missing = await buildStaticSite({ ...config, tokens: { files: [], modes: [{ name: 'dark', files: ['dark/*.json'] }] } });
     expect(!missing.ok && missing.problems).toEqual(['systembook.config.ts: "tokens.modes.dark": "dark/*.json" não casa com nenhum arquivo.']);

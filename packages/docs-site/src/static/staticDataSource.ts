@@ -6,6 +6,7 @@ import type {
   PublicPageRef,
   PublicSettings,
   PublishedPage,
+  TokenSet,
 } from '@systembook/schema';
 import {
   loadSearchIndex,
@@ -110,7 +111,10 @@ export function createStaticDataSource({ dataUrl, fetch: doFetch = globalThis.fe
     search: async (q) => querySearchIndex(await getSearchIndex(), q),
     getComponentPreview: async (ref) =>
       (await once<Record<string, PublicComponentPreview>>(staticDataPaths.previews))[previewKey(ref)] ?? null,
-    // O build ainda não gera tokens (SYS-130).
-    getTokens: async () => null,
+    // `null` também se o arquivo vier com a lista vazia: o contrato não distingue.
+    getTokens: async () => {
+      const set = await once<TokenSet | null>(staticDataPaths.tokens);
+      return set?.tokens.length ? set : null;
+    },
   };
 }
