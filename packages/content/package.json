@@ -28,6 +28,10 @@
       "types": "./src/blocks.ts",
       "default": "./src/blocks.ts"
     },
+    "./inline": {
+      "types": "./src/inline.ts",
+      "default": "./src/inline.ts"
+    },
     "./node": {
       "types": "./src/node.ts",
       "default": "./src/node.ts"
@@ -80,6 +84,10 @@
       "./blocks": {
         "types": "./dist/blocks.d.ts",
         "default": "./dist/blocks.js"
+      },
+      "./inline": {
+        "types": "./dist/inline.d.ts",
+        "default": "./dist/inline.js"
       },
       "./node": {
         "types": "./dist/node.d.ts",

@@ -1,4 +1,5 @@
 import type { Block, PageSnapshot, StaticSiteData } from '@systembook/schema';
+import { stripInlineMarkdown } from '@systembook/content/inline';
 import { parsePageKey, sitePath } from '@systembook/content/site';
 
 /** Uma rota do site e o que vai no `<head>` dela. */
@@ -10,6 +11,11 @@ export interface RouteMeta {
 }
 
 const DESCRIPTION_MAX = 160;
+
+/** O subtítulo sem marcadores, ou `undefined` se não houver (vazio cai no fallback). */
+function subtitleText(subtitulo: string | null | undefined): string | undefined {
+  return subtitulo ? stripInlineMarkdown(subtitulo) || undefined : undefined;
+}
 
 /** `RouteMeta[]` de todas as rotas, na pasta de dados (o app lê ao navegar). */
 export const META_FILE = 'routes.json';
@@ -55,14 +61,14 @@ export function routeMetas(data: StaticSiteData, landingTitle: string | null): R
   for (const key of Object.keys(data.pages).sort()) {
     const page = data.pages[key]!;
     const ref = parsePageKey(key);
-    const description = page.subtitulo ?? firstParagraph(primaryBlocks(page.snapshot)) ?? name;
+    const description = subtitleText(page.subtitulo) ?? firstParagraph(primaryBlocks(page.snapshot)) ?? name;
     routes.push({ path: sitePath(ref), title: `${page.titulo} · ${name}`, description });
     for (const tab of page.snapshot?.tabs ?? []) {
       if (tab.isPrimary) continue;
       routes.push({
         path: sitePath(ref, tab.tabId),
         title: `${tab.titulo} · ${page.titulo} · ${name}`,
-        description: page.subtitulo ?? firstParagraph(tab.blocks) ?? description,
+        description: subtitleText(page.subtitulo) ?? firstParagraph(tab.blocks) ?? description,
       });
     }
   }
