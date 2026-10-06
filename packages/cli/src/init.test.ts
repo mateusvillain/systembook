@@ -50,7 +50,7 @@ describe('systembook init', { timeout: 60_000 }, () => {
     expect(pkg.devDependencies!['@systembook/cli']).toMatch(/^\^\d+\.\d+\.\d+/);
     // Peers do CLI que o yarn 1 não instalaria.
     expect(pkg.devDependencies).toMatchObject({ react: '^19.0.0', 'react-dom': '^19.0.0' });
-    expect(read(root, '.gitignore')).toBe('# SystemBook\nsystembook-dist/\n.systembook/\n');
+    expect(read(root, '.gitignore')).toBe('# Systembook\nsystembook-dist/\n.systembook/\n');
 
     const config = await loadConfig(root);
     expect(config.name).toBe(path.basename(root).split(/[-_]/).map((w) => w[0]!.toUpperCase() + w.slice(1)).join(' '));
@@ -86,7 +86,7 @@ describe('systembook init', { timeout: 60_000 }, () => {
     expect(read(root, 'package.json')).toMatch(/^\{\n {4}"name"/);
     expect(steps.find((s) => s.file === 'package.json')!.note).toContain('mantidos: docs:dev');
     // `/systembook-dist` já cobre o site; só falta a pasta dos previews.
-    expect(read(root, '.gitignore')).toBe('node_modules\n/systembook-dist\n\n# SystemBook\n.systembook/\n');
+    expect(read(root, '.gitignore')).toBe('node_modules\n/systembook-dist\n\n# Systembook\n.systembook/\n');
 
     // Rodar de novo não duplica nada; com confirmação, sobrescreve.
     const again = await initProject(root, { confirm: async () => true });
@@ -189,7 +189,7 @@ describe('systembook init', { timeout: 60_000 }, () => {
     const root = project({ 'package.json': '{\r\n  "name": "x"\r\n}\r\n', '.gitignore': '' });
     await initProject(root);
     expect(read(root, 'package.json')).toMatch(/^\{\r\n {2}"name": "x",\r\n/);
-    expect(read(root, '.gitignore')).toBe('# SystemBook\nsystembook-dist/\n.systembook/\n');
+    expect(read(root, '.gitignore')).toBe('# Systembook\nsystembook-dist/\n.systembook/\n');
 
     // Negação e padrão com /** contam como presentes.
     const ignored = project({ '.gitignore': '!systembook-dist/\n.systembook/**\n' });

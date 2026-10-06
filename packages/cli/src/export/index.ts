@@ -104,7 +104,7 @@ async function fetchExport(doFetch: typeof fetch, base: URL, token: string): Pro
   const body = (await response.json().catch(() => null)) as { result?: { data?: InstanceExport } } | null;
   const data = body?.result?.data;
   if (!data || data.version !== 1) {
-    throw new ExportError('a resposta não é um export do SystemBook que este CLI entende — atualize o CLI e a instância para a mesma versão.');
+    throw new ExportError('a resposta não é um export do Systembook que este CLI entende — atualize o CLI e a instância para a mesma versão.');
   }
   return data;
 }

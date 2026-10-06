@@ -2,7 +2,7 @@
 
 Este documento é a referência do arquivo `*.preview.tsx` — o arquivo que o **time
 consumidor** escreve no próprio repositório para expor um componente ao live
-preview do SystemBook. O `systembook previews` (do `@systembook/cli`) descobre
+preview do Systembook. O `systembook previews` (do `@systembook/cli`) descobre
 esses arquivos, builda cada variante no CI do time e envia o artefato estático para a instância; o
 `component-embed` da doc então renderiza esse artefato num iframe real e
 interativo.

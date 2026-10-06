@@ -1,5 +1,5 @@
 # ==============================================================================
-# SystemBook — compose de PRODUÇÃO (referência para self-hosting)
+# Systembook — compose de PRODUÇÃO (referência para self-hosting)
 #
 # Roda a imagem publicada no GHCR (TASK-58), NÃO um build local. É distinto do
 # docker-compose.yml (dev, com hot-reload) — use este em produção.

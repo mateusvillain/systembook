@@ -1,9 +1,9 @@
-# Contribuindo com o SystemBook
+# Contribuindo com o Systembook
 
 Obrigado pelo interesse em contribuir! Este guia cobre como rodar o projeto
 localmente, os checks esperados antes de um PR, e as convenções do repositório.
 
-O SystemBook é um CMS self-hosted para documentação de design systems: monorepo
+O Systembook é um CMS self-hosted para documentação de design systems: monorepo
 pnpm com um servidor Node/tRPC + SQLite (`apps/server`), um painel admin React
 (`apps/admin`), pacotes compartilhados (`packages/*`) e exemplos (`examples/*`:
 o `examples/static-docs` é o projeto de referência do modo estático, buildado no

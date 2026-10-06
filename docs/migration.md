@@ -1,6 +1,6 @@
 # Migração entre modos (CMS ↔ estático)
 
-Os dois modos do SystemBook usam o mesmo modelo de conteúdo
+Os dois modos do Systembook usam o mesmo modelo de conteúdo
 (`Menu → Seção → Página → Tab`, com os mesmos blocos) e geram a mesma doc
 pública. Trocar de modo é, portanto, mover o conteúdo de um lugar para o outro.
 Não há conversão de formato.

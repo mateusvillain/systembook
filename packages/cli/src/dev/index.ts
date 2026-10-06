@@ -338,7 +338,7 @@ export async function startDevServer(root: string, options: DevOptions = {}): Pr
     siteProblems = [`erro inesperado: ${(error as Error).stack ?? String(error)}`];
   }
   await listen();
-  logger.info(`\n  SystemBook dev — ${config.name}\n  ➜ ${url()}\n`);
+  logger.info(`\n  Systembook dev — ${config.name}\n  ➜ ${url()}\n`);
   report();
 
   return {

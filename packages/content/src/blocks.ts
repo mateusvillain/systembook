@@ -1,7 +1,7 @@
 import type { Block, BlockType, CalloutVariant, DosDontsCover, DosDontsVariant } from '@systembook/schema';
 
 /**
- * Mapeamento canônico entre nós Tiptap top-level e blocos do SystemBook
+ * Mapeamento canônico entre nós Tiptap top-level e blocos do Systembook
  * (TASK-31; centralizado aqui na SYS-93). A doc pública
  * (`@systembook/docs-site`) e o parser de arquivos deste pacote usam estas
  * funções. O server (`apps/server/src/blocks/serialize.ts`) mantém uma cópia —

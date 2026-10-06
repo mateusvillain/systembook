@@ -1,5 +1,5 @@
 /**
- * `@systembook/docs-site` (SYS-90): a documentação pública do SystemBook e a
+ * `@systembook/docs-site` (SYS-90): a documentação pública do Systembook e a
  * camada de renderização de conteúdo, independentes de onde o conteúdo vem.
  *
  * Quem monta o site fornece um `DocsDataSource` (contrato em

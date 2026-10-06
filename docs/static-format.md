@@ -1,6 +1,6 @@
 # Formato de conteúdo do modo estático
 
-Este documento é a referência do **modo estático** do SystemBook: a documentação
+Este documento é a referência do **modo estático** do Systembook: a documentação
 escrita em arquivos `.md`/`.mdx` dentro do repositório do design system e
 transformada em site estático pelo CLI (`@systembook/cli`). É o contrato que o
 parser (`@systembook/content`) implementa. Se os dois divergirem, o parser e os

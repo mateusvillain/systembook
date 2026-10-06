@@ -2,7 +2,7 @@
   "name": "@systembook/example-static-docs",
   "version": "0.0.0",
   "private": true,
-  "description": "Projeto de exemplo do modo est\u00e1tico do SystemBook.",
+  "description": "Projeto de exemplo do modo est\u00e1tico do Systembook.",
   "type": "module",
   "scripts": {
     "dev": "systembook dev",

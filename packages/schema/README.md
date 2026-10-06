@@ -1,6 +1,6 @@
 # @systembook/schema
 
-Contratos de tipo compartilhados do [SystemBook](https://github.com/mateusvillain/systembook).
+Contratos de tipo compartilhados do [Systembook](https://github.com/mateusvillain/systembook).
 
 Pacote **types-only**: não tem runtime próprio. Existe para que o `*.preview.tsx`
 que você escreve, o [`@systembook/cli`](https://www.npmjs.com/package/@systembook/cli)

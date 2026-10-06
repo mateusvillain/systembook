@@ -1,6 +1,6 @@
 # @systembook/cli
 
-O CLI do [SystemBook](https://github.com/mateusvillain/systembook): `systembook`.
+O CLI do [Systembook](https://github.com/mateusvillain/systembook): `systembook`.
 
 ```bash
 npm i -D @systembook/cli @systembook/schema
@@ -150,7 +150,7 @@ Workflow de GitHub Actions que barra o PR com conteúdo quebrado
 (`.github/workflows/systembook-check.yml`):
 
 ```yaml
-name: SystemBook check
+name: Systembook check
 
 # Sem filtro de `paths`: um check obrigatório filtrado fica pendente para
 # sempre nos PRs que não tocam os caminhos — e mudar um componente também pode

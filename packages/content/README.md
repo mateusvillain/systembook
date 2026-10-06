@@ -1,6 +1,6 @@
 # @systembook/content
 
-O conteúdo do [SystemBook](https://github.com/mateusvillain/systembook) em
+O conteúdo do [Systembook](https://github.com/mateusvillain/systembook) em
 arquivos: o parser de `.md`/`.mdx` para os blocos do CMS, a árvore de navegação
 a partir das pastas e os dados do site estático.
 

@@ -2,7 +2,7 @@
   "name": "@systembook/schema",
   "version": "0.3.3",
   "license": "MIT",
-  "description": "Contratos de tipo compartilhados do SystemBook — PreviewConfig, tipos de bloco e mensagens de preview.",
+  "description": "Contratos de tipo compartilhados do Systembook — PreviewConfig, tipos de bloco e mensagens de preview.",
   "keywords": [
     "systembook",
     "design-system",

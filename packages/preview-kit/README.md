@@ -1,6 +1,6 @@
 # @systembook/preview-kit
 
-Runtime de montagem dos previews do [SystemBook](https://github.com/mateusvillain/systembook).
+Runtime de montagem dos previews do [Systembook](https://github.com/mateusvillain/systembook).
 
 Roda **dentro do iframe** de preview: monta a variante pedida e reage às
 mudanças de props que o painel envia por `postMessage`. Na prática você não o

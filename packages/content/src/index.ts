@@ -1,5 +1,5 @@
 /**
- * `@systembook/content`: o conteúdo do SystemBook em arquivos. O formato está
+ * `@systembook/content`: o conteúdo do Systembook em arquivos. O formato está
  * em `docs/static-format.md`; o mapeamento nó ↔ bloco também sai sozinho em
  * `@systembook/content/blocks`, sem as dependências do parser.
  */

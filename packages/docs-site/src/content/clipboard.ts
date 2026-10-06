@@ -2,7 +2,7 @@
  * Cópia para a área de transferência com fallback (SYS-71).
  *
  * `navigator.clipboard` **só existe em contexto seguro** (https ou localhost).
- * SystemBook é self-hosted em container único, e uma instância servida em http
+ * Systembook é self-hosted em container único, e uma instância servida em http
  * puro numa rede interna — o cenário de implantação mais banal do produto — não
  * tem a API: `navigator.clipboard` é `undefined` e `navigator.clipboard.writeText`
  * lança `TypeError` antes de qualquer `.catch()` de promise pegar.

@@ -1,7 +1,7 @@
 # Exemplo: modo estático
 
 Um design system fictício (**Acme DS**) documentado no modo estático do
-SystemBook: conteúdo em `.mdx` dentro do repositório, site gerado pelo
+Systembook: conteúdo em `.mdx` dentro do repositório, site gerado pelo
 `systembook build`. Serve de referência do formato e de fixture do CI do
 monorepo, que builda este projeto a cada push.
 

@@ -49,7 +49,7 @@ function docsSiteSource(dir: string): Plugin {
  * recusa por padrão o que não está na pasta do app.
  */
 function servedDirs(config: ResolvedConfig, docsSite: string): string[] {
-  // No monorepo do SystemBook, as dependências estão na raiz do workspace.
+  // No monorepo do Systembook, as dependências estão na raiz do workspace.
   const dirs = [config.root, APP_DIR, docsSite, searchForWorkspaceRoot(APP_DIR)];
   for (const dir of [APP_DIR, docsSite]) {
     // A pasta acima do `node_modules` mais externo (o projeto, ou o cache do

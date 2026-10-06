@@ -1,10 +1,10 @@
 # Setup — do zero a uma instância conectada
 
-Este guia leva um time do nada até uma instância do SystemBook rodando, com o
+Este guia leva um time do nada até uma instância do Systembook rodando, com o
 repositório do design system publicando previews de componentes nela via CI. Siga
 as seções na ordem.
 
-> **Uma instância = um design system.** O SystemBook **não é multi-tenant**: cada
+> **Uma instância = um design system.** O Systembook **não é multi-tenant**: cada
 > instância documenta um único design system. Para documentar outro design system,
 > suba outra instância (outro container, outro volume). Não há passos de
 > configuração de "tenant" ou "workspace" — se você procurava por isso, ele não
@@ -69,7 +69,7 @@ produção real, coloque um reverse proxy com TLS na frente (os cookies de sess�
 marcados `Secure` fora de ambiente local).
 
 > **Antes de ir para produção**, configure um backup: todo o estado fica num único
-> arquivo SQLite no volume, e o SystemBook **não** faz backup automático. Veja o
+> arquivo SQLite no volume, e o Systembook **não** faz backup automático. Veja o
 > [guia de backup e recuperação](./backup.md) (setup recomendado com Litestream).
 
 ---
