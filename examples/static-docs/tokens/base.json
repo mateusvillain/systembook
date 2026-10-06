@@ -1,8 +1,14 @@
 {
   "acme": {
+    "brand": {
+      "$type": "color",
+      "$value": "{acme.primary}",
+      "$deprecated": "Use acme.primary — brand era o nome da primeira versão."
+    },
     "palette": {
       "$type": "color",
       "$description": "Cores primitivas. Os tokens de papel (light.json e dark.json) apontam para elas.",
+      "white": { "$value": "#ffffff" },
       "indigo": {
         "300": { "$value": "#a5b4fc" },
         "400": { "$value": "#818cf8" },
@@ -78,7 +84,7 @@
           "fontFamily": "{acme.font.family.sans}",
           "fontSize": "24px",
           "fontWeight": "{acme.font.weight.semibold}",
-          "letterSpacing": "-0.02em",
+          "letterSpacing": "-0.5px",
           "lineHeight": 1.25
         }
       }

@@ -2,12 +2,14 @@
   "acme": {
     "$type": "color",
     "primary": { "$value": "{acme.palette.indigo.600}", "$description": "Ação principal, links e foco." },
+    "on-primary": { "$value": "{acme.palette.white}", "$description": "Texto e ícones sobre acme.primary." },
     "primary-hover": { "$value": "{acme.palette.indigo.700}" },
     "neutral": { "$value": "{acme.palette.slate.600}", "$description": "Texto secundário e bordas." },
     "neutral-subtle": { "$value": "{acme.palette.slate.100}" },
-    "success": { "$value": "{acme.palette.green.600}" },
-    "warning": { "$value": "{acme.palette.amber.600}" },
+    "success": { "$value": "{acme.palette.green.600}", "$description": "Ícones e bordas de estado; como texto, não passa 4,5:1 sobre acme.surface no modo claro." },
+    "warning": { "$value": "{acme.palette.amber.600}", "$description": "Ícones e bordas de estado; como texto, não passa 4,5:1 sobre acme.surface no modo claro." },
     "danger": { "$value": "{acme.palette.red.600}", "$description": "Erros e ações destrutivas." },
+    "on-danger": { "$value": "{acme.palette.white}", "$description": "Texto e ícones sobre acme.danger." },
     "surface": { "$value": "{acme.palette.slate.50}" },
     "text": { "$value": "{acme.palette.slate.900}" }
   }
