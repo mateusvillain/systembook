@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, NavLink, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Check, Plus, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Plus, X } from 'lucide-react';
 import { queryClient, useTRPC, type RouterOutput } from '../lib/trpc.js';
 import { ContentEditor, type ContentEditorHandle } from '../features/editor/ContentEditor.js';
 import { DraftPreviewDialog } from '../features/editor/DraftPreviewDialog.js';
@@ -359,6 +359,8 @@ function TabItem({
         onMoveNext={onMoveRight}
         movePrevLabel="Move left"
         moveNextLabel="Move right"
+        movePrevIcon={ArrowLeft}
+        moveNextIcon={ArrowRight}
         triggerClassName="-ml-2 mb-1 opacity-0 transition-opacity group-hover/tab:opacity-100 group-focus-within/tab:opacity-100"
       />
     </span>
