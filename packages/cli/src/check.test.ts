@@ -31,12 +31,30 @@ function snapshot(dir: string): string[] {
     .sort();
 }
 
+/** Roda `systembook check` como o CLI: saída padrão, erros, avisos e o código de saída. */
+async function runCheck(root: string) {
+  const out: string[] = [];
+  const errors: string[] = [];
+  const warnings: string[] = [];
+  vi.spyOn(console, 'log').mockImplementation((...a) => void out.push(a.join(' ')));
+  vi.spyOn(console, 'error').mockImplementation((...a) => void errors.push(a.join(' ')));
+  vi.spyOn(console, 'warn').mockImplementation((...a) => void warnings.push(a.join(' ')));
+  try {
+    process.exitCode = undefined;
+    await createProgram().parseAsync(['check', '--root', root], { from: 'user' });
+    return { exitCode: process.exitCode, out, errors, warnings };
+  } finally {
+    process.exitCode = undefined;
+    vi.restoreAllMocks();
+  }
+}
+
 describe('systembook check', { timeout: 60_000 }, () => {
   it('projeto válido: ok, com um resumo, sem escrever nada no projeto', async () => {
     const root = project();
     const before = snapshot(root);
     const result = await checkSite(await loadConfig(root));
-    expect(result).toEqual({ ok: true, pages: 3, images: 2, variants: 2, tokens: 0, modes: 0, warnings: [] });
+    expect(result).toEqual({ ok: true, pages: 3, images: 2, variants: 2, tokens: null, warnings: [] });
     expect(snapshot(root)).toEqual(before);
   });
 
@@ -71,17 +89,7 @@ describe('systembook check', { timeout: 60_000 }, () => {
     ]);
     expect(snapshot(root)).toEqual(before);
 
-    const errors: string[] = [];
-    vi.spyOn(console, 'error').mockImplementation((...a) => void errors.push(a.join(' ')));
-    let exitCode: typeof process.exitCode;
-    try {
-      process.exitCode = undefined;
-      await createProgram().parseAsync(['check', '--root', root], { from: 'user' });
-      exitCode = process.exitCode;
-    } finally {
-      process.exitCode = undefined;
-      vi.restoreAllMocks();
-    }
+    const { exitCode, errors } = await runCheck(root);
     expect(exitCode).toBe(1);
     expect(errors.at(-1)).toBe('\n5 erro(s).');
   });
@@ -89,17 +97,7 @@ describe('systembook check', { timeout: 60_000 }, () => {
   it('config com campo inválido: o comando para nela (sem config não há conteúdo a ler)', async () => {
     const root = project();
     writeFileSync(path.join(root, 'systembook.config.ts'), "export default { name: '', titel: 'x' };\n");
-    const errors: string[] = [];
-    vi.spyOn(console, 'error').mockImplementation((...a) => void errors.push(a.join(' ')));
-    let exitCode: typeof process.exitCode;
-    try {
-      process.exitCode = undefined;
-      await createProgram().parseAsync(['check', '--root', root], { from: 'user' });
-      exitCode = process.exitCode;
-    } finally {
-      process.exitCode = undefined;
-      vi.restoreAllMocks();
-    }
+    const { exitCode, errors } = await runCheck(root);
     expect(exitCode).toBe(1);
     expect(errors.slice(0, -1).every((e) => e.startsWith('systembook.config.ts:'))).toBe(true);
     expect(errors.at(-1)).toBe('\n2 erro(s).');
@@ -121,25 +119,9 @@ describe('systembook check', { timeout: 60_000 }, () => {
     write('light.json', { text: { $type: 'color', $value: '#111' } });
     write('dark.json', { text: { $type: 'color', $value: 'nope' } });
 
-    const run = async () => {
-      const out: string[] = [];
-      const errors: string[] = [];
-      const warnings: string[] = [];
-      vi.spyOn(console, 'log').mockImplementation((...a) => void out.push(a.join(' ')));
-      vi.spyOn(console, 'error').mockImplementation((...a) => void errors.push(a.join(' ')));
-      vi.spyOn(console, 'warn').mockImplementation((...a) => void warnings.push(a.join(' ')));
-      try {
-        process.exitCode = undefined;
-        await createProgram().parseAsync(['check', '--root', root], { from: 'user' });
-        return { exitCode: process.exitCode, out, errors, warnings };
-      } finally {
-        process.exitCode = undefined;
-        vi.restoreAllMocks();
-      }
-    };
-
-    const failed = await run();
+    const failed = await runCheck(root);
     expect(failed.exitCode).toBe(1);
+    expect(failed.warnings).toEqual(['aviso: tokens/base.json  fg: propriedade "$foo" não suportada; ignorada.']);
     expect(failed.errors).toEqual([
       'tokens/base.json  fg: o alias {text} aponta para um token com erro.',
       'tokens/dark.json  text: "nope" não é uma cor ("#0a84ff", "rgb(…)", um nome CSS ou { colorSpace, components }) (modo dark).',
@@ -147,12 +129,21 @@ describe('systembook check', { timeout: 60_000 }, () => {
     ]);
 
     write('dark.json', { text: { $type: 'color', $value: '#eee' } });
-    const passed = await run();
+    const passed = await runCheck(root);
     expect(passed.exitCode).toBeUndefined();
     expect(passed.warnings).toEqual(['aviso: tokens/base.json  fg: propriedade "$foo" não suportada; ignorada.']);
     expect(passed.out).toEqual([
-      '✓ Sem erros (1 aviso(s)) — 3 página(s), 2 imagem(ns), 2 variante(s) de preview, 2 token(s) em 2 modo(s).',
+      '✓ Sem erros (1 aviso(s)) — 3 página(s), 2 imagem(ns), 2 variante(s) de preview, 2 token(s) em 2 modos (light, dark).',
     ]);
+
+    // Sem modos o resumo não fala de modo; com config e nenhum token, diz 0.
+    writeFileSync(configFile, readFileSync(configFile, 'utf8').replace(/tokens: \{.*\},/, "tokens: 'tokens/*.json',"));
+    write('base.json', {});
+    write('light.json', {});
+    write('dark.json', { text: { $type: 'color', $value: '#eee' } });
+    expect((await runCheck(root)).out).toEqual(['✓ Sem erros — 3 página(s), 2 imagem(ns), 2 variante(s) de preview, 1 token(s).']);
+    write('dark.json', {});
+    expect((await runCheck(root)).out).toEqual(['✓ Sem erros — 3 página(s), 2 imagem(ns), 2 variante(s) de preview, 0 token(s).']);
   });
 
   it('outDir perigoso é erro do check, junto dos de conteúdo', async () => {
