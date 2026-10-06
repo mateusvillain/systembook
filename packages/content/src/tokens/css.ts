@@ -104,21 +104,34 @@ const TYPOGRAPHY_FIELDS: [field: string, property: string, convert: (v: TokenVal
   ['lineHeight', 'line-height', lineHeight],
 ];
 
+/** Estilo de uma tipografia, nas chaves do CSSOM — as mesmas dos campos do DTCG. */
+export interface TypographyStyle {
+  fontFamily?: string;
+  fontSize?: string;
+  fontWeight?: string;
+  letterSpacing?: string;
+  lineHeight?: string;
+}
+
 /**
- * Os campos de uma tipografia como propriedades CSS (`font-family`,
- * `letter-spacing`…), só os que convertem — para a amostra aplicar.
+ * Os campos de uma tipografia em CSS, só os que convertem — para a amostra
+ * aplicar direto num `style`.
  */
-export function typographyProperties(value: TokenValue): Record<string, string> {
+export function typographyStyle(value: TokenValue): TypographyStyle {
   if (!isObject(value)) return {};
-  const entries = TYPOGRAPHY_FIELDS.map(([field, property, convert]) => [property, convert(value[field] ?? null)] as const);
-  return Object.fromEntries(entries.filter((e): e is readonly [string, string] => e[1] !== null));
+  const style: Record<string, string> = {};
+  for (const [field, , convert] of TYPOGRAPHY_FIELDS) {
+    const css = convert(value[field] ?? null);
+    if (css !== null) style[field] = css;
+  }
+  return style;
 }
 
 /** `font` não carrega `letter-spacing`: a amostra e o fallback usam os campos um a um. */
 function typography(v: TokenValue): string | null {
-  const p = typographyProperties(v);
-  const size = p['font-size'] && p['line-height'] ? `${p['font-size']}/${p['line-height']}` : null;
-  return join([p['font-weight'] ?? null, size, p['font-family'] ?? null]);
+  const s = typographyStyle(v);
+  const size = s.fontSize && s.lineHeight ? `${s.fontSize}/${s.lineHeight}` : null;
+  return join([s.fontWeight ?? null, size, s.fontFamily ?? null]);
 }
 
 const CONVERT: Record<TokenType, (v: TokenValue) => string | null> = {
