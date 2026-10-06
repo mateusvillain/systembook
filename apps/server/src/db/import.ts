@@ -334,9 +334,14 @@ export function importInstance(db: Db, input: InstanceImport, autorId: string): 
               .get().id;
             result.created.pages++;
           }
+          // `undefined` = o CLI não conhece o campo (versão antiga): um rótulo que o
+          // editor definiu no CMS não deve voltar para "Overview" por causa disso.
+          // `null` = o projeto não define `overviewTitle`: os arquivos mandam.
           const overviewTitulo = page.overviewTitulo?.trim() || 'Overview';
-          if (primaryTabId) tx.update(tabs).set({ titulo: overviewTitulo }).where(eq(tabs.id, primaryTabId)).run();
-          else
+          if (primaryTabId) {
+            if (page.overviewTitulo !== undefined)
+              tx.update(tabs).set({ titulo: overviewTitulo }).where(eq(tabs.id, primaryTabId)).run();
+          } else
             primaryTabId = tx
               .insert(tabs)
               .values({ pageId, titulo: overviewTitulo, ordem: 0, isPrimary: true })

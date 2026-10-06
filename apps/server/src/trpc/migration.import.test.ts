@@ -192,6 +192,23 @@ describe('migration.import (SYS-112)', () => {
     expect(db.select().from(revisions).all()).toHaveLength(before);
   });
 
+  it('overwrite de um CLI antigo (sem overviewTitulo) preserva o rótulo definido no CMS; null o redefine', async () => {
+    await importing(project());
+    const pageRow = db.select().from(pages).where(eq(pages.slug, 'button')).get()!;
+    const primary = await callerFor(db, admin).tabs.getPrimary({ pageId: pageRow.id });
+    await callerFor(db, admin).tabs.rename({ id: primary.id, titulo: 'Design' });
+    const label = () => db.select().from(tabs).where(eq(tabs.id, primary.id)).get()!.titulo;
+
+    const older = project({ overwrite: true }); // sem `overviewTitulo` no payload
+    await importing(older);
+    expect(label()).toBe('Design');
+
+    const withNull = project({ overwrite: true });
+    withNull.menus[0]!.sections[0]!.pages[0] = { ...withNull.menus[0]!.sections[0]!.pages[0]!, overviewTitulo: null };
+    await importing(withNull);
+    expect(label()).toBe('Overview');
+  });
+
   it('com overwrite, substitui a página (mesmo id, tabs do projeto) e publica de novo', async () => {
     await importing(project());
     const pageId = db.select().from(pages).where(eq(pages.slug, 'button')).get()!.id;
