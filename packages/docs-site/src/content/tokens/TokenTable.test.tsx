@@ -1,23 +1,10 @@
 // @vitest-environment jsdom
-import { act } from 'react';
-import { createRoot, type Root } from 'react-dom/client';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
+import { setupDom } from '../../../test/dom.js';
 import type { Token, TokenType, TokenValue } from '@systembook/schema';
 import { TokenTable } from './TokenTable.js';
 
-(globalThis as Record<string, unknown>).IS_REACT_ACT_ENVIRONMENT = true;
-
-let container: HTMLDivElement;
-let root: Root;
-beforeEach(() => {
-  container = document.createElement('div');
-  document.body.appendChild(container);
-  root = createRoot(container);
-});
-afterEach(() => {
-  act(() => root.unmount());
-  container.remove();
-});
+const dom = setupDom();
 
 const token = (type: TokenType, value: TokenValue): Token => ({
   path: `t.${type}`,
@@ -34,7 +21,7 @@ const CASES: [TokenType, TokenValue, string[]][] = [
   ['duration', '200ms', ['200ms']],
   ['cubicBezier', [0.2, 0, 0, 1], ['cubic-bezier(0.2, 0, 0, 1)']],
   ['number', 1.5, ['1.5']],
-  ['strokeStyle', { dashArray: ['2px', '4px'], lineCap: 'round' }, ['dashArray: 2px 4px', 'lineCap: round']],
+  ['strokeStyle', { dashArray: ['2px', '4px'], lineCap: 'round' }, ['stroke-dasharray: 2px 4px', 'stroke-linecap: round']],
   ['border', { color: '#000', width: '1px', style: 'solid' }, ['1px solid #000']],
   ['transition', { duration: '200ms', delay: '0ms', timingFunction: 'ease' }, ['200ms ease 0ms']],
   [
@@ -55,19 +42,29 @@ const CASES: [TokenType, TokenValue, string[]][] = [
 
 describe('TokenTable como fallback (SYS-136)', () => {
   it('renderiza qualquer tipo, com os compostos legíveis', () => {
-    act(() => root.render(<TokenTable tokens={CASES.map(([type, value]) => token(type, value))} modes={['default']} />));
-    const rows = [...container.querySelectorAll('tbody tr')];
+    dom.render((<TokenTable tokens={CASES.map(([type, value]) => token(type, value))} modes={['default']} />));
+    const rows = [...dom.container().querySelectorAll('tbody tr')];
     expect(rows).toHaveLength(CASES.length);
     rows.forEach((row, i) => {
       const [type, , lines] = CASES[i]!;
       expect(row.querySelector('th')!.textContent).toBe(`t.${type}`);
       expect([...row.querySelectorAll('.sb-token-value')].map((c) => c.textContent)).toEqual(lines);
     });
-    expect(container.querySelector('.sb-token-swatch')).toBeNull();
+    expect(dom.container().querySelector('.sb-token-swatch')).toBeNull();
+  });
+
+  it('mostra o tipo de cada token em Details', () => {
+    dom.render(<TokenTable tokens={[token('number', 1)]} modes={['default']} />);
+    expect(dom.container().querySelector('.sb-token-details .sb-token-type')!.textContent).toBe('number');
+  });
+
+  it('tipo fora de TokenType (schema mais novo) não derruba a tabela: o valor sai em JSON', () => {
+    dom.render(<TokenTable tokens={[token('futureType' as TokenType, { a: 1 }), token('number', 2)]} modes={['default']} />);
+    expect([...dom.container().querySelectorAll('.sb-token-value')].map((c) => c.textContent)).toEqual(['{"a":1}', '2']);
   });
 
   it('valor sem conversão cai no JSON', () => {
-    act(() => root.render(<TokenTable tokens={[token('border', { color: '#000' })]} modes={['default']} />));
-    expect(container.querySelector('.sb-token-value')!.textContent).toBe('{"color":"#000"}');
+    dom.render((<TokenTable tokens={[token('border', { color: '#000' })]} modes={['default']} />));
+    expect(dom.container().querySelector('.sb-token-value')!.textContent).toBe('{"color":"#000"}');
   });
 });
