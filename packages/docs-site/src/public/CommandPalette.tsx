@@ -61,7 +61,8 @@ function groupEntries(entries: Entry[]): { label: string; items: { entry: Entry;
 /**
  * Busca da doc pública como Command Palette (SYS-116): um modal sobre a página,
  * aberto pelo gatilho do header ou por ⌘K / Ctrl+K. Sem texto, só o campo;
- * digitando, mostra os resultados da busca (debounced) agrupados por seção. ↑/↓ navegam, Enter abre (⌘/Ctrl+Enter em outra aba), Esc fecha.
+ * digitando, mostra os resultados da busca (debounced) agrupados por seção.
+ * ↑/↓ navegam, Enter abre (⌘/Ctrl+Enter em outra aba), Esc fecha.
  *
  * É um `<dialog>` nativo aberto com `showModal()`: o navegador entrega a camada
  * superior, o foco preso, o Esc e a devolução do foco ao gatilho. Fica no DOM do
@@ -151,6 +152,9 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
 
   const waiting = searching && (debounced !== query.trim() || searchQuery.isFetching) && entries.length === 0;
   const empty = searching && !waiting && entries.length === 0;
+  // O listbox só existe com resultados: `aria-controls`/`aria-expanded` não
+  // podem apontar para um id que não está no DOM.
+  const listOpen = entries.length > 0;
 
   function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (entries.length === 0) return;
@@ -161,6 +165,8 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
       e.preventDefault();
       setActive((i) => (i <= 0 ? entries.length - 1 : i - 1));
     } else if (e.key === 'Enter') {
+      // Enter que confirma uma composição de IME (japonês, chinês…) não é "abrir".
+      if (e.nativeEvent.isComposing) return;
       e.preventDefault();
       const chosen = entries[active];
       if (!chosen) return;
@@ -188,10 +194,10 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
           placeholder={placeholder}
           aria-label={placeholder}
           role="combobox"
-          aria-expanded
-          aria-controls={listboxId}
+          aria-expanded={listOpen}
+          aria-controls={listOpen ? listboxId : undefined}
           aria-autocomplete="list"
-          aria-activedescendant={entries.length > 0 ? optionId(active) : undefined}
+          aria-activedescendant={listOpen ? optionId(active) : undefined}
           autoFocus
           autoComplete="off"
           spellCheck={false}
@@ -204,52 +210,52 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
 
       {/* Sem texto não há corpo: a palette é só o campo e o rodapé até digitar. */}
       {searching && (
-      <div className="sb-palette-body">
-        {waiting ? (
-          <p className="sb-palette-hint">Searching…</p>
-        ) : empty ? (
-          <p className="sb-palette-hint" data-testid="search-no-results">
-            No results found.
+        <div className="sb-palette-body">
+          {waiting ? (
+            <p className="sb-palette-hint">Searching…</p>
+          ) : empty ? (
+            <p className="sb-palette-hint" data-testid="search-no-results">
+              No results found.
+            </p>
+          ) : (
+            <div id={listboxId} role="listbox" aria-label="Results" data-testid="search-results">
+              {groups.map((group) => (
+                <div key={group.label} role="group" aria-label={group.label} className="sb-palette-group">
+                  <p className="sb-palette-group-label" aria-hidden>
+                    {group.label}
+                  </p>
+                  <ul className="sb-palette-items" role="presentation">
+                    {group.items.map(({ entry, index }) => (
+                      <li key={entry.id} role="presentation">
+                        <Link
+                          to={entry.to}
+                          id={optionId(index)}
+                          role="option"
+                          aria-selected={index === active}
+                          className={`sb-palette-item${index === active ? ' active' : ''}`}
+                          onClick={(e) => {
+                            // Cliques com modificador abrem em outra aba e deixam a palette no lugar.
+                            if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+                            onClose();
+                          }}
+                          onMouseMove={() => setActive(index)}
+                          data-testid="search-result"
+                        >
+                          <span className="sb-palette-item-title">{entry.title}</span>
+                          {entry.description && <span className="sb-palette-item-desc">{entry.description}</span>}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          )}
+          {/* Anúncio para leitores de tela: a lista muda sem mover o foco. */}
+          <p className="sb-palette-sr" role="status" aria-live="polite">
+            {waiting ? '' : empty ? 'No results found.' : `${entries.length} results`}
           </p>
-        ) : (
-          <div id={listboxId} role="listbox" aria-label="Results" data-testid="search-results">
-            {groups.map((group) => (
-              <div key={group.label} role="group" aria-label={group.label} className="sb-palette-group">
-                <p className="sb-palette-group-label" aria-hidden>
-                  {group.label}
-                </p>
-                <ul className="sb-palette-items" role="presentation">
-                  {group.items.map(({ entry, index }) => (
-                    <li key={entry.id} role="presentation">
-                      <Link
-                        to={entry.to}
-                        id={optionId(index)}
-                        role="option"
-                        aria-selected={index === active}
-                        className={`sb-palette-item${index === active ? ' active' : ''}`}
-                        onClick={(e) => {
-                          // Cliques com modificador abrem em outra aba e deixam a palette no lugar.
-                          if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
-                          onClose();
-                        }}
-                        onMouseMove={() => setActive(index)}
-                        data-testid="search-result"
-                      >
-                        <span className="sb-palette-item-title">{entry.title}</span>
-                        {entry.description && <span className="sb-palette-item-desc">{entry.description}</span>}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        )}
-        {/* Anúncio para leitores de tela: a lista muda sem mover o foco. */}
-        <p className="sb-palette-sr" role="status" aria-live="polite">
-          {waiting ? '' : empty ? 'No results found.' : `${entries.length} results`}
-        </p>
-      </div>
+        </div>
       )}
 
       <div className="sb-palette-footer" aria-hidden>

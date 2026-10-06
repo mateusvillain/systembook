@@ -278,6 +278,10 @@ describe('doc pública fora da raiz (basename) e sem prefixo', () => {
     expect(dialog.querySelector('[data-testid=public-search-input]')).not.toBeNull();
     expect(dialog.querySelector('[data-testid=search-result]')).toBeNull();
     expect(dialog.querySelector('.sb-palette-body')).toBeNull();
+    // Sem lista no DOM, o combobox não aponta para um listbox inexistente.
+    const input = dialog.querySelector('[data-testid=public-search-input]')!;
+    expect(input.getAttribute('aria-expanded')).toBe('false');
+    expect(input.hasAttribute('aria-controls')).toBe(false);
   });
 
   it('a busca mostra título, descrição com destaque e o href com a base do router', async () => {
@@ -288,6 +292,10 @@ describe('doc pública fora da raiz (basename) e sem prefixo', () => {
     expect(item.querySelector('.sb-palette-item-title')!.textContent).toBe('Button');
     expect(item.querySelector('.sb-palette-item-desc')!.textContent).toBe('Botão');
     expect(item.getAttribute('href')).toBe('/meu-repo/components/actions/button');
+
+    const input = container.querySelector('[data-testid=public-search-input]')!;
+    expect(input.getAttribute('aria-expanded')).toBe('true');
+    expect(document.getElementById(input.getAttribute('aria-controls')!)).not.toBeNull();
   });
 
   it('⌘K abre a palette e Esc/fechar a fecham', async () => {
