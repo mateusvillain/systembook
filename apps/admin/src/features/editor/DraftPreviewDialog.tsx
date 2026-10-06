@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Eye, Moon, Sun, X } from 'lucide-react';
 import { useTRPC } from '../../lib/trpc.js';
 import {
+  InlineMarkdown,
   PageRenderer,
   TableOfContents,
   useHeadingIds,
@@ -188,7 +189,9 @@ function PreviewBody({ pageId }: { pageId: string }) {
                   <header className="sb-page-header">
                     <h1 className="sb-public-title">{query.data.titulo}</h1>
                     {query.data.subtitulo && (
-                      <p className="sb-page-subtitle">{query.data.subtitulo}</p>
+                      <p className="sb-page-subtitle">
+                        <InlineMarkdown>{query.data.subtitulo}</InlineMarkdown>
+                      </p>
                     )}
                   </header>
                   <PageRenderer snapshot={query.data.snapshot as RenderableSnapshot} />

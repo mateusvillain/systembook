@@ -1,4 +1,5 @@
 import type { Block, PageSnapshot, StaticSiteData } from '@systembook/schema';
+import { stripInlineMarkdown } from '@systembook/content/inline';
 import { parsePageKey, sitePath } from '@systembook/content/site';
 
 /** Uma rota do site e o que vai no `<head>` dela. */
@@ -55,14 +56,14 @@ export function routeMetas(data: StaticSiteData, landingTitle: string | null): R
   for (const key of Object.keys(data.pages).sort()) {
     const page = data.pages[key]!;
     const ref = parsePageKey(key);
-    const description = page.subtitulo ?? firstParagraph(primaryBlocks(page.snapshot)) ?? name;
+    const description = (page.subtitulo && stripInlineMarkdown(page.subtitulo)) ?? firstParagraph(primaryBlocks(page.snapshot)) ?? name;
     routes.push({ path: sitePath(ref), title: `${page.titulo} · ${name}`, description });
     for (const tab of page.snapshot?.tabs ?? []) {
       if (tab.isPrimary) continue;
       routes.push({
         path: sitePath(ref, tab.tabId),
         title: `${tab.titulo} · ${page.titulo} · ${name}`,
-        description: page.subtitulo ?? firstParagraph(tab.blocks) ?? description,
+        description: (page.subtitulo && stripInlineMarkdown(page.subtitulo)) ?? firstParagraph(tab.blocks) ?? description,
       });
     }
   }

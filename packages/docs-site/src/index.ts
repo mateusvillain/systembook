@@ -62,6 +62,7 @@ export { PublicPageById } from './public/PublicPageById.js';
 export { LegacyDocsRedirect } from './public/LegacyDocsRedirect.js';
 export { DocsRoutesProvider, useDocsPaths, type DocsPaths } from './public/docsRoutes.js';
 export { createDocsRoute } from './public/createDocsRoute.js';
+export { InlineMarkdown } from './public/InlineMarkdown.js';
 export { TableOfContents } from './public/TableOfContents.js';
 export { useHeadingIds } from './public/useHeadingIds.js';
 export { useTheme } from './public/useTheme.js';

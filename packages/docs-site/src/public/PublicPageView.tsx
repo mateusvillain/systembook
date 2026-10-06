@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { PageRenderer } from './PageRenderer.js';
+import { InlineMarkdown } from './InlineMarkdown.js';
 import { TableOfContents } from './TableOfContents.js';
 import { HeadingAnchors } from './HeadingAnchors.js';
 import { useHeadingIds } from './useHeadingIds.js';
@@ -71,7 +72,11 @@ export function PublicPageView() {
       <article>
         <header className="sb-page-header">
           <h1 className="sb-public-title">{titulo}</h1>
-          {subtitulo && <p className="sb-page-subtitle">{subtitulo}</p>}
+          {subtitulo && (
+            <p className="sb-page-subtitle">
+              <InlineMarkdown>{subtitulo}</InlineMarkdown>
+            </p>
+          )}
         </header>
         <div data-testid="not-published" style={{ color: '#666' }}>
           <p>This page has not been published yet.</p>
@@ -90,7 +95,11 @@ export function PublicPageView() {
       <article className="sb-page-body" ref={bodyRef}>
         <header className="sb-page-header">
           <h1 className="sb-public-title">{titulo}</h1>
-          {subtitulo && <p className="sb-page-subtitle">{subtitulo}</p>}
+          {subtitulo && (
+            <p className="sb-page-subtitle">
+              <InlineMarkdown>{subtitulo}</InlineMarkdown>
+            </p>
+          )}
         </header>
         <PageRenderer
           snapshot={snapshot}
