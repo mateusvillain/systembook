@@ -5,10 +5,12 @@
  */
 export { formatTokenDiagnostic, sortByTokenOrder, TokenDiagnosticBag, type TokenDiagnostic } from './diagnostics.js';
 export { loadTokenSet } from './load.js';
+export { checkCssVarCollisions, findCssVarCollisions, toCssVar, toJsPath } from './names.js';
 export { parseTokenSources } from './parse.js';
 export { resolveTokens } from './resolve.js';
 export {
   DEFAULT_TOKEN_MODE,
+  ROOT_TOKEN,
   type LoadedTokens,
   type ParsedToken,
   type ParsedTokens,

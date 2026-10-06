@@ -217,6 +217,17 @@ describe('loadTokenSet', () => {
     });
   });
 
+  it('avisa quando dois tokens válidos geram a mesma variável CSS', () => {
+    const { set, diagnostics } = loadTokenSet([
+      source({ color: { $type: 'color', brandPrimary: { $value: '#00f' }, 'brand-primary': { $value: '#0af' }, bad: { $value: 'x' } } }),
+    ]);
+    expect(set.tokens).toHaveLength(2);
+    expect(diagnostics.map((d) => [d.severity, d.path])).toEqual([
+      ['error', 'color.bad'],
+      ['warning', 'color.brand-primary'],
+    ]);
+  });
+
   it('junta os diagnósticos das três etapas', () => {
     const { diagnostics } = loadTokenSet([
       source({ a: { $value: 1, $type: 'number', $foo: 1 }, b: { $value: '{c}', $type: 'number' }, d: { $value: 'x', $type: 'number' } }),
