@@ -5,11 +5,14 @@ order: 1
 
 ## Pares aprovados
 
-| Texto | Fundo | Contraste |
-| --- | --- | --- |
-| `--acme-neutral` | `--acme-surface` | 12,6:1 |
-| branco | `--acme-primary` | 6,3:1 |
-| branco | `--acme-danger` | 4,8:1 |
+Cada token troca de valor entre os modos; o contraste vale para os dois.
+
+| Texto | Fundo | Claro | Escuro |
+| --- | --- | --- | --- |
+| `--acme-text` | `--acme-surface` | 17,1:1 | 19,3:1 |
+| `--acme-neutral` | `--acme-surface` | 7,2:1 | 7,9:1 |
+| `--acme-on-primary` | `--acme-primary` | 6,3:1 | 6,8:1 |
+| `--acme-on-danger` | `--acme-danger` | 4,8:1 | 7,3:1 |
 
 <DosDonts variant="do" title="Use o token do papel">
   `color: var(--acme-danger)` continua certo quando o tema muda.

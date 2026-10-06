@@ -36,6 +36,10 @@ tokens: {
 },
 ```
 
+O projeto de exemplo [`examples/static-docs`](../examples/static-docs) usa
+essa forma: paleta e escalas num `base.json`, cores de papel em `light.json` e
+`dark.json`.
+
 `files` é opcional (um arquivo completo por modo, como o export do Figma, não
 precisa de base). Os modos seguem a ordem em que aparecem na config — exceto os
 de nome só numérico (`"1"`), que o JavaScript põe antes dos outros num objeto.

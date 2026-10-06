@@ -1,0 +1,110 @@
+{
+  "acme": {
+    "brand": {
+      "$type": "color",
+      "$value": "{acme.primary}",
+      "$deprecated": "Use acme.primary — brand era o nome da primeira versão."
+    },
+    "palette": {
+      "$type": "color",
+      "$description": "Cores primitivas. Os tokens de papel (light.json e dark.json) apontam para elas.",
+      "white": { "$value": "#ffffff" },
+      "indigo": {
+        "300": { "$value": "#a5b4fc" },
+        "400": { "$value": "#818cf8" },
+        "500": { "$value": "#6366f1" },
+        "600": { "$value": "#4f46e5" },
+        "700": { "$value": "#4338ca" }
+      },
+      "slate": {
+        "50": { "$value": "#f8fafc" },
+        "100": { "$value": "#f1f5f9" },
+        "200": { "$value": "#e2e8f0" },
+        "400": { "$value": "#94a3b8" },
+        "600": { "$value": "#475569" },
+        "700": { "$value": "#334155" },
+        "800": { "$value": "#1e293b" },
+        "900": { "$value": "#0f172a" },
+        "950": { "$value": "#020617" }
+      },
+      "green": {
+        "400": { "$value": "#4ade80" },
+        "600": { "$value": "#16a34a" }
+      },
+      "amber": {
+        "400": { "$value": "#fbbf24" },
+        "600": { "$value": "#d97706" }
+      },
+      "red": {
+        "400": { "$value": "#f87171" },
+        "600": { "$value": "#dc2626" }
+      }
+    },
+    "space": {
+      "$type": "dimension",
+      "$description": "Escala de espaçamento, múltiplos de 4px.",
+      "1": { "$value": "4px" },
+      "2": { "$value": "8px" },
+      "3": { "$value": "12px" },
+      "4": { "$value": "16px" },
+      "6": { "$value": "24px" },
+      "8": { "$value": "32px" }
+    },
+    "radius": {
+      "$type": "dimension",
+      "sm": { "$value": "4px" },
+      "md": { "$value": "8px" },
+      "full": { "$value": "9999px", "$description": "Pílulas e avatares." }
+    },
+    "font": {
+      "family": {
+        "$type": "fontFamily",
+        "sans": { "$value": ["Inter", "system-ui", "sans-serif"] },
+        "mono": { "$value": ["JetBrains Mono", "ui-monospace", "monospace"] }
+      },
+      "weight": {
+        "$type": "fontWeight",
+        "regular": { "$value": 400 },
+        "semibold": { "$value": 600 }
+      }
+    },
+    "type": {
+      "$type": "typography",
+      "body": {
+        "$value": {
+          "fontFamily": "{acme.font.family.sans}",
+          "fontSize": "16px",
+          "fontWeight": "{acme.font.weight.regular}",
+          "letterSpacing": "0px",
+          "lineHeight": 1.5
+        }
+      },
+      "heading": {
+        "$value": {
+          "fontFamily": "{acme.font.family.sans}",
+          "fontSize": "24px",
+          "fontWeight": "{acme.font.weight.semibold}",
+          "letterSpacing": "-0.5px",
+          "lineHeight": 1.25
+        }
+      }
+    },
+    "shadow": {
+      "$type": "shadow",
+      "card": {
+        "$value": { "color": "#0f172a1f", "offsetX": "0px", "offsetY": "2px", "blur": "8px", "spread": "0px" }
+      }
+    },
+    "motion": {
+      "duration": {
+        "$type": "duration",
+        "fast": { "$value": "120ms" },
+        "base": { "$value": "200ms" }
+      },
+      "easing": {
+        "$type": "cubicBezier",
+        "standard": { "$value": [0.2, 0, 0, 1] }
+      }
+    }
+  }
+}
