@@ -66,6 +66,48 @@ describe('parseTokenSources', () => {
     ]);
   });
 
+  it('grupos de mesmo caminho em arquivos diferentes são um grupo só', () => {
+    const { tokens, diagnostics } = parseTokenSources([
+      source('a.json', { color: { $type: 'color', $deprecated: true } }),
+      source('b.json', { color: { blue: { $value: '#00f' } } }),
+    ]);
+    expect(diagnostics).toEqual([]);
+    expect(tokens).toEqual([{ path: 'color.blue', type: 'color', deprecated: true, byMode: { default: '#00f' }, file: 'b.json' }]);
+  });
+
+  it('$type do grupo diferente entre arquivos avisa e vale o último', () => {
+    const { tokens, diagnostics } = parseTokenSources([
+      source('a.json', { x: { $type: 'color' } }),
+      source('b.json', { x: { $type: 'dimension', y: { $value: '4px' } } }),
+    ]);
+    expect(tokens[0]!.type).toBe('dimension');
+    expect(diagnostics).toEqual([
+      { severity: 'warning', file: 'b.json', path: 'x', message: '"$type" do grupo diferente entre os arquivos (color, dimension); vale o último.' },
+    ]);
+  });
+
+  it('caminho que é token num arquivo e grupo em outro é erro', () => {
+    const { tokens, diagnostics } = parseTokenSources([
+      source('a.json', { color: { brand: { $value: '#00f', $type: 'color' }, ok: { $value: '#000', $type: 'color' } } }),
+      source('b.json', { color: { brand: { 500: { $value: '#0af', $type: 'color' } } } }),
+      source('c.json', { space: { $value: '4px', $type: 'dimension' } }),
+      source('d.json', { space: { $type: 'dimension' } }),
+    ]);
+    expect(tokens.map((t) => t.path)).toEqual(['color.ok']);
+    expect(diagnostics).toEqual([
+      { severity: 'error', file: 'a.json', path: 'color.brand', message: 'é token e grupo ao mesmo tempo (color.brand.500 está dentro dele).' },
+      { severity: 'error', file: 'c.json', path: 'space', message: 'é token e grupo ao mesmo tempo (declarado como grupo em d.json).' },
+    ]);
+  });
+
+  it('file é o da primeira definição', () => {
+    const { tokens } = parseTokenSources([
+      source('a1.json', { x: { $value: 1, $type: 'number' } }),
+      source('a2.json', { x: { $value: 2, $type: 'number' } }),
+    ]);
+    expect(tokens[0]!.file).toBe('a1.json');
+  });
+
   it('redefinição avisa e vale a última', () => {
     const { tokens, diagnostics } = parseTokenSources([
       source('a.json', { x: { $value: 1, $type: 'number' } }),
@@ -123,7 +165,9 @@ describe('parseTokenSources', () => {
         source('dark.json', { x: { $type: 'dimension', $value: '4px' } }, 'dark'),
       ]);
       expect(tokens).toEqual([]);
-      expect(diagnostics[0]).toMatchObject({ severity: 'error', path: 'x', message: '"$type" diferente entre os arquivos: color, dimension.' });
+      expect(diagnostics).toEqual([
+        { severity: 'error', file: 'dark.json', path: 'x', message: '"$type" diferente entre os arquivos: color, dimension.' },
+      ]);
     });
 
     it('modo de um arquivo com JSON inválido não entra no conjunto', () => {
@@ -137,9 +181,31 @@ describe('parseTokenSources', () => {
       expect(diagnostics[0]!.message).toMatch(/^JSON inválido: /);
     });
 
-    it('nome de modo vazio é erro', () => {
-      const { diagnostics } = parseTokenSources([source('x.json', {}, ' ')]);
-      expect(diagnostics).toEqual([{ severity: 'error', file: 'x.json', message: 'o nome do modo está vazio.' }]);
+    it('nome de modo vazio ou __proto__ é erro', () => {
+      const { diagnostics, modes } = parseTokenSources([source('x.json', {}, ' '), source('y.json', {}, '__proto__')]);
+      expect(modes).toEqual(['default']);
+      expect(diagnostics).toEqual([
+        { severity: 'error', file: 'x.json', message: 'nome de modo inválido: " ".' },
+        { severity: 'error', file: 'y.json', message: 'nome de modo inválido: "__proto__".' },
+      ]);
+    });
+
+    it('$type do grupo no base vale para os tokens dos arquivos de modo', () => {
+      const { tokens } = parseTokenSources([
+        source('base.json', { color: { $type: 'color' } }),
+        source('light.json', { color: { bg: { $value: '#fff' } } }, 'light'),
+        source('dark.json', { color: { bg: { $value: '#000' } } }, 'dark'),
+      ]);
+      expect(tokens).toEqual([{ path: 'color.bg', type: 'color', byMode: { light: '#fff', dark: '#000' }, file: 'light.json' }]);
+    });
+
+    it('description e deprecated: vale a última definição que traz o campo', () => {
+      const { tokens } = parseTokenSources([
+        source('base.json', { bg: { $type: 'color', $value: '#fff', $description: 'Fundo' } }),
+        source('dark.json', { bg: { $value: '#000', $description: 'Fundo escuro' } }, 'dark'),
+        source('light.json', { bg: { $value: '#fafafa' } }, 'light'),
+      ]);
+      expect(tokens[0]).toMatchObject({ description: 'Fundo escuro', byMode: { dark: '#000', light: '#fafafa' } });
     });
   });
 
@@ -205,6 +271,12 @@ describe('parseTokenSources', () => {
         ['warning', 'color.red', '"dark" ignorado: um token não pode conter outros tokens ou grupos.'],
       ]);
     });
+  });
+
+  it('$root no topo do arquivo é erro', () => {
+    const { tokens, diagnostics } = parseTokenSources([source('t.json', { $root: { $value: 1, $type: 'number' } })]);
+    expect(tokens).toEqual([]);
+    expect(diagnostics).toEqual([{ severity: 'error', file: 't.json', path: '$root', message: '"$root" só existe dentro de um grupo.' }]);
   });
 
   it('$root é o token do próprio grupo', () => {

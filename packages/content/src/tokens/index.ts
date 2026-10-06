@@ -3,11 +3,6 @@
  * Funções puras, sem disco e sem as dependências do parser de `.md/.mdx` —
  * servem à CLI, ao server e à doc pública.
  */
-export { parseTokenSources, type ParsedTokens } from './parse.js';
-export {
-  DEFAULT_TOKEN_MODE,
-  formatTokenDiagnostic,
-  type ParsedToken,
-  type TokenDiagnostic,
-  type TokenSource,
-} from './types.js';
+export { formatTokenDiagnostic, TokenDiagnosticBag, type TokenDiagnostic } from './diagnostics.js';
+export { parseTokenSources } from './parse.js';
+export { DEFAULT_TOKEN_MODE, type ParsedToken, type ParsedTokens, type TokenSource } from './types.js';
