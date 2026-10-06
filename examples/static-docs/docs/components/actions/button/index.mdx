@@ -28,6 +28,16 @@ export function SaveBar() {
 }
 ```
 
+## Propriedades
+
+| Propriedade | Tipo | Padrão | Quando usar |
+| --- | --- | --- | --- |
+| `variant` | `primary`, `secondary`, `danger` | `primary` | Define a ênfase da ação. Use uma só `primary` por tela. |
+| `size` | `sm`, `md`, `lg` | `md` | `sm` em toolbars e tabelas; `lg` em ações de destaque. |
+| `disabled` | `boolean` | `false` | Indisponível no momento. Explique o motivo perto do botão. |
+| `loading` | `boolean` | `false` | Ação em andamento. Mantém a largura e bloqueia cliques repetidos. |
+| `onClick` | `() => void` | — | Dispara a ação. |
+
 ## Boas práticas
 
 <DosDonts variant="do" title="Use um verbo no rótulo" coverComponent="Button" coverVariant="primary">
