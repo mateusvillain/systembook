@@ -48,8 +48,10 @@ de nome só numérico (`"1"`), que o JavaScript põe antes dos outros num objeto
 - `node_modules`, `.git`, a pasta do site gerado (`outDir`) e o próprio
   arquivo de config ficam de fora dos globs.
 
-`systembook build` falha com qualquer erro nos tokens e lista os avisos sem
-falhar; o `systembook dev` mostra os dois ao salvar um arquivo de tokens.
+`systembook build` e `systembook check` falham com qualquer erro nos tokens
+(saída com código 1) e listam os avisos sem falhar — com só avisos, o `check`
+sai com 0 e o resumo diz quantos tokens leu (e os modos, quando há mais de um). O `systembook dev` mostra
+erros e avisos ao salvar um arquivo de tokens.
 
 ## Formato: DTCG
 

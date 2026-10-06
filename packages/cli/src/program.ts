@@ -101,12 +101,18 @@ export function createProgram(): Command {
       const config = await loadProjectConfig(options.root);
       if (!config) return;
       const result = await checkSite(config);
+      reportWarnings(result.warnings);
       if (!result.ok) {
         reportProblems(result.problems);
         return;
       }
+      // Modo único `default` (sem arquivos de modo) não é informação.
+      const { tokens: t } = result;
+      const modes = t && t.modes.length > 1 ? ` em ${t.modes.length} modos (${t.modes.join(', ')})` : '';
+      const tokens = t ? `, ${t.count} token(s)${modes}` : '';
+      const warnings = result.warnings.length ? ` (${result.warnings.length} aviso(s))` : '';
       console.log(
-        `✓ Sem erros — ${result.pages} página(s), ${result.images} imagem(ns), ${result.variants} variante(s) de preview.`,
+        `✓ Sem erros${warnings} — ${result.pages} página(s), ${result.images} imagem(ns), ${result.variants} variante(s) de preview${tokens}.`,
       );
     });
 
