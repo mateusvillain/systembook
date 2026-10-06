@@ -7,7 +7,7 @@ import type { TokenSource } from './types.js';
 function resolve(...sources: TokenSource[]) {
   const parsed = parseTokenSources(sources);
   expect(parsed.diagnostics).toEqual([]);
-  return resolveTokens(parsed.tokens, parsed.modes);
+  return resolveTokens(parsed);
 }
 
 const source = (json: unknown, mode?: string, file = mode ? `${mode}.json` : 'tokens.json'): TokenSource =>
@@ -71,6 +71,29 @@ describe('resolveTokens', () => {
     const text = tokens.find((t) => t.path === 'color.text')!;
     expect(text.byMode.light!.resolvedValue).toBe('#111');
     expect(text.byMode.dark!.resolvedValue).toBe('#eee');
+  });
+
+  it('alvo que cai no base num modo e é sobreposto em outro', () => {
+    const { tokens } = resolve(
+      source({ color: { $type: 'color', fg: { $value: '#111' }, text: { $value: '{color.fg}' } } }),
+      source({}, 'light'),
+      source({ color: { fg: { $value: '#eee' } } }, 'dark'),
+    );
+    const text = tokens.find((t) => t.path === 'color.text')!;
+    expect(text.byMode).toEqual({
+      light: { value: '{color.fg}', resolvedValue: '#111', aliasOf: 'color.fg' },
+      dark: { value: '{color.fg}', resolvedValue: '#eee', aliasOf: 'color.fg' },
+    });
+  });
+
+  it('o valor de cada token é um objeto próprio', () => {
+    const { tokens } = resolve(
+      source({ s: { $type: 'cubicBezier', $value: [0, 0, 1, 1] }, a: { $value: '{s}' }, b: { $value: '{s}' } }),
+    );
+    const [s, a, b] = tokens.map((t) => t.byMode.default!.resolvedValue);
+    expect(a).toEqual(s);
+    expect(a).not.toBe(s);
+    expect(a).not.toBe(b);
   });
 
   it('sem $type, herda o do token apontado, seguindo a cadeia', () => {
@@ -148,6 +171,27 @@ describe('resolveTokens', () => {
     expect(diagnostics.map((d) => [d.path, d.message])).toEqual([
       ['x', 'os aliases apontam para tokens de tipos diferentes (color, dimension); declare o "$type".'],
     ]);
+  });
+
+  it('alias para um token que o parser descartou diz que o token tem erro', () => {
+    const parsed = parseTokenSources([
+      source({ x: { $type: 'color', $value: '{y}' } }, 'light'),
+      source({ x: { $type: 'color', $value: '{y}' }, y: { $type: 'color', $value: '#000' } }, 'dark'),
+    ]);
+    expect(parsed.diagnostics.map((d) => d.path)).toEqual(['y']);
+    expect(resolveTokens(parsed).diagnostics.map((d) => d.message)).toEqual([
+      'o alias {y} aponta para um token com erro (modo light).',
+    ]);
+  });
+
+  it('cadeia de aliases longa demais é erro, não estouro de pilha', () => {
+    // Do fim para o começo: t0 → t1 → … → t2999, resolvida a partir de t0.
+    const json: Record<string, unknown> = { t2999: { $type: 'number', $value: 1 } };
+    for (let i = 0; i < 2999; i++) json[`t${i}`] = { $type: 'number', $value: `{t${i + 1}}` };
+    const { tokens, diagnostics } = resolve(source(json));
+    expect(diagnostics.some((d) => d.message === 'cadeia de aliases com mais de 256 tokens.')).toBe(true);
+    expect(tokens.length).toBeGreaterThan(0);
+    expect(tokens.length).toBeLessThan(3000);
   });
 
   it('chave __proto__ num valor composto continua chave', () => {

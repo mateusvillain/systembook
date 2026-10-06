@@ -53,3 +53,8 @@ export interface ParsedTokens {
   tokens: ParsedToken[];
   diagnostics: TokenDiagnostic[];
 }
+
+export interface ResolvedTokens {
+  tokens: ResolvedToken[];
+  diagnostics: TokenDiagnostic[];
+}
