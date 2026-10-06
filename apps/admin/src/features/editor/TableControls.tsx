@@ -75,6 +75,29 @@ function selectCell(editor: Editor, tablePos: number, rowIndex: number, colIndex
   return true;
 }
 
+/**
+ * Folga em volta da tabela onde os controles continuam visíveis. Os botões vivem
+ * numa régua a `railOffset` (16px) da borda esquerda/superior e se estendem ~9px
+ * para cada lado; o vão entre a tabela e eles não é parte da `<table>`, então sem
+ * esta zona o ponteiro "saía" da tabela a caminho do botão, os controles
+ * desmontavam e o clique nunca chegava. Esquerda/topo cobrem a régua; direita/baixo
+ * cobrem os botões de borda (última coluna/linha).
+ */
+const RAIL_ZONE = { left: 32, top: 32, right: 12, bottom: 12 };
+
+/** O ponto (viewport) está sobre a tabela `tablePos` ou na zona dos controles dela? */
+function inTableZone(editor: Editor, tablePos: number, x: number, y: number): boolean {
+  const tableEl = findTableElement(editor, tablePos);
+  if (!tableEl) return false;
+  const r = tableEl.getBoundingClientRect();
+  return (
+    x >= r.left - RAIL_ZONE.left &&
+    x <= r.right + RAIL_ZONE.right &&
+    y >= r.top - RAIL_ZONE.top &&
+    y <= r.bottom + RAIL_ZONE.bottom
+  );
+}
+
 const controlButtonClass =
   'pointer-events-auto absolute flex size-[18px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border/70 bg-background text-muted-foreground shadow-sm transition-colors hover:border-foreground/40 hover:text-foreground disabled:pointer-events-none disabled:opacity-0';
 
@@ -88,6 +111,10 @@ export function TableControls({
   const [hoveredPos, setHoveredPos] = useState<number | null>(null);
   const [geometry, setGeometry] = useState<TableGeometry | null>(null);
   const controlRef = useRef<HTMLDivElement>(null);
+  // Espelho de `hoveredPos` para os listeners do DOM (registrados uma vez) lerem
+  // a tabela atual sem reassinar a cada mudança.
+  const hoveredPosRef = useRef<number | null>(null);
+  hoveredPosRef.current = hoveredPos;
 
   const recompute = useCallback(() => {
     const canvas = canvasRef.current;
@@ -117,6 +144,9 @@ export function TableControls({
     function onMove(e: MouseEvent) {
       const tableEl = (e.target as HTMLElement).closest('table');
       if (!tableEl) {
+        // Fora da tabela, mas ainda a caminho dos controles: mantém.
+        const current = hoveredPosRef.current;
+        if (current != null && inTableZone(editor, current, e.clientX, e.clientY)) return;
         setHoveredPos(null);
         return;
       }
@@ -136,6 +166,9 @@ export function TableControls({
       // editor, mas visualmente sobre a tabela), mantém o estado — só limpa
       // ao sair de fato da área da tabela/controles.
       if (controlRef.current?.contains(e.relatedTarget as Node)) return;
+      // A régua fica fora do DOM do editor: sair para ela também é "leave".
+      const current = hoveredPosRef.current;
+      if (current != null && inTableZone(editor, current, e.clientX, e.clientY)) return;
       setHoveredPos(null);
     }
 
@@ -197,6 +230,12 @@ export function TableControls({
       className="sb-table-controls pointer-events-none absolute inset-0 z-10"
       contentEditable={false}
       onMouseDown={(e) => e.preventDefault()}
+      // Saindo dos botões: de volta ao editor, o `mousemove` decide; para qualquer
+      // outro lugar fora da zona, esconde (senão os controles ficariam presos).
+      onMouseLeave={(e) => {
+        const back = editor.view.dom.contains(e.relatedTarget as Node);
+        if (!back && !inTableZone(editor, tablePos, e.clientX, e.clientY)) setHoveredPos(null);
+      }}
     >
       <button
         type="button"
