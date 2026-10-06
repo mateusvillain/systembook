@@ -1,4 +1,4 @@
-import type { ComponentType, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -6,7 +6,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ArrowDown, ArrowUp, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, MoreHorizontal, Pencil, Trash2, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /**
@@ -25,7 +25,7 @@ import { cn } from '@/lib/utils';
  * dois hoje (só reorder dentro do mesmo pai), então não expomos UI morta.
  *
  * Todo item leva ícone (o `DropdownMenuItem` já dimensiona e colore o `svg`):
- * menu com ícone em só alguns itens desalinha os rótulos (SYS-menus).
+ * menu com ícone em só alguns itens desalinha os rótulos.
  *
  * Mover para cima/baixo somem quando `onMovePrev`/`onMoveNext` são omitidos —
  * o call site passa `undefined` na primeira/última posição, espelhando o antigo
@@ -67,8 +67,8 @@ export function RowActionsMenu({
   movePrevLabel?: string;
   moveNextLabel?: string;
   /** Ícones dos itens de mover (setas na direção do rótulo; padrão ↑/↓). */
-  movePrevIcon?: ComponentType<{ className?: string }>;
-  moveNextIcon?: ComponentType<{ className?: string }>;
+  movePrevIcon?: LucideIcon;
+  moveNextIcon?: LucideIcon;
   onDelete: () => void;
   align?: 'start' | 'center' | 'end';
   /** Estilos de posição/revelação por contexto (ex.: opacity-0 group-hover…). */

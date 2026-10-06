@@ -60,7 +60,7 @@ export function CopyLinkItem({
           .catch(() => toast.error('Could not copy the link'));
       }}
     >
-      <Link2 className="size-4" />
+      <Link2 />
       Copy link
     </DropdownMenuItem>
   );
