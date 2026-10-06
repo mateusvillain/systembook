@@ -38,6 +38,29 @@ export function useInternalLinks(): (event: React.MouseEvent<HTMLElement>) => vo
       const anchor = (event.target as Element).closest?.('a[href]');
       if (!(anchor instanceof HTMLAnchorElement)) return;
 
+      // Âncora da própria página (`#id`): não é navegação do router. O TOC e as
+      // âncoras de heading/bloco têm handler próprio e vivem dentro deste
+      // contêiner — interceptá-los aqui engolia o clique (`stopPropagation`) e o
+      // `navigate` só com hash não rola o cartão, que é quem tem o scroll. Link
+      // `target="_blank"` do conteúdo não pode seguir o padrão (abriria outra
+      // aba): rola no lugar.
+      const rawHref = anchor.getAttribute('href') ?? '';
+      if (rawHref.startsWith('#')) {
+        if (anchor.target !== '_blank') return;
+        let id = rawHref.slice(1);
+        try {
+          id = decodeURIComponent(id);
+        } catch {
+          // Hash malformado: usa como veio.
+        }
+        const target = id ? document.getElementById(id) : null;
+        event.preventDefault();
+        if (!target) return;
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        history.replaceState(null, '', `#${id}`);
+        return;
+      }
+
       const url = new URL(anchor.href, window.location.href);
       if (url.origin !== window.location.origin) return;
       if (url.pathname !== docsRoot && !url.pathname.startsWith(`${docsRoot}/`)) return;
