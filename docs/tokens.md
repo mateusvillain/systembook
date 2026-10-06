@@ -103,6 +103,19 @@ Essa convenção é do Systembook. A spec DTCG não define modos dentro do forma
 de token; o módulo Resolver da spec compõe conjuntos de arquivos, e é a mesma
 ideia.
 
+## Nomes para copiar
+
+A doc mostra, para cada token, o caminho e dois nomes prontos para copiar:
+
+| | Regra | `color.brandPrimary.500` |
+| --- | --- | --- |
+| Variável CSS | segmentos em kebab-case, minúsculos, unidos por `-` (a convenção do Style Dictionary); `$root` some | `--color-brand-primary-500` |
+| JS | acesso num objeto aninhado com os mesmos grupos; número vira índice, nome que não é identificador vai entre aspas | `color.brandPrimary[500]` |
+
+O preview dos componentes usa a mesma variável CSS. Se dois tokens geram a
+mesma variável (`color.brandPrimary` e `color.brand-primary`), o build avisa:
+no preview, um sobrescreveria o outro.
+
 ## Erros
 
 Todo erro traz o arquivo e o caminho do token, e o build lista **todos** de
@@ -125,7 +138,8 @@ tipo (`"color": "{space.sm}"`); valor composto sem nenhum campo do tipo.
 
 São só avisos: propriedade desconhecida (como `$extends`, ainda não suportado),
 token redefinido, `$type` de grupo diferente entre arquivos, grupo que declara
-`$type` mas não tem nenhum token (quase sempre um `$value` esquecido) e, nos tipos
+`$type` mas não tem nenhum token (quase sempre um `$value` esquecido), dois
+tokens com a mesma variável CSS e, nos tipos
 compostos, campo faltando ou que não faz parte do tipo.
 
 ### Formato dos valores

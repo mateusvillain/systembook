@@ -5,6 +5,7 @@
  */
 export { formatTokenDiagnostic, sortByTokenOrder, TokenDiagnosticBag, type TokenDiagnostic } from './diagnostics.js';
 export { loadTokenSet } from './load.js';
+export { findCssVarCollisions, toCssVar, toJsPath, type CssVarOptions } from './names.js';
 export { parseTokenSources } from './parse.js';
 export { resolveTokens } from './resolve.js';
 export {
