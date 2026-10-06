@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -13,7 +13,7 @@ afterEach(() => {
 
 /** Projeto temporário (em `.tmp/`, como nos outros testes do CLI) com config JSON. */
 const TMP = fileURLToPath(new URL('../.tmp', import.meta.url));
-async function project(tokens: unknown, files: Record<string, unknown>) {
+async function project(tokens: unknown, files: Record<string, unknown>, setup?: (root: string) => void) {
   mkdirSync(TMP, { recursive: true });
   const root = mkdtempSync(path.join(TMP, 'tokens-'));
   dirs.push(root);
@@ -22,6 +22,7 @@ async function project(tokens: unknown, files: Record<string, unknown>) {
     mkdirSync(path.dirname(path.join(root, name)), { recursive: true });
     writeFileSync(path.join(root, name), typeof content === 'string' ? content : JSON.stringify(content));
   }
+  setup?.(root);
   return loadProjectTokens(await loadConfig(root));
 }
 
@@ -88,9 +89,56 @@ describe('loadProjectTokens', () => {
   });
 
   it('o mesmo arquivo em dois padrões do mesmo grupo entra uma vez', async () => {
-    const { set, warnings } = await project(['t.json', '*.json'], { 't.json': { a: color('#fff') } });
+    const { set, problems, warnings } = await project(['tokens/t.json', 'tokens/*.json'], { 'tokens/t.json': { a: color('#fff') } });
     expect(set?.tokens).toHaveLength(1);
+    expect(problems).toEqual([]);
     expect(warnings).toEqual([]);
+  });
+
+  it('glob largo ignora a config, o outDir e a pasta interna', async () => {
+    const { set, problems } = await project('**/*.json', {
+      'tokens/a.json': { a: color('#fff') },
+      'systembook-dist/_systembook/data/nav.json': [],
+      '.systembook/cache.json': {},
+    });
+    expect(problems).toEqual([]);
+    expect(set?.tokens.map((t) => t.path)).toEqual(['a']);
+  });
+
+  it('"!padrão" exclui; "\\" vale como "/"; pasta solta não expande', async () => {
+    const { set, problems } = await project(['tokens\\*.json', '!tokens/draft.json'], {
+      'tokens/a.json': { a: color('#fff') },
+      'tokens/draft.json': { draft: color('nope') },
+    });
+    expect(problems).toEqual([]);
+    expect(set?.tokens.map((t) => t.path)).toEqual(['a']);
+    expect((await project('tokens', { 'tokens/a.json': { a: color('#fff') } })).problems).toEqual([
+      'systembook.config.json: "tokens.files": "tokens" não casa com nenhum arquivo.',
+    ]);
+    expect((await project('!x.json', {})).problems).toEqual([
+      'systembook.config.json: "tokens.files": só há padrões de exclusão ("!…") — informe os arquivos a incluir.',
+    ]);
+  });
+
+  it('arquivo com BOM é lido; link para fora do projeto não', async () => {
+    const bom = await project('t.json', { 't.json': `\uFEFF${JSON.stringify({ a: color('#fff') })}` });
+    expect(bom.problems).toEqual([]);
+    expect(bom.set?.tokens).toHaveLength(1);
+
+    mkdirSync(TMP, { recursive: true });
+    const outside = mkdtempSync(path.join(TMP, 'outside-'));
+    dirs.push(outside);
+    writeFileSync(path.join(outside, 'x.json'), JSON.stringify({ x: color('#000') }));
+    const linked = await project('*.tokens.json', {}, (root) => symlinkSync(path.join(outside, 'x.json'), path.join(root, 'x.tokens.json')));
+    expect(linked.problems).toEqual(['x.tokens.json  aponta (link simbólico) para fora do projeto — não é lido.']);
+  });
+
+  it('um padrão errado não esconde os erros dos arquivos que casaram', async () => {
+    const { problems } = await project(['nada/*.json', 't.json'], { 't.json': { bad: color('nope') } });
+    expect(problems).toEqual([
+      'systembook.config.json: "tokens.files": "nada/*.json" não casa com nenhum arquivo.',
+      't.json  bad: "nope" não é uma cor ("#0a84ff", "rgb(…)", um nome CSS ou { colorSpace, components }).',
+    ]);
   });
 
   it('ignora node_modules', async () => {

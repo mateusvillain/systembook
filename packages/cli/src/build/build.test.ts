@@ -209,6 +209,9 @@ describe('systembook build', { timeout: 60_000 }, () => {
     write({ ok: { $type: 'color', $value: '#fff', $foo: 1 } });
     const built = await buildStaticSite({ ...config, tokens: { files: ['tokens/*.json'], modes: [] } });
     expect(built).toMatchObject({ ok: true, warnings: ['tokens/color.json  ok: propriedade "$foo" não suportada; ignorada.'] });
+
+    const missing = await buildStaticSite({ ...config, tokens: { files: [], modes: [{ name: 'dark', files: ['dark/*.json'] }] } });
+    expect(!missing.ok && missing.problems).toEqual(['systembook.config.ts: "tokens.modes.dark": "dark/*.json" não casa com nenhum arquivo.']);
   });
 
   it('recusa outDir que apagaria o projeto ou o conteúdo', async () => {

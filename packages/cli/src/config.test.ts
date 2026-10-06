@@ -44,11 +44,14 @@ describe('loadConfig — tokens', () => {
     expect((await loadConfig(json({ files: 'base.json', modes: { light: 'light.json', dark: ['dark/*.json'] } }))).tokens).toEqual({
       files: ['base.json'],
       modes: [
-        ['light', ['light.json']],
-        ['dark', ['dark/*.json']],
+        { name: 'light', files: ['light.json'] },
+        { name: 'dark', files: ['dark/*.json'] },
       ],
     });
-    expect((await loadConfig(json({ modes: { light: 'l.json' } }))).tokens).toEqual({ files: [], modes: [['light', ['l.json']]] });
+    expect((await loadConfig(json({ modes: { light: 'l.json' } }))).tokens).toEqual({
+      files: [],
+      modes: [{ name: 'light', files: ['l.json'] }],
+    });
     expect((await loadConfig(json(undefined))).tokens).toBeUndefined();
   });
 

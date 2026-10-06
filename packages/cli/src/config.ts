@@ -14,6 +14,12 @@ const baseSchema = z
   .regex(/^\//, 'precisa começar com "/" (ex.: "/meu-repo/")')
   .transform((base) => (base.endsWith('/') ? base : `${base}/`));
 
+/** Arquivos de tokens já normalizados: os base e os de cada modo, na ordem da config. */
+export interface TokenFiles {
+  files: string[];
+  modes: { name: string; files: string[] }[];
+}
+
 /** Um arquivo, um glob ou uma lista deles — relativos à raiz do projeto. */
 const tokenFilesSchema = z
   .union([z.string().min(1), z.array(z.string().min(1))])
@@ -34,18 +40,21 @@ const tokensSchema = z
     ],
     { error: 'use um arquivo ou glob, uma lista deles, ou { files, modes }' },
   )
-  .transform((tokens) =>
+  .transform((tokens): TokenFiles =>
     Array.isArray(tokens)
-      ? { files: tokens, modes: [] as [string, string[]][] }
-      : { files: tokens.files ?? [], modes: Object.entries(tokens.modes ?? {}) },
+      ? { files: tokens, modes: [] }
+      : {
+          files: tokens.files ?? [],
+          modes: Object.entries(tokens.modes ?? {}).map(([name, files]) => ({ name, files })),
+        },
   )
   .superRefine((tokens, ctx) => {
     if (!tokens.files.length && !tokens.modes.length) {
       ctx.addIssue({ code: 'custom', message: 'informe ao menos um arquivo, em "files" ou em "modes"' });
     }
-    for (const [mode, files] of tokens.modes) {
-      if (!mode.trim()) ctx.addIssue({ code: 'custom', path: ['modes'], message: `nome de modo vazio ("${mode}")` });
-      else if (!files.length) ctx.addIssue({ code: 'custom', path: ['modes', mode], message: 'a lista não pode ser vazia' });
+    for (const { name, files } of tokens.modes) {
+      if (!name.trim()) ctx.addIssue({ code: 'custom', path: ['modes'], message: `nome de modo vazio ("${name}")` });
+      else if (!files.length) ctx.addIssue({ code: 'custom', path: ['modes', name], message: 'a lista não pode ser vazia' });
     }
   });
 

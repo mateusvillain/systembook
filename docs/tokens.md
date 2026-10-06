@@ -37,13 +37,19 @@ tokens: {
 ```
 
 `files` é opcional (um arquivo completo por modo, como o export do Figma, não
-precisa de base). Cada padrão precisa casar com algum arquivo dentro do
-projeto, e um arquivo é base ou de um modo, nunca os dois. `node_modules` fica
-de fora dos globs.
+precisa de base). Os modos seguem a ordem em que aparecem na config — exceto os
+de nome só numérico (`"1"`), que o JavaScript põe antes dos outros num objeto.
 
-`systembook build` e `systembook check` falham com qualquer erro nos tokens e
-listam os avisos sem falhar; no `systembook dev`, salvar um arquivo de tokens
-atualiza o site.
+- Cada padrão precisa casar com algum arquivo dentro do projeto (um link
+  simbólico para fora não é lido), e um arquivo é base ou de um modo, nunca os
+  dois.
+- `!padrão` exclui arquivos dos outros padrões do mesmo grupo
+  (`["tokens/*.json", "!tokens/draft.json"]`).
+- `node_modules`, `.git`, a pasta do site gerado (`outDir`) e o próprio
+  arquivo de config ficam de fora dos globs.
+
+`systembook build` falha com qualquer erro nos tokens e lista os avisos sem
+falhar; o `systembook dev` mostra os dois ao salvar um arquivo de tokens.
 
 ## Formato: DTCG
 
