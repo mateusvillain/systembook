@@ -684,18 +684,23 @@
 .sb-tokens thead th {
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--sb-fg-muted, #5c6370);
+  color: var(--sb-fg-muted, #59636e);
   text-transform: capitalize;
   white-space: nowrap;
 }
 
 .sb-token-head {
   font-weight: 400;
-  min-width: 14rem;
+  min-width: 11rem;
 }
 
-.sb-token-head > * + * {
+.sb-token-head > * + *,
+.sb-token-details > * + * {
   margin-top: 0.3rem;
+}
+
+.sb-token-details {
+  min-width: 12rem;
 }
 
 .sb-token-name {
@@ -708,7 +713,7 @@
 
 .sb-tokens tr[data-deprecated] .sb-token-name {
   text-decoration: line-through;
-  text-decoration-color: var(--sb-fg-muted, #5c6370);
+  text-decoration-color: var(--sb-fg-muted, #59636e);
 }
 
 .sb-token-deprecated {
@@ -717,12 +722,17 @@
   border-radius: 999px;
   border: 1px solid var(--sb-border, #e2e4e8);
   font-size: 0.6875rem;
-  color: var(--sb-fg-muted, #5c6370);
+  color: var(--sb-fg-muted, #59636e);
 }
 
-.sb-token-description {
+.sb-token-description,
+.sb-token-deprecated-reason {
   display: block;
-  color: var(--sb-fg-muted, #5c6370);
+  color: var(--sb-fg-muted, #59636e);
+}
+
+.sb-token-deprecated-reason {
+  font-style: italic;
 }
 
 .sb-token-copy {
@@ -737,7 +747,7 @@
   border: 1px solid var(--sb-border, #e2e4e8);
   border-radius: 6px;
   background: transparent;
-  color: var(--sb-fg-muted, #5c6370);
+  color: var(--sb-fg-muted, #59636e);
   font: inherit;
   font-size: 0.6875rem;
   cursor: pointer;
@@ -746,7 +756,12 @@
 .sb-token-copy-button:hover,
 .sb-token-copy-button:focus-visible {
   color: var(--sb-fg, inherit);
-  border-color: var(--sb-fg-muted, #5c6370);
+  border-color: var(--sb-fg-muted, #59636e);
+}
+
+.sb-token-copy-button:focus-visible {
+  outline: 2px solid var(--sb-accent, #1d4ed8);
+  outline-offset: 2px;
 }
 
 .sb-token-copy-button[data-state='copied'] {
@@ -779,20 +794,25 @@
 .sb-token-alias {
   display: block;
   font-size: 0.75rem;
-  color: var(--sb-fg-muted, #5c6370);
+  color: var(--sb-fg-muted, #59636e);
   overflow-wrap: anywhere;
 }
 
 /* Swatch sobre xadrez: uma cor com transparência mostra o quanto é
-   transparente. A borda sutil separa do fundo uma cor igual à superfície. */
+   transparente. A borda deriva da cor do texto (não do hairline das tabelas,
+   fraco demais): uma cor igual à superfície ainda tem contorno. O xadrez
+   escurece no tema escuro (`public.css`). */
 .sb-token-swatch {
+  --sb-token-check-a: #d4d7dd;
+  --sb-token-check-b: #ffffff;
+
   display: block;
   width: 100%;
   max-width: 7rem;
   height: 2.5rem;
   border-radius: 6px;
-  border: 1px solid var(--sb-border, #e2e4e8);
+  border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
   background:
     linear-gradient(var(--sb-token-color), var(--sb-token-color)),
-    repeating-conic-gradient(#d4d7dd 0 25%, #fff 0 50%) 0 0 / 12px 12px;
+    repeating-conic-gradient(var(--sb-token-check-a) 0 25%, var(--sb-token-check-b) 0 50%) 0 0 / 12px 12px;
 }

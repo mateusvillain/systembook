@@ -1,4 +1,5 @@
 import type { TokenType, TokenValue } from '@systembook/schema';
+import { FONT_WEIGHTS, FUNCTION_COLOR_SPACES, isNumber, isObject, PREDEFINED_COLOR_SPACES, weightKey } from './values.js';
 
 /**
  * Valor resolvido de um token → valor CSS (SYS-133): o que a doc mostra ao lado
@@ -11,16 +12,6 @@ import type { TokenType, TokenValue } from '@systembook/schema';
  * mostra o JSON.
  */
 
-type JsonObject = { [key: string]: TokenValue };
-
-const isObject = (v: unknown): v is JsonObject => typeof v === 'object' && v !== null && !Array.isArray(v);
-const isNumber = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
-
-/** Espaços que o CSS escreve com `color(espaço …)`. */
-const PREDEFINED_SPACES = new Set(['srgb', 'srgb-linear', 'display-p3', 'a98-rgb', 'prophoto-rgb', 'rec2020', 'xyz', 'xyz-d50', 'xyz-d65']);
-/** Espaços com função própria; `hsl`/`hwb` levam `%` nos dois últimos componentes. */
-const FUNCTION_SPACES = new Set(['hsl', 'hwb', 'lab', 'lch', 'oklab', 'oklch']);
-
 /** Número sem ruído de ponto flutuante (`0.30000000000000004` → `0.3`). */
 const num = (n: number) => String(Number(n.toFixed(4)));
 
@@ -32,8 +23,8 @@ function color(v: TokenValue): string | null {
     if (!isNumber(c)) return 'none';
     return (v.colorSpace === 'hsl' || v.colorSpace === 'hwb') && i > 0 ? `${num(c)}%` : num(c);
   });
-  if (PREDEFINED_SPACES.has(v.colorSpace)) return `color(${v.colorSpace} ${components.join(' ')}${alpha})`;
-  if (FUNCTION_SPACES.has(v.colorSpace)) return `${v.colorSpace}(${components.join(' ')}${alpha})`;
+  if (PREDEFINED_COLOR_SPACES.has(v.colorSpace)) return `color(${v.colorSpace} ${components.join(' ')}${alpha})`;
+  if (FUNCTION_COLOR_SPACES.has(v.colorSpace)) return `${v.colorSpace}(${components.join(' ')}${alpha})`;
   return typeof v.hex === 'string' ? v.hex : null;
 }
 
@@ -51,18 +42,11 @@ function fontFamily(v: TokenValue): string | null {
   return list.map((f) => (/^[\w-]+$/.test(f) ? f : `"${f.replace(/"/g, '\\"')}"`)).join(', ');
 }
 
-/** Pesos por nome (grafia normalizada, como no validador) → número, que o CSS sempre aceita. */
-const WEIGHTS: Record<string, number> = {
-  thin: 100, hairline: 100, extralight: 200, ultralight: 200, light: 300, normal: 400, regular: 400, book: 400,
-  medium: 500, semibold: 600, demibold: 600, bold: 700, extrabold: 800, ultrabold: 800, black: 900, heavy: 900,
-  extrablack: 950, ultrablack: 950,
-};
-
 function fontWeight(v: TokenValue): string | null {
   if (isNumber(v)) return String(v);
   if (typeof v !== 'string') return null;
   if (/^\d+$/.test(v)) return v;
-  const weight = WEIGHTS[v.toLowerCase().replace(/[\s_-]/g, '')];
+  const weight = FONT_WEIGHTS[weightKey(v)];
   return weight === undefined ? null : String(weight);
 }
 
@@ -136,4 +120,3 @@ const CONVERT: Record<TokenType, (v: TokenValue) => string | null> = {
 export function toCssValue(type: TokenType, value: TokenValue): string | null {
   return CONVERT[type](value);
 }
-

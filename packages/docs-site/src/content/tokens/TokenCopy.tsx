@@ -11,35 +11,41 @@ const FORMATS = [
 
 type FormatId = (typeof FORMATS)[number]['id'];
 
-/** Quanto tempo o botão diz "Copied" (ou que falhou) antes de voltar. */
+/** "Copied" é recibo: some logo. */
 const FEEDBACK_MS = 2000;
+/**
+ * "Failed" é tarefa (copiar à mão): fica mais, como as instruções de cópia
+ * manual do code block — expirar em 2s apagaria antes de o leitor agir.
+ */
+const FAILURE_MS = 10000;
 
 /**
  * Botões de copiar o nome de um token (SYS-133): a variável CSS (`var(--x)`),
- * o acesso em JS e o caminho. O texto copiado aparece no `title`, para quem
- * quer conferir antes; numa falha (sem Clipboard API e sem `execCommand`), o
- * botão diz que não copiou em vez de fingir sucesso.
+ * o acesso em JS e o caminho. O texto copiado aparece no `title`; numa falha
+ * (sem Clipboard API e sem `execCommand`) o botão diz que não copiou em vez de
+ * fingir sucesso. O anúncio para leitor de tela sai por `onAnnounce`, para a
+ * tabela ter uma região viva só.
  */
-export function TokenCopy({ path }: { path: string }) {
+export function TokenCopy({ path, onAnnounce }: { path: string; onAnnounce: (message: string) => void }) {
   const [result, setResult] = useState<{ id: FormatId; ok: boolean } | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => void (timer.current && clearTimeout(timer.current)), []);
 
-  function copy(id: FormatId, text: string) {
+  function copy(id: FormatId, name: string, text: string) {
     void copyText(text).then((ok) => {
       setResult({ id, ok });
+      onAnnounce(ok ? `Copied ${name} ${text}` : `Could not copy ${name} — select ${text} and copy it`);
       if (timer.current) clearTimeout(timer.current);
-      timer.current = setTimeout(() => setResult(null), FEEDBACK_MS);
+      timer.current = setTimeout(() => setResult(null), ok ? FEEDBACK_MS : FAILURE_MS);
     });
   }
-
-  const announce = result ? (result.ok ? 'Copied to clipboard' : 'Could not copy — select the name and copy it') : '';
 
   return (
     <span className="sb-token-copy">
       {FORMATS.map(({ id, label, name, text }) => {
         const value = text(path);
         const state = result?.id === id ? (result.ok ? 'copied' : 'failed') : undefined;
+        const shown = state === 'copied' ? 'Copied' : state === 'failed' ? 'Failed' : label;
         return (
           <button
             key={id}
@@ -47,16 +53,14 @@ export function TokenCopy({ path }: { path: string }) {
             className="sb-token-copy-button"
             data-state={state}
             title={value}
-            aria-label={`Copy ${name} ${value}`}
-            onClick={() => copy(id, value)}
+            // Começa pelo texto visível (WCAG 2.5.3): quem fala "CSS" aciona o botão.
+            aria-label={`${shown}: copy ${name} ${value}`}
+            onClick={() => copy(id, name, value)}
           >
-            {state === 'copied' ? 'Copied' : state === 'failed' ? 'Failed' : label}
+            {shown}
           </button>
         );
       })}
-      <span className="sr-only" role="status" aria-live="polite">
-        {announce}
-      </span>
     </span>
   );
 }

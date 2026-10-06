@@ -1,12 +1,12 @@
-import type { ReactNode } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
 import type { Token } from '@systembook/schema';
 import { DEFAULT_TOKEN_MODE, toCssValue } from '@systembook/content/tokens';
 import { TokenCopy } from './TokenCopy.js';
+import '../content.css';
 
-/** O valor como o leitor o escreveria em CSS; sem conversão, o JSON. */
-export function tokenValueText(token: Token, mode: string): string {
-  const { resolvedValue } = token.byMode[mode]!;
-  return toCssValue(token.type, resolvedValue) ?? JSON.stringify(resolvedValue);
+/** O valor de um token num modo como CSS; `null` quando não há conversão. */
+function cssValue(token: Token, mode: string): string | null {
+  return toCssValue(token.type, token.byMode[mode]!.resolvedValue);
 }
 
 export interface TokenTableProps {
@@ -14,18 +14,30 @@ export interface TokenTableProps {
   modes: readonly string[];
   /** Nome acessível da tabela (o grupo, por exemplo). */
   label?: string;
-  /** Amostra visual do valor num modo; sem ela, só o valor (o fallback). */
-  preview?: (token: Token, mode: string) => ReactNode;
+  /**
+   * Amostra visual do valor num modo, com o valor em CSS já calculado (`null`
+   * quando não há conversão — sem amostra honesta). Sem ela, só o valor.
+   */
+  preview?: (token: Token, mode: string, css: string | null) => ReactNode;
 }
 
 /**
- * Tabela de tokens (SYS-133), a moldura que todos os renderers por tipo usam:
- * uma linha por token, com o caminho, os botões de copiar, a descrição e o
- * aviso de deprecated, e uma coluna por modo com a amostra, o valor e o alias.
- * Um modo só (`default`) não ganha cabeçalho de modo.
+ * Tabela de tokens (SYS-133), a moldura de todos os renderers por tipo. Uma
+ * linha por token: o caminho (cabeçalho da linha, só o nome e o selo de
+ * deprecated — o leitor de tela o repete em cada célula), uma coluna por modo
+ * com a amostra, o valor e o alias, e "Details" com a descrição e os botões de
+ * copiar. Um modo só (`default`) não ganha cabeçalho de modo.
  */
 export function TokenTable({ tokens, modes, label, preview }: TokenTableProps) {
   const single = modes.length === 1 && modes[0] === DEFAULT_TOKEN_MODE;
+  // Uma região viva por tabela. O espaço alternado no fim muda o texto mesmo
+  // quando a mensagem se repete, para o leitor de tela anunciar de novo.
+  const [announcement, setAnnouncement] = useState('');
+  const announce = useCallback(
+    (message: string) => setAnnouncement((previous) => (previous === message ? `${message} ` : message)),
+    [],
+  );
+
   return (
     <div className="sb-tokens-scroll">
       <table className="sb-tokens" aria-label={label}>
@@ -41,6 +53,7 @@ export function TokenTable({ tokens, modes, label, preview }: TokenTableProps) {
                 </th>
               ))
             )}
+            <th scope="col">Details</th>
           </tr>
         </thead>
         <tbody>
@@ -49,26 +62,32 @@ export function TokenTable({ tokens, modes, label, preview }: TokenTableProps) {
               <th scope="row" className="sb-token-head">
                 <code className="sb-token-name">{token.path}</code>
                 {token.deprecated ? <span className="sb-token-deprecated">Deprecated</span> : null}
-                {typeof token.deprecated === 'string' ? (
-                  <span className="sb-token-description">{token.deprecated}</span>
-                ) : null}
-                {token.description ? <span className="sb-token-description">{token.description}</span> : null}
-                <TokenCopy path={token.path} />
               </th>
               {modes.map((mode) => {
-                const alias = token.byMode[mode]!.aliasOf;
+                const css = cssValue(token, mode);
+                const { resolvedValue, aliasOf } = token.byMode[mode]!;
                 return (
                   <td key={mode} className="sb-token-cell">
-                    {preview?.(token, mode)}
-                    <code className="sb-token-value">{tokenValueText(token, mode)}</code>
-                    {alias ? <span className="sb-token-alias">→ {alias}</span> : null}
+                    {preview?.(token, mode, css)}
+                    <code className="sb-token-value">{css ?? JSON.stringify(resolvedValue)}</code>
+                    {aliasOf ? <span className="sb-token-alias">→ {aliasOf}</span> : null}
                   </td>
                 );
               })}
+              <td className="sb-token-details">
+                {typeof token.deprecated === 'string' ? (
+                  <span className="sb-token-deprecated-reason">{token.deprecated}</span>
+                ) : null}
+                {token.description ? <span className="sb-token-description">{token.description}</span> : null}
+                <TokenCopy path={token.path} onAnnounce={announce} />
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
+      <span className="sr-only" role="status" aria-live="polite">
+        {announcement}
+      </span>
     </div>
   );
 }

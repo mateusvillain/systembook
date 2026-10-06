@@ -2,6 +2,7 @@ import type { Token, TokenType, TokenValue } from '@systembook/schema';
 import { didYouMean } from '../diagnostics.js';
 import { sortByTokenOrder, TokenDiagnosticBag } from './diagnostics.js';
 import { aliasesIn, aliasTarget, cascadeFailures, failedAliasMessage } from './resolve.js';
+import { FONT_WEIGHTS, FUNCTION_COLOR_SPACES, isNumber, isObject, PREDEFINED_COLOR_SPACES, weightKey } from './values.js';
 import type { ResolvedToken, ValidatedTokens } from './types.js';
 
 /**
@@ -43,14 +44,6 @@ export function isTokenType(value: string): value is TokenType {
   return (TOKEN_TYPES as readonly string[]).includes(value);
 }
 
-type JsonObject = { [key: string]: TokenValue };
-
-function isObject(value: unknown): value is JsonObject {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-const isNumber = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
-
 const words = (list: string) => new Set(list.split(/\s+/).filter(Boolean));
 
 const HEX = /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
@@ -71,16 +64,10 @@ const NAMED_COLORS = words(`
   saddlebrown salmon sandybrown seagreen seashell sienna silver skyblue slateblue slategray slategrey snow
   springgreen steelblue tan teal thistle tomato turquoise violet wheat white whitesmoke yellow yellowgreen
 `);
-const COLOR_SPACES = words(
-  'srgb srgb-linear hsl hwb lab lch oklab oklch display-p3 a98-rgb prophoto-rgb rec2020 xyz xyz-d50 xyz-d65',
-);
+const COLOR_SPACES = new Set([...PREDEFINED_COLOR_SPACES, ...FUNCTION_COLOR_SPACES]);
 const LENGTH_UNITS = words('px rem em % vh vw vmin vmax svh lvh dvh svw lvw dvw ch ex cap ic lh rlh cm mm q in pt pc');
 const DIMENSION = /^(-?(?:\d+(?:\.\d+)?|\.\d+))([a-z]+|%)?$/i;
 const DURATION = /^(?:\d+(?:\.\d+)?|\.\d+)(?:ms|s)$/;
-/** Pesos sem espaço, hífen nem caixa: "Semi Bold", "semi-bold" e "SemiBold" são o mesmo. */
-const FONT_WEIGHTS = words(
-  'thin hairline extralight ultralight light normal regular book medium semibold demibold bold extrabold ultrabold black heavy extrablack ultrablack',
-);
 const EASINGS = words('linear ease ease-in ease-out ease-in-out');
 const STROKE_STYLES = words('solid dashed dotted double groove ridge outset inset');
 const LINE_CAPS = words('round butt square');
@@ -123,7 +110,7 @@ const KINDS = {
     check: (v: TokenValue) => {
       const n = typeof v === 'string' && /^\d+$/.test(v) ? Number(v) : v;
       if (isNumber(n)) return n >= 1 && n <= 1000;
-      return typeof n === 'string' && FONT_WEIGHTS.has(n.toLowerCase().replace(/[\s_-]/g, ''));
+      return typeof n === 'string' && weightKey(n) in FONT_WEIGHTS;
     },
   },
   duration: {
