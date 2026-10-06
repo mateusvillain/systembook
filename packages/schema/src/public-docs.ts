@@ -1,5 +1,6 @@
 import type { PageSnapshot } from './block.js';
 import type { PreviewConfig } from './preview-config.js';
+import type { TokenSet } from './tokens.js';
 
 /**
  * Contrato de dados da documentação pública (SYS-87).
@@ -125,4 +126,10 @@ export interface DocsDataSource {
   search(q: string): Promise<PublicSearchResult[]>;
   /** Preview publicado mais recente de uma variante, ou `null` se não há. */
   getComponentPreview(ref: ComponentPreviewRef): Promise<PublicComponentPreview | null>;
+  /**
+   * Design tokens publicados (projeto "Design tokens"), ou `null` quando a
+   * instância não tem tokens — a doc esconde o que depende deles. Os grupos
+   * (`color.brand`) saem dos `path`, sem leitura própria.
+   */
+  getTokens(): Promise<TokenSet | null>;
 }

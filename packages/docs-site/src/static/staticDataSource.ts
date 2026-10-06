@@ -110,5 +110,7 @@ export function createStaticDataSource({ dataUrl, fetch: doFetch = globalThis.fe
     search: async (q) => querySearchIndex(await getSearchIndex(), q),
     getComponentPreview: async (ref) =>
       (await once<Record<string, PublicComponentPreview>>(staticDataPaths.previews))[previewKey(ref)] ?? null,
+    // O build ainda não gera tokens (SYS-130).
+    getTokens: async () => null,
   };
 }

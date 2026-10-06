@@ -72,6 +72,7 @@ const dataSource: DocsDataSource = {
     },
   ],
   getComponentPreview: async () => null,
+  getTokens: async () => null,
 };
 
 let container: HTMLDivElement;

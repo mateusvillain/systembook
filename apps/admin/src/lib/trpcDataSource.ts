@@ -37,4 +37,7 @@ export const trpcDataSource: DocsDataSource = {
     const preview = await trpcClient.componentPreviews.getLatest.query(ref);
     return preview && { url: preview.url, config: preview.config };
   },
+
+  // O server ainda não guarda tokens (SYS-143).
+  getTokens: async () => null,
 };
