@@ -2,7 +2,7 @@
   "name": "@systembook/content",
   "version": "0.4.0",
   "license": "MIT",
-  "description": "Conteúdo do Systembook em arquivos: parser de .md/.mdx para os blocos do CMS, árvore de navegação a partir das pastas e o mapeamento canônico entre nós Tiptap e blocos.",
+  "description": "Conteúdo do Systembook em arquivos: parser de .md/.mdx para os blocos do CMS, árvore de navegação a partir das pastas, o mapeamento canônico entre nós Tiptap e blocos e o parser de design tokens DTCG.",
   "keywords": [
     "systembook",
     "design-system",
@@ -39,6 +39,10 @@
     "./site": {
       "types": "./src/site/index.ts",
       "default": "./src/site/index.ts"
+    },
+    "./tokens": {
+      "types": "./src/tokens/index.ts",
+      "default": "./src/tokens/index.ts"
     }
   },
   "sideEffects": false,
@@ -96,6 +100,10 @@
       "./site": {
         "types": "./dist/site/index.d.ts",
         "default": "./dist/site/index.js"
+      },
+      "./tokens": {
+        "types": "./dist/tokens/index.d.ts",
+        "default": "./dist/tokens/index.js"
       }
     }
   },
