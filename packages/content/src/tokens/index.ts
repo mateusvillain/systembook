@@ -4,6 +4,7 @@
  * servem à CLI, ao server e à doc pública.
  */
 export { formatTokenDiagnostic, sortByTokenOrder, TokenDiagnosticBag, type TokenDiagnostic } from './diagnostics.js';
+export { toCssValue } from './css.js';
 export { loadTokenSet } from './load.js';
 export { checkCssVarCollisions, findCssVarCollisions, toCssVar, toJsPath } from './names.js';
 export { parseTokenSources } from './parse.js';

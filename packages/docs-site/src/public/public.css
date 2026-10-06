@@ -114,6 +114,12 @@
   --sb-toc-fg-active: #e6edf3;
 }
 
+/* Xadrez do swatch de cor (SYS-133): o claro brilharia sobre o cartão escuro. */
+.sb-public[data-theme='dark'] .sb-token-swatch {
+  --sb-token-check-a: #2a313c;
+  --sb-token-check-b: #161b22;
+}
+
 /* ---- Fundo do canvas (SYS-115) ----
    `--sb-bg` mora em `.sb-public`, então o `html` nunca o recebe e pinta o
    branco padrão do navegador. Ele aparece onde o shell não cobre: o gutter
