@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
-**English** · [Português (Brasil)](./README.pt-BR.md)
+**English** · [Português (Brasil)](./README.pt-BR.md) · [Español](./README.es.md)
 
 Systembook is an open source platform for documenting design systems, in the
 style of Material Design docs or the Atlassian Design System. Its main idea: a
