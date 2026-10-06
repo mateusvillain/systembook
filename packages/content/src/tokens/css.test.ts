@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { TokenType, TokenValue } from '@systembook/schema';
-import { toCssLines, toCssValue, typographyProperties } from './css.js';
+import { toCssLines, toCssValue, typographyStyle } from './css.js';
 
 describe('toCssValue', () => {
   it.each<[TokenType, TokenValue, string]>([
@@ -69,7 +69,7 @@ describe('toCssLines', () => {
     expect(
       toCssLines('typography', { fontFamily: ['Inter', 'sans-serif'], fontSize: '16px', fontWeight: 'bold', letterSpacing: '-0.5px', lineHeight: 1.5 }),
     ).toEqual(['font-family: Inter, sans-serif', 'font-size: 16px', 'font-weight: 700', 'letter-spacing: -0.5px', 'line-height: 1.5']);
-    expect(typographyProperties({ fontSize: 14, lineHeight: '20px' })).toEqual({ 'font-size': '14px', 'line-height': '20px' });
+    expect(typographyStyle({ fontSize: 14, lineHeight: '20px' })).toEqual({ fontSize: '14px', lineHeight: '20px' });
   });
 
   it('tipografia com campo faltando ou que não converte: "—" e o valor cru', () => {

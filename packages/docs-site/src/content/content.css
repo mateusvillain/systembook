@@ -831,3 +831,18 @@
     linear-gradient(var(--sb-token-color), var(--sb-token-color)),
     repeating-conic-gradient(var(--sb-token-check-a) 0 25%, var(--sb-token-check-b) 0 50%) 0 0 / 12px 12px;
 }
+
+/* Amostra de tipografia (SYS-134): a frase com o estilo do token, em até
+   duas linhas — quebrar é o que deixa a altura de linha visível; o resto corta
+   com reticências. O valor escrito ao lado é a referência; a amostra mostra o
+   caráter da fonte. */
+.sb-token-type-sample {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  max-width: 18rem;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  color: var(--sb-fg, inherit);
+}
