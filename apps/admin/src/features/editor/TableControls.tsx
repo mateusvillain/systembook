@@ -1,20 +1,44 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import type { Editor } from '@tiptap/react';
-import { Plus, Rows2, X } from 'lucide-react';
+import {
+  ArrowDownToLine,
+  ArrowLeftToLine,
+  ArrowRightToLine,
+  ArrowUpToLine,
+  GripHorizontal,
+  GripVertical,
+  Plus,
+  Rows2,
+  Trash2,
+} from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
 
 /**
- * Controles de tabela por hover (TASK-100): substitui o grupo de botões
- * +Linha/−Linha/+Coluna/−Coluna que vivia sempre visível na `EditorToolbar`.
- * Ao passar o mouse sobre uma tabela, revela uma régua acima (colunas) e uma
- * à esquerda (linhas) com pontos de inserção em posições específicas — não
- * apenas "adicionar no fim" — mais um botão por linha/coluna para removê-la,
- * e um botão no canto superior esquerdo para alternar se a primeira linha é
- * cabeçalho (`toggleHeaderRow`, comando nativo do `@tiptap/extension-table`).
+ * Controles de tabela por hover (TASK-100, redesenhados): ao passar o mouse sobre
+ * uma tabela, aparecem
+ *  - uma **alça por coluna** (acima) e **por linha** (à esquerda) que abre um menu
+ *    com ações nomeadas — "Insert row above/below", "Delete row", etc. — e destaca
+ *    a linha/coluna alvo. Antes eram dezenas de bolinhas idênticas (+ e ×) em cada
+ *    fronteira, e só o `title` dizia o que cada uma fazia;
+ *  - um "+" explícito no fim de cada eixo (nova coluna à direita, nova linha
+ *    abaixo), o caso mais comum;
+ *  - o botão do canto para alternar a primeira linha como cabeçalho
+ *    (`toggleHeaderRow`, comando nativo do `@tiptap/extension-table`).
  *
- * Reaproveita o padrão de rastreamento de hover da `BlockHandles` (mousemove
- * no DOM do editor, sem depender de eventos de foco/seleção) e, como o
- * layout de uma tabela muda a cada inserção/remoção, recalcula a geometria a
- * cada transação enquanto uma tabela estiver "hovered".
+ * Não há reordenar linhas/colunas: o `@tiptap/extension-table` não tem comando
+ * para isso. O ícone de pontos ao lado da tabela é o da `BlockHandles` e move o
+ * bloco inteiro.
+ *
+ * Reaproveita o rastreamento de hover da `BlockHandles` (mousemove no DOM do
+ * editor) e recalcula a geometria a cada transação enquanto uma tabela estiver
+ * "hovered".
  */
 
 interface TableGeometry {
@@ -77,13 +101,12 @@ function selectCell(editor: Editor, tablePos: number, rowIndex: number, colIndex
 
 /**
  * Folga em volta da tabela onde os controles continuam visíveis. Os botões vivem
- * numa régua a `railOffset` (16px) da borda esquerda/superior e se estendem ~9px
- * para cada lado; o vão entre a tabela e eles não é parte da `<table>`, então sem
- * esta zona o ponteiro "saía" da tabela a caminho do botão, os controles
- * desmontavam e o clique nunca chegava. Esquerda/topo cobrem a régua; direita/baixo
- * cobrem os botões de borda (última coluna/linha).
+ * nas réguas (alças à esquerda/acima) e nos "+" do fim de cada eixo (à direita/
+ * abaixo); o vão entre a tabela e eles não é parte da `<table>`, então sem esta
+ * zona o ponteiro "saía" da tabela a caminho do botão, os controles desmontavam e
+ * o clique nunca chegava.
  */
-const RAIL_ZONE = { left: 32, top: 32, right: 12, bottom: 12 };
+const RAIL_ZONE = { left: 36, top: 36, right: 40, bottom: 40 };
 
 /** O ponto (viewport) está sobre a tabela `tablePos` ou na zona dos controles dela? */
 function inTableZone(editor: Editor, tablePos: number, x: number, y: number): boolean {
@@ -98,8 +121,15 @@ function inTableZone(editor: Editor, tablePos: number, x: number, y: number): bo
   );
 }
 
-const controlButtonClass =
-  'pointer-events-auto absolute flex size-[18px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border/70 bg-background text-muted-foreground shadow-sm transition-colors hover:border-foreground/40 hover:text-foreground disabled:pointer-events-none disabled:opacity-0';
+// `p-0`: sem o preflight do Tailwind o <button> herda o padding nativo do navegador
+// (1px 6px), que espreme o ícone das alças estreitas.
+const chipClass =
+  'pointer-events-auto absolute box-border flex items-center justify-center border border-border p-0 bg-background text-muted-foreground shadow-sm transition-colors hover:border-primary/50 hover:bg-accent hover:text-foreground data-[state=open]:border-primary data-[state=open]:bg-accent data-[state=open]:text-foreground focus-visible:ring-ring/50 focus-visible:ring-[3px] outline-none';
+
+/** Alça de linha/coluna: pílula fina com pontos de arrasto, centrada na régua. */
+const handleClass = cn(chipClass, 'rounded-md');
+/** "+" do fim de cada eixo e botão do canto: quadrado discreto com ícone. */
+const addClass = cn(chipClass, 'size-6 rounded-md');
 
 export function TableControls({
   editor,
@@ -115,6 +145,12 @@ export function TableControls({
   // a tabela atual sem reassinar a cada mudança.
   const hoveredPosRef = useRef<number | null>(null);
   hoveredPosRef.current = hoveredPos;
+  // Menu de alça aberto: o conteúdo vai para um portal (fora do DOM do editor e
+  // dos controles), então o ponteiro "sai" de tudo ao entrar nele — enquanto
+  // estiver aberto nada esconde os controles (senão o menu desmontaria junto).
+  const menuOpenRef = useRef(false);
+  // Linha/coluna destacada (hover na alça ou menu aberto).
+  const [hot, setHot] = useState<{ axis: 'row' | 'col'; index: number } | null>(null);
 
   const recompute = useCallback(() => {
     const canvas = canvasRef.current;
@@ -138,6 +174,16 @@ export function TableControls({
     };
   }, [editor, hoveredPos, recompute]);
 
+  // Sem tabela (ou sem hover) não há menu aberto nem linha destacada: o menu pode
+  // desmontar aberto (p.ex. apagar a última coluna remove a própria alça) sem
+  // disparar `onOpenChange(false)`, e o ref ficaria preso em `true`.
+  useEffect(() => {
+    if (!geometry) {
+      menuOpenRef.current = false;
+      setHot(null);
+    }
+  }, [geometry]);
+
   // Rede de segurança: com os controles visíveis, qualquer movimento fora da
   // tabela, dos botões e da zona de tolerância esconde. Cobre saídas que nenhum
   // handler acima vê (o `mouseleave` do editor já passou e o container dos
@@ -147,6 +193,7 @@ export function TableControls({
     function onDocMove(e: MouseEvent) {
       const target = e.target as Node;
       if (controlRef.current?.contains(target) || editor.view.dom.contains(target)) return;
+      if (menuOpenRef.current) return;
       if (!inTableZone(editor, hoveredPos!, e.clientX, e.clientY)) setHoveredPos(null);
     }
     document.addEventListener('mousemove', onDocMove);
@@ -157,6 +204,7 @@ export function TableControls({
     const dom = editor.view.dom as HTMLElement;
 
     function onMove(e: MouseEvent) {
+      if (menuOpenRef.current) return;
       const tableEl = (e.target as HTMLElement).closest('table');
       if (!tableEl) {
         // Fora da tabela, mas ainda a caminho dos controles: mantém.
@@ -177,6 +225,7 @@ export function TableControls({
     }
 
     function onLeave(e: MouseEvent) {
+      if (menuOpenRef.current) return;
       // Se o cursor está indo para os controles flutuantes (fora do dom do
       // editor, mas visualmente sobre a tabela), mantém o estado — só limpa
       // ao sair de fato da área da tabela/controles.
@@ -200,7 +249,10 @@ export function TableControls({
   const { pos: tablePos, rect, colBounds, rowBounds } = geometry;
   const numCols = colBounds.length - 1;
   const numRows = rowBounds.length - 1;
-  const railOffset = 16;
+  const tableRight = colBounds[numCols]!;
+  const tableBottom = rowBounds[numRows]!;
+  /** Distância do centro das alças/botões à borda da tabela. */
+  const railOffset = 14;
 
   const insertColumnAt = (boundaryIndex: number) => {
     const colIndex = boundaryIndex < numCols ? boundaryIndex : numCols - 1;
@@ -239,6 +291,19 @@ export function TableControls({
     editor.chain().focus().toggleHeaderRow().run();
   };
 
+  // Ação de menu: o item fecha o menu, mas se a ação remove a própria alça (apagar
+  // a última coluna/linha) o `onOpenChange(false)` não chega — encerra aqui.
+  const act = (run: () => void) => () => {
+    menuOpenRef.current = false;
+    setHot(null);
+    run();
+  };
+
+  const onMenuOpenChange = (axis: 'row' | 'col', index: number) => (open: boolean) => {
+    menuOpenRef.current = open;
+    setHot(open ? { axis, index } : null);
+  };
+
   return (
     <div
       ref={controlRef}
@@ -248,76 +313,157 @@ export function TableControls({
       // Saindo dos botões: de volta ao editor, o `mousemove` decide; para qualquer
       // outro lugar fora da zona, esconde (senão os controles ficariam presos).
       onMouseLeave={(e) => {
+        if (menuOpenRef.current) return;
         const back = editor.view.dom.contains(e.relatedTarget as Node);
         if (!back && !inTableZone(editor, tablePos, e.clientX, e.clientY)) setHoveredPos(null);
       }}
     >
+      {/* Destaque da linha/coluna alvo: liga a alça ao que ela vai alterar. */}
+      {hot && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute rounded-sm bg-primary/5 ring-1 ring-primary/40"
+          style={
+            hot.axis === 'row'
+              ? {
+                  left: rect.left,
+                  top: rowBounds[hot.index]!,
+                  width: tableRight - rect.left,
+                  height: rowBounds[hot.index + 1]! - rowBounds[hot.index]!,
+                }
+              : {
+                  left: colBounds[hot.index]!,
+                  top: rect.top,
+                  width: colBounds[hot.index + 1]! - colBounds[hot.index]!,
+                  height: tableBottom - rect.top,
+                }
+          }
+        />
+      )}
+
       <button
         type="button"
-        className={controlButtonClass}
+        className={cn(addClass, '-translate-x-1/2 -translate-y-1/2')}
         style={{ left: rect.left - railOffset, top: rect.top - railOffset }}
         title="Toggle header row"
         aria-label="Toggle header row"
         onClick={toggleHeaderRow}
       >
-        <Rows2 className="size-3" />
+        <Rows2 className="size-3.5" />
       </button>
 
-      {colBounds.map((x, i) => (
-        <button
-          key={`col-insert-${i}`}
-          type="button"
-          className={controlButtonClass}
-          style={{ left: x, top: rect.top - railOffset }}
-          title="Add column"
-          aria-label={`Add column at position ${i + 1}`}
-          onClick={() => insertColumnAt(i)}
-        >
-          <Plus className="size-3" />
-        </button>
-      ))}
-      {Array.from({ length: numCols }, (_, i) => (colBounds[i]! + colBounds[i + 1]!) / 2).map((cx, i) => (
-        <button
-          key={`col-remove-${i}`}
-          type="button"
-          className={controlButtonClass}
-          style={{ left: cx, top: rect.top - railOffset }}
-          title="Remove column"
-          aria-label={`Remove column ${i + 1}`}
-          disabled={numCols <= 1}
-          onClick={() => removeColumn(i)}
-        >
-          <X className="size-3" />
-        </button>
-      ))}
+      {/* Colunas: uma alça por coluna, acima, com o menu de ações. */}
+      {Array.from({ length: numCols }, (_, i) => i).map((i) => {
+        const cx = (colBounds[i]! + colBounds[i + 1]!) / 2;
+        const label = `Column ${i + 1}`;
+        return (
+          <DropdownMenu key={`col-${i}`} modal={false} onOpenChange={onMenuOpenChange('col', i)}>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className={cn(handleClass, 'h-4 w-8 -translate-x-1/2 -translate-y-1/2')}
+                style={{ left: cx, top: rect.top - railOffset }}
+                title={`${label} actions`}
+                aria-label={`${label} actions`}
+                onMouseEnter={() => setHot({ axis: 'col', index: i })}
+                onMouseLeave={() => !menuOpenRef.current && setHot(null)}
+              >
+                <GripHorizontal className="size-3.5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="start"
+              onCloseAutoFocus={(e) => e.preventDefault()}
+            >
+              <DropdownMenuItem onSelect={act(() => insertColumnAt(i))}>
+                <ArrowLeftToLine />
+                Insert column left
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={act(() => insertColumnAt(i + 1))}>
+                <ArrowRightToLine />
+                Insert column right
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                variant="destructive"
+                disabled={numCols <= 1}
+                onSelect={act(() => removeColumn(i))}
+              >
+                <Trash2 />
+                Delete column
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      })}
 
-      {rowBounds.map((y, i) => (
-        <button
-          key={`row-insert-${i}`}
-          type="button"
-          className={controlButtonClass}
-          style={{ left: rect.left - railOffset, top: y }}
-          title="Add row"
-          aria-label={`Add row at position ${i + 1}`}
-          onClick={() => insertRowAt(i)}
-        >
-          <Plus className="size-3" />
-        </button>
-      ))}
-      {Array.from({ length: numRows }, (_, i) => (rowBounds[i]! + rowBounds[i + 1]!) / 2).map((cy, i) => (
-        <button
-          key={`row-remove-${i}`}
-          type="button"
-          className={controlButtonClass}
-          style={{ left: rect.left - railOffset, top: cy }}
-          title="Remove row"
-          aria-label={`Remove row ${i + 1}`}
-          disabled={numRows <= 1}
-          onClick={() => removeRow(i)}
-        >
-          <X className="size-3" />
-        </button>
-      ))}
+      {/* Linhas: uma alça por linha, à esquerda, com o menu de ações. */}
+      {Array.from({ length: numRows }, (_, i) => i).map((i) => {
+        const cy = (rowBounds[i]! + rowBounds[i + 1]!) / 2;
+        const label = `Row ${i + 1}`;
+        return (
+          <DropdownMenu key={`row-${i}`} modal={false} onOpenChange={onMenuOpenChange('row', i)}>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className={cn(handleClass, 'h-8 w-4 -translate-x-1/2 -translate-y-1/2')}
+                style={{ left: rect.left - railOffset, top: cy }}
+                title={`${label} actions`}
+                aria-label={`${label} actions`}
+                onMouseEnter={() => setHot({ axis: 'row', index: i })}
+                onMouseLeave={() => !menuOpenRef.current && setHot(null)}
+              >
+                <GripVertical className="size-3.5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              side="right"
+              align="start"
+              onCloseAutoFocus={(e) => e.preventDefault()}
+            >
+              <DropdownMenuItem onSelect={act(() => insertRowAt(i))}>
+                <ArrowUpToLine />
+                Insert row above
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={act(() => insertRowAt(i + 1))}>
+                <ArrowDownToLine />
+                Insert row below
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                variant="destructive"
+                disabled={numRows <= 1}
+                onSelect={act(() => removeRow(i))}
+              >
+                <Trash2 />
+                Delete row
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      })}
+
+      {/* "+" no fim de cada eixo: o caso mais comum, sem abrir menu. */}
+      <button
+        type="button"
+        className={cn(addClass, '-translate-y-1/2')}
+        style={{ left: tableRight + 8, top: rect.top + (rowBounds[1]! - rect.top) / 2 }}
+        title="Add column"
+        aria-label="Add column at the end"
+        onClick={() => insertColumnAt(numCols)}
+      >
+        <Plus className="size-3.5" />
+      </button>
+      <button
+        type="button"
+        className={cn(addClass, '-translate-x-1/2')}
+        style={{ left: rect.left + (colBounds[1]! - rect.left) / 2, top: tableBottom + 8 }}
+        title="Add row"
+        aria-label="Add row at the end"
+        onClick={() => insertRowAt(numRows)}
+      >
+        <Plus className="size-3.5" />
+      </button>
     </div>
   );
 }
