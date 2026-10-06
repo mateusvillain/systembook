@@ -137,6 +137,16 @@ beforeEach(() => {
   document.body.appendChild(container);
   root = createRoot(container);
   window.matchMedia = vi.fn().mockReturnValue({ matches: false }) as unknown as typeof window.matchMedia;
+  // jsdom não implementa `<dialog>` modal: o stub liga o atributo `open` e
+  // dispara `close`, que é o contrato de que a palette depende.
+  HTMLDialogElement.prototype.showModal = function () {
+    this.setAttribute('open', '');
+  };
+  HTMLDialogElement.prototype.close = function () {
+    if (!this.hasAttribute('open')) return;
+    this.removeAttribute('open');
+    this.dispatchEvent(new Event('close'));
+  };
 });
 
 afterEach(() => {
@@ -233,25 +243,150 @@ describe('doc pública fora da raiz (basename) e sem prefixo', () => {
     expect(currentPath).toBe('/foundation/color/palette');
   });
 
-  it('escolher um resultado da busca navega dentro do prefixo', async () => {
-    await render(<StaticSite at="/meu-repo/" />);
-    const input = container.querySelector<HTMLInputElement>('[data-testid=public-search-input]')!;
-
+  const openPalette = async () => {
     await act(async () => {
-      input.focus();
+      container.querySelector<HTMLElement>('[data-testid=search-open]')!.click();
+    });
+    await settle();
+    return container.querySelector<HTMLDialogElement>('dialog.sb-palette')!;
+  };
+
+  const type = async (text: string) => {
+    const input = container.querySelector<HTMLInputElement>('[data-testid=public-search-input]')!;
+    await act(async () => {
       // Input controlado: o valor precisa passar pelo setter nativo para o
       // React enxergar a mudança.
-      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, 'bot');
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, text);
       input.dispatchEvent(new Event('input', { bubbles: true }));
     });
-    await settle(350); // debounce da busca
+    await settle(250); // debounce da busca
     await settle();
+    return input;
+  };
 
-    const result = container.querySelector<HTMLElement>('[data-testid=search-result]')!;
-    await act(async () => {
-      result.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+  const key = (input: HTMLElement, k: string, init: KeyboardEventInit = {}) =>
+    act(async () => {
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true, ...init }));
     });
+
+  it('a palette abre pelo gatilho só com o campo, sem lista até digitar', async () => {
+    await render(<StaticSite at="/meu-repo/" />);
+    expect(container.querySelector('dialog.sb-palette')!.hasAttribute('open')).toBe(false);
+
+    const dialog = await openPalette();
+    expect(dialog.hasAttribute('open')).toBe(true);
+    expect(dialog.querySelector('[data-testid=public-search-input]')).not.toBeNull();
+    expect(dialog.querySelector('[data-testid=search-result]')).toBeNull();
+    expect(dialog.querySelector('.sb-palette-body')).toBeNull();
+    // Sem lista no DOM, o combobox não aponta para um listbox inexistente.
+    const input = dialog.querySelector('[data-testid=public-search-input]')!;
+    expect(input.getAttribute('aria-expanded')).toBe('false');
+    expect(input.hasAttribute('aria-controls')).toBe(false);
+  });
+
+  it('a busca mostra título, descrição com destaque e o href com a base do router', async () => {
+    await render(<StaticSite at="/meu-repo/" />);
+    await openPalette();
+    await type('bot');
+    const item = container.querySelector('[data-testid=search-result]')!;
+    expect(item.querySelector('.sb-palette-item-title')!.textContent).toBe('Button');
+    expect(item.querySelector('.sb-palette-item-desc')!.textContent).toBe('Botão');
+    expect(item.getAttribute('href')).toBe('/meu-repo/components/actions/button');
+
+    const input = container.querySelector('[data-testid=public-search-input]')!;
+    expect(input.getAttribute('aria-expanded')).toBe('true');
+    expect(document.getElementById(input.getAttribute('aria-controls')!)).not.toBeNull();
+  });
+
+  it('⌘K abre a palette e Esc/fechar a fecham', async () => {
+    await render(<StaticSite at="/meu-repo/" />);
+    await act(async () => {
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true }));
+    });
+    const dialog = container.querySelector<HTMLDialogElement>('dialog.sb-palette')!;
+    expect(dialog.hasAttribute('open')).toBe(true);
+
+    await act(async () => {
+      container.querySelector<HTMLElement>('[data-testid=search-close]')!.click();
+    });
+    expect(dialog.hasAttribute('open')).toBe(false);
+    // Fechou: o corpo desmonta, então a próxima abertura começa limpa.
+    expect(container.querySelector('[data-testid=public-search-input]')).toBeNull();
+
+    // O navegador fecha o dialog sozinho no Esc, e o `close` volta ao estado do pai.
+    await openPalette();
+    await act(async () => dialog.close());
+    expect(container.querySelector('[data-testid=public-search-input]')).toBeNull();
+  });
+
+  it('digitar busca, ↑/↓ navegam com wrap e Enter navega dentro do prefixo', async () => {
+    await render(<StaticSite at="/meu-repo/" />);
+    await openPalette();
+    const input = await type('bot');
+
+    const results = () => [...container.querySelectorAll('[data-testid=search-result]')];
+    expect(results()).toHaveLength(1);
+    expect(container.querySelector('.sb-palette-group-label')!.textContent).toBe('Actions');
+    expect(input.getAttribute('aria-activedescendant')).toBe(results()[0]!.id);
+
+    await key(input, 'ArrowDown'); // 1 item: dá a volta no próprio item
+    expect(results()[0]!.getAttribute('aria-selected')).toBe('true');
+    await key(input, 'ArrowUp');
+    expect(results()[0]!.getAttribute('aria-selected')).toBe('true');
+
+    await key(input, 'Enter');
     expect(currentPath).toBe('/components/actions/button');
+    expect(container.querySelector('dialog.sb-palette')!.hasAttribute('open')).toBe(false);
+  });
+
+  it('⌘K alterna: com a palette aberta, fecha', async () => {
+    await render(<StaticSite at="/meu-repo/" />);
+    const toggle = () =>
+      act(async () => {
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true }));
+      });
+    const dialog = container.querySelector<HTMLDialogElement>('dialog.sb-palette')!;
+    await toggle();
+    expect(dialog.hasAttribute('open')).toBe(true);
+    await toggle();
+    expect(dialog.hasAttribute('open')).toBe(false);
+  });
+
+  it('a região de anúncio fica montada fora da lista e usa o singular', async () => {
+    await render(<StaticSite at="/meu-repo/" />);
+    await openPalette();
+    const live = () => container.querySelector('dialog.sb-palette [role=status]')!;
+    // Montada antes de qualquer texto, para o leitor de tela anunciar as mudanças.
+    expect(live().textContent).toBe('');
+    await type('bot');
+    expect(live().textContent).toBe('1 result');
+  });
+
+  it('Enter com a lista da busca anterior (debounce pendente) não navega', async () => {
+    await render(<StaticSite at="/meu-repo/" />);
+    await openPalette();
+    const input = await type('bot');
+    const before = currentPath;
+    // Muda o texto e aperta Enter antes do debounce: a lista ainda é a de "bot".
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, 'bota');
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await key(input, 'Enter');
+    expect(currentPath).toBe(before);
+    expect(container.querySelector('dialog.sb-palette')!.hasAttribute('open')).toBe(true);
+  });
+
+  it('⌘/Ctrl+Enter abre o resultado em outra aba e deixa a palette aberta', async () => {
+    const open = vi.spyOn(window, 'open').mockReturnValue(null);
+    await render(<StaticSite at="/meu-repo/" />);
+    await openPalette();
+    const input = await type('bot');
+    await key(input, 'Enter', { metaKey: true });
+
+    expect(open).toHaveBeenCalledWith('/meu-repo/components/actions/button', '_blank', 'noopener');
+    expect(container.querySelector('dialog.sb-palette')!.hasAttribute('open')).toBe(true);
+    open.mockRestore();
   });
 });
 
