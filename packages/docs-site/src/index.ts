@@ -53,6 +53,11 @@ export {
 export { EmbedCoverPreview, type DosDontsCoverFieldProps } from './content/nodes/DosDontsCover.js';
 export { blocksToTiptapDoc } from './content/blocksToTiptapDoc.js';
 
+// Design tokens
+export { TokenTable, tokenValueText, type TokenTableProps } from './content/tokens/TokenTable.js';
+export { ColorTokens } from './content/tokens/ColorTokens.js';
+export { TokenCopy } from './content/tokens/TokenCopy.js';
+
 // Doc pública
 export { PageRenderer, BODY_VIEW_LABEL, bodyViewLabel, type RenderableSnapshot } from './public/PageRenderer.js';
 export { PublicLayout, type PublicOutletContext } from './public/PublicLayout.js';

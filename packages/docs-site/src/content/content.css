@@ -654,3 +654,145 @@
   font-size: 0.875rem;
   color: var(--sb-fg-muted, #57606a);
 }
+
+/* ---- Design tokens (SYS-133) ----
+   A tabela de tokens é a moldura de todos os renderers por tipo: o caminho, os
+   botões de copiar e a descrição na primeira coluna; uma coluna por modo com a
+   amostra, o valor e o alias. Rola dentro do próprio wrapper em tela estreita,
+   como as tabelas de conteúdo. Fora de `.sb-editor` de propósito: a página
+   Tokens usa a tabela sem o ProseMirror em volta. */
+.sb-tokens-scroll {
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.sb-tokens {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.sb-tokens th,
+.sb-tokens td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--sb-border, #e2e4e8);
+  text-align: left;
+  vertical-align: top;
+}
+
+.sb-tokens thead th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--sb-fg-muted, #5c6370);
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.sb-token-head {
+  font-weight: 400;
+  min-width: 14rem;
+}
+
+.sb-token-head > * + * {
+  margin-top: 0.3rem;
+}
+
+.sb-token-name {
+  display: block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.sb-tokens tr[data-deprecated] .sb-token-name {
+  text-decoration: line-through;
+  text-decoration-color: var(--sb-fg-muted, #5c6370);
+}
+
+.sb-token-deprecated {
+  display: inline-block;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  border: 1px solid var(--sb-border, #e2e4e8);
+  font-size: 0.6875rem;
+  color: var(--sb-fg-muted, #5c6370);
+}
+
+.sb-token-description {
+  display: block;
+  color: var(--sb-fg-muted, #5c6370);
+}
+
+.sb-token-copy {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.sb-token-copy-button {
+  min-width: 3.25rem;
+  padding: 0.1rem 0.45rem;
+  border: 1px solid var(--sb-border, #e2e4e8);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--sb-fg-muted, #5c6370);
+  font: inherit;
+  font-size: 0.6875rem;
+  cursor: pointer;
+}
+
+.sb-token-copy-button:hover,
+.sb-token-copy-button:focus-visible {
+  color: var(--sb-fg, inherit);
+  border-color: var(--sb-fg-muted, #5c6370);
+}
+
+.sb-token-copy-button[data-state='copied'] {
+  color: var(--sb-accent, #1d4ed8);
+  border-color: var(--sb-accent, #1d4ed8);
+}
+
+/* Alvo de toque confortável em tela de toque, como o copiar do code block. */
+@media (pointer: coarse) {
+  .sb-token-copy-button {
+    min-height: 2.25rem;
+  }
+}
+
+.sb-token-cell {
+  min-width: 9rem;
+}
+
+.sb-token-cell > * + * {
+  margin-top: 0.3rem;
+}
+
+.sb-token-value {
+  display: block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+}
+
+.sb-token-alias {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--sb-fg-muted, #5c6370);
+  overflow-wrap: anywhere;
+}
+
+/* Swatch sobre xadrez: uma cor com transparência mostra o quanto é
+   transparente. A borda sutil separa do fundo uma cor igual à superfície. */
+.sb-token-swatch {
+  display: block;
+  width: 100%;
+  max-width: 7rem;
+  height: 2.5rem;
+  border-radius: 6px;
+  border: 1px solid var(--sb-border, #e2e4e8);
+  background:
+    linear-gradient(var(--sb-token-color), var(--sb-token-color)),
+    repeating-conic-gradient(#d4d7dd 0 25%, #fff 0 50%) 0 0 / 12px 12px;
+}
