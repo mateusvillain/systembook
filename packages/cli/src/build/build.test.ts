@@ -42,7 +42,7 @@ describe('systembook build', { timeout: 60_000 }, () => {
   it('em subpath: um index.html por rota, 404, dados e assets sob a base', async () => {
     const config = await fixtureConfig('/acme-ds/');
     const result = await buildStaticSite(config);
-    expect(result).toEqual({ ok: true, outDir: config.outDir, routes: 5 });
+    expect(result).toEqual({ ok: true, outDir: config.outDir, routes: 5, warnings: [] });
 
     const files = tree(config.outDir);
     const html = [...files.keys()].filter((f) => f.endsWith('.html') && !f.startsWith('_systembook/')).sort();
@@ -192,6 +192,26 @@ describe('systembook build', { timeout: 60_000 }, () => {
     expect(result.ok).toBe(false);
     expect(!result.ok && result.problems.map((p) => p.split('  ')[0])).toEqual(['docs/m/s/p.mdx:5:1', 'docs/m/s/p.mdx:7:1']);
     expect(() => readdirSync(config.outDir)).toThrow();
+  });
+
+  it('tokens: erro falha o build sem gerar nada; aviso não', async () => {
+    const config = await fixtureConfig('/');
+    mkdirSync(path.join(config.root, 'tokens'));
+    const write = (tokens: unknown) => writeFileSync(path.join(config.root, 'tokens/color.json'), JSON.stringify(tokens));
+
+    write({ ok: { $type: 'color', $value: '#fff' }, bad: { $type: 'color', $value: 'nope' } });
+    const failed = await buildStaticSite({ ...config, tokens: { files: ['tokens/*.json'], modes: [] } });
+    expect(!failed.ok && failed.problems).toEqual([
+      'tokens/color.json  bad: "nope" não é uma cor ("#0a84ff", "rgb(…)", um nome CSS ou { colorSpace, components }).',
+    ]);
+    expect(() => readdirSync(config.outDir)).toThrow();
+
+    write({ ok: { $type: 'color', $value: '#fff', $foo: 1 } });
+    const built = await buildStaticSite({ ...config, tokens: { files: ['tokens/*.json'], modes: [] } });
+    expect(built).toMatchObject({ ok: true, warnings: ['tokens/color.json  ok: propriedade "$foo" não suportada; ignorada.'] });
+
+    const missing = await buildStaticSite({ ...config, tokens: { files: [], modes: [{ name: 'dark', files: ['dark/*.json'] }] } });
+    expect(!missing.ok && missing.problems).toEqual(['systembook.config.ts: "tokens.modes.dark": "dark/*.json" não casa com nenhum arquivo.']);
   });
 
   it('recusa outDir que apagaria o projeto ou o conteúdo', async () => {

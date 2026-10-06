@@ -35,6 +35,37 @@ async function problems(root: string): Promise<string[]> {
   return [];
 }
 
+describe('loadConfig — tokens', () => {
+  const json = (tokens: unknown) => project({ 'systembook.config.json': JSON.stringify({ name: 'T', tokens }) });
+
+  it('normaliza as três formas', async () => {
+    expect((await loadConfig(json('tokens/*.json'))).tokens).toEqual({ files: ['tokens/*.json'], modes: [] });
+    expect((await loadConfig(json(['a.json', 'b.json']))).tokens).toEqual({ files: ['a.json', 'b.json'], modes: [] });
+    expect((await loadConfig(json({ files: 'base.json', modes: { light: 'light.json', dark: ['dark/*.json'] } }))).tokens).toEqual({
+      files: ['base.json'],
+      modes: [
+        { name: 'light', files: ['light.json'] },
+        { name: 'dark', files: ['dark/*.json'] },
+      ],
+    });
+    expect((await loadConfig(json({ modes: { light: 'l.json' } }))).tokens).toEqual({
+      files: [],
+      modes: [{ name: 'light', files: ['l.json'] }],
+    });
+    expect((await loadConfig(json(undefined))).tokens).toBeUndefined();
+  });
+
+  it('recusa formas inválidas', async () => {
+    const shape = 'systembook.config.json: "tokens": use um arquivo ou glob, uma lista deles, ou { files, modes }';
+    expect(await problems(json([]))).toEqual(['systembook.config.json: "tokens": informe ao menos um arquivo, em "files" ou em "modes"']);
+    expect(await problems(json({}))).toEqual(['systembook.config.json: "tokens": informe ao menos um arquivo, em "files" ou em "modes"']);
+    expect(await problems(json({ modes: { dark: [] } }))).toEqual(['systembook.config.json: "tokens.modes.dark": a lista não pode ser vazia']);
+    expect(await problems(json({ modes: { ' ': 'x.json' } }))).toEqual(['systembook.config.json: "tokens.modes": nome de modo vazio (" ")']);
+    expect(await problems(json({ file: 'x.json' }))).toEqual([shape]);
+    expect(await problems(json(3))).toEqual([shape]);
+  });
+});
+
 describe('loadConfig', () => {
   it('lê .ts com tipos e aplica os padrões', async () => {
     const root = project({

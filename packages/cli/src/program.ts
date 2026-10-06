@@ -82,6 +82,7 @@ export function createProgram(): Command {
         }
       }
       const result = await buildStaticSite(config);
+      reportWarnings(result.warnings);
       if (!result.ok) {
         reportProblems(result.problems);
         return;
@@ -138,7 +139,7 @@ export function createProgram(): Command {
       }
       try {
         const result = await exportProject({ from: options.from, token, out: options.out, force: options.force });
-        for (const warning of result.warnings) console.warn(`aviso: ${warning}`);
+        reportWarnings(result.warnings);
         if (result.unpublished.length) {
           console.warn(`\n${result.unpublished.length} página(s) nunca publicada(s) ficaram de fora:`);
           for (const page of result.unpublished) {
@@ -174,7 +175,7 @@ export function createProgram(): Command {
       if (!config) return;
       try {
         const result = await importProject(config, { to: options.to, token, overwrite: options.overwrite });
-        for (const warning of result.warnings) console.warn(`aviso: ${warning}`);
+        reportWarnings(result.warnings);
         const { menus, sections, pages } = result.created;
         console.log(
           `Importado em ${options.to} — criado(s): ${menus} menu(s), ${sections} seção(ões), ${pages} página(s); ${result.replaced} página(s) substituída(s); ${result.images} imagem(ns). Tudo publicado.`,
@@ -214,6 +215,11 @@ async function loadProjectConfig(root: string) {
     reportProblems(error.problems);
     return null;
   }
+}
+
+/** Avisos não falham o comando; saem antes, para o resumo ficar por último. */
+function reportWarnings(warnings: string[]): void {
+  for (const warning of warnings) console.warn(`aviso: ${warning}`);
 }
 
 function reportProblems(problems: string[]): void {
