@@ -2,115 +2,113 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
-**Systembook** é uma plataforma **open source** para documentação de design
-systems — no estilo Material Design Docs / Atlassian Design System — em que cada
-componente pode ser embutido como um **preview real e interativo**: um iframe do
-componente de verdade, buildado no CI do próprio time, não uma captura de tela ou
-uma réplica manual.
+**English** · [Português (Brasil)](./README.pt-BR.md)
 
-Funciona de dois jeitos, com a mesma documentação pública no fim:
+Systembook is an open source platform for documenting design systems, in the
+style of Material Design docs or the Atlassian Design System. Its main idea: a
+component in the docs is the real component, not a screenshot. Each one is
+embedded as an interactive preview, an iframe of the actual code, built in your
+own CI.
 
-- **Modo CMS** — um **container Docker único**, self-hosted, com um painel
-  administrativo: o conteúdo é escrito e publicado direto no navegador (sem PR,
-  sem deploy de engenharia), com revisões, usuários e papéis.
-- **Modo estático** — o conteúdo vive em arquivos **`.mdx` dentro do repositório**
-  do design system, e o CLI gera um **site estático** que qualquer host gratuito
-  serve (GitHub Pages, Vercel, Netlify). Sem servidor e sem banco.
+There are two ways to run it, and both end in the same public docs:
 
-Nenhum dos dois depende de serviço de terceiros pago. Uma instância (ou um site)
-documenta um design system.
+- **CMS mode.** One self-hosted Docker container with an admin panel. People write
+  and publish in the browser, with no PR and no engineering deploy. It has
+  revisions, users and roles.
+- **Static mode.** Content lives in `.mdx` files in your design system's repository.
+  The CLI builds a static site that any free host can serve (GitHub Pages, Vercel,
+  Netlify). No server, no database.
 
-O problema que resolve: manter a documentação viva do design system — pelo painel,
-sem depender de engenharia, ou junto do código, revisada em PR — enquanto os
-componentes exibidos continuam sendo os componentes reais do código, sempre
-atualizados via o pipeline de CI do time.
+Neither mode depends on a paid third-party service. One instance, or one site,
+documents one design system.
 
-**Exemplo ao vivo** (modo estático, publicado pelo GitHub Pages deste
-repositório): <https://mateusvillain.github.io/systembook/>
+**Live example** (static mode, published with this repository's GitHub Pages):
+<https://mateusvillain.github.io/systembook/>
 
-## Escolha seu modo
+> The guides in [`docs/`](./docs) are written in Portuguese for now.
 
-| | **Modo CMS** | **Modo estático** |
+## Pick a mode
+
+| | **CMS mode** | **Static mode** |
 | --- | --- | --- |
-| **Fonte do conteúdo** | Banco SQLite da instância | Arquivos `.md`/`.mdx` no repositório |
-| **Quem edita** | Qualquer pessoa com login, no editor visual do painel | Quem tem acesso ao repositório, num editor de texto, via PR |
-| **Distribuição** | Imagem Docker (`ghcr.io/mateusvillain/systembook`) | Pacote npm (`@systembook/cli`) |
-| **Hospedagem** | Um servidor seu rodando o container | Qualquer host estático (GitHub Pages, Vercel, Netlify, S3…) |
-| **Custo** | O servidor (VPS, container) | Gratuito nos hosts estáticos comuns |
-| **Publicar** | Botão "Publicar" no painel | Merge na branch + build no CI |
-| **Histórico** | Revisões por página, com comparação por bloco e restauração | O histórico do git |
-| **Recursos só deste modo** | Editor visual, rascunho com autosave, revisões, usuários e papéis, dashboard de atividade | Review em PR, `systembook check` no CI, `systembook dev` com reload, imagem como bloco, site sem servidor |
+| **Where content lives** | The instance's SQLite database | `.md`/`.mdx` files in the repository |
+| **Who edits** | Anyone with a login, in the visual editor | Anyone with repo access, in a text editor, through a PR |
+| **Distribution** | Docker image (`ghcr.io/mateusvillain/systembook`) | npm package (`@systembook/cli`) |
+| **Hosting** | A server of yours running the container | Any static host (GitHub Pages, Vercel, Netlify, S3…) |
+| **Cost** | The server (VPS, container) | Free on the usual static hosts |
+| **Publishing** | "Publish" button in the panel | Merge, then a CI build |
+| **History** | Per-page revisions, block-level compare, restore | Git history |
+| **Only in this mode** | Visual editor, draft autosave, users and roles, activity dashboard | PR review, `systembook check` in CI, `systembook dev` with reload, no server |
 
-Nos dois modos, a doc pública é a mesma: menus, seções, páginas com tabs,
-previews interativos com controles, do/don't, callouts, código com realce,
-busca e tema escuro.
+The public docs are the same in both: menus, sections, pages with tabs,
+interactive previews with controls, do/don't blocks, callouts, highlighted code,
+search and a dark theme.
 
-Use o **CMS** quando quem escreve a doc não vive no repositório (design,
-conteúdo) e precisa publicar sozinho. Use o **estático** quando a doc deve andar
-junto do código, revisada no mesmo PR, e você não quer manter um servidor.
-Trocar de modo depois é possível — veja [migração entre modos](./docs/migration.md).
+Pick **CMS** if the people writing docs don't live in the repository (design,
+content) and need to publish on their own. Pick **static** if docs should travel
+with the code, get reviewed in the same PR, and you'd rather not run a server. You
+can switch later: see [migrating between modes](./docs/migration.md).
 
-## O que **não** é
+## What it isn't
 
-Para evitar expectativas erradas, estes itens estão **fora do escopo** (alguns são
-backlog pós-MVP, outros são decisões de arquitetura deliberadas):
+A few things are out of scope, some as backlog and some on purpose:
 
-- **No modo CMS, não é Git-based.** O conteúdo vive num banco de dados (SQLite),
-  editado pelo painel — não há commit/PR por edição. (Se é isso que você quer,
-  use o modo estático.)
-- **Não é multi-tenant.** Uma instância = um design system. Não há suporte a
-  múltiplos design systems por instância no MVP.
-- **Não é um builder de biblioteca de componentes.** O Systembook **documenta e
-  embute** os componentes que o seu time já constrói no repositório dele; ele não
-  compila nem hospeda o código-fonte dos componentes.
-- **O modo CMS não tem fluxo de aprovação (draft → review → publish) no MVP.** O
-  editor publica direto. Autosave grava rascunho; "Publicar" cria uma revisão versionada.
-- **Não migra `.stories.tsx` automaticamente.** A leitura de stories do Storybook e
-  a inferência de variantes via AST estão no backlog V2 — hoje as variantes de
-  preview são declaradas em arquivos `*.preview.tsx`.
+- **In CMS mode, it isn't Git-based.** Content lives in a database and is edited in
+  the panel, so there's no commit or PR per edit. If you want that, use static mode.
+- **It isn't multi-tenant.** One instance is one design system.
+- **It doesn't build your component library.** Systembook documents and embeds the
+  components your team already builds. It doesn't compile or host their source.
+- **CMS mode has no approval flow yet.** Editors publish directly. Autosave keeps a
+  draft, and "Publish" creates a versioned revision.
+- **It doesn't import `.stories.tsx` files.** Reading Storybook stories and
+  inferring variants from the AST is on the backlog. For now, preview variants are
+  declared in `*.preview.tsx` files.
 
-Outros itens de backlog V2: convite de usuário / recuperação de senha via SMTP,
-diff granular entre revisões e multi-tenancy.
+Also on the backlog: user invites and password recovery by email, finer-grained
+revision diffs, and multi-tenancy.
 
-## Comparação
+## How it compares
 
-| | **Systembook** | **Storybook** | **Zeroheight** | **Decap CMS** |
+| | **Systembook** | **Storybook** | **Zeroheight** | **Supernova** |
 | --- | --- | --- | --- | --- |
-| **Hospedagem** | Self-hosted (Docker) ou qualquer host estático | Self-hosted (build estático) | SaaS pago | Self-hosted (front) |
-| **Edição de conteúdo** | CMS real no painel, ou `.mdx` no repo | MDX editado por dev | CMS SaaS | Git-based (commit/PR) |
-| **Preview de componente real** | ✅ iframe do componente real, com variantes e controles | ✅ (foco central) | ⚠️ depende de sync com Storybook | ❌ docs estáticas |
-| **Documentação de texto** | ✅ editor rich-text tipado | ⚠️ fraca/manual | ✅ | ✅ |
-| **Custo** | Gratuito (só a hospedagem) | Gratuito (só a hospedagem) | Licença SaaS | Gratuito (só a hospedagem) |
+| **What it is** | Docs platform with real component previews | Component workshop with docs | Hosted design system docs | Hosted design system platform (docs, tokens, code automation) |
+| **Hosting** | Self-hosted (Docker) or any static host | Self-hosted static build | Hosted SaaS | Hosted SaaS |
+| **Who writes the docs** | Anyone in a visual editor (CMS), or developers in `.mdx` (static) | Developers, in MDX | Designers and writers, in a hosted editor | Designers and writers, in a hosted editor |
+| **Real component previews** | Yes: the real component in an iframe, with variants and controls, built in your CI | Yes, it's the core of the tool | Embeds your Storybook | Connects Storybook data |
+| **Figma sync** | No | Through addons | Yes | Yes |
+| **Design tokens** | No | No | Yes | Yes |
+| **Cost** | Free, you pay for hosting | Free, you pay for hosting | Free tier with limits, paid plans | Free tier with limits, paid plans |
+| **Open source** | MIT | MIT | No | No |
 
-Em resumo: o Systembook combina a **documentação de texto** — num CMS real, ou em
-arquivos no repo — com o **live preview do componente real** do lado "Storybook",
-buildado no CI do próprio time, self-hosted e sem custo de licença.
+Storybook is the best place to develop and test components, and its docs are
+written by developers. Zeroheight and Supernova suit teams that live in Figma and
+want tokens and sync. Systembook is for when you want editorial docs and the real
+components in one place that you host and control, without a per-seat license.
 
-## Instalação
+## Installation
 
-- [Modo CMS (Docker)](#modo-cms-docker)
-- [Modo estático (npm)](#modo-estático-npm)
+- [CMS mode (Docker)](#cms-mode-docker)
+- [Static mode (npm)](#static-mode-npm)
 
-## Modo CMS (Docker)
+## CMS mode (Docker)
 
-O modo CMS roda como um **container Docker único** — não há banco externo, fila
-ou serviço de terceiros para provisionar. O passo a passo completo (subir a
-instância, primeiro login, instalar o conector no repo do design system e
-configurar o CI) está no [**guia de setup**](./docs/setup.md); o resumo está abaixo.
+CMS mode runs as a single Docker container. There's no external database, queue or
+third-party service to set up. The full walkthrough (starting the instance, first
+login, installing the CLI in the design system repo, wiring up CI) is in the
+[**setup guide**](./docs/setup.md). A short version follows.
 
-### Pré-requisitos
+### Requirements
 
-- **Docker** + **Docker Compose** na máquina/servidor que vai hospedar a instância.
-- Um repositório de componentes com **CI**, se você quiser publicar previews reais
-  (opcional para começar).
-- Você **não precisa clonar este repositório** para hospedar o Systembook — só
-  baixar o compose de produção e o template de variáveis.
+- **Docker** and **Docker Compose** on the machine that will host the instance.
+- A component repository with **CI**, if you want real previews (optional to start).
+- You don't need to clone this repository to host Systembook. Just download the
+  production compose file and the env template.
 
-### 1. Baixar o compose e o `.env`
+### 1. Download the compose file and `.env`
 
-A imagem é publicada no GitHub Container Registry:
+The image is published on the GitHub Container Registry:
 [`ghcr.io/mateusvillain/systembook`](https://github.com/mateusvillain/systembook/pkgs/container/systembook)
-(multi-arch: `amd64` + `arm64`).
+(multi-arch: `amd64` and `arm64`).
 
 ```bash
 curl -O https://raw.githubusercontent.com/mateusvillain/systembook/main/docker-compose.production.yml
@@ -118,108 +116,106 @@ curl -O https://raw.githubusercontent.com/mateusvillain/systembook/main/.env.pro
 cp .env.production.example .env
 ```
 
-### 2. Preencher as variáveis obrigatórias
+### 2. Fill in the required variables
 
-| Variável | O que é | Como preencher |
+| Variable | What it is | How to fill it |
 | --- | --- | --- |
-| `SESSION_SECRET` | Segredo que assina os cookies de sessão. | `openssl rand -base64 32` |
-| `ARGON2_SECRET` | Pepper do hash de senha (argon2id). **Não mude depois de criar usuários** — invalidaria todas as senhas. | `openssl rand -base64 32` |
-| `INITIAL_ADMIN_EMAIL` | Email do admin criado no primeiro boot. | ex.: `admin@suaempresa.com` |
-| `INITIAL_ADMIN_PASSWORD` | Senha desse admin. | senha forte (mín. 8 caracteres) |
+| `SESSION_SECRET` | Secret that signs session cookies. | `openssl rand -base64 32` |
+| `ARGON2_SECRET` | Pepper for password hashing (argon2id). **Don't change it after creating users**, or every password stops working. | `openssl rand -base64 32` |
+| `INITIAL_ADMIN_EMAIL` | Email of the admin created on first boot. | e.g. `admin@yourcompany.com` |
+| `INITIAL_ADMIN_PASSWORD` | That admin's password. | A strong password (8+ characters) |
 
-As opcionais (`PORT`, `DATABASE_PATH`, `PREVIEWS_PATH`) já têm default na imagem.
+The optional ones (`PORT`, `DATABASE_PATH`, `PREVIEWS_PATH`) have defaults in the image.
 
-### 3. Subir o container
+### 3. Start the container
 
 ```bash
 docker compose -f docker-compose.production.yml up -d
-docker compose -f docker-compose.production.yml ps    # deve ficar "healthy"
+docker compose -f docker-compose.production.yml ps    # should become "healthy"
 ```
 
-No primeiro boot (banco vazio), o container roda as migrations e faz o seed do
-admin inicial a partir das variáveis de ambiente. Acesse a instância na porta
-configurada (default `3000`), faça login em `/login` e — logo em seguida — crie
-usuários nomeados e rotacione a credencial de bootstrap. Em produção, coloque um
-reverse proxy com TLS na frente: os cookies de sessão são `Secure` fora de
-ambiente local.
+On first boot (empty database) the container runs the migrations and seeds the
+initial admin from the environment variables. Open the instance on the configured
+port (`3000` by default), sign in at `/login`, then create named users and rotate
+the bootstrap credential. In production, put a reverse proxy with TLS in front:
+session cookies are `Secure` outside local environments.
 
-O banco SQLite e os artefatos de preview persistem no volume `systembook-data`
-declarado no compose, então sobrevivem a recriações e updates do container. O
-backup é responsabilidade operacional de quem hospeda — veja o
-[guia de backup e recuperação](./docs/backup.md) (setup recomendado com Litestream).
+The SQLite database and the preview artifacts live in the `systembook-data` volume
+declared in the compose file, so they survive container recreation and updates.
+Backups are up to whoever hosts the instance. See the
+[backup and recovery guide](./docs/backup.md) (Litestream is the recommended setup).
 
-### 4. Atualizar a instância
+### 4. Update the instance
 
 ```bash
 docker compose -f docker-compose.production.yml pull
 docker compose -f docker-compose.production.yml up -d
 ```
 
-As migrations pendentes rodam automaticamente no boot da nova versão. Faça backup
-do volume antes de atualizar.
+Pending migrations run automatically when the new version boots. Back up the volume
+before you update.
 
-### 5. (Opcional) Conectar o pipeline de previews
+### 5. (Optional) Connect the previews pipeline
 
-Para embutir os componentes reais do seu design system, instale o CLI no
-repositório de componentes e publique os artefatos pelo CI:
+To embed your design system's real components, install the CLI in the component
+repository and publish the artifacts from CI:
 
 ```bash
-pnpm add -D @systembook/cli @systembook/schema   # ou npm i -D / yarn add -D
+pnpm add -D @systembook/cli @systembook/schema   # or npm i -D / yarn add -D
 npx systembook previews build --root .
 ```
 
-O workflow completo de GitHub Actions está em
-[`docs/ci-example.md`](./docs/ci-example.md); o contrato dos arquivos
-`*.preview.tsx` está em
+The full GitHub Actions workflow is in [`docs/ci-example.md`](./docs/ci-example.md),
+and the `*.preview.tsx` contract is in
 [`docs/preview-tsx-schema.md`](./docs/preview-tsx-schema.md).
 
-## Modo estático (npm)
+## Static mode (npm)
 
-Requer Node.js 22+ e o `@systembook/cli` 0.3.0 ou mais recente. No repositório
-do design system (ou numa pasta vazia):
+Needs Node.js 22+ and `@systembook/cli` 0.3.0 or newer. In your design system's
+repository (or an empty folder):
 
 ```bash
-npx @systembook/cli init     # config, docs/ com landing e uma página, scripts e .gitignore
-npm install                  # ou pnpm install / yarn
-npm run docs:dev             # http://localhost:4000, recarrega ao salvar
+npx @systembook/cli init     # config, docs/ with a landing page and one page, scripts, .gitignore
+npm install                  # or pnpm install / yarn
+npm run docs:dev             # http://localhost:4000, reloads on save
 ```
 
-O `init` pergunta se deve criar o workflow de deploy no GitHub Pages
-(`--github-pages` ou `--no-github-pages` para não perguntar). Se `docs/` já
-guarda outra documentação, o conteúdo vai para `systembook-docs/`. A partir daí:
+`init` asks whether to create the GitHub Pages deploy workflow (pass
+`--github-pages` or `--no-github-pages` to skip the question). If `docs/` already
+holds other documentation, the content goes to `systembook-docs/`. From there:
 
-| Comando | O que faz |
+| Command | What it does |
 | --- | --- |
-| `systembook dev` | Servidor local; erros de conteúdo aparecem num overlay |
-| `systembook check` | Valida conteúdo, links, imagens e previews (para rodar em PR) |
-| `systembook build` | Gera o site em `systembook-dist/` |
+| `systembook dev` | Local server; content errors show up in an overlay |
+| `systembook check` | Validates content, links, images and previews (run it on PRs) |
+| `systembook build` | Builds the site into `systembook-dist/` |
 
-- [**Formato do conteúdo**](./docs/static-format.md): pastas, frontmatter,
-  blocos e componentes MDX (`<Callout>`, `<ComponentEmbed>`, `<DosDonts>`).
-- [**Publicar**](./docs/deploy-static.md): GitHub Pages, Vercel, Netlify e
-  outros hosts.
-- [**Projeto de exemplo**](./examples/static-docs): um design system completo no
-  formato, com previews — é o que está publicado em
+- [**Content format**](./docs/static-format.md): folders, frontmatter, blocks and
+  MDX components (`<Callout>`, `<ComponentEmbed>`, `<DosDonts>`).
+- [**Publishing**](./docs/deploy-static.md): GitHub Pages, Vercel, Netlify and
+  other hosts.
+- [**Example project**](./examples/static-docs): a complete design system in this
+  format, with previews. It's what's published at
   <https://mateusvillain.github.io/systembook/>.
-- [**Migração entre modos**](./docs/migration.md).
-- Previews de componente: os mesmos `*.preview.tsx` do modo CMS
-  ([contrato](./docs/preview-tsx-schema.md)); o `build` os inclui no site.
+- [**Migrating between modes**](./docs/migration.md).
+- Component previews use the same `*.preview.tsx` files as CMS mode
+  ([contract](./docs/preview-tsx-schema.md)), and `build` includes them in the site.
 
-## Desenvolvimento
+## Development
 
-Instruções de setup local (dois processos em dev, checks de CI, convenções) estão
-no [`CONTRIBUTING.md`](./CONTRIBUTING.md). Detalhes de arquitetura e gotchas do
-repositório estão no [`CLAUDE.md`](./CLAUDE.md).
+Local setup (two processes in dev, CI checks, conventions) is in
+[`CONTRIBUTING.md`](./CONTRIBUTING.md). Architecture notes and repository gotchas
+are in [`CLAUDE.md`](./CLAUDE.md).
 
 ```bash
 git clone https://github.com/mateusvillain/systembook.git
 cd systembook
 pnpm install
-pnpm dev                               # server (porta 3000)
-pnpm --filter @systembook/admin dev    # painel admin (porta 5173)
+pnpm dev                               # server (port 3000)
+pnpm --filter @systembook/admin dev    # admin panel (port 5173)
 ```
 
-## Licença
+## License
 
-[MIT](./LICENSE). Contribuições são bem-vindas — veja o
+[MIT](./LICENSE). Contributions are welcome, see
 [`CONTRIBUTING.md`](./CONTRIBUTING.md).
