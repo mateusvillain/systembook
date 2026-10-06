@@ -197,8 +197,7 @@ html:has(.sb-public[data-theme='dark']:not(.sb-public--preview)) {
    fechar, toggle de tema): tamanho, forma e estados consistentes. */
 .sb-theme-toggle,
 .sb-nav-toggle,
-.sb-search-trigger,
-.sb-search-close {
+.sb-search-trigger {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -220,15 +219,13 @@ html:has(.sb-public[data-theme='dark']:not(.sb-public--preview)) {
 /* Só hambúrguer/busca/fechar ficam ocultos no desktop — o toggle de tema
    é sempre visível, então recebe `display` à parte na regra acima. */
 .sb-nav-toggle,
-.sb-search-trigger,
-.sb-search-close {
+.sb-search-trigger {
   display: none;
 }
 
 .sb-theme-toggle:hover,
 .sb-nav-toggle:hover,
-.sb-search-trigger:hover,
-.sb-search-close:hover {
+.sb-search-trigger:hover {
   background: var(--sb-hover);
   border-color: var(--sb-border);
   color: var(--sb-fg);
@@ -236,8 +233,7 @@ html:has(.sb-public[data-theme='dark']:not(.sb-public--preview)) {
 
 .sb-theme-toggle:focus-visible,
 .sb-nav-toggle:focus-visible,
-.sb-search-trigger:focus-visible,
-.sb-search-close:focus-visible {
+.sb-search-trigger:focus-visible {
   outline: 2px solid var(--sb-accent);
   outline-offset: 2px;
 }
@@ -256,7 +252,7 @@ html:has(.sb-public[data-theme='dark']:not(.sb-public--preview)) {
   border-radius: 8px;
   background: var(--sb-card);
   color: var(--sb-search-muted);
-  cursor: text;
+  cursor: pointer;
   transition:
     box-shadow 0.15s ease-out,
     color 0.15s ease-out;
@@ -271,10 +267,6 @@ html:has(.sb-public[data-theme='dark']:not(.sb-public--preview)) {
 @media (hover: hover) {
   .sb-searchbox-field:hover:not(:focus-within) {
     box-shadow: 0 0 0 1px var(--sb-search-ring);
-    color: var(--sb-fg-muted);
-  }
-
-  .sb-searchbox-field:hover:not(:focus-within) .sb-searchbox-input::placeholder {
     color: var(--sb-fg-muted);
   }
 }
@@ -1185,133 +1177,268 @@ html:has(.sb-public[data-theme='dark']:not(.sb-public--preview)) {
   color: #f4c9c6;
 }
 
-/* ---- Busca em dropdown ao vivo (TASK-54) ---- */
+/* ---- Busca: gatilho no header + Command Palette (TASK-54, SYS-116) ---- */
 .sb-searchbox {
-  position: relative;
   margin-left: auto;
 }
 
-/* O chrome (fundo, raio, foco) é do pill `.sb-searchbox-field`; o input é
-   apenas o texto dentro dele. */
-.sb-searchbox-input {
-  flex: 1;
-  min-width: 0;
-  padding: 0;
+/* O gatilho é um `<button>` com a anatomia do pill `.sb-searchbox-field`: sem
+   o chrome nativo, e o texto se comporta como o placeholder do antigo input. */
+.sb-searchbox-trigger {
+  width: 325px;
+  max-width: 40vw;
   border: none;
-  background: none;
   font: inherit;
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.2;
-  color: var(--sb-fg);
+  text-align: left;
+  cursor: pointer;
 }
 
-.sb-searchbox-input::placeholder {
-  color: var(--sb-search-muted);
-  font-weight: 500;
-  /* Declarada no pseudo: a transição do `input` não alcança o placeholder. */
-  transition: color 0.15s ease-out;
-}
-
-/* Sem anel próprio: `:focus-within` do pill já sinaliza o foco, e um outline
-   no input desenharia um retângulo dentro do pill. */
-.sb-searchbox-input:focus,
-.sb-searchbox-input:focus-visible {
+.sb-searchbox-trigger:focus:not(:focus-visible) {
   outline: none;
 }
 
-/* `type=search` traz um X de limpar nativo no WebKit que reintroduziria
-   chrome dentro do pill (e duplicaria o botão fechar do overlay mobile). */
-.sb-searchbox-input::-webkit-search-cancel-button,
-.sb-searchbox-input::-webkit-search-decoration {
+.sb-searchbox-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+/* ---- Command Palette (SYS-116) ----
+   `<dialog>` aberto com `showModal()`: camada superior e backdrop do navegador.
+   `display: flex` só em `[open]` — num seletor sem ele, o dialog fechado
+   apareceria. As cores vêm dos tokens do `.sb-public` (o dialog é filho dele). */
+.sb-palette {
+  padding: 0;
+  border: none;
+  border-radius: 16px;
+  background: var(--sb-card);
+  color: var(--sb-fg);
+  box-shadow: var(--sb-shadow);
+  width: min(640px, calc(100vw - 32px));
+  max-width: none;
+  max-height: min(680px, 80dvh);
+  margin: 12vh auto auto;
+  overflow: hidden;
+}
+
+.sb-palette[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.sb-palette::backdrop {
+  background: rgba(15, 23, 31, 0.45);
+}
+
+.sb-palette-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  /* `auto`, não `1`: `flex: 1` é `flex-basis: 0%`, e num dialog de altura
+     automática (só `max-height`) o Safari resolve essa base como 0 e colapsa
+     o painel inteiro — o backdrop aparece e o conteúdo não. */
+  flex: 1 1 auto;
+}
+
+.sb-palette-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--sb-border);
+}
+
+.sb-palette-search-icon {
+  flex-shrink: 0;
+  color: var(--sb-fg);
+}
+
+.sb-palette-input {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 18px;
+  line-height: 1.3;
+  color: var(--sb-fg);
+}
+
+.sb-palette-input::placeholder {
+  color: var(--sb-search-muted);
+}
+
+/* O foco do campo é o próprio modal: um outline desenharia um retângulo no cabeçalho. */
+.sb-palette-input:focus,
+.sb-palette-input:focus-visible {
+  outline: none;
+}
+
+/* `type=search` traz um X de limpar nativo no WebKit que duplicaria o fechar. */
+.sb-palette-input::-webkit-search-cancel-button,
+.sb-palette-input::-webkit-search-decoration {
   -webkit-appearance: none;
   appearance: none;
 }
 
-.sb-searchbox-dropdown {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  width: min(420px, 80vw);
-  max-height: 60vh;
+.sb-palette-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--sb-fg);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.sb-palette-close:hover {
+  background: var(--sb-hover);
+}
+
+.sb-palette-close:focus-visible {
+  outline: 2px solid var(--sb-accent);
+  outline-offset: 2px;
+}
+
+.sb-palette-body {
+  flex: 1 1 auto; /* ver `.sb-palette-panel` */
+  min-height: 0;
   overflow-y: auto;
-  /* Superfície elevada = branco do cartão; `--sb-bg` agora é o cinza da moldura. */
-  background: var(--sb-card);
-  border: 1px solid var(--sb-border);
-  border-radius: 10px;
-  box-shadow: var(--sb-shadow);
-  z-index: 50;
+  overscroll-behavior: contain;
+  padding: 8px 12px 12px;
 }
 
-.sb-searchbox-hint {
+.sb-palette-hint {
   margin: 0;
-  padding: 0.9rem 1rem;
+  padding: 1.25rem 0.5rem;
   color: var(--sb-fg-muted);
-  font-size: 0.9rem;
+  font-size: 0.95rem;
 }
 
-.sb-searchbox-results {
-  list-style: none;
+.sb-palette-group-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   margin: 0;
-  padding: 0.35rem;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--sb-hover);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--sb-fg);
+}
+
+.sb-palette-items {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
   display: grid;
   gap: 2px;
 }
 
-.sb-searchbox-result {
+.sb-palette-item {
   display: flex;
   flex-direction: column;
-  gap: 0.1rem;
-  width: 100%;
-  text-align: left;
-  padding: 0.55rem 0.7rem;
-  border: none;
-  border-radius: 6px;
-  background: none;
-  cursor: pointer;
-  font: inherit;
+  gap: 4px;
+  padding: 12px 16px;
+  border-radius: 8px;
   color: var(--sb-fg);
+  text-decoration: none;
+  cursor: pointer;
   transition: background-color 0.1s ease;
 }
 
-.sb-searchbox-result.active {
-  background: var(--sb-accent-soft);
+.sb-palette-item.active {
+  background: var(--sb-pill-active);
 }
 
-.sb-searchbox-result:focus-visible {
+.sb-palette-item:focus-visible {
   outline: 2px solid var(--sb-accent);
   outline-offset: -2px;
 }
 
-.sb-searchbox-result-section {
-  font-size: 0.68rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--sb-fg-muted);
-}
-
-.sb-searchbox-result-title {
-  font-size: 0.98rem;
+.sb-palette-item-title {
+  font-size: 15px;
   font-weight: 600;
-  color: var(--sb-accent);
+  line-height: 1.3;
 }
 
-.sb-searchbox-result-snippet {
-  color: var(--sb-fg-muted);
-  font-size: 0.85rem;
+.sb-palette-item-desc {
+  font-size: 14px;
   line-height: 1.45;
+  color: var(--sb-fg-muted);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-.sb-searchbox-result-snippet mark,
+.sb-palette-item-desc mark,
 .sb-public mark {
   background: var(--sb-mark-bg);
   color: var(--sb-mark-fg);
   padding: 0 1px;
   border-radius: 2px;
+}
+
+.sb-palette-footer {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--sb-border);
+  font-size: 14px;
+  color: var(--sb-fg-muted);
+}
+
+.sb-palette-hintkey {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sb-palette-hintkey kbd {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--sb-hover);
+  font: inherit;
+  font-weight: 500;
+  color: var(--sb-fg);
+}
+
+/* Só leitores de tela (o status de resultados). */
+.sb-palette-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sb-palette-item,
+  .sb-palette-close {
+    transition: none;
+  }
 }
 
 /* ---- Responsivo: < 768px (TASK-57) ---- */
@@ -1419,65 +1546,37 @@ html:has(.sb-public[data-theme='dark']:not(.sb-public--preview)) {
 
   .sb-nav-toggle,
   .sb-search-trigger,
-  .sb-search-close,
   .sb-theme-toggle {
     min-width: 44px;
     min-height: 44px;
   }
 
-  /* Busca: gatilho-ícone que abre um overlay full-screen (em vez do dropdown). */
+  /* Busca: o gatilho vira o ícone e a palette ocupa a tela toda — não há
+     teclado físico, então o badge do atalho e as dicas de teclado saem. */
   .sb-search-trigger {
     display: inline-flex;
     margin-left: auto;
   }
 
   .sb-searchbox {
-    position: static;
-    margin-left: 0;
-  }
-
-  .sb-searchbox:not([data-mobile-open]) {
     display: none;
   }
 
-  .sb-searchbox[data-mobile-open] {
-    display: block;
-    position: fixed;
-    inset: 0;
-    z-index: 80;
-    background: var(--sb-card);
-    padding: 0.75rem;
-  }
-
-  /* No overlay o campo ocupa a largura toda (o pill de 325px é do desktop) e
-     o badge do atalho sai — não há teclado físico para acioná-lo. */
-  .sb-searchbox[data-mobile-open] .sb-searchbox-field {
-    width: 100%;
+  .sb-palette {
+    width: 100vw;
     max-width: none;
-    min-height: 44px;
-    /* O overlay já é `--sb-card`: branco sobre branco apagaria o campo. */
-    background: var(--sb-surface);
-  }
-
-  .sb-searchbox-kbd {
-    display: none;
-  }
-
-  .sb-searchbox[data-mobile-open] .sb-searchbox-input {
-    flex: 1;
-    width: 100%;
-  }
-
-  .sb-searchbox[data-mobile-open] .sb-search-close {
-    display: inline-flex;
-  }
-
-  .sb-searchbox[data-mobile-open] .sb-searchbox-dropdown {
-    position: static;
-    width: 100%;
+    height: 100dvh;
     max-height: none;
-    margin-top: 0.6rem;
-    border: none;
-    box-shadow: none;
+    margin: 0;
+    border-radius: 0;
+  }
+
+  .sb-palette-close {
+    width: 44px;
+    height: 44px;
+  }
+
+  .sb-palette-footer {
+    display: none;
   }
 }

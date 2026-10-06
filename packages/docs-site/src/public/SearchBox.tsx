@@ -1,262 +1,70 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Search, X } from 'lucide-react';
-import { usePublicSearch } from '../content/docsQueries.js';
-import { useDocsPaths } from './docsRoutes.js';
-
-// Delimitadores STX/ETX que o `snippet()` do FTS5 coloca ao redor dos termos
-// casados (ver SearchResult.snippet no server). Escritos como escapes \u para
-// não dependerem de caracteres de controle literais no fonte (que podem ser
-// perdidos ao salvar → regex zero-width → loop infinito). Renderizamos os
-// trechos casados como <mark>; o texto entre eles é conteúdo (untrusted) que o
-// React escapa automaticamente — sem dangerouslySetInnerHTML, sem injeção.
-const MATCH_OPEN = String.fromCharCode(2); // STX
-const MATCH_CLOSE = String.fromCharCode(3); // ETX
-
-function highlight(snippet: string): ReactNode[] {
-  const parts: ReactNode[] = [];
-  const regex = new RegExp(`${MATCH_OPEN}([^${MATCH_CLOSE}]*)${MATCH_CLOSE}`, 'g');
-  let last = 0;
-  let key = 0;
-  let match: RegExpExecArray | null;
-  while ((match = regex.exec(snippet)) !== null) {
-    // Defesa contra loop infinito caso a regex algum dia case vazio.
-    if (regex.lastIndex === match.index) {
-      regex.lastIndex++;
-      continue;
-    }
-    if (match.index > last) parts.push(snippet.slice(last, match.index));
-    parts.push(<mark key={key++}>{match[1]}</mark>);
-    last = regex.lastIndex;
-  }
-  if (last < snippet.length) parts.push(snippet.slice(last));
-  return parts;
-}
-
-const DEBOUNCE_MS = 300;
+import { useEffect, useState } from 'react';
+import { Search } from 'lucide-react';
+import { usePublicSettings } from '../content/docsQueries.js';
+import { CommandPalette } from './CommandPalette.js';
 
 // Rótulo do atalho: `⌘K` em Mac, `Ctrl K` no resto. Lido uma vez no módulo —
 // a plataforma não muda em runtime, e assim não vira estado do componente.
 const IS_MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
 const SHORTCUT_LABEL = IS_MAC ? '⌘K' : 'Ctrl K';
 
-/** Foco já num campo editável? Então o atalho é do campo, não nosso. */
-function isTypingTarget(el: EventTarget | null): boolean {
-  if (!(el instanceof HTMLElement)) return false;
-  if (el.isContentEditable) return true;
-  const tag = el.tagName;
-  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
-}
-
 /**
- * Busca da doc pública (TASK-54): input no header com resultados ao vivo num
- * dropdown, debounced (300ms) para não disparar uma busca a cada tecla.
- * Cada resultado mostra título, breadcrumb da seção e o snippet destacado, e
- * navega para a página ao ser selecionado (mouse ou ↑/↓+Enter). Escopo MVP:
- * dropdown leve in-page, sem página de resultados dedicada (nota do spec).
+ * Gatilho da busca no header (TASK-54, SYS-40) e dono do estado da Command
+ * Palette (SYS-116). O campo em pill do desktop e o ícone do mobile são só
+ * botões que abrem o modal — quem busca de verdade é o `CommandPalette`. ⌘K /
+ * Ctrl+K abre (e fecha) de qualquer ponto da doc, inclusive com o foco num
+ * campo: o atalho do navegador para ⌘K é raro e a palette é o destino esperado.
  */
 export function SearchBox() {
-  const navigate = useNavigate();
-  const paths = useDocsPaths();
-  const listboxId = useId();
-
-  const [query, setQuery] = useState('');
-  const [debounced, setDebounced] = useState('');
   const [open, setOpen] = useState(false);
-  const [active, setActive] = useState(-1); // índice destacado por teclado
-  const [mobileOpen, setMobileOpen] = useState(false); // overlay full-screen no mobile
-  const containerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const settings = usePublicSettings();
+  const name = settings.data?.nomeDesignSystem;
+  const label = name ? `Search ${name}` : 'Search the documentation';
 
-  // Debounce: só atualiza o termo buscado após o usuário parar de digitar.
-  useEffect(() => {
-    const id = setTimeout(() => setDebounced(query.trim()), DEBOUNCE_MS);
-    return () => clearTimeout(id);
-  }, [query]);
-
-  const searchQuery = usePublicSearch(debounced);
-  const results = searchQuery.data ?? [];
-
-  // Reseta o item ativo quando os resultados mudam.
-  useEffect(() => setActive(-1), [debounced]);
-
-  // Fecha ao clicar fora.
-  useEffect(() => {
-    if (!open) return;
-    function onDown(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener('mousedown', onDown);
-    return () => document.removeEventListener('mousedown', onDown);
-  }, [open]);
-
-  // Atalho global ⌘K / Ctrl+K (SYS-40): foca a busca de qualquer ponto da
-  // doc. No mobile o campo só existe dentro do overlay, então o atalho
-  // abre o overlay antes de focar.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key !== 'k' && e.key !== 'K') return;
       if (!e.metaKey && !e.ctrlKey) return;
-      // Deixa o campo em foco tratar o próprio atalho — exceto quando o campo
-      // em foco é o nosso (⌘K de novo é inofensivo e mantém o foco).
-      if (isTypingTarget(e.target) && e.target !== inputRef.current) return;
       e.preventDefault();
-      if (window.matchMedia('(max-width: 767px)').matches) {
-        openMobile();
-        return;
-      }
-      setOpen(true);
-      inputRef.current?.focus();
+      setOpen((o) => !o);
     }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, []);
 
-  function goTo(r: (typeof results)[number]) {
-    setOpen(false);
-    setMobileOpen(false);
-    setQuery('');
-    // URL canônica com o menu (SYS-37); sem `menuSlug` cai na forma legada,
-    // que o `LegacyDocsRedirect` resolve.
-    navigate(
-      r.menuSlug
-        ? paths.page({ menuSlug: r.menuSlug, sectionSlug: r.sectionSlug ?? '', pageSlug: r.pageSlug })
-        : paths.legacyPage(r.sectionSlug ?? '', r.pageSlug),
-    );
-  }
-
-  function openMobile() {
-    setMobileOpen(true);
-    setOpen(true);
-    // Foca o input após o overlay aparecer.
-    requestAnimationFrame(() => inputRef.current?.focus());
-  }
-
-  function closeMobile() {
-    setMobileOpen(false);
-    setOpen(false);
-    setQuery('');
-  }
-
-  function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Escape') {
-      setOpen(false);
-      setMobileOpen(false);
-      return;
-    }
-    if (!open || results.length === 0) return;
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setActive((i) => (i + 1) % results.length);
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setActive((i) => (i <= 0 ? results.length - 1 : i - 1));
-    } else if (e.key === 'Enter' && active >= 0) {
-      e.preventDefault();
-      const chosen = results[active];
-      if (chosen) goTo(chosen);
-    }
-  }
-
-  const showDropdown = open && debounced.length > 0;
-  const showNoResults = showDropdown && !searchQuery.isLoading && results.length === 0;
-
   return (
     <>
-      {/* Gatilho só-mobile: abre o overlay de busca full-screen (CSS controla a
-          visibilidade por breakpoint). */}
+      {/* Gatilho só-mobile: o ícone (CSS controla a visibilidade por breakpoint). */}
       <button
         type="button"
         className="sb-search-trigger"
-        aria-label="Search the documentation"
-        onClick={openMobile}
+        aria-label={label}
+        onClick={() => setOpen(true)}
         data-testid="search-trigger"
       >
         <Search aria-hidden size={16} />
       </button>
 
-      <div
-        className="sb-searchbox"
-        ref={containerRef}
-        role="search"
-        data-mobile-open={mobileOpen || undefined}
-        data-testid="searchbox"
-      >
-        <div className="sb-searchbox-field">
+      <div className="sb-searchbox" data-testid="searchbox">
+        <button
+          type="button"
+          className="sb-searchbox-field sb-searchbox-trigger"
+          aria-label={label}
+          aria-haspopup="dialog"
+          onClick={() => setOpen(true)}
+          data-testid="search-open"
+        >
           <Search className="sb-searchbox-icon" aria-hidden size={16} />
-          <input
-            ref={inputRef}
-            type="search"
-            className="sb-searchbox-input"
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setOpen(true);
-            }}
-            onFocus={() => setOpen(true)}
-            onKeyDown={onKeyDown}
-            placeholder="Search the documentation"
-            aria-label="Search the documentation"
-            role="combobox"
-            aria-expanded={showDropdown}
-            aria-controls={listboxId}
-            aria-autocomplete="list"
-            data-testid="public-search-input"
-          />
+          <span className="sb-searchbox-label">{label}</span>
           {/* Dica do atalho: decorativa (`aria-hidden`) — o atalho não é a única
-              forma de chegar ao campo, e leitores de tela já anunciam o input. */}
+              forma de abrir a busca, e o botão já tem nome acessível. */}
           <kbd className="sb-searchbox-kbd" aria-hidden>
             {SHORTCUT_LABEL}
           </kbd>
-          {/* Botão fechar só aparece no overlay mobile (CSS). */}
-          <button
-            type="button"
-            className="sb-search-close"
-            aria-label="Close search"
-            onClick={closeMobile}
-            data-testid="search-close"
-          >
-            <X aria-hidden size={16} />
-          </button>
-        </div>
-
-        {showDropdown && (
-        <div className="sb-searchbox-dropdown" id={listboxId} role="listbox" data-testid="search-dropdown">
-          {searchQuery.isLoading ? (
-            <p className="sb-searchbox-hint">Searching…</p>
-          ) : showNoResults ? (
-            <p className="sb-searchbox-hint" data-testid="search-no-results">
-              No results found.
-            </p>
-          ) : (
-            <ul className="sb-searchbox-results" data-testid="search-results">
-              {results.map((r, i) => (
-                <li key={r.pageId} role="option" aria-selected={i === active}>
-                  <button
-                    type="button"
-                    className={`sb-searchbox-result${i === active ? ' active' : ''}`}
-                    // onMouseDown (não onClick) para navegar antes do blur do
-                    // input fechar o dropdown.
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      goTo(r);
-                    }}
-                    onMouseEnter={() => setActive(i)}
-                    data-testid="search-result"
-                  >
-                    <span className="sb-searchbox-result-section">{r.sectionTitulo}</span>
-                    <span className="sb-searchbox-result-title">{r.pageTitulo}</span>
-                    {r.snippet && (
-                      <span className="sb-searchbox-result-snippet">{highlight(r.snippet)}</span>
-                    )}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-        )}
+        </button>
       </div>
+
+      <CommandPalette open={open} onClose={() => setOpen(false)} />
     </>
   );
 }
