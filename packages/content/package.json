@@ -1,6 +1,6 @@
 {
   "name": "@systembook/content",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "license": "MIT",
   "description": "Conteúdo do SystemBook em arquivos: parser de .md/.mdx para os blocos do CMS, árvore de navegação a partir das pastas e o mapeamento canônico entre nós Tiptap e blocos.",
   "keywords": [
