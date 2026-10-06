@@ -339,6 +339,44 @@ describe('doc pública fora da raiz (basename) e sem prefixo', () => {
     expect(container.querySelector('dialog.sb-palette')!.hasAttribute('open')).toBe(false);
   });
 
+  it('⌘K alterna: com a palette aberta, fecha', async () => {
+    await render(<StaticSite at="/meu-repo/" />);
+    const toggle = () =>
+      act(async () => {
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true }));
+      });
+    const dialog = container.querySelector<HTMLDialogElement>('dialog.sb-palette')!;
+    await toggle();
+    expect(dialog.hasAttribute('open')).toBe(true);
+    await toggle();
+    expect(dialog.hasAttribute('open')).toBe(false);
+  });
+
+  it('a região de anúncio fica montada fora da lista e usa o singular', async () => {
+    await render(<StaticSite at="/meu-repo/" />);
+    await openPalette();
+    const live = () => container.querySelector('dialog.sb-palette [role=status]')!;
+    // Montada antes de qualquer texto, para o leitor de tela anunciar as mudanças.
+    expect(live().textContent).toBe('');
+    await type('bot');
+    expect(live().textContent).toBe('1 result');
+  });
+
+  it('Enter com a lista da busca anterior (debounce pendente) não navega', async () => {
+    await render(<StaticSite at="/meu-repo/" />);
+    await openPalette();
+    const input = await type('bot');
+    const before = currentPath;
+    // Muda o texto e aperta Enter antes do debounce: a lista ainda é a de "bot".
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, 'bota');
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await key(input, 'Enter');
+    expect(currentPath).toBe(before);
+    expect(container.querySelector('dialog.sb-palette')!.hasAttribute('open')).toBe(true);
+  });
+
   it('⌘/Ctrl+Enter abre o resultado em outra aba e deixa a palette aberta', async () => {
     const open = vi.spyOn(window, 'open').mockReturnValue(null);
     await render(<StaticSite at="/meu-repo/" />);

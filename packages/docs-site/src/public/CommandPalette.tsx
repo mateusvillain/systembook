@@ -93,8 +93,12 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
       className="sb-palette"
       aria-label="Search"
       // Esc e `close()` disparam `close`; é o único caminho que devolve o estado
-      // ao pai, então o `open` nunca diverge do que o navegador mostra.
-      onClose={onClose}
+      // ao pai, então o `open` nunca diverge do que o navegador mostra. O evento é
+      // despachado numa tarefa à parte: se o modal foi reaberto nesse intervalo
+      // (⌘K duas vezes seguidas), o `close` velho não pode derrubar o novo.
+      onClose={() => {
+        if (!dialogRef.current?.open) onClose();
+      }}
       // O backdrop é parte do próprio `<dialog>`: um clique nele tem o dialog
       // como alvo, ao contrário dos cliques no painel.
       onMouseDown={(e) => {
@@ -115,6 +119,9 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
   const [query, setQuery] = useState('');
   const [debounced, setDebounced] = useState('');
   const [active, setActive] = useState(0);
+  // O item ativo só rola para a vista quando a mudança veio do teclado: com o
+  // mouse, rolar sob o cursor faz a lista "fugir" de quem passa o ponteiro.
+  const scrollActive = useRef(false);
 
   useEffect(() => {
     const id = setTimeout(() => setDebounced(query.trim()), DEBOUNCE_MS);
@@ -147,6 +154,8 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
 
   // Mantém o item ativo à vista ao navegar por teclado (a lista rola, o foco não).
   useEffect(() => {
+    if (!scrollActive.current) return;
+    scrollActive.current = false;
     document.getElementById(optionId(active))?.scrollIntoView?.({ block: 'nearest' });
   }, [active]);
 
@@ -160,14 +169,19 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
     if (entries.length === 0) return;
     if (e.key === 'ArrowDown') {
       e.preventDefault();
+      scrollActive.current = true;
       setActive((i) => (i + 1) % entries.length);
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
+      scrollActive.current = true;
       setActive((i) => (i <= 0 ? entries.length - 1 : i - 1));
     } else if (e.key === 'Enter') {
       // Enter que confirma uma composição de IME (japonês, chinês…) não é "abrir".
       if (e.nativeEvent.isComposing) return;
       e.preventDefault();
+      // A lista ainda é a da busca anterior (o debounce não rodou): abrir o item
+      // dela levaria a uma página que não é a do texto digitado.
+      if (debounced !== query.trim()) return;
       const chosen = entries[active];
       if (!chosen) return;
       if (e.metaKey || e.ctrlKey) {
@@ -251,12 +265,19 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
               ))}
             </div>
           )}
-          {/* Anúncio para leitores de tela: a lista muda sem mover o foco. */}
-          <p className="sb-palette-sr" role="status" aria-live="polite">
-            {waiting ? '' : empty ? 'No results found.' : `${entries.length} results`}
-          </p>
         </div>
       )}
+
+      {/* Anúncio para leitores de tela: a lista muda sem mover o foco. Fica fora do
+          `searching &&` — uma região viva montada junto com o primeiro texto costuma
+          não ser anunciada. */}
+      <p className="sb-palette-sr" role="status" aria-live="polite">
+        {!searching || waiting
+          ? ''
+          : empty
+            ? 'No results found.'
+            : `${entries.length} ${entries.length === 1 ? 'result' : 'results'}`}
+      </p>
 
       <div className="sb-palette-footer" aria-hidden>
         <span className="sb-palette-hintkey">
