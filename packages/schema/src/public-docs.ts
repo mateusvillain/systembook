@@ -127,9 +127,9 @@ export interface DocsDataSource {
   /** Preview publicado mais recente de uma variante, ou `null` se não há. */
   getComponentPreview(ref: ComponentPreviewRef): Promise<PublicComponentPreview | null>;
   /**
-   * Design tokens publicados (projeto "Design tokens"), ou `null` quando a
-   * instância não tem tokens — a doc esconde o que depende deles. Os grupos
-   * (`color.brand`) saem dos `path`, sem leitura própria.
+   * Design tokens publicados (SYS-129), ou `null` sem nenhum token — nunca um
+   * conjunto com a lista vazia, para CMS e estático esconderem a mesma coisa.
+   * Os grupos (`color.brand`) saem dos `path`.
    */
   getTokens(): Promise<TokenSet | null>;
 }
