@@ -39,6 +39,10 @@
     "./site": {
       "types": "./src/site/index.ts",
       "default": "./src/site/index.ts"
+    },
+    "./tokens": {
+      "types": "./src/tokens/index.ts",
+      "default": "./src/tokens/index.ts"
     }
   },
   "sideEffects": false,
@@ -96,6 +100,10 @@
       "./site": {
         "types": "./dist/site/index.d.ts",
         "default": "./dist/site/index.js"
+      },
+      "./tokens": {
+        "types": "./dist/tokens/index.d.ts",
+        "default": "./dist/tokens/index.js"
       }
     }
   },
