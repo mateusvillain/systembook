@@ -1,6 +1,9 @@
 import type { Token, TokenModeValue, TokenSet, TokenValue } from '@systembook/schema';
 import type { TokenDiagnostic } from './diagnostics.js';
 
+/** Token com o valor do próprio grupo (spec 2025.10): `{color.accent.$root}`. */
+export const ROOT_TOKEN = '$root';
+
 /** Modo único de um conjunto sem arquivos por modo. */
 export const DEFAULT_TOKEN_MODE = 'default';
 

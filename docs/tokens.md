@@ -109,8 +109,25 @@ A doc mostra, para cada token, o caminho e dois nomes prontos para copiar:
 
 | | Regra | `color.brandPrimary.500` |
 | --- | --- | --- |
-| Variável CSS | segmentos em kebab-case, minúsculos, unidos por `-` (a convenção do Style Dictionary); `$root` some | `--color-brand-primary-500` |
-| JS | acesso num objeto aninhado com os mesmos grupos; número vira índice, nome que não é identificador vai entre aspas | `color.brandPrimary[500]` |
+| Variável CSS | segmentos em kebab-case, minúsculos, unidos por `-` (a convenção do Style Dictionary) | `--color-brand-primary-500` |
+| JS | acesso num objeto aninhado com os mesmos grupos | `color.brandPrimary[500]` |
+
+Na variável CSS, cada segmento do caminho:
+
+- quebra o camelCase em hífen (`brandPrimary` → `brand-primary`,
+  `HTMLBody` → `html-body`, também com acento: `brandÉclair` → `brand-éclair`);
+- vai para minúsculas;
+- troca pontuação ASCII (espaço, `:`, `;`, `(`, `/`, aspas…) por `-`, sem
+  hífens repetidos nem nas pontas; letras acentuadas, outros alfabetos e emoji
+  ficam como estão — são válidos num nome CSS;
+- se for só pontuação (`@@`), vira os códigos dos caracteres (`40-40`), para
+  não sumir;
+- `$root` some: `accent.$root` → `--accent`.
+
+No JS, segmento que é identificador vira `.nome`; inteiro sem zero à esquerda
+(até 15 dígitos) vira `[500]`; o resto vai entre aspas (`["2xl"]`, `["05"]`).
+Se o primeiro segmento não pode abrir uma expressão (`2xl`, ou uma palavra
+reservada como `default`), ela parte de `tokens`: `tokens["2xl"].gap`.
 
 O preview dos componentes usa a mesma variável CSS. Se dois tokens geram a
 mesma variável (`color.brandPrimary` e `color.brand-primary`), o build avisa:

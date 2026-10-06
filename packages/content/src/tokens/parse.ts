@@ -1,6 +1,6 @@
 import type { TokenValue } from '@systembook/schema';
 import { TokenDiagnosticBag } from './diagnostics.js';
-import { DEFAULT_TOKEN_MODE, type ParsedToken, type ParsedTokens, type TokenSource } from './types.js';
+import { DEFAULT_TOKEN_MODE, ROOT_TOKEN, type ParsedToken, type ParsedTokens, type TokenSource } from './types.js';
 
 /**
  * Parser de arquivos DTCG (SYS-124): achata grupos aninhados em tokens com
@@ -14,8 +14,6 @@ const TOKEN_PROPS = new Set(['$value', '$type', '$description', '$deprecated', '
 const GROUP_PROPS = new Set(['$type', '$description', '$deprecated', '$extensions']);
 /** `$schema` só faz sentido no topo do arquivo. */
 const FILE_PROPS = new Set([...GROUP_PROPS, '$schema']);
-/** Token com o valor do próprio grupo (spec 2025.10): `{color.accent.$root}`. */
-const ROOT_TOKEN = '$root';
 const INVALID_NAME = /[.{}]/;
 /** Viraria o protótipo do `byMode`, não uma chave dele. */
 const RESERVED_MODES = new Set(['__proto__']);
