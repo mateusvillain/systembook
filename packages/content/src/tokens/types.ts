@@ -1,4 +1,4 @@
-import type { TokenValue } from '@systembook/schema';
+import type { TokenModeValue, TokenValue } from '@systembook/schema';
 import type { TokenDiagnostic } from './diagnostics.js';
 
 /** Modo único de um conjunto sem arquivos por modo. */
@@ -37,6 +37,14 @@ export interface ParsedToken {
   byMode: Record<string, TokenValue>;
   /** Arquivo da primeira definição do token, para os diagnósticos. */
   file: string;
+}
+
+/**
+ * Token com os aliases resolvidos em cada modo. O `type` ainda é o texto do
+ * arquivo (ou o herdado pelo alias) — a validação o confere depois.
+ */
+export interface ResolvedToken extends Omit<ParsedToken, 'byMode'> {
+  byMode: Record<string, TokenModeValue>;
 }
 
 export interface ParsedTokens {

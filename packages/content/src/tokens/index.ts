@@ -5,4 +5,5 @@
  */
 export { formatTokenDiagnostic, TokenDiagnosticBag, type TokenDiagnostic } from './diagnostics.js';
 export { parseTokenSources } from './parse.js';
-export { DEFAULT_TOKEN_MODE, type ParsedToken, type ParsedTokens, type TokenSource } from './types.js';
+export { aliasTarget, resolveTokens, type ResolvedTokens } from './resolve.js';
+export { DEFAULT_TOKEN_MODE, type ParsedToken, type ParsedTokens, type ResolvedToken, type TokenSource } from './types.js';
