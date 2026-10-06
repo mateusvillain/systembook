@@ -69,7 +69,8 @@ export function RowActionsMenu({
   /** Ícones dos itens de mover (setas na direção do rótulo; padrão ↑/↓). */
   movePrevIcon?: LucideIcon;
   moveNextIcon?: LucideIcon;
-  onDelete: () => void;
+  /** Omitir esconde "Delete" (item não removível, ex.: o corpo da página). */
+  onDelete?: () => void;
   align?: 'start' | 'center' | 'end';
   /** Estilos de posição/revelação por contexto (ex.: opacity-0 group-hover…). */
   triggerClassName?: string;
@@ -106,11 +107,15 @@ export function RowActionsMenu({
             {moveNextLabel}
           </DropdownMenuItem>
         )}
-        <DropdownMenuSeparator />
-        <DropdownMenuItem variant="destructive" onSelect={onDelete}>
-          <Trash2 />
-          Delete
-        </DropdownMenuItem>
+        {onDelete && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem variant="destructive" onSelect={onDelete}>
+              <Trash2 />
+              Delete
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -200,6 +200,7 @@ describe('migration.import (SYS-112)', () => {
     next.menus[0]!.sections[0]!.pages[0] = {
       ...next.menus[0]!.sections[0]!.pages[0]!,
       titulo: 'Button v2',
+      overviewTitulo: 'Visão geral',
       body: paragraph('novo corpo'),
       tabs: [{ titulo: 'Code', slug: 'code', doc: paragraph('código') }],
     };
@@ -213,7 +214,7 @@ describe('migration.import (SYS-112)', () => {
     });
     expect(page!.pageId).toBe(pageId);
     expect(page!.titulo).toBe('Button v2');
-    expect(page!.snapshot!.tabs.map((tab) => tab.titulo)).toEqual(['Conteúdo', 'Code']);
+    expect(page!.snapshot!.tabs.map((tab) => tab.titulo)).toEqual(['Visão geral', 'Code']);
     expect(db.select().from(tabs).where(eq(tabs.pageId, pageId)).all()).toHaveLength(2);
     expect(db.select().from(revisions).where(eq(revisions.pageId, pageId)).all()).toHaveLength(2);
     expect(db.select().from(revisions).where(eq(revisions.pageId, LANDING_PAGE_ID)).all()).toHaveLength(2);

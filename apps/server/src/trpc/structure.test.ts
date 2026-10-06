@@ -238,7 +238,7 @@ describe('estrutura de navegação (sections/pages/tabs)', () => {
       expect(primaries).toHaveLength(1);
     });
 
-    it('a tab primária não é renomeável nem removível como tab de usuário (TASK-66)', async () => {
+    it('a tab primária nasce "Overview", é renomeável (SYS-117) mas não removível (TASK-66)', async () => {
       const caller = callerFor(db, editor);
       const page = await caller.pages.create({ sectionId, titulo: 'Body', slug: 'body' });
       const primary = db
@@ -247,15 +247,16 @@ describe('estrutura de navegação (sections/pages/tabs)', () => {
         .where(and(eq(tabs.pageId, page.id), eq(tabs.isPrimary, true)))
         .get();
 
-      await expect(caller.tabs.rename({ id: primary!.id, titulo: 'Hack' })).rejects.toMatchObject({
-        code: 'NOT_FOUND',
-      });
+      expect(primary!.titulo).toBe('Overview');
+      const renamed = await caller.tabs.rename({ id: primary!.id, titulo: 'Visão geral' });
+      expect(renamed).toMatchObject({ titulo: 'Visão geral', isPrimary: true });
+      await expect(caller.tabs.rename({ id: primary!.id, titulo: '' })).rejects.toThrow();
       await expect(caller.tabs.delete({ id: primary!.id })).rejects.toMatchObject({
         code: 'NOT_FOUND',
       });
       // segue existindo e intacta
       const still = db.select().from(tabs).where(eq(tabs.id, primary!.id)).get();
-      expect(still?.isPrimary).toBe(true);
+      expect(still).toMatchObject({ isPrimary: true, titulo: 'Visão geral' });
     });
 
     it('slug duplicado na mesma seção dá CONFLICT; em seção diferente funciona', async () => {

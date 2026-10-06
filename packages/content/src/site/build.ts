@@ -219,7 +219,7 @@ export function buildSiteData(tree: ContentTree, options: BuildSiteOptions): Sit
           const key = pageKey(ref);
           const snapshot: PageSnapshot = {
             tabs: [
-              { tabId: BODY_TAB_ID, titulo: 'Overview', isPrimary: true, blocks: blocksFor(key, BODY_TAB_ID, resolve(page.body)) },
+              { tabId: BODY_TAB_ID, titulo: page.overviewTitulo ?? 'Overview', isPrimary: true, blocks: blocksFor(key, BODY_TAB_ID, resolve(page.body)) },
               ...page.tabs.map((tab) => ({
                 tabId: tab.slug,
                 titulo: tab.titulo,

@@ -16,6 +16,8 @@ function tabNotFound(): TRPCError {
 // de ordenação (user tabs seguem 0-based ignorando a primária) e é protegida
 // de rename/delete — o `eq(isPrimary, false)` nos where's garante que um id de
 // primária cai em `tabNotFound()`, nunca alterando/removendo o corpo.
+// Exceção: `rename` aceita a primária — o `titulo` dela é o rótulo da visão do
+// corpo no tab bar público (SYS-117, default "Overview").
 export const tabsRouter = router({
   listByPage: protectedProcedure.input(z.object({ pageId: z.string() })).query(({ ctx, input }) =>
     ctx.db
@@ -66,7 +68,7 @@ export const tabsRouter = router({
       const updated = ctx.db
         .update(tabs)
         .set({ titulo: input.titulo })
-        .where(and(eq(tabs.id, input.id), eq(tabs.isPrimary, false)))
+        .where(eq(tabs.id, input.id))
         .returning()
         .get();
       if (!updated) throw tabNotFound();

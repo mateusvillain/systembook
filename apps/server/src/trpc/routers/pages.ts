@@ -221,7 +221,7 @@ export const pagesRouter = router({
             .returning()
             .get();
           tx.insert(tabs)
-            .values({ pageId: page.id, titulo: 'Conteúdo', ordem: 0, isPrimary: true })
+            .values({ pageId: page.id, titulo: 'Overview', ordem: 0, isPrimary: true })
             .run();
           return page;
         });

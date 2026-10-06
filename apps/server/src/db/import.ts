@@ -334,11 +334,14 @@ export function importInstance(db: Db, input: InstanceImport, autorId: string): 
               .get().id;
             result.created.pages++;
           }
-          primaryTabId ??= tx
-            .insert(tabs)
-            .values({ pageId, titulo: 'Conteúdo', ordem: 0, isPrimary: true })
-            .returning({ id: tabs.id })
-            .get().id;
+          const overviewTitulo = page.overviewTitulo?.trim() || 'Overview';
+          if (primaryTabId) tx.update(tabs).set({ titulo: overviewTitulo }).where(eq(tabs.id, primaryTabId)).run();
+          else
+            primaryTabId = tx
+              .insert(tabs)
+              .values({ pageId, titulo: overviewTitulo, ordem: 0, isPrimary: true })
+              .returning({ id: tabs.id })
+              .get().id;
 
           const docs = [{ tabId: primaryTabId, doc: page.body as TiptapDoc }];
           page.tabs.forEach((tab, i) => {

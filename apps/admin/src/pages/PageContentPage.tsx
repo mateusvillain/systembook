@@ -8,6 +8,7 @@ import { ContentEditor, type ContentEditorHandle } from '../features/editor/Cont
 import { DraftPreviewDialog } from '../features/editor/DraftPreviewDialog.js';
 import { SectionHeader } from '../features/editor/SectionHeader.js';
 import { StatusTagSelector } from '../features/editor/StatusTagSelector.js';
+import { bodyViewLabel } from '@systembook/docs-site';
 import { Button } from '@/components/ui/button';
 import { RowActionsMenu } from '@/components/RowActionsMenu';
 import { createLinkClass } from '@/lib/styles';
@@ -35,7 +36,11 @@ export function PageContentPage() {
   const revisions = useQuery(trpc.revisions.listByPage.queryOptions({ pageId: pageId! }));
 
   const invalidateTabs = () =>
-    queryClient.invalidateQueries(trpc.tabs.listByPage.queryFilter({ pageId: pageId! }));
+    Promise.all([
+      queryClient.invalidateQueries(trpc.tabs.listByPage.queryFilter({ pageId: pageId! })),
+      // O rótulo do corpo (SYS-117) é o `titulo` da tab primária.
+      queryClient.invalidateQueries(trpc.tabs.getPrimary.queryFilter({ pageId: pageId! })),
+    ]);
 
   const createTab = useMutation(trpc.tabs.create.mutationOptions({ onSuccess: invalidateTabs }));
   const renameTab = useMutation(trpc.tabs.rename.mutationOptions({ onSuccess: invalidateTabs }));
@@ -196,9 +201,12 @@ export function PageContentPage() {
       {/* Tab bar: Corpo + tabs de usuário. Com 0 tabs, só o gatilho "+ Aba". */}
       {tabs.length > 0 ? (
         <nav aria-label="Page views" className="-mt-2 flex flex-wrap items-center gap-1 border-b">
-          <PageViewLink to={`/pages/${pageId}`} end>
-            Body
-          </PageViewLink>
+          <TabItem
+            to={`/pages/${pageId}`}
+            end
+            tab={{ id: primary.data.id, titulo: bodyViewLabel(primary.data.titulo) }}
+            onRename={(titulo) => renameTab.mutate({ id: primary.data.id, titulo })}
+          />
           {tabs.map((tab, i) => (
             <TabItem
               key={tab.id}
@@ -297,6 +305,7 @@ function PageViewLink({ to, end, children }: { to: string; end?: boolean; childr
 /** Uma tab de usuário no bar: link + ações (⋮) reveladas no hover. */
 function TabItem({
   to,
+  end,
   tab,
   onRename,
   onDelete,
@@ -304,9 +313,11 @@ function TabItem({
   onMoveRight,
 }: {
   to: string;
+  end?: boolean;
   tab: { id: string; titulo: string };
   onRename: (titulo: string) => void;
-  onDelete: () => void;
+  /** Omitido na visão do corpo (não removível). */
+  onDelete?: () => void;
   onMoveLeft?: () => void;
   onMoveRight?: () => void;
 }) {
@@ -347,7 +358,9 @@ function TabItem({
 
   return (
     <span className="group/tab -mb-px flex items-center">
-      <PageViewLink to={to}>{tab.titulo}</PageViewLink>
+      <PageViewLink to={to} end={end}>
+        {tab.titulo}
+      </PageViewLink>
       <RowActionsMenu
         triggerLabel={`More actions for tab ${tab.titulo}`}
         onRename={() => {

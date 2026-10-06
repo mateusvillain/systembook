@@ -123,6 +123,12 @@ function planTree(data: InstanceExport, warn: (message: string) => void) {
             const where = `página "${page.titulo}"`;
             const pageSlug = slug(page.slug, page.titulo, pageSlugs, where);
             let primary = page.snapshot.tabs.find((tab) => tab.isPrimary);
+            // Rótulo do corpo (SYS-117): só vai ao frontmatter se foi customizado.
+            // 'Conteúdo' é o valor legado de revisões anteriores à SYS-117.
+            const overviewTitle =
+              primary && primary.titulo.trim() && !['Overview', 'Conteúdo'].includes(primary.titulo.trim())
+                ? primary.titulo.trim()
+                : undefined;
             let userTabs = page.snapshot.tabs.filter((tab) => !tab.isPrimary);
             if (!primary && userTabs.length) {
               // Revisão anterior ao corpo de página: no CMS a 1ª tab abre a
@@ -146,7 +152,7 @@ function planTree(data: InstanceExport, warn: (message: string) => void) {
             pages.push({
               body: { file: body, blocks: primary?.blocks ?? [] },
               tabs,
-              frontmatter: { title: title(page.titulo, 'Página', where), subtitle: page.subtitulo, order: pageOrder, status },
+              frontmatter: { title: title(page.titulo, 'Página', where), subtitle: page.subtitulo, overviewTitle, order: pageOrder, status },
             });
 
             const key = `${menu.slug}/${section.slug}/${page.slug}`;
