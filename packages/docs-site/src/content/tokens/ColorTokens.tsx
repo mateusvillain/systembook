@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import { TokenSample } from './TokenSample.js';
 import { TokenTable, type TokenTableProps } from './TokenTable.js';
 
 /**
@@ -9,14 +9,5 @@ import { TokenTable, type TokenTableProps } from './TokenTable.js';
  * "transparente".
  */
 export function ColorTokens(props: Omit<TokenTableProps, 'preview'>) {
-  return (
-    <TokenTable
-      {...props}
-      preview={(_token, _mode, css) =>
-        css === null ? null : (
-          <span className="sb-token-swatch" aria-hidden style={{ '--sb-token-color': css } as CSSProperties} />
-        )
-      }
-    />
-  );
+  return <TokenTable {...props} preview={(_token, _mode, css) => (css === null ? null : <TokenSample kind="color" value={css} />)} />;
 }

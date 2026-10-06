@@ -47,7 +47,7 @@ describe('ColorTokens', () => {
       '→ acme.palette.indigo.600',
       '→ acme.palette.indigo.400',
     ]);
-    const swatch = cells[0]!.querySelector<HTMLElement>('.sb-token-swatch')!;
+    const swatch = cells[0]!.querySelector<HTMLElement>('.sb-token-color')!;
     expect(swatch.style.getPropertyValue('--sb-token-color')).toBe('#4f46e5');
     expect(swatch.getAttribute('aria-hidden')).toBe('true');
 
@@ -66,7 +66,7 @@ describe('ColorTokens', () => {
   it('cor sem conversão para CSS: sem swatch, com o JSON', () => {
     const value = { colorSpace: 'nope', components: [1, 0, 0] };
     dom.render(<ColorTokens tokens={[{ path: 'c', type: 'color', byMode: { default: { value, resolvedValue: value } } }]} modes={['default']} />);
-    expect(dom.container().querySelector('.sb-token-swatch')).toBeNull();
+    expect(dom.container().querySelector('.sb-token-color')).toBeNull();
     expect(dom.container().querySelector('.sb-token-value')!.textContent).toBe(JSON.stringify(value));
   });
 

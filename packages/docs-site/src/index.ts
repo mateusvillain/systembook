@@ -57,6 +57,8 @@ export { blocksToTiptapDoc } from './content/blocksToTiptapDoc.js';
 export { TokenTable, type TokenTableProps } from './content/tokens/TokenTable.js';
 export { ColorTokens } from './content/tokens/ColorTokens.js';
 export { TypographyTokens } from './content/tokens/TypographyTokens.js';
+export { DimensionTokens } from './content/tokens/DimensionTokens.js';
+export { ShadowTokens } from './content/tokens/ShadowTokens.js';
 
 // Doc pública
 export { PageRenderer, BODY_VIEW_LABEL, bodyViewLabel, type RenderableSnapshot } from './public/PageRenderer.js';
