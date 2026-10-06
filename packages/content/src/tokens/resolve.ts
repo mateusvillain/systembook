@@ -25,6 +25,15 @@ export function aliasTarget(value: TokenValue): string | undefined {
   return typeof value === 'string' ? ALIAS.exec(value)?.[1] : undefined;
 }
 
+/** Todos os caminhos apontados no valor, inclusive em campos de valores compostos. */
+export function aliasesIn(value: TokenValue): string[] {
+  const ref = aliasTarget(value);
+  if (ref !== undefined) return [ref];
+  if (Array.isArray(value)) return value.flatMap(aliasesIn);
+  if (value !== null && typeof value === 'object') return Object.values(value).flatMap(aliasesIn);
+  return [];
+}
+
 /** O alias do token no modo, quando o valor inteiro é um. */
 function directAlias(token: ParsedToken, mode: string): string | undefined {
   return aliasTarget(token.byMode[mode]!);

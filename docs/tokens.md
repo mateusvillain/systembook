@@ -118,7 +118,31 @@ tokens/light.json  color.fg: sem valor no modo dark — defina o token num arqui
 São erros: JSON inválido; nome inválido; valor solto sem `$value`; caminho que é
 token num arquivo e grupo em outro; `$type` diferente entre arquivos; token
 sem valor em algum modo; alias para um token que não existe ou para um grupo;
-referência circular (`a → b → a`); `$type` diferente do token apontado.
+referência circular (`a → b → a`); `$type` diferente do token apontado; token
+sem `$type` ou com um `$type` que não é da spec; valor fora do formato do tipo,
+em qualquer modo; campo de valor composto apontando para um token de outro
+tipo (`"color": "{space.sm}"`).
 
 São só avisos: propriedade desconhecida (como `$extends`, ainda não suportado),
-token redefinido e `$type` de grupo diferente entre arquivos.
+token redefinido, `$type` de grupo diferente entre arquivos e, nos tipos
+compostos, campo faltando ou que não faz parte do tipo.
+
+### Formato dos valores
+
+O valor é conferido depois de resolver os aliases, em cada modo:
+
+| Tipo | Aceita |
+| --- | --- |
+| `color` | `"#0a84ff"` (3, 4, 6 ou 8 dígitos), `"rgb(…)"`/`"oklch(…)"`, nome CSS, ou `{ colorSpace, components, alpha?, hex? }` |
+| `dimension` | `"16px"`, `"-0.5rem"`, `"0"`, ou `{ value, unit }` |
+| `fontFamily` | texto ou lista de textos |
+| `fontWeight` | 1 a 1000, ou um nome (`"bold"`, `"semi-bold"`…) |
+| `duration` | `"200ms"`, `"0.2s"`, ou `{ value, unit: "ms" \| "s" }` |
+| `cubicBezier` | `[x1, y1, x2, y2]`, com `x1` e `x2` entre 0 e 1 |
+| `number` | número |
+| `strokeStyle` | `"solid"`, `"dashed"`… ou `{ dashArray, lineCap }` |
+| `border` | `{ color, width, style }` |
+| `transition` | `{ duration, delay, timingFunction }` |
+| `shadow` | `{ color, offsetX, offsetY, blur, spread, inset? }`, ou uma lista delas |
+| `gradient` | lista de `{ color, position }` |
+| `typography` | `{ fontFamily, fontSize, fontWeight, letterSpacing, lineHeight }` — `lineHeight` em número ou dimensão |

@@ -4,6 +4,7 @@
  * servem à CLI, ao server e à doc pública.
  */
 export { formatTokenDiagnostic, TokenDiagnosticBag, type TokenDiagnostic } from './diagnostics.js';
+export { loadTokenSet, type LoadedTokens } from './load.js';
 export { parseTokenSources } from './parse.js';
 export { resolveTokens } from './resolve.js';
 export {
@@ -14,3 +15,4 @@ export {
   type ResolvedTokens,
   type TokenSource,
 } from './types.js';
+export { isTokenType, TOKEN_TYPES, validateTokens, type ValidatedTokens } from './validate.js';
