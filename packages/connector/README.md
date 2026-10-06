@@ -6,10 +6,10 @@
 > como a biblioteca que o `@systembook/cli` usa.
 
 CLI que conecta o repositório do seu design system ao
-[SystemBook](https://github.com/mateusvillain/systembook).
+[Systembook](https://github.com/mateusvillain/systembook).
 
 Varre o repo por arquivos `*.preview.tsx`, gera as entradas de preview e builda
-um artefato estático que o CI envia para a sua instância — o SystemBook não
+um artefato estático que o CI envia para a sua instância — o Systembook não
 compila o código de vocês, só hospeda o resultado.
 
 ```bash

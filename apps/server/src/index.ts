@@ -96,6 +96,6 @@ const server = createServer((req, res) => {
 });
 
 server.listen(env.PORT, () => {
-  console.log(`[server] SystemBook ouvindo em http://localhost:${env.PORT}`);
+  console.log(`[server] Systembook ouvindo em http://localhost:${env.PORT}`);
   console.log(`[server] admin estático: ${adminDist ?? 'não encontrado (ok em dev)'}`);
 });

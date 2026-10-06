@@ -16,7 +16,7 @@ import { initProject, PAGES_WORKFLOW_FILE } from './init.js';
  */
 export function createProgram(): Command {
   const program = new Command('systembook').description(
-    'SystemBook: documentação de design system, no modo CMS ou em arquivos (modo estático).',
+    'Systembook: documentação de design system, no modo CMS ou em arquivos (modo estático).',
   );
 
   registerPreviewCommands(

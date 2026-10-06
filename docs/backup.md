@@ -1,6 +1,6 @@
 # Backup e recuperação (responsabilidade do operador)
 
-> **O SystemBook não faz backup automático.** Todo o estado — usuários, conteúdo,
+> **O Systembook não faz backup automático.** Todo o estado — usuários, conteúdo,
 > revisões, tokens — vive num **único arquivo SQLite** (`DATABASE_PATH`, por padrão
 > `/app/data/systembook.db`), junto dos artefatos de preview em `/app/data/previews`,
 > no volume `systembook-data`. Fazer backup e ter um plano de recuperação de
@@ -18,7 +18,7 @@ de falha. Você precisa de uma cópia **fora do host**.
 Qualquer estratégia serve (um `cp` agendado do arquivo `.db` para outro storage já é
 melhor que nada), mas a recomendação abaixo — **Litestream** — dá replicação
 contínua com perda de dados próxima de zero, sem exigir nenhuma mudança no código do
-SystemBook.
+Systembook.
 
 ## Por que Litestream funciona aqui
 
@@ -27,7 +27,7 @@ disco (e seu WAL) e enviando as mudanças para um destino remoto — tipicamente
 bucket S3-compatível. Ele não precisa de integração com a aplicação: roda como um
 processo separado que aponta para o mesmo arquivo.
 
-O SystemBook abre o banco em **modo WAL** (`journal_mode = WAL`, em
+O Systembook abre o banco em **modo WAL** (`journal_mode = WAL`, em
 `apps/server/src/db/client.ts`), que é exatamente o que o Litestream exige — então
 funciona sem nenhum ajuste. Basta rodar o Litestream como um **sidecar** que
 compartilha o volume `systembook-data`.
@@ -107,7 +107,7 @@ docker compose -f docker-compose.production.yml logs -f litestream
 ## Procedimento de restauração
 
 Restaurar recupera o arquivo `.db` do destino remoto **para um volume vazio, antes
-de subir o container do SystemBook** (o app não deve estar escrevendo no arquivo
+de subir o container do Systembook** (o app não deve estar escrevendo no arquivo
 durante o restore).
 
 1. **Garanta um volume vazio.** Numa instância nova, o volume `systembook-data` já

@@ -85,7 +85,7 @@ export function AppHeader({
             S
           </span>
           {/* Wordmark cede espaço no mobile — o "S" já identifica a marca. */}
-          <strong className="text-foreground hidden text-base sm:inline">SystemBook</strong>
+          <strong className="text-foreground hidden text-base sm:inline">Systembook</strong>
         </Link>
 
         {/* No mobile a nav de menus migra para o topo do drawer (AdminLayout);

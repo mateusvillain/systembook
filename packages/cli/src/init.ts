@@ -232,7 +232,7 @@ async function updateGitignore(file: string): Promise<InitStep> {
   if (!missing.length) return { file: '.gitignore', status: 'mantido', note: 'já ignora o site gerado' };
   const eol = current?.includes('\r\n') ? '\r\n' : '\n';
   const separator = !current ? '' : current.endsWith('\n') ? eol : `${eol}${eol}`;
-  await writeFile(file, `${current ?? ''}${separator}${['# SystemBook', ...missing].join(eol)}${eol}`);
+  await writeFile(file, `${current ?? ''}${separator}${['# Systembook', ...missing].join(eol)}${eol}`);
   return { file: '.gitignore', status: current === null ? 'criado' : 'atualizado', note: `+ ${missing.join(', ')}` };
 }
 
@@ -331,7 +331,7 @@ function configTemplate(name: string, contentDir: string): string {
   const content =
     contentDir === 'docs'
       ? `  // contentDir: 'docs',`
-      : `  // \`docs/\` já guarda outra documentação; o conteúdo do SystemBook fica aqui.\n  contentDir: ${JSON.stringify(contentDir)},`;
+      : `  // \`docs/\` já guarda outra documentação; o conteúdo do Systembook fica aqui.\n  contentDir: ${JSON.stringify(contentDir)},`;
   return `import type { SystemBookConfig } from '@systembook/cli';
 
 // Formato completo: https://github.com/mateusvillain/systembook/blob/main/docs/static-format.md

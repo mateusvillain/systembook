@@ -2,7 +2,7 @@
   "name": "@systembook/docs-site",
   "version": "0.3.3",
   "license": "MIT",
-  "description": "Documentação pública do SystemBook e renderização de conteúdo, independentes da fonte de dados (CMS ou arquivos estáticos).",
+  "description": "Documentação pública do Systembook e renderização de conteúdo, independentes da fonte de dados (CMS ou arquivos estáticos).",
   "keywords": [
     "systembook",
     "design-system",

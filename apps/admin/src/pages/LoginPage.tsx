@@ -44,7 +44,7 @@ export function LoginPage() {
     <main className="sb-admin flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle className="text-2xl">SystemBook</CardTitle>
+          <CardTitle className="text-2xl">Systembook</CardTitle>
           <CardDescription>Sign in to manage the documentation.</CardDescription>
         </CardHeader>
         <CardContent>

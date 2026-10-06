@@ -1,7 +1,7 @@
 # Publicando previews de componentes via CI (GitHub Actions)
 
 Este guia mostra como o repositório do seu design system publica previews de
-componentes na sua instância SystemBook a cada push. O fluxo tem três partes:
+componentes na sua instância Systembook a cada push. O fluxo tem três partes:
 
 1. **Build** — o `systembook previews` (do `@systembook/cli`) descobre os
    arquivos `*.preview.tsx` do repo, gera um entrypoint por variante e builda
@@ -55,7 +55,7 @@ Crie `.github/workflows/systembook-preview.yml` no repositório do design
 system:
 
 ```yaml
-name: SystemBook previews
+name: Systembook previews
 
 # Push na branch padrão é o gatilho recomendado: cada merge publica a versão
 # mais nova dos previews. Ajuste (ex.: tags, workflow_dispatch) se o seu
@@ -88,7 +88,7 @@ jobs:
       # diretório de variante ao par canônico (component, variantId).
       # O tar de cada variante inclui o diretório assets/ compartilhado —
       # os index.html referenciam ../assets/ por caminho relativo.
-      - name: Upload para a instância SystemBook
+      - name: Upload para a instância Systembook
         env:
           SYSTEMBOOK_UPLOAD_TOKEN: ${{ secrets.SYSTEMBOOK_UPLOAD_TOKEN }}
           SYSTEMBOOK_INSTANCE_URL: ${{ vars.SYSTEMBOOK_INSTANCE_URL }}

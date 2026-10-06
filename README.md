@@ -1,8 +1,8 @@
-# SystemBook
+# Systembook
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
-**SystemBook** é uma plataforma **open source** para documentação de design
+**Systembook** é uma plataforma **open source** para documentação de design
 systems — no estilo Material Design Docs / Atlassian Design System — em que cada
 componente pode ser embutido como um **preview real e interativo**: um iframe do
 componente de verdade, buildado no CI do próprio time, não uma captura de tela ou
@@ -60,7 +60,7 @@ backlog pós-MVP, outros são decisões de arquitetura deliberadas):
   use o modo estático.)
 - **Não é multi-tenant.** Uma instância = um design system. Não há suporte a
   múltiplos design systems por instância no MVP.
-- **Não é um builder de biblioteca de componentes.** O SystemBook **documenta e
+- **Não é um builder de biblioteca de componentes.** O Systembook **documenta e
   embute** os componentes que o seu time já constrói no repositório dele; ele não
   compila nem hospeda o código-fonte dos componentes.
 - **O modo CMS não tem fluxo de aprovação (draft → review → publish) no MVP.** O
@@ -74,7 +74,7 @@ diff granular entre revisões e multi-tenancy.
 
 ## Comparação
 
-| | **SystemBook** | **Storybook** | **Zeroheight** | **Decap CMS** |
+| | **Systembook** | **Storybook** | **Zeroheight** | **Decap CMS** |
 | --- | --- | --- | --- | --- |
 | **Hospedagem** | Self-hosted (Docker) ou qualquer host estático | Self-hosted (build estático) | SaaS pago | Self-hosted (front) |
 | **Edição de conteúdo** | CMS real no painel, ou `.mdx` no repo | MDX editado por dev | CMS SaaS | Git-based (commit/PR) |
@@ -82,7 +82,7 @@ diff granular entre revisões e multi-tenancy.
 | **Documentação de texto** | ✅ editor rich-text tipado | ⚠️ fraca/manual | ✅ | ✅ |
 | **Custo** | Gratuito (só a hospedagem) | Gratuito (só a hospedagem) | Licença SaaS | Gratuito (só a hospedagem) |
 
-Em resumo: o SystemBook combina a **documentação de texto** — num CMS real, ou em
+Em resumo: o Systembook combina a **documentação de texto** — num CMS real, ou em
 arquivos no repo — com o **live preview do componente real** do lado "Storybook",
 buildado no CI do próprio time, self-hosted e sem custo de licença.
 
@@ -103,7 +103,7 @@ configurar o CI) está no [**guia de setup**](./docs/setup.md); o resumo está a
 - **Docker** + **Docker Compose** na máquina/servidor que vai hospedar a instância.
 - Um repositório de componentes com **CI**, se você quiser publicar previews reais
   (opcional para começar).
-- Você **não precisa clonar este repositório** para hospedar o SystemBook — só
+- Você **não precisa clonar este repositório** para hospedar o Systembook — só
   baixar o compose de produção e o template de variáveis.
 
 ### 1. Baixar o compose e o `.env`
