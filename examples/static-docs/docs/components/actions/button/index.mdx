@@ -14,6 +14,20 @@ status: Stable
 
 Abra os **Controls** abaixo de cada preview para trocar o rótulo, a variante e o estado.
 
+## Uso
+
+```tsx
+import { Button } from '@acme/ds';
+
+export function SaveBar() {
+  return (
+    <Button variant="primary" onClick={() => save()}>
+      Salvar alterações
+    </Button>
+  );
+}
+```
+
 ## Boas práticas
 
 <DosDonts variant="do" title="Use um verbo no rótulo" coverComponent="Button" coverVariant="primary">
