@@ -114,6 +114,23 @@
   --sb-toc-fg-active: #e6edf3;
 }
 
+/* ---- Fundo do canvas (SYS-115) ----
+   `--sb-bg` mora em `.sb-public`, então o `html` nunca o recebe e pinta o
+   branco padrão do navegador. Ele aparece onde o shell não cobre: o gutter
+   reservado por `scrollbar-gutter: stable` (o shell tem `overflow: hidden`,
+   mas o gutter é reservado mesmo assim), o overscroll e qualquer sobra de
+   sub-pixel — uma borda branca em volta da página, e bem evidente no tema
+   escuro. Os valores repetem os de `--sb-bg` acima (a var não alcança o
+   `html`). O preview de rascunho do admin fica de fora: ele vive dentro de
+   um dialog, e pintar o `html` ali tingiria o painel inteiro. */
+html:has(.sb-public:not(.sb-public--preview)) {
+  background: #f3f3f4;
+}
+
+html:has(.sb-public[data-theme='dark']:not(.sb-public--preview)) {
+  background: #010409;
+}
+
 /* ---- Header (1.2, reformulado em SYS-36) ----
    Sobre o cinza da moldura: sem background, sem borda e sem blur — e sem
    `sticky`, já que a página não rola mais (o scroll é interno ao cartão).
