@@ -960,6 +960,9 @@ html:has(.sb-public[data-theme='dark']:not(.sb-public--preview)) {
   color: var(--sb-accent);
   text-decoration: none;
   text-underline-offset: 3px;
+  /* `content.css` põe `cursor: text` no link do editor (lá o clique não
+     navega). No leitor ele navega. */
+  cursor: pointer;
   transition: text-decoration-color 0.12s ease;
 }
 
