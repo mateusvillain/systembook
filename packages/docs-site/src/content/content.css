@@ -846,3 +846,38 @@
   overflow-wrap: anywhere;
   color: var(--sb-fg, inherit);
 }
+
+/* Amostras de dimensão e sombra (SYS-135). A barra de espaçamento tem a
+   largura do valor, limitada à célula — um valor maior que ela mostra a
+   célula cheia, e o número escrito ao lado diz o resto. */
+.sb-token-size {
+  display: block;
+  width: var(--sb-token-size);
+  max-width: 100%;
+  min-width: 1px;
+  height: 0.75rem;
+  border-radius: 2px;
+  background: var(--sb-accent, #1d4ed8);
+  opacity: 0.75;
+}
+
+.sb-token-radius {
+  display: block;
+  width: 3rem;
+  height: 3rem;
+  border: 2px solid var(--sb-accent, #1d4ed8);
+  border-radius: var(--sb-token-radius);
+  background: var(--sb-accent-soft, #eef4ff);
+}
+
+/* O cartão fica sobre a superfície da célula, com margem para a sombra não
+   ser cortada pelo scroll da tabela. */
+.sb-token-shadow {
+  display: block;
+  width: 5rem;
+  height: 3rem;
+  margin: 0.5rem 0.75rem 0.75rem 0.25rem;
+  border-radius: 8px;
+  background: var(--sb-card, #ffffff);
+  box-shadow: var(--sb-token-shadow);
+}
