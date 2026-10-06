@@ -138,6 +138,21 @@ export function TableControls({
     };
   }, [editor, hoveredPos, recompute]);
 
+  // Rede de segurança: com os controles visíveis, qualquer movimento fora da
+  // tabela, dos botões e da zona de tolerância esconde. Cobre saídas que nenhum
+  // handler acima vê (o `mouseleave` do editor já passou e o container dos
+  // botões é `pointer-events-none`), p.ex. sair pelo vão entre dois botões.
+  useEffect(() => {
+    if (hoveredPos == null) return;
+    function onDocMove(e: MouseEvent) {
+      const target = e.target as Node;
+      if (controlRef.current?.contains(target) || editor.view.dom.contains(target)) return;
+      if (!inTableZone(editor, hoveredPos!, e.clientX, e.clientY)) setHoveredPos(null);
+    }
+    document.addEventListener('mousemove', onDocMove);
+    return () => document.removeEventListener('mousemove', onDocMove);
+  }, [editor, hoveredPos]);
+
   useEffect(() => {
     const dom = editor.view.dom as HTMLElement;
 
