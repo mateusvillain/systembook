@@ -10,6 +10,7 @@ export { parseTokenSources } from './parse.js';
 export { resolveTokens } from './resolve.js';
 export {
   DEFAULT_TOKEN_MODE,
+  nonEmptyTokenSet,
   ROOT_TOKEN,
   type LoadedTokens,
   type ParsedToken,

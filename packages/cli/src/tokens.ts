@@ -1,7 +1,7 @@
 import { readFile, realpath } from 'node:fs/promises';
 import path from 'node:path';
 import type { TokenSet } from '@systembook/schema';
-import { formatTokenDiagnostic, loadTokenSet, type TokenSource } from '@systembook/content/tokens';
+import { formatTokenDiagnostic, loadTokenSet, nonEmptyTokenSet, type TokenSource } from '@systembook/content/tokens';
 import { glob } from 'tinyglobby';
 import type { ResolvedConfig } from './config.js';
 
@@ -95,7 +95,7 @@ export async function loadProjectTokens(config: ResolvedConfig): Promise<Project
 
   const { set, diagnostics } = loadTokenSet(sources);
   for (const d of diagnostics) (d.severity === 'error' ? result.problems : result.warnings).push(formatTokenDiagnostic(d));
-  result.set = set.tokens.length ? set : null;
+  result.set = nonEmptyTokenSet(set);
   return result;
 }
 

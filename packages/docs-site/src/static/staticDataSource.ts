@@ -6,6 +6,7 @@ import type {
   PublicPageRef,
   PublicSettings,
   PublishedPage,
+  TokenSet,
 } from '@systembook/schema';
 import {
   loadSearchIndex,
@@ -15,6 +16,7 @@ import {
   type SearchIndex,
   type SearchIndexJson,
 } from '@systembook/content/site';
+import { nonEmptyTokenSet } from '@systembook/content/tokens';
 
 /**
  * Fonte de dados da doc pública no modo estático (SYS-98): lê os JSONs que o
@@ -110,7 +112,6 @@ export function createStaticDataSource({ dataUrl, fetch: doFetch = globalThis.fe
     search: async (q) => querySearchIndex(await getSearchIndex(), q),
     getComponentPreview: async (ref) =>
       (await once<Record<string, PublicComponentPreview>>(staticDataPaths.previews))[previewKey(ref)] ?? null,
-    // O build ainda não gera tokens (SYS-130).
-    getTokens: async () => null,
+    getTokens: async () => nonEmptyTokenSet(await once<TokenSet | null>(staticDataPaths.tokens)),
   };
 }

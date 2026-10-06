@@ -75,3 +75,11 @@ export interface LoadedTokens {
   /** De todas as etapas, na ordem: parser, aliases, validação. */
   diagnostics: TokenDiagnostic[];
 }
+
+/**
+ * O conjunto, ou `null` sem nenhum token — a regra do `DocsDataSource.getTokens`
+ * (SYS-129): lista vazia não existe, para CMS e estático esconderem o mesmo.
+ */
+export function nonEmptyTokenSet(set: TokenSet | null | undefined): TokenSet | null {
+  return set?.tokens.length ? set : null;
+}

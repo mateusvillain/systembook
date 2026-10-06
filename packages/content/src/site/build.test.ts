@@ -174,6 +174,7 @@ describe('siteDataFiles', () => {
       'nav.json',
       'landing.json',
       'previews.json',
+      'tokens.json', // da raiz dos dados — não é a página foundation/color/tokens
       'search.json',
       'pages/components/actions/button.json',
       'pages/foundation/color/palette.json',
@@ -193,9 +194,25 @@ describe('siteDataFiles', () => {
       nav: JSON.parse(files.get('nav.json')!),
       landing: JSON.parse(files.get('landing.json')!),
       previews: JSON.parse(files.get('previews.json')!),
+      tokens: JSON.parse(files.get('tokens.json')!),
       pages: Object.fromEntries(Object.keys(data.pages).map((k) => [k, JSON.parse(files.get(`pages/${k}.json`)!)])),
     };
     expect(roundtrip).toEqual(data);
+  });
+});
+
+describe('tokens (SYS-130)', () => {
+  const tree = buildContentTree([]);
+  const settings = { nomeDesignSystem: 'X', logoUrl: null, logoDarkUrl: null };
+  const set = {
+    modes: ['light', 'dark'],
+    tokens: [{ path: 'bg', type: 'color' as const, byMode: { light: { value: '#fff', resolvedValue: '#fff' }, dark: { value: '#000', resolvedValue: '#000' } } }],
+  };
+
+  it('vão para o tokens.json; sem tokens, ou com a lista vazia, é null', () => {
+    expect(JSON.parse(siteDataFiles(buildSiteData(tree, { settings, tokens: set }).data).get('tokens.json')!)).toEqual(set);
+    expect(buildSiteData(tree, { settings }).data.tokens).toBeNull();
+    expect(buildSiteData(tree, { settings, tokens: { modes: ['default'], tokens: [] } }).data.tokens).toBeNull();
   });
 });
 

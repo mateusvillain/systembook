@@ -177,6 +177,7 @@ export async function prepareSite(config: ResolvedConfig, options: PrepareOption
     settings,
     base: config.base,
     previews: previewMap,
+    tokens: tokens.set,
     imageUrl: (relativePath) => {
       const source = path.join(config.contentDir, relativePath);
       // Inexistente: a URL não importa, o build para no erro abaixo.
