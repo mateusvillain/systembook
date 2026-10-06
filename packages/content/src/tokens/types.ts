@@ -1,4 +1,4 @@
-import type { TokenModeValue, TokenValue } from '@systembook/schema';
+import type { Token, TokenModeValue, TokenSet, TokenValue } from '@systembook/schema';
 import type { TokenDiagnostic } from './diagnostics.js';
 
 /** Modo único de um conjunto sem arquivos por modo. */
@@ -37,6 +37,8 @@ export interface ParsedToken {
   byMode: Record<string, TokenValue>;
   /** Arquivo da primeira definição do token, para os diagnósticos. */
   file: string;
+  /** Arquivo de onde veio o valor de cada modo — o erro de um modo aponta para ele. */
+  fileByMode: Record<string, string>;
 }
 
 /**
@@ -56,5 +58,17 @@ export interface ParsedTokens {
 
 export interface ResolvedTokens {
   tokens: ResolvedToken[];
+  diagnostics: TokenDiagnostic[];
+}
+
+export interface ValidatedTokens {
+  tokens: Token[];
+  diagnostics: TokenDiagnostic[];
+}
+
+export interface LoadedTokens {
+  /** Só os tokens válidos, com valor em todos os modos. */
+  set: TokenSet;
+  /** De todas as etapas, na ordem: parser, aliases, validação. */
   diagnostics: TokenDiagnostic[];
 }

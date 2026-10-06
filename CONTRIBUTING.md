@@ -122,6 +122,8 @@ Por isso, ao propor mudanças em `packages/schema`:
   um tipo canônico, verifique os espelhos:
   - `BLOCK_TYPES` em `apps/server/src/db/schema.ts` (runtime dos block types);
   - o schema zod de `PreviewConfig` em `packages/connector/src/preview-config-schema.ts`;
+  - `TOKEN_TYPES` em `packages/content/src/tokens/validate.ts` (runtime de
+    `TokenType`; uma asserção quebra o typecheck se divergirem);
   - o mapeamento block→nó Tiptap, duplicado em
     `apps/server/src/blocks/serialize.ts` e
     `apps/admin/src/features/revisions/blocksToTiptapDoc.ts`.
