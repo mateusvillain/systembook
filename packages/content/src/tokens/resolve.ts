@@ -1,6 +1,6 @@
 import type { TokenModeValue, TokenValue } from '@systembook/schema';
 import { didYouMean } from '../diagnostics.js';
-import { TokenDiagnosticBag } from './diagnostics.js';
+import { sortByTokenOrder, TokenDiagnosticBag } from './diagnostics.js';
 import type { ParsedToken, ParsedTokens, ResolvedToken, ResolvedTokens } from './types.js';
 
 /**
@@ -39,6 +39,34 @@ function directAlias(token: ParsedToken, mode: string): string | undefined {
   return aliasTarget(token.byMode[mode]!);
 }
 
+/** A mensagem de quem aponta para um token reprovado. */
+export function failedAliasMessage(ref: string): string {
+  return `o alias {${ref}} aponta para um token com erro`;
+}
+
+/**
+ * Quem aponta (mesmo num campo de valor composto) para um token reprovado cai
+ * junto, até nada mais mudar: o conjunto não pode ter alias para fora dele.
+ */
+export function cascadeFailures<T extends { path: string }>(
+  tokens: readonly T[],
+  refsOf: (token: T) => Iterable<string>,
+  failed: (path: string) => boolean,
+  fail: (token: T, ref: string) => void,
+): void {
+  for (let changed = true; changed; ) {
+    changed = false;
+    for (const token of tokens) {
+      if (failed(token.path)) continue;
+      const broken = [...refsOf(token)].find(failed);
+      if (broken !== undefined) {
+        fail(token, broken);
+        changed = true;
+      }
+    }
+  }
+}
+
 type Resolution = { ok: true; value: TokenValue } | { ok: false };
 
 const FAILED: Resolution = { ok: false };
@@ -66,15 +94,16 @@ class Resolver {
     for (const token of parsed.tokens) this.refs.set(token.path, new Set());
   }
 
-  fail(token: ParsedToken, message: string): void {
+  /** Erro do token; o de um modo aponta para o arquivo de onde veio o valor do modo. */
+  fail(token: ParsedToken, message: string, mode?: string): void {
     if (this.failed.has(token.path)) return;
     this.failed.add(token.path);
-    this.bag.error(token.file, token.path, message);
+    this.bag.error(mode === undefined ? token.file : token.fileByMode[mode]!, token.path, message);
   }
 
   /** Por que o alias não tem para onde apontar. */
   missingTarget(ref: string, from: string): string {
-    if (this.dropped.has(ref)) return `o alias {${ref}} aponta para um token com erro`;
+    if (this.dropped.has(ref)) return failedAliasMessage(ref);
     if (this.paths.some((p) => p.startsWith(`${ref}.`))) return `o alias {${ref}} aponta para um grupo, não para um token`;
     // Apontar para si mesmo nunca é a correção.
     const candidates = this.paths.filter((p) => p !== from);
@@ -86,7 +115,12 @@ export function resolveTokens(parsed: ParsedTokens): ResolvedTokens {
   const r = new Resolver(parsed);
   for (const mode of parsed.modes) resolveMode(r, mode);
   const types = inferTypes(r);
-  cascadeFailures(r);
+  cascadeFailures(
+    parsed.tokens,
+    (token) => r.refs.get(token.path)!,
+    (path) => r.failed.has(path),
+    (token, ref) => r.fail(token, `${failedAliasMessage(ref)}.`),
+  );
 
   const tokens: ResolvedToken[] = [];
   for (const token of parsed.tokens) {
@@ -112,10 +146,7 @@ export function resolveTokens(parsed: ParsedTokens): ResolvedTokens {
     tokens.push(result);
   }
 
-  // Na ordem dos tokens nos arquivos, não na ordem em que a resolução os achou.
-  const order = new Map(parsed.tokens.map((t, i) => [t.path, i]));
-  const diagnostics = [...r.bag.items].sort((a, b) => order.get(a.path!)! - order.get(b.path!)!);
-  return { tokens, diagnostics };
+  return { tokens, diagnostics: sortByTokenOrder(r.bag.items, r.paths) };
 }
 
 /** Resolve os aliases de todos os tokens num modo. */
@@ -132,13 +163,13 @@ function resolveMode(r: Resolver, mode: string): void {
       const cycle = stack.slice(at);
       cycle.forEach((member, i) => {
         const chain = [...cycle.slice(i), ...cycle.slice(0, i), member];
-        r.fail(r.index.get(member)!, `referência circular: ${chain.join(' → ')}${inMode}.`);
+        r.fail(r.index.get(member)!, `referência circular: ${chain.join(' → ')}${inMode}.`, mode);
       });
       return FAILED;
     }
     const token = r.index.get(path)!;
     if (stack.length >= MAX_ALIAS_DEPTH) {
-      r.fail(token, `cadeia de aliases com mais de ${MAX_ALIAS_DEPTH} tokens${inMode}.`);
+      r.fail(token, `cadeia de aliases com mais de ${MAX_ALIAS_DEPTH} tokens${inMode}.`, mode);
       return FAILED;
     }
     stack.push(path);
@@ -155,11 +186,11 @@ function resolveMode(r: Resolver, mode: string): void {
     if (ref !== undefined) {
       r.refs.get(token.path)!.add(ref);
       if (!r.index.has(ref)) {
-        r.fail(token, `${r.missingTarget(ref, token.path)}${inMode}.`);
+        r.fail(token, `${r.missingTarget(ref, token.path)}${inMode}.`, mode);
         return FAILED;
       }
       const target = resolveToken(ref);
-      if (!target.ok) r.fail(token, `o alias {${ref}} aponta para um token com erro${inMode}.`);
+      if (!target.ok) r.fail(token, `${failedAliasMessage(ref)}${inMode}.`, mode);
       return target;
     }
     if (Array.isArray(value)) {
@@ -229,22 +260,4 @@ function inferTypes(r: Resolver): Map<string, string> {
     }
   }
   return types;
-}
-
-/**
- * Quem aponta (mesmo num campo de valor composto) para um token com erro cai
- * junto, até nada mais mudar: o conjunto não pode ter alias para fora dele.
- */
-function cascadeFailures(r: Resolver): void {
-  for (let changed = true; changed; ) {
-    changed = false;
-    for (const token of r.parsed.tokens) {
-      if (r.failed.has(token.path)) continue;
-      const broken = [...r.refs.get(token.path)!].find((ref) => r.failed.has(ref));
-      if (broken !== undefined) {
-        r.fail(token, `o alias {${broken}} aponta para um token com erro.`);
-        changed = true;
-      }
-    }
-  }
 }

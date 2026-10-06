@@ -121,28 +121,31 @@ sem valor em algum modo; alias para um token que não existe ou para um grupo;
 referência circular (`a → b → a`); `$type` diferente do token apontado; token
 sem `$type` ou com um `$type` que não é da spec; valor fora do formato do tipo,
 em qualquer modo; campo de valor composto apontando para um token de outro
-tipo (`"color": "{space.sm}"`).
+tipo (`"color": "{space.sm}"`); valor composto sem nenhum campo do tipo.
 
 São só avisos: propriedade desconhecida (como `$extends`, ainda não suportado),
-token redefinido, `$type` de grupo diferente entre arquivos e, nos tipos
+token redefinido, `$type` de grupo diferente entre arquivos, grupo que declara
+`$type` mas não tem nenhum token (quase sempre um `$value` esquecido) e, nos tipos
 compostos, campo faltando ou que não faz parte do tipo.
 
 ### Formato dos valores
 
-O valor é conferido depois de resolver os aliases, em cada modo:
+O valor é conferido depois de resolver os aliases, em cada modo. Um token com
+vários problemas lista todos de uma vez; o erro que só acontece num modo aponta
+o arquivo daquele modo.
 
 | Tipo | Aceita |
 | --- | --- |
-| `color` | `"#0a84ff"` (3, 4, 6 ou 8 dígitos), `"rgb(…)"`/`"oklch(…)"`, nome CSS, ou `{ colorSpace, components, alpha?, hex? }` |
-| `dimension` | `"16px"`, `"-0.5rem"`, `"0"`, ou `{ value, unit }` |
+| `color` | `"#0a84ff"` (3, 4, 6 ou 8 dígitos), funções de cor CSS (`rgb()`, `hsl()`, `oklch()`, `color()`…), nome de cor CSS (`rebeccapurple`, `transparent`), ou `{ colorSpace, components, alpha?, hex? }` |
+| `dimension` | `"16px"`, `"-0.5rem"`, `"1.5em"`, `"100%"` (unidades de comprimento CSS), número puro (px), ou `{ value, unit }` |
 | `fontFamily` | texto ou lista de textos |
-| `fontWeight` | 1 a 1000, ou um nome (`"bold"`, `"semi-bold"`…) |
-| `duration` | `"200ms"`, `"0.2s"`, ou `{ value, unit: "ms" \| "s" }` |
-| `cubicBezier` | `[x1, y1, x2, y2]`, com `x1` e `x2` entre 0 e 1 |
+| `fontWeight` | 1 a 1000 (número ou texto), ou um nome em qualquer grafia (`"bold"`, `"semi-bold"`, `"SemiBold"`, `"Semi Bold"`) |
+| `duration` | `"200ms"`, `"0.2s"`, número puro (ms), ou `{ value, unit: "ms" \| "s" }` |
+| `cubicBezier` | `[x1, y1, x2, y2]`, com `x1` e `x2` entre 0 e 1, ou `"linear"`, `"ease"`, `"ease-in"`, `"ease-out"`, `"ease-in-out"` |
 | `number` | número |
-| `strokeStyle` | `"solid"`, `"dashed"`… ou `{ dashArray, lineCap }` |
+| `strokeStyle` | `"solid"`, `"dashed"`… (sem diferença de caixa) ou `{ dashArray, lineCap }` |
 | `border` | `{ color, width, style }` |
 | `transition` | `{ duration, delay, timingFunction }` |
 | `shadow` | `{ color, offsetX, offsetY, blur, spread, inset? }`, ou uma lista delas |
-| `gradient` | lista de `{ color, position }` |
+| `gradient` | lista de `{ color, position }`, com `position` de 0 a 1 ou em `"%"` |
 | `typography` | `{ fontFamily, fontSize, fontWeight, letterSpacing, lineHeight }` — `lineHeight` em número ou dimensão |

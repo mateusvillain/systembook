@@ -19,9 +19,16 @@ describe('parseTokenSources', () => {
     expect(modes).toEqual(['default']);
     // Chaves numéricas vêm antes no JSON (regra de ordem do JS para objetos).
     expect(tokens).toEqual([
-      { path: 'color.brand.500', type: 'color', byMode: { default: '#0a84ff' }, file: 'tokens.json' },
-      { path: 'color.brand.600', type: 'color', byMode: { default: '#0060df' }, file: 'tokens.json' },
-      { path: 'space.sm', type: 'dimension', description: 'Espaço curto', byMode: { default: '4px' }, file: 'tokens.json' },
+      { path: 'color.brand.500', type: 'color', byMode: { default: '#0a84ff' }, file: 'tokens.json', fileByMode: { default: 'tokens.json' } },
+      { path: 'color.brand.600', type: 'color', byMode: { default: '#0060df' }, file: 'tokens.json', fileByMode: { default: 'tokens.json' } },
+      {
+        path: 'space.sm',
+        type: 'dimension',
+        description: 'Espaço curto',
+        byMode: { default: '4px' },
+        file: 'tokens.json',
+        fileByMode: { default: 'tokens.json' },
+      },
     ]);
   });
 
@@ -72,7 +79,9 @@ describe('parseTokenSources', () => {
       source('b.json', { color: { blue: { $value: '#00f' } } }),
     ]);
     expect(diagnostics).toEqual([]);
-    expect(tokens).toEqual([{ path: 'color.blue', type: 'color', deprecated: true, byMode: { default: '#00f' }, file: 'b.json' }]);
+    expect(tokens).toEqual([
+      { path: 'color.blue', type: 'color', deprecated: true, byMode: { default: '#00f' }, file: 'b.json', fileByMode: { default: 'b.json' } },
+    ]);
   });
 
   it('$type do grupo diferente entre arquivos avisa e vale o último', () => {
@@ -129,8 +138,20 @@ describe('parseTokenSources', () => {
       expect(diagnostics).toEqual([]);
       expect(modes).toEqual(['light', 'dark']);
       expect(tokens).toEqual([
-        { path: 'color.bg', type: 'color', byMode: { light: '#fff', dark: '#000' }, file: 'base.json' },
-        { path: 'color.brand', type: 'color', byMode: { light: '#0a84ff', dark: '#0a84ff' }, file: 'base.json' },
+        {
+          path: 'color.bg',
+          type: 'color',
+          byMode: { light: '#fff', dark: '#000' },
+          file: 'base.json',
+          fileByMode: { light: 'base.json', dark: 'dark.json' },
+        },
+        {
+          path: 'color.brand',
+          type: 'color',
+          byMode: { light: '#0a84ff', dark: '#0a84ff' },
+          file: 'base.json',
+          fileByMode: { light: 'base.json', dark: 'base.json' },
+        },
       ]);
     });
 
@@ -196,7 +217,15 @@ describe('parseTokenSources', () => {
         source('light.json', { color: { bg: { $value: '#fff' } } }, 'light'),
         source('dark.json', { color: { bg: { $value: '#000' } } }, 'dark'),
       ]);
-      expect(tokens).toEqual([{ path: 'color.bg', type: 'color', byMode: { light: '#fff', dark: '#000' }, file: 'light.json' }]);
+      expect(tokens).toEqual([
+        {
+          path: 'color.bg',
+          type: 'color',
+          byMode: { light: '#fff', dark: '#000' },
+          file: 'light.json',
+          fileByMode: { light: 'light.json', dark: 'dark.json' },
+        },
+      ]);
     });
 
     it('description e deprecated: vale a última definição que traz o campo', () => {
@@ -271,6 +300,15 @@ describe('parseTokenSources', () => {
         ['warning', 'color.red', '"dark" ignorado: um token não pode conter outros tokens ou grupos.'],
       ]);
     });
+  });
+
+  it('grupo que só declara e não tem token em arquivo nenhum avisa', () => {
+    const { tokens, diagnostics } = parseTokenSources([
+      source('a.json', { c: { $type: 'color' }, d: { $type: 'color' } }),
+      source('b.json', { d: { x: { $value: '#000' } } }),
+    ]);
+    expect(tokens.map((t) => t.path)).toEqual(['d.x']);
+    expect(diagnostics).toEqual([{ severity: 'warning', file: 'a.json', path: 'c', message: 'grupo sem nenhum token — faltou o "$value"?' }]);
   });
 
   it('$root no topo do arquivo é erro', () => {

@@ -1,16 +1,7 @@
-import type { TokenSet } from '@systembook/schema';
-import type { TokenDiagnostic } from './diagnostics.js';
 import { parseTokenSources } from './parse.js';
 import { resolveTokens } from './resolve.js';
-import type { TokenSource } from './types.js';
+import type { LoadedTokens, TokenSource } from './types.js';
 import { validateTokens } from './validate.js';
-
-export interface LoadedTokens {
-  /** Só os tokens válidos, com valor em todos os modos. */
-  set: TokenSet;
-  /** De todas as etapas, na ordem: parser, aliases, validação. */
-  diagnostics: TokenDiagnostic[];
-}
 
 /**
  * Arquivos DTCG → `TokenSet`: parse, resolução de aliases e validação. É o

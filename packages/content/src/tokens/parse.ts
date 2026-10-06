@@ -201,6 +201,16 @@ function mergeDefinitions(
     const deprecated = last(declared, 'deprecated');
     if (deprecated !== undefined) groupDeprecated.set(path, deprecated);
   }
+  // Grupo que só declara (`{ "c": { "$type": "color" } }`) e não tem token em
+  // arquivo nenhum: quase sempre um token sem "$value".
+  for (const [path, declared] of groups) {
+    if (!path || tokens.has(path)) continue;
+    const prefix = `${path}.`;
+    if (![...tokens.keys()].some((p) => p.startsWith(prefix))) {
+      bag.warning(declared[0]!.file, path, 'grupo sem nenhum token — faltou o "$value"?');
+    }
+  }
+
   /** O valor do grupo mais próximo que declara, subindo até a raiz do arquivo (`""`). */
   const inherited = <T>(map: Map<string, T>, path: string): T | undefined => {
     const segments = path.split('.');
@@ -245,17 +255,22 @@ function mergeDefinitions(
       continue;
     }
     const byMode: Record<string, TokenValue> = {};
+    const fileByMode: Record<string, string> = {};
     const missing: string[] = [];
     for (const mode of modes) {
       const def = lastWhere(defs, (d) => d.mode === mode) ?? lastWhere(defs, (d) => d.mode === undefined);
-      if (def) byMode[mode] = def.value;
-      else missing.push(mode);
+      if (!def) {
+        missing.push(mode);
+        continue;
+      }
+      byMode[mode] = def.value;
+      fileByMode[mode] = def.file;
     }
     if (missing.length) {
       bag.error(defs[0]!.file, path, `sem valor no modo ${missing.join(', ')} — defina o token num arquivo base ou em todos os modos.`);
       continue;
     }
-    const token: ParsedToken = { path, byMode, file: defs[0]!.file };
+    const token: ParsedToken = { path, byMode, file: defs[0]!.file, fileByMode };
     const type = typed[0]?.type ?? inherited(groupType, path);
     if (type !== undefined) token.type = type;
     const description = last(defs, 'description');

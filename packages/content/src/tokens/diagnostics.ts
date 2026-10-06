@@ -33,3 +33,13 @@ export class TokenDiagnosticBag {
     this.items.push(path ? { severity, file, path, message } : { severity, file, message });
   }
 }
+
+/**
+ * Diagnósticos na ordem dos tokens nos arquivos, não na ordem em que cada etapa
+ * os achou. Os sem caminho (erro do arquivo inteiro) vêm antes.
+ */
+export function sortByTokenOrder(items: readonly TokenDiagnostic[], paths: readonly string[]): TokenDiagnostic[] {
+  const order = new Map(paths.map((p, i) => [p, i]));
+  const rank = (d: TokenDiagnostic) => (d.path === undefined ? -1 : (order.get(d.path) ?? paths.length));
+  return [...items].sort((a, b) => rank(a) - rank(b));
+}
