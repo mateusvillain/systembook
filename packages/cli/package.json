@@ -1,6 +1,6 @@
 {
   "name": "@systembook/cli",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "license": "MIT",
   "description": "CLI do SystemBook: previews de componentes (os dois modos) e o build do site estático a partir de arquivos .md/.mdx.",
   "keywords": [
