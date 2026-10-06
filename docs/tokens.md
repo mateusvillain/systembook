@@ -48,6 +48,10 @@ de nome só numérico (`"1"`), que o JavaScript põe antes dos outros num objeto
 - `node_modules`, `.git`, a pasta do site gerado (`outDir`) e o próprio
   arquivo de config ficam de fora dos globs.
 
+O projeto de exemplo [`examples/static-docs`](../examples/static-docs) usa
+essa forma: paleta e escalas num `base.json`, cores de papel em `light.json` e
+`dark.json`.
+
 `systembook build` e `systembook check` falham com qualquer erro nos tokens
 (saída com código 1) e listam os avisos sem falhar — com só avisos, o `check`
 sai com 0 e o resumo diz quantos tokens leu (e os modos, quando há mais de um). O `systembook dev` mostra

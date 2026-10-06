@@ -1,0 +1,14 @@
+{
+  "acme": {
+    "$type": "color",
+    "primary": { "$value": "{acme.palette.indigo.600}", "$description": "Ação principal, links e foco." },
+    "primary-hover": { "$value": "{acme.palette.indigo.700}" },
+    "neutral": { "$value": "{acme.palette.slate.600}", "$description": "Texto secundário e bordas." },
+    "neutral-subtle": { "$value": "{acme.palette.slate.100}" },
+    "success": { "$value": "{acme.palette.green.600}" },
+    "warning": { "$value": "{acme.palette.amber.600}" },
+    "danger": { "$value": "{acme.palette.red.600}", "$description": "Erros e ações destrutivas." },
+    "surface": { "$value": "{acme.palette.slate.50}" },
+    "text": { "$value": "{acme.palette.slate.900}" }
+  }
+}

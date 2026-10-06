@@ -23,8 +23,12 @@ Num projeto seu, o equivalente é `npx systembook dev|check|build` com o
 
 ```
 static-docs/
-├── systembook.config.ts          # nome, logos, base e status tags
+├── systembook.config.ts          # nome, logos, base, status tags e tokens
 ├── brand/                        # logo e logo do tema escuro
+├── tokens/                       # design tokens DTCG
+│   ├── base.json                 # paleta, espaço, raio, tipografia, sombra e movimento
+│   ├── light.json                # cores de papel no modo light (aliases da paleta)
+│   └── dark.json                 # as mesmas no modo dark
 ├── src/components/
 │   ├── Button.tsx                # o componente do design system
 │   └── Button.preview.tsx        # variantes e controles do preview interativo
@@ -87,3 +91,13 @@ publicado no GitHub Pages do repositório, num subpath (`/systembook/`): o
 workflow (`.github/workflows/pages.yml`) passa o subpath no build, com
 `systembook build --base`. O passo a passo para outros hosts está em
 [`docs/deploy-static.md`](../../docs/deploy-static.md).
+
+## Design tokens
+
+Os tokens do Acme DS seguem o formato DTCG e entram pelo campo `tokens` da
+config: `base.json` vale para todos os modos, e `light.json`/`dark.json`
+definem as cores de papel (`acme.primary`, `acme.surface`…) de cada modo,
+apontando para a paleta. O `check` valida tudo e o resumo conta os tokens; o
+`build` grava os valores resolvidos de cada modo em
+`systembook-dist/_systembook/data/tokens.json`. O formato completo está em
+[`docs/tokens.md`](../../docs/tokens.md).
