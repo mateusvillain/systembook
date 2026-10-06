@@ -2,19 +2,24 @@
  * Design tokens normalizados (projeto "Design tokens", SYS-123).
  *
  * A fonte da verdade são arquivos no formato DTCG (Design Tokens Community
- * Group, W3C) no repo do design system. `@systembook/content/tokens` lê esses
- * arquivos, resolve aliases e modos e devolve um `TokenSet` — o formato que
- * trafega daqui em diante: embutido no site estático, gravado pelo server no
- * modo CMS e lido pela doc pública via `DocsDataSource`.
+ * Group, W3C) no repo do design system. O parser de tokens lê esses arquivos,
+ * resolve aliases e modos e devolve um `TokenSet` — o formato que trafega
+ * daqui em diante: embutido no site estático, gravado pelo server no modo CMS
+ * e lido pela doc pública via `DocsDataSource`.
  *
  * Mapeamento com a spec DTCG:
  * - grupos aninhados viram o `path` com pontos (`color.brand.500`) — a spec
  *   proíbe `.`, `{` e `}` nos nomes, então o `path` é inequívoco;
  * - `$type` é o do próprio token, senão o do grupo mais próximo, senão o do
  *   token apontado pelo alias;
- * - `$value`, `$description`, `$deprecated` e `$extensions` passam adiante;
- * - modos (light/dark, marcas) não existem no formato de token da spec: cada
- *   modo vem de arquivos próprios, sobrepostos aos arquivos base.
+ * - aliases são os da forma `{color.brand.500}`, no valor inteiro ou em campos
+ *   de um valor composto;
+ * - `$value`, `$description` e `$deprecated` passam adiante.
+ *
+ * Modos (light/dark, marcas) são decisão do Systembook, não da spec de
+ * tokens: cada modo vem de arquivos próprios, sobrepostos aos arquivos base —
+ * o que o export de variáveis do Figma gera (um arquivo por modo) e o que o
+ * módulo Resolver do DTCG compõe. O alias é resolvido dentro do modo.
  */
 
 /**
@@ -38,9 +43,9 @@ export type TokenType =
   | 'typography';
 
 /**
- * Valor de um token como JSON. O formato depende do `type` (ver os tipos
- * `*TokenValue` abaixo), mas nada aqui o garante: quem produz o `TokenSet`
- * valida, quem consome confere o formato que vai usar.
+ * Valor de um token como JSON. O formato depende do `type` e da versão da
+ * spec que o arquivo segue (`"#0a84ff"` ou `{ colorSpace, components }`); o
+ * parser valida o formato, e quem consome interpreta o que vai usar.
  */
 export type TokenValue =
   | string
@@ -50,19 +55,17 @@ export type TokenValue =
   | TokenValue[]
   | { [key: string]: TokenValue };
 
-/** Cor na forma de objeto da spec. A forma legada é uma string CSS (`#0a84ff`). */
-export interface ColorTokenValue {
-  colorSpace: string;
-  components: (number | 'none')[];
-  alpha?: number;
-  /** Fallback hexadecimal, quando o arquivo traz. */
-  hex?: string;
-}
-
-/** Dimensão ou duração na forma de objeto. A forma legada é uma string (`16px`, `200ms`). */
-export interface MeasureTokenValue {
-  value: number;
-  unit: string;
+/** O valor de um token num modo. */
+export interface TokenModeValue {
+  /** Como está no arquivo: pode ser um alias ou conter aliases. */
+  value: TokenValue;
+  /** Com todos os aliases substituídos. */
+  resolvedValue: TokenValue;
+  /**
+   * Token apontado quando o valor inteiro é um alias. Só a primeira referência
+   * (não o fim da cadeia): é o que a doc mostra como "→ color.blue.500".
+   */
+  aliasOf?: string;
 }
 
 /** Um design token, com o valor de cada modo. */
@@ -73,24 +76,15 @@ export interface Token {
   description?: string;
   /** `true`, ou a explicação do que usar no lugar. */
   deprecated?: boolean | string;
-  /**
-   * Valor por modo como está no arquivo — pode ser um alias (`{color.blue.500}`)
-   * ou conter aliases em campos de um valor composto. Tem uma chave para cada
-   * modo de `TokenSet.modes`.
-   */
-  values: Record<string, TokenValue>;
-  /** Valor por modo com todos os aliases substituídos. Mesmas chaves de `values`. */
-  resolved: Record<string, TokenValue>;
-  /**
-   * Token apontado, por modo, quando o valor inteiro é um alias. Só a primeira
-   * referência (não o fim da cadeia): é o que a doc mostra como "→ color.blue.500".
-   */
-  aliasOf?: Record<string, string>;
-  /** `$extensions` do token, intocado (dados de ferramentas de terceiros). */
-  extensions?: Record<string, TokenValue>;
+  /** Valor em cada modo, com uma chave para cada modo de `TokenSet.modes`. */
+  byMode: Record<string, TokenModeValue>;
 }
 
-/** Conjunto de tokens de um design system. */
+/**
+ * Conjunto de tokens de um design system. Só tem tokens válidos e completos:
+ * um token com erro (alias quebrado, valor inválido, modo faltando) fica de
+ * fora e vira diagnóstico do parser.
+ */
 export interface TokenSet {
   /**
    * Modos na ordem em que aparecem nas fontes. Nunca vazio: sem arquivos por
