@@ -1137,8 +1137,10 @@ html:has(.sb-public[data-theme='dark']:not(.sb-public--preview)) {
 }
 
 /* A última linha não fecha a tabela com um traço solto: a borda do wrapper já
-   faz esse papel. */
-.sb-public .sb-editor .ProseMirror tr:last-child td {
+   faz esse papel. Vale para `th` também: o cabeçalho é uma linha de `th` dentro do
+   `tbody` (Tiptap), então tabela só com cabeçalho ou com coluna de cabeçalho na
+   última linha teria o traço duplicado com a borda do wrapper. */
+.sb-public .sb-editor .ProseMirror tr:last-child :is(th, td) {
   border-bottom: none;
 }
 
