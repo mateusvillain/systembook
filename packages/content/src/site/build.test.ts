@@ -174,7 +174,7 @@ describe('siteDataFiles', () => {
       'nav.json',
       'landing.json',
       'previews.json',
-      'tokens.json',
+      'tokens.json', // da raiz dos dados — não é a página foundation/color/tokens
       'search.json',
       'pages/components/actions/button.json',
       'pages/foundation/color/palette.json',

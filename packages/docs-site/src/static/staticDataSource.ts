@@ -16,6 +16,7 @@ import {
   type SearchIndex,
   type SearchIndexJson,
 } from '@systembook/content/site';
+import { nonEmptyTokenSet } from '@systembook/content/tokens';
 
 /**
  * Fonte de dados da doc pública no modo estático (SYS-98): lê os JSONs que o
@@ -111,10 +112,6 @@ export function createStaticDataSource({ dataUrl, fetch: doFetch = globalThis.fe
     search: async (q) => querySearchIndex(await getSearchIndex(), q),
     getComponentPreview: async (ref) =>
       (await once<Record<string, PublicComponentPreview>>(staticDataPaths.previews))[previewKey(ref)] ?? null,
-    // `null` também se o arquivo vier com a lista vazia: o contrato não distingue.
-    getTokens: async () => {
-      const set = await once<TokenSet | null>(staticDataPaths.tokens);
-      return set?.tokens.length ? set : null;
-    },
+    getTokens: async () => nonEmptyTokenSet(await once<TokenSet | null>(staticDataPaths.tokens)),
   };
 }

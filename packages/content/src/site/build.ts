@@ -12,6 +12,7 @@ import { tiptapDocToBlocks, type TiptapDoc, type TiptapNode } from '../blocks.js
 import type { Diagnostic } from '../diagnostics.js';
 import type { ContentDocument, ContentTree } from '../tree/types.js';
 import { pageKey, parsePageKey, sitePath, staticDataPaths } from './paths.js';
+import { nonEmptyTokenSet } from '../tokens/types.js';
 import { createSearchIndex } from './search.js';
 
 /**
@@ -242,8 +243,7 @@ export function buildSiteData(tree: ContentTree, options: BuildSiteOptions): Sit
     ? { tabs: [{ tabId: BODY_TAB_ID, titulo: 'Overview', isPrimary: true, blocks: blocksFor('', BODY_TAB_ID, resolve(tree.landing)) }] }
     : null;
 
-  // Lista vazia é `null`: o contrato do `getTokens` não distingue "sem tokens" de "nenhum válido".
-  const tokens = options.tokens?.tokens.length ? options.tokens : null;
+  const tokens = nonEmptyTokenSet(options.tokens);
   return { data: { settings: options.settings, nav, landing, pages, previews: options.previews ?? {}, tokens }, images, diagnostics };
 }
 

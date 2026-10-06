@@ -21,3 +21,4 @@ export function loadTokenSet(sources: readonly TokenSource[]): LoadedTokens {
     diagnostics: [...parsed.diagnostics, ...resolved.diagnostics, ...validated.diagnostics, ...collisions],
   };
 }
+
