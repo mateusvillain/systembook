@@ -3,59 +3,65 @@ import { describe, expect, it } from 'vitest';
 import type { Token, TokenType, TokenValue } from '@systembook/schema';
 import { setupDom } from '../../../test/dom.js';
 import { DimensionTokens } from './DimensionTokens.js';
-import { ShadowTokens } from './ShadowTokens.js';
 
 const dom = setupDom();
 
-const token = (path: string, type: TokenType, value: TokenValue): Token => ({
+const token = (path: string, value: TokenValue, type: TokenType = 'dimension'): Token => ({
   path,
   type,
   byMode: { default: { value, resolvedValue: value } },
 });
 
-const prop = (selector: string, name: string) =>
-  [...dom.container().querySelectorAll<HTMLElement>(selector)].map((el) => el.style.getPropertyValue(name));
+const samples = (kind: string) =>
+  [...dom.container().querySelectorAll<HTMLElement>(`.sb-token-${kind}`)].map((el) => el.style.getPropertyValue(`--sb-token-${kind}`));
 
 describe('DimensionTokens', () => {
-  it('espaçamento vira barra; raio, pelo caminho, vira quadrado arredondado', () => {
+  it('espaçamento vira barra; número puro em px; { value, unit }', () => {
     dom.render(
       <DimensionTokens
-        tokens={[
-          token('space.4', 'dimension', '16px'),
-          token('space.lg', 'dimension', { value: 1.5, unit: 'rem' }),
-          token('radius.md', 'dimension', '8px'),
-          token('acme.rounded.full', 'dimension', '9999px'),
-        ]}
+        tokens={[token('space.4', '16px'), token('space.lg', { value: 1.5, unit: 'rem' }), token('space.n', 8), token('space.none', 0)]}
         modes={['default']}
       />,
     );
-    expect(prop('.sb-token-size', '--sb-token-size')).toEqual(['16px', '1.5rem']);
-    expect(prop('.sb-token-radius', '--sb-token-radius')).toEqual(['8px', '9999px']);
+    expect(samples('size')).toEqual(['16px', '1.5rem', '8px', '0']);
     expect(dom.container().querySelector('.sb-token-size')!.getAttribute('aria-hidden')).toBe('true');
   });
 
-  it('valor negativo e outros tipos ficam sem amostra, só escritos', () => {
-    dom.render(<DimensionTokens tokens={[token('space.neg', 'dimension', '-4px'), token('n', 'number', 2)]} modes={['default']} />);
-    expect(dom.container().querySelectorAll('.sb-token-size, .sb-token-radius')).toHaveLength(0);
-    expect([...dom.container().querySelectorAll('.sb-token-value')].map((v) => v.textContent)).toEqual(['-4px', '2']);
-  });
-});
-
-describe('ShadowTokens', () => {
-  it('cartão com o box-shadow do valor, camadas inclusive', () => {
+  it('raio pelo caminho, por palavra inteira', () => {
     dom.render(
-      <ShadowTokens
+      <DimensionTokens
         tokens={[
-          token('shadow.card', 'shadow', { color: '#0f172a1f', offsetX: '0px', offsetY: '2px', blur: '8px', spread: '0px' }),
-          token('shadow.stack', 'shadow', [
-            { color: '#0002', offsetX: 0, offsetY: 1, blur: 2, spread: 0, inset: true },
-            { color: '#0001', offsetX: 0, offsetY: 4, blur: 8, spread: 0 },
-          ]),
+          token('radius.md', '8px'),
+          token('border.radius.sm', '4px'),
+          token('md.sys.shape.corner.small', '8px'),
+          token('acme.rounded-full', '9999px'),
+          token('borderRadius.lg', '12px'),
+          token('shadow.blur-radius', '24px'),
+          token('focus.ring-radius', '2px'),
+          token('spacing.radiusless', '4px'),
         ]}
         modes={['default']}
       />,
     );
-    expect(prop('.sb-token-shadow', '--sb-token-shadow')).toEqual(['0px 2px 8px 0px #0f172a1f', 'inset 0 1px 2px 0 #0002, 0 4px 8px 0 #0001']);
-    expect(dom.container().querySelectorAll('tbody tr')[1]!.querySelectorAll('.sb-token-value')).toHaveLength(2);
+    expect(samples('radius')).toEqual(['8px', '4px', '8px', '9999px', '12px']);
+    expect(samples('size')).toEqual(['24px', '2px', '4px']);
+  });
+
+  it('sem amostra quando ela mentiria: negativo, relativo, não comprimento, outro tipo', () => {
+    dom.render(
+      <DimensionTokens
+        tokens={[
+          token('space.neg', '-4px'),
+          token('size.half', '50%'),
+          token('size.screen', '100vw'),
+          token('size.auto', 'auto'),
+          token('size.raw', '16'),
+          token('n', 2, 'number'),
+        ]}
+        modes={['default']}
+      />,
+    );
+    expect(dom.container().querySelectorAll('.sb-token-size, .sb-token-radius')).toHaveLength(0);
+    expect([...dom.container().querySelectorAll('.sb-token-value')].map((v) => v.textContent)).toEqual(['-4px', '50%', '100vw', 'auto', '16', '2']);
   });
 });

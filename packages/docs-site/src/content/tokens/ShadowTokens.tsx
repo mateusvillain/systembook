@@ -1,10 +1,11 @@
-import type { CSSProperties } from 'react';
+import { TokenSample } from './TokenSample.js';
 import { TokenTable, type TokenTableProps } from './TokenTable.js';
 
 /**
  * Tokens de sombra (SYS-135): um cartão com a sombra aplicada por modo —
- * camadas e `inset` inclusive, já que é o `box-shadow` do próprio valor. A
- * amostra é decorativa; as camadas vêm escritas ao lado.
+ * camadas e `inset` inclusive, já que é o `box-shadow` do próprio valor —,
+ * numa bandeja com folga para o blur não ser cortado. A amostra é decorativa;
+ * as camadas vêm escritas ao lado.
  */
 export function ShadowTokens(props: Omit<TokenTableProps, 'preview'>) {
   return (
@@ -12,7 +13,9 @@ export function ShadowTokens(props: Omit<TokenTableProps, 'preview'>) {
       {...props}
       preview={(token, _mode, css) =>
         css === null || token.type !== 'shadow' ? null : (
-          <span className="sb-token-shadow" aria-hidden style={{ '--sb-token-shadow': css } as CSSProperties} />
+          <span className="sb-token-shadow-tray">
+            <TokenSample kind="shadow" value={css} />
+          </span>
         )
       }
     />

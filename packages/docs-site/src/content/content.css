@@ -817,7 +817,7 @@
    transparente. A borda deriva da cor do texto (não do hairline das tabelas,
    fraco demais): uma cor igual à superfície ainda tem contorno. O xadrez
    escurece no tema escuro (`public.css`). */
-.sb-token-swatch {
+.sb-token-color {
   --sb-token-check-a: #d4d7dd;
   --sb-token-check-b: #ffffff;
 
@@ -849,9 +849,11 @@
 
 /* Amostras de dimensão e sombra (SYS-135). A barra de espaçamento tem a
    largura do valor, limitada à célula — um valor maior que ela mostra a
-   célula cheia, e o número escrito ao lado diz o resto. */
+   célula cheia, e o número escrito ao lado diz o resto. `font-size: 1rem`
+   para `em` medir o que mediria no texto do produto, não na fonte da tabela. */
 .sb-token-size {
   display: block;
+  font-size: 1rem;
   width: var(--sb-token-size);
   max-width: 100%;
   min-width: 1px;
@@ -863,6 +865,7 @@
 
 .sb-token-radius {
   display: block;
+  font-size: 1rem;
   width: 3rem;
   height: 3rem;
   border: 2px solid var(--sb-accent, #1d4ed8);
@@ -870,14 +873,23 @@
   background: var(--sb-accent-soft, #eef4ff);
 }
 
-/* O cartão fica sobre a superfície da célula, com margem para a sombra não
-   ser cortada pelo scroll da tabela. */
+/* Bandeja: a sombra precisa de um fundo diferente do cartão para aparecer —
+   no tema escuro, cartão e célula têm a mesma cor e a sombra sumiria. A
+   folga deixa o blur aparecer sem encostar no valor escrito. */
+.sb-token-shadow-tray {
+  display: block;
+  width: fit-content;
+  padding: 1.25rem 1.5rem;
+  border-radius: 10px;
+  background: var(--sb-surface, #f4f5f7);
+}
+
 .sb-token-shadow {
   display: block;
   width: 5rem;
   height: 3rem;
-  margin: 0.5rem 0.75rem 0.75rem 0.25rem;
   border-radius: 8px;
+  border: 1px solid color-mix(in srgb, currentColor 10%, transparent);
   background: var(--sb-card, #ffffff);
   box-shadow: var(--sb-token-shadow);
 }
