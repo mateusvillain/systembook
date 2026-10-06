@@ -1,6 +1,19 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Check, ChevronDown, LogOut, PanelLeft, Plus, X } from 'lucide-react';
+import {
+  Activity,
+  Check,
+  ChevronDown,
+  Fingerprint,
+  KeyRound,
+  LogOut,
+  PanelLeft,
+  PanelTop,
+  Plus,
+  Tag,
+  Users,
+  X,
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { queryClient, useTRPC } from '../../lib/trpc.js';
 import { AdminSearchTrigger } from './AdminSearch.js';
@@ -327,34 +340,52 @@ function UserMenu({
         <DropdownMenuItem asChild>
           {/* SYS-70: mesmo rótulo do título da tela — "Global history" descrevia
               a rota antiga (feed cru); a tela é o painel de atividade. */}
-          <Link to="/admin/history">Activity</Link>
+          <Link to="/admin/history">
+            <Activity />
+            Activity
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/admin/settings/landing-page">Landing page</Link>
+          <Link to="/admin/settings/landing-page">
+            <PanelTop />
+            Landing page
+          </Link>
         </DropdownMenuItem>
         {/* Status tags: gerenciável por admin e editor (protectedProcedure). */}
         <DropdownMenuItem asChild>
-          <Link to="/admin/settings/status-tags">Status tags</Link>
+          <Link to="/admin/settings/status-tags">
+            <Tag />
+            Status tags
+          </Link>
         </DropdownMenuItem>
         {isAdmin && (
           <DropdownMenuItem asChild>
-            <Link to="/admin/users">Users</Link>
+            <Link to="/admin/users">
+              <Users />
+              Users
+            </Link>
           </DropdownMenuItem>
         )}
         {isAdmin && (
           <DropdownMenuItem asChild>
-            <Link to="/admin/settings/tokens">Tokens</Link>
+            <Link to="/admin/settings/tokens">
+              <KeyRound />
+              Tokens
+            </Link>
           </DropdownMenuItem>
         )}
         {/* Identidade: configuração da instância, só admin (SYS-39). */}
         {isAdmin && (
           <DropdownMenuItem asChild>
-            <Link to="/admin/settings/identity">Identity</Link>
+            <Link to="/admin/settings/identity">
+              <Fingerprint />
+              Identity
+            </Link>
           </DropdownMenuItem>
         )}
         <DropdownMenuSeparator />
         <DropdownMenuItem disabled={logoutPending} onSelect={onLogout}>
-          <LogOut className="size-4" />
+          <LogOut />
           Sign out
         </DropdownMenuItem>
       </DropdownMenuContent>

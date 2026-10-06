@@ -6,7 +6,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal } from 'lucide-react';
+import { ArrowDown, ArrowUp, MoreHorizontal, Pencil, Trash2, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /**
@@ -23,6 +23,9 @@ import { cn } from '@/lib/utils';
  * inline — não abrimos modal). "Duplicar" e "Mover entre seções" do exemplo do
  * plano ficam de fora de propósito: não há mutation de backend para nenhum dos
  * dois hoje (só reorder dentro do mesmo pai), então não expomos UI morta.
+ *
+ * Todo item leva ícone (o `DropdownMenuItem` já dimensiona e colore o `svg`):
+ * menu com ícone em só alguns itens desalinha os rótulos.
  *
  * Mover para cima/baixo somem quando `onMovePrev`/`onMoveNext` são omitidos —
  * o call site passa `undefined` na primeira/última posição, espelhando o antigo
@@ -41,6 +44,8 @@ export function RowActionsMenu({
   onMoveNext,
   movePrevLabel = 'Move up',
   moveNextLabel = 'Move down',
+  movePrevIcon: MovePrevIcon = ArrowUp,
+  moveNextIcon: MoveNextIcon = ArrowDown,
   onDelete,
   align = 'start',
   triggerClassName,
@@ -61,6 +66,9 @@ export function RowActionsMenu({
   onMoveNext?: () => void;
   movePrevLabel?: string;
   moveNextLabel?: string;
+  /** Ícones dos itens de mover (setas na direção do rótulo; padrão ↑/↓). */
+  movePrevIcon?: LucideIcon;
+  moveNextIcon?: LucideIcon;
   onDelete: () => void;
   align?: 'start' | 'center' | 'end';
   /** Estilos de posição/revelação por contexto (ex.: opacity-0 group-hover…). */
@@ -81,12 +89,26 @@ export function RowActionsMenu({
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align={align}>
-        <DropdownMenuItem onSelect={onRename}>Rename</DropdownMenuItem>
+        <DropdownMenuItem onSelect={onRename}>
+          <Pencil />
+          Rename
+        </DropdownMenuItem>
         {extraItems}
-        {onMovePrev && <DropdownMenuItem onSelect={onMovePrev}>{movePrevLabel}</DropdownMenuItem>}
-        {onMoveNext && <DropdownMenuItem onSelect={onMoveNext}>{moveNextLabel}</DropdownMenuItem>}
+        {onMovePrev && (
+          <DropdownMenuItem onSelect={onMovePrev}>
+            <MovePrevIcon />
+            {movePrevLabel}
+          </DropdownMenuItem>
+        )}
+        {onMoveNext && (
+          <DropdownMenuItem onSelect={onMoveNext}>
+            <MoveNextIcon />
+            {moveNextLabel}
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" onSelect={onDelete}>
+          <Trash2 />
           Delete
         </DropdownMenuItem>
       </DropdownMenuContent>

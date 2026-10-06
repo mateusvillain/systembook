@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Link2 } from 'lucide-react';
+import { FolderInput, Link2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { queryClient, useTRPC } from '../../lib/trpc.js';
 import {
@@ -60,7 +60,7 @@ export function CopyLinkItem({
           .catch(() => toast.error('Could not copy the link'));
       }}
     >
-      <Link2 className="size-4" />
+      <Link2 />
       Copy link
     </DropdownMenuItem>
   );
@@ -97,7 +97,10 @@ export function MoveToMenuSub({
 
   return (
     <DropdownMenuSub>
-      <DropdownMenuSubTrigger>Move to another menu</DropdownMenuSubTrigger>
+      <DropdownMenuSubTrigger>
+        <FolderInput />
+        Move to another menu
+      </DropdownMenuSubTrigger>
       <DropdownMenuSubContent>
         {menus.map((menu) => (
           <MenuSectionsSub
