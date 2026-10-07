@@ -119,14 +119,19 @@ describe('seletor de grupo no editor (SYS-138)', () => {
 
   it('editando: recebe os grupos e troca o grupo do nó', async () => {
     const editor = await renderEditor(true, async () => TOKENS);
-    expect(seen.at(-1)).toMatchObject({ group: 'color', groups: ['space', 'color', 'font', 'font.weight', 'shadow', 'font.family', 'motion'], hasTokens: true, loading: false });
+    expect(seen.at(-1)).toMatchObject({ group: 'color', groups: ['space', 'color', 'font', 'font.weight', 'shadow', 'font.family', 'motion'], status: 'available' });
     await act(async () => dom.container().querySelector<HTMLButtonElement>('.sb-token-block-bar button')!.click());
     expect(editor().getJSON().content![0]).toEqual({ type: 'tokenTable', attrs: { group: 'space' } });
   });
 
   it('sem tokens, o seletor sabe que não há o que escolher', async () => {
     await renderEditor(true, async () => null);
-    expect(seen.at(-1)).toMatchObject({ groups: [], hasTokens: false, loading: false });
+    expect(seen.at(-1)).toMatchObject({ groups: [], status: 'none' });
+  });
+
+  it('erro de leitura chega como erro, não como "sem tokens"', async () => {
+    await renderEditor(true, () => Promise.reject(new Error('rede')));
+    expect(seen.at(-1)).toMatchObject({ groups: [], status: 'error' });
   });
 
   it('read-only não mostra o seletor', async () => {

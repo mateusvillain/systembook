@@ -155,15 +155,16 @@ export function getBlockInsertContext(editor: Editor, pos: number): BlockInsertC
  * e, no futuro, pelo menu "/" (TASK-104), que insere na posição real do
  * cursor e por isso pode de fato estar dentro de um callout/célula de tabela.
  */
+/** Blocos fora do `CALLOUT_CONTENT` e do conteúdo de célula: tabela e token-table (SYS-137). */
+const OUTSIDE_CALLOUT_AND_CELL = new Set(['table', 'tokenTable']);
+
 export function filterBlockGroupsForContext(
   groups: BlockGroup[],
   context: BlockInsertContext,
 ): BlockGroup[] {
   const isAllowed = (item: BlockItem) => {
-    if (item.id === 'table' && (context.insideCallout || context.insideTableCell)) return false;
+    if (OUTSIDE_CALLOUT_AND_CELL.has(item.id) && (context.insideCallout || context.insideTableCell)) return false;
     if (item.id.startsWith('callout-') && context.insideTableCell) return false;
-    // Fora do `CALLOUT_CONTENT` e do conteúdo de célula (SYS-137).
-    if (item.id === 'tokenTable' && (context.insideCallout || context.insideTableCell)) return false;
     return true;
   };
   return groups

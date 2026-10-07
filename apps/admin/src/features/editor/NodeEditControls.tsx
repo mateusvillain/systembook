@@ -123,33 +123,30 @@ export function CodeLanguageSelect({ language, onChange }: CodeLanguageSelectPro
  * Seletor de grupo do bloco `token-table` (SYS-138), na barra acima das
  * tabelas. "All tokens" é o grupo vazio. Um grupo salvo que sumiu dos tokens
  * (renomeado, apagado) continua na lista, marcado, para o autor ver o que está
- * escolhido e trocar. Sem tokens, o select fica desabilitado e diz por quê.
+ * escolhido e trocar. Sem tokens (ou com erro de leitura), o select fica
+ * desabilitado; o porquê é o aviso do próprio bloco, logo abaixo.
  */
-export function TokenTableGroupSelect({ group, groups, hasTokens, loading, onSelect }: TokenTableEditControlsProps) {
-  const missing = !!group && hasTokens && !groups.includes(group);
+export function TokenTableGroupSelect({ group, groups, status, onSelect }: TokenTableEditControlsProps) {
+  // O grupo salvo precisa ser uma opção para o select mostrá-lo: marcado
+  // quando os tokens chegaram e ele não está entre os grupos; sem tokens, só o nome.
+  const stale = !!group && !groups.includes(group);
   return (
-    <>
-      <label className="sb-token-group-label">
-        <span>Group</span>
-        <select
-          className="sb-token-group-select"
-          value={group}
-          disabled={loading || !hasTokens}
-          onChange={(e) => onSelect(e.target.value)}
-        >
-          <option value="">All tokens</option>
-          {missing && <option value={group}>{group} (not found)</option>}
-          {!hasTokens && group && <option value={group}>{group}</option>}
-          {groups.map((g) => (
-            <option key={g} value={g}>
-              {g}
-            </option>
-          ))}
-        </select>
-      </label>
-      {!loading && !hasTokens && (
-        <span className="sb-token-group-hint">Publish design tokens to choose a group.</span>
-      )}
-    </>
+    <label className="sb-token-group-label">
+      <span>Group</span>
+      <select
+        className="sb-token-group-select"
+        value={group}
+        disabled={status !== 'available'}
+        onChange={(e) => onSelect(e.target.value)}
+      >
+        <option value="">All tokens</option>
+        {stale && <option value={group}>{status === 'available' ? `${group} (not found)` : group}</option>}
+        {groups.map((g) => (
+          <option key={g} value={g}>
+            {g}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }

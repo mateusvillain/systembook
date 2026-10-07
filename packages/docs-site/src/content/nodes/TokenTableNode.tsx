@@ -6,6 +6,23 @@ import { tokenGroups, tokensInGroup } from '@systembook/content/tokens';
 import { useTokens } from '../docsQueries.js';
 import { TokenGroup } from '../tokens/TokenGroup.js';
 
+/** Situação dos tokens para o seletor: carregando, erro de leitura, nenhum publicado, ou disponíveis. */
+export type TokenTableTokensStatus = 'loading' | 'error' | 'none' | 'available';
+
+/** O que o seletor de grupo do editor precisa saber (SYS-138). */
+export interface TokenTableEditControlsProps {
+  group: string;
+  /** Grupos disponíveis (`tokenGroups`); vazio fora de `available`. */
+  groups: readonly string[];
+  status: TokenTableTokensStatus;
+  onSelect: (group: string) => void;
+}
+
+export interface TokenTableOptions {
+  /** Seletor de grupo; `null` na renderização read-only. */
+  EditControls: ComponentType<TokenTableEditControlsProps> | null;
+}
+
 /**
  * Bloco de tabela de design tokens: nó atômico que guarda só o grupo
  * (`color.brand`; `""` = todos — SYS-137). A forma persistida está em
@@ -19,22 +36,6 @@ import { TokenGroup } from '../tokens/TokenGroup.js';
  * O seletor de grupo (SYS-138) é injetado pelo editor via a opção
  * `EditControls`, como no `component-embed`.
  */
-/** O que o seletor de grupo do editor precisa saber (SYS-138). */
-export interface TokenTableEditControlsProps {
-  group: string;
-  /** Grupos disponíveis (`tokenGroups`), vazio enquanto carrega ou sem tokens. */
-  groups: readonly string[];
-  /** `false` sem nenhum token publicado ou com erro de leitura. */
-  hasTokens: boolean;
-  loading: boolean;
-  onSelect: (group: string) => void;
-}
-
-export interface TokenTableOptions {
-  /** Seletor de grupo; `null` na renderização read-only. */
-  EditControls: ComponentType<TokenTableEditControlsProps> | null;
-}
-
 function TokenTableView({ node, updateAttributes, editor, extension }: NodeViewProps) {
   const group = node.attrs.group as string;
   const query = useTokens();
@@ -50,8 +51,7 @@ function TokenTableView({ node, updateAttributes, editor, extension }: NodeViewP
         <EditControls
           group={group}
           groups={set ? tokenGroups(set.tokens) : []}
-          hasTokens={!!set}
-          loading={query.isLoading}
+          status={query.isLoading ? 'loading' : query.isError ? 'error' : set ? 'available' : 'none'}
           onSelect={(next) => updateAttributes({ group: next })}
         />
       </div>
