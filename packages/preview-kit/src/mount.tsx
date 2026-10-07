@@ -1,10 +1,25 @@
 import type { ComponentType } from 'react';
 import { createRoot } from 'react-dom/client';
-import type { PreviewConfig, PreviewUpdatePropsMessage } from '@systembook/schema';
+import type {
+  PreviewConfig,
+  PreviewMessage,
+  PreviewSetTokensMessage,
+  PreviewUpdatePropsMessage,
+  TokenModeAttribute,
+} from '@systembook/schema';
 
 /** Valor de `type` das mensagens de atualização de props (contrato em @systembook/schema). */
 export const UPDATE_PROPS_MESSAGE_TYPE: PreviewUpdatePropsMessage['type'] =
   'systembook:update-props';
+
+/** Valor de `type` da mensagem de design tokens (contrato em @systembook/schema). */
+export const SET_TOKENS_MESSAGE_TYPE: PreviewSetTokensMessage['type'] = 'systembook:set-tokens';
+
+/** Atributo do `<html>` com o modo ativo — o dos seletores de `tokensToCss`. */
+const TOKEN_MODE_ATTRIBUTE: TokenModeAttribute = 'data-mode';
+
+/** Marca o `<style>` das variáveis, para a próxima mensagem trocar o mesmo. */
+const TOKENS_STYLE_ATTRIBUTE = 'data-systembook-tokens';
 
 export interface MountOptions {
   /** Variante inicial a renderizar — deve casar com um `id` de `config.variants`. */
@@ -29,21 +44,55 @@ function resolveAllowedOrigin(explicit: string | undefined): string {
   return window.location.origin;
 }
 
-function isUpdatePropsMessage(data: unknown): data is PreviewUpdatePropsMessage {
-  if (typeof data !== 'object' || data === null) return false;
+function parsePreviewMessage(data: unknown): PreviewMessage | null {
+  if (typeof data !== 'object' || data === null) return null;
   const candidate = data as Record<string, unknown>;
-  return (
+  if (
     candidate.type === UPDATE_PROPS_MESSAGE_TYPE &&
     typeof candidate.props === 'object' &&
     candidate.props !== null
-  );
+  ) {
+    return candidate as unknown as PreviewUpdatePropsMessage;
+  }
+  if (
+    candidate.type === SET_TOKENS_MESSAGE_TYPE &&
+    typeof candidate.css === 'string' &&
+    typeof candidate.mode === 'string'
+  ) {
+    return candidate as unknown as PreviewSetTokensMessage;
+  }
+  return null;
+}
+
+/**
+ * Aplica os tokens no documento do iframe: um `<style>` só no `<head>` (o
+ * conteúdo é trocado a cada mensagem, via `textContent` — nada é lido como
+ * HTML) e o modo no `<html>`, onde os seletores `[data-mode]` o encontram.
+ */
+function applyTokens({ css, mode }: PreviewSetTokensMessage) {
+  let style = document.head.querySelector<HTMLStyleElement>(`style[${TOKENS_STYLE_ATTRIBUTE}]`);
+  if (!style) {
+    style = document.createElement('style');
+    style.setAttribute(TOKENS_STYLE_ATTRIBUTE, '');
+    document.head.appendChild(style);
+  }
+  if (style.textContent !== css) style.textContent = css;
+  document.documentElement.setAttribute(TOKEN_MODE_ATTRIBUTE, mode);
+}
+
+/** O artefato do connector tem um `mount()` por documento: o que ele aplicou, ele limpa. */
+function removeTokens() {
+  document.head.querySelector(`style[${TOKENS_STYLE_ATTRIBUTE}]`)?.remove();
+  document.documentElement.removeAttribute(TOKEN_MODE_ATTRIBUTE);
 }
 
 /**
  * Monta o preview de uma variante dentro de `rootElement` e fica escutando
- * mensagens `systembook:update-props` do pai para re-renderizar o componente
- * com props mescladas — é o runtime que o connector bundla no artefato (TASK-41)
- * e que o painel de controles do admin dirige via postMessage (TASK-49).
+ * mensagens do pai: `systembook:update-props` re-renderiza o componente com
+ * props mescladas, e `systembook:set-tokens` aplica as variáveis CSS dos
+ * design tokens e o modo ativo (SYS-147) — é o runtime que o connector bundla
+ * no artefato (TASK-41) e que o painel de controles do admin dirige via
+ * postMessage (TASK-49).
  */
 export function mount(
   rootElement: HTMLElement,
@@ -69,14 +118,19 @@ export function mount(
   const allowedOrigin = resolveAllowedOrigin(options.allowedOrigin);
 
   const onMessage = (event: MessageEvent) => {
-    if (!isUpdatePropsMessage(event.data)) return;
+    const message = parsePreviewMessage(event.data);
+    if (!message) return;
     if (event.origin !== allowedOrigin) {
       console.warn(
-        `[preview-kit] mensagem systembook:update-props ignorada — origin "${event.origin}" não é a permitida ("${allowedOrigin}")`,
+        `[preview-kit] mensagem ${message.type} ignorada — origin "${event.origin}" não é a permitida ("${allowedOrigin}")`,
       );
       return;
     }
-    currentProps = { ...currentProps, ...event.data.props };
+    if (message.type === SET_TOKENS_MESSAGE_TYPE) {
+      applyTokens(message);
+      return;
+    }
+    currentProps = { ...currentProps, ...message.props };
     root.render(<Component {...currentProps} />);
   };
 
@@ -86,6 +140,7 @@ export function mount(
   return {
     unmount() {
       window.removeEventListener('message', onMessage);
+      removeTokens();
       root.unmount();
     },
   };

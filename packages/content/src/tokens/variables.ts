@@ -1,4 +1,4 @@
-import type { Token, TokenSet } from '@systembook/schema';
+import type { Token, TokenModeAttribute, TokenSet } from '@systembook/schema';
 import { cssString, toCssValue, typographyProperties } from './css.js';
 import { toCssVar } from './names.js';
 
@@ -15,8 +15,8 @@ import { toCssVar } from './names.js';
  * nunca herdar o valor do modo de fora.
  */
 
-/** Atributo que escolhe o modo dos tokens num elemento. */
-export const TOKEN_MODE_ATTRIBUTE = 'data-mode';
+/** Atributo que escolhe o modo dos tokens num elemento; o preview-kit o põe no `<html>`. */
+export const TOKEN_MODE_ATTRIBUTE: TokenModeAttribute = 'data-mode';
 
 export function tokenModeSelector(mode: string): string {
   return `[${TOKEN_MODE_ATTRIBUTE}=${cssString(mode)}]`;

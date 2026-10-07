@@ -158,7 +158,7 @@ Para o passo a passo do pipeline de CI (build + upload por variante), veja
 instância, instalar o conector, primeiro login), veja o
 [guia de setup](./setup.md).
 
-## Contrato `postMessage` (`systembook:update-props`)
+## Contrato `postMessage`
 
 Isto interessa a quem quiser **entender ou estender** o comportamento de runtime —
 por exemplo, construir uma UI de controles customizada em vez do painel padrão do
@@ -182,6 +182,32 @@ de controles do admin (TASK-49) envia:
 - **`props`** é um objeto **parcial** — o `preview-kit` faz o **merge** dessas
   props sobre as props atuais do componente e re-renderiza. Só as props presentes
   na mensagem mudam; as demais são preservadas.
+
+### Design tokens (`systembook:set-tokens`)
+
+Quando a instância tem design tokens publicados, a doc envia ao iframe as
+variáveis CSS de todos os modos e o modo ativo:
+
+```ts
+{
+  type: 'systembook:set-tokens',
+  css: ':root, [data-mode="light"] { --color-bg: #fff; … } [data-mode="dark"] { … }',
+  mode: 'dark'
+}
+```
+
+O `preview-kit` põe o `css` num `<style data-systembook-tokens>` do `<head>`
+(trocado a cada mensagem) e o `mode` no atributo `data-mode` do `<html>`. Para o
+componente reagir à troca de modo, basta ler as variáveis — `var(--color-bg)` —
+com os nomes da coluna "Variável CSS" da doc de tokens ([`docs/tokens.md`](./tokens.md)).
+O literal do `type` é exportado como `SET_TOKENS_MESSAGE_TYPE`; o tipo,
+`PreviewSetTokensMessage`, vem de `@systembook/schema`. Sem tokens publicados nada
+é enviado e o preview fica como antes.
+
+O iframe não guarda os tokens entre cargas nem avisa quando está pronto: quem
+embeda envia a mensagem no `load` do iframe, de novo a cada recarga e a cada
+troca de modo. O `css` é aplicado como está — um `url()` nele faz requisições a
+partir do iframe —, por isso a mensagem passa pela mesma checagem de origin abaixo.
 
 ### Segurança de origin
 
