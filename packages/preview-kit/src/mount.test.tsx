@@ -2,7 +2,7 @@
 import { act } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PreviewConfig } from '@systembook/schema';
-import { mount, UPDATE_PROPS_MESSAGE_TYPE, type PreviewHandle } from './mount.js';
+import { mount, SET_TOKENS_MESSAGE_TYPE, UPDATE_PROPS_MESSAGE_TYPE, type PreviewHandle } from './mount.js';
 
 (globalThis as Record<string, unknown>).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -36,6 +36,14 @@ function dispatchUpdateProps(props: Record<string, unknown>, origin: string) {
     }),
   );
 }
+
+function dispatchSetTokens(data: Record<string, unknown>, origin: string) {
+  window.dispatchEvent(new MessageEvent('message', { data: { type: SET_TOKENS_MESSAGE_TYPE, ...data }, origin }));
+}
+
+const TOKENS_CSS = ':root, [data-mode="light"] {\n  --bg: #fff;\n}\n\n[data-mode="dark"] {\n  --bg: #000;\n}';
+
+const tokenStyles = () => document.head.querySelectorAll('style[data-systembook-tokens]');
 
 describe('preview-kit mount()', () => {
   let container: HTMLElement;
@@ -177,5 +185,58 @@ describe('preview-kit mount()', () => {
       dispatchUpdateProps({ children: 'Depois' }, PARENT_ORIGIN);
     });
     expect(container.textContent).toBe('');
+  });
+
+  describe('systembook:set-tokens', () => {
+    beforeEach(async () => {
+      await act(async () => {
+        handle = mount(container, config, SampleButton, { variantId: 'primary', allowedOrigin: PARENT_ORIGIN });
+      });
+    });
+
+    it('injeta as variáveis num <style> e põe o modo no <html>', async () => {
+      await act(async () => dispatchSetTokens({ css: TOKENS_CSS, mode: 'light' }, PARENT_ORIGIN));
+
+      expect(tokenStyles()).toHaveLength(1);
+      expect(tokenStyles()[0]?.textContent).toBe(TOKENS_CSS);
+      expect(document.documentElement.getAttribute('data-mode')).toBe('light');
+      // O componente segue montado: os tokens não re-renderizam nada.
+      expect(container.querySelector('button')?.textContent).toBe('Salvar');
+    });
+
+    it('trocar de modo troca o atributo e reaproveita o mesmo <style>', async () => {
+      await act(async () => dispatchSetTokens({ css: TOKENS_CSS, mode: 'light' }, PARENT_ORIGIN));
+      await act(async () => dispatchSetTokens({ css: TOKENS_CSS, mode: 'dark' }, PARENT_ORIGIN));
+
+      expect(tokenStyles()).toHaveLength(1);
+      expect(document.documentElement.getAttribute('data-mode')).toBe('dark');
+
+      await act(async () => dispatchSetTokens({ css: '[data-mode="dark"] { --bg: #111; }', mode: 'dark' }, PARENT_ORIGIN));
+      expect(tokenStyles()).toHaveLength(1);
+      expect(tokenStyles()[0]?.textContent).toContain('#111');
+    });
+
+    it('origin não permitida e shape estranho não aplicam nada', async () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      await act(async () => {
+        dispatchSetTokens({ css: TOKENS_CSS, mode: 'dark' }, 'https://malicioso.example');
+        dispatchSetTokens({ css: 42, mode: 'dark' }, PARENT_ORIGIN);
+        dispatchSetTokens({ css: TOKENS_CSS }, PARENT_ORIGIN);
+      });
+
+      expect(tokenStyles()).toHaveLength(0);
+      expect(document.documentElement.hasAttribute('data-mode')).toBe(false);
+      expect(warn).toHaveBeenCalledOnce();
+      expect(warn.mock.calls[0]?.[0]).toContain('systembook:set-tokens');
+    });
+
+    it('unmount() remove o <style> e o modo', async () => {
+      await act(async () => dispatchSetTokens({ css: TOKENS_CSS, mode: 'dark' }, PARENT_ORIGIN));
+      await act(async () => handle!.unmount());
+      handle = undefined;
+
+      expect(tokenStyles()).toHaveLength(0);
+      expect(document.documentElement.hasAttribute('data-mode')).toBe(false);
+    });
   });
 });
