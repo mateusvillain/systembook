@@ -85,11 +85,13 @@ describe('uploadTokens (TASK-44)', () => {
     const caller = callerFor(db, admin);
     const tokens = await caller.uploadTokens.create({ label: 'Tokens CI', escopo: 'tokens' });
     const ci = await caller.uploadTokens.create({ label: 'Previews CI' });
+    const migration = await caller.uploadTokens.create({ label: 'Export', escopo: 'migration' });
     expect(tokens.escopo).toBe('tokens');
     expect(findActiveUploadToken(db, tokens.token, 'tokens')?.criadoPor).toBe(admin.userId);
     expect(findActiveUploadToken(db, tokens.token, 'previews')).toBeNull();
     expect(findActiveUploadToken(db, tokens.token, 'migration')).toBeNull();
     expect(findActiveUploadToken(db, ci.token, 'tokens')).toBeNull();
+    expect(findActiveUploadToken(db, migration.token, 'tokens')).toBeNull();
     const listed = await caller.uploadTokens.list();
     expect(listed.find((t) => t.label === 'Tokens CI')?.escopo).toBe('tokens');
   });

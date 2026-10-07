@@ -56,7 +56,7 @@ export function UploadTokens() {
   return (
     <section className="grid gap-6">
       <div className="grid gap-1">
-        <h1 className="text-2xl font-semibold">Tokens</h1>
+        <h1 className="text-2xl font-semibold">Upload tokens</h1>
         <p className="text-muted-foreground text-sm">
           Each token does one thing. <strong>Preview upload</strong> tokens authenticate the team CI
           when uploading preview artifacts (<code>POST /api/previews</code>).{' '}

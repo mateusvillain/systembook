@@ -21,8 +21,9 @@ export function hashUploadToken(token: string): string {
 export type UploadTokenRow = typeof uploadTokens.$inferSelect;
 
 /**
- * Resolve um token bruto (header Authorization do POST /api/previews,
- * TASK-43, ou das rotas de migração, SYS-110) para a linha ativa do escopo
+ * Resolve um token bruto (header Authorization das rotas de upload e de
+ * migração: POST /api/previews, TASK-43; export/import, SYS-110; e o upload
+ * de design tokens, SYS-142) para a linha ativa do escopo
  * pedido — null se desconhecido, revogado ou de outro escopo. Nunca logar o
  * token recebido, nem em caso de erro.
  */

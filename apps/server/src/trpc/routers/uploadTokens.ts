@@ -7,8 +7,9 @@ import { adminProcedure, router } from '../init.js';
 
 /**
  * Gestão de tokens de upload (TASK-44) — tudo adminProcedure de propósito:
- * um token dá escrita no conteúdo público de preview a partir de um processo
- * externo (CI), então editor não gerencia tokens (nota do spec).
+ * um token dá escrita em conteúdo público (previews, design tokens) ou no
+ * conteúdo inteiro (migração) a partir de um processo externo, então editor
+ * não gerencia tokens (nota do spec).
  */
 export const uploadTokensRouter = router({
   // Nunca expõe token_hash — só metadados.
