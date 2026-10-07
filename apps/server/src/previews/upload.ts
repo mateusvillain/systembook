@@ -9,6 +9,7 @@ import * as tar from 'tar';
 import { findActiveUploadToken, parseBearer } from '../auth/uploadTokens.js';
 import type { Db } from '../db/client.js';
 import { insertComponentPreview } from '../db/componentPreviews.js';
+import { sendJson } from '../http/json.js';
 import { isSafeSegment, resolvePreviewPath } from './paths.js';
 
 /**
@@ -36,11 +37,6 @@ const DEFAULT_MAX_ARTIFACT_BYTES = 50 * 1024 * 1024;
 
 const REQUIRED_FIELDS = ['component_name', 'variant_id', 'commit_sha'] as const;
 type FieldName = (typeof REQUIRED_FIELDS)[number];
-
-function sendJson(res: ServerResponse, status: number, body: unknown): void {
-  res.writeHead(status, { 'content-type': 'application/json' });
-  res.end(JSON.stringify(body));
-}
 
 export async function handlePreviewUpload(
   req: IncomingMessage,

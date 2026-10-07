@@ -12,8 +12,9 @@ export const tokensRouter = router({
   /**
    * O último conjunto publicado (`getLatestTokenSet`), ou `null` sem nenhum
    * token — a regra do contrato: conjunto vazio não existe, para CMS e
-   * estático esconderem o mesmo (`nonEmptyTokenSet`). Uma linha ilegível vira erro da query, que a doc
-   * mostra como aviso no lugar dos tokens, sem derrubar a página.
+   * estático esconderem o mesmo (`nonEmptyTokenSet`). Uma linha ilegível
+   * vira erro da query, que a doc mostra como aviso no lugar dos tokens, sem
+   * derrubar a página.
    */
   getLatest: publicProcedure.query(({ ctx }): TokenSet | null =>
     nonEmptyTokenSet(getLatestTokenSet(ctx.db)?.tokenSet),

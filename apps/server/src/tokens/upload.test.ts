@@ -124,5 +124,31 @@ describe('POST /api/tokens (SYS-142)', () => {
     await startServer({ maxBodyBytes: 64 });
     const big = await post(token, { commitSha: 'x', sources: [{ file: 'a.json', content: BASE.repeat(4) }] });
     expect(big.status).toBe(413);
+
+    // Sem content-length (streaming): o corpo é lido até o fim e o 413 chega, sem a conexão cair.
+    const chunks = [JSON.stringify({ commitSha: 'x', sources: [{ file: 'a.json', content: BASE.repeat(40) }] })];
+    const streamed = await fetch(`${baseUrl}/api/tokens`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+      body: new ReadableStream({
+        pull(controller) {
+          const next = chunks.shift();
+          if (next) controller.enqueue(new TextEncoder().encode(next));
+          else controller.close();
+        },
+      }),
+      duplex: 'half',
+    } as RequestInit);
+    expect(streamed.status).toBe(413);
+    expect(db.select().from(tokenSets).all()).toEqual([]);
+  });
+
+  it('upload válido sem nenhum token grava e tira os tokens da doc', async () => {
+    const token = tokenFor('tokens');
+    await post(token, { commitSha: 'a', sources: [{ file: 'a.json', content: BASE }] });
+    const res = await post(token, { commitSha: 'b', sources: [{ file: 'a.json', content: '{}' }] });
+    expect(res.status).toBe(201);
+    expect(await res.json()).toMatchObject({ commitSha: 'b', tokens: 0 });
+    expect(getLatestTokenSet(db)?.tokenSet.tokens).toEqual([]);
   });
 });
