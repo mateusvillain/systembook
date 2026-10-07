@@ -53,7 +53,8 @@ export function tokenSections(tokens: readonly Token[]): TokenSection[] {
   const sections = new Map<string, Token[]>();
   tokens.forEach((token, i) => {
     const segments = paths[i]!;
-    const group = segments.slice(0, segments.length > common.length + 1 ? common.length + 1 : common.length).join('.');
+    // Um nível abaixo do prefixo, sem passar do grupo do próprio token.
+    const group = segments.slice(0, Math.min(common.length + 1, segments.length - 1)).join('.');
     const section = sections.get(group);
     if (section) section.push(token);
     else sections.set(group, [token]);

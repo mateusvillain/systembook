@@ -429,6 +429,15 @@ describe('página Tokens gerada (SYS-140)', () => {
     expect(container.querySelector('[data-testid=public-not-found]')).not.toBeNull();
   });
 
+  it('com tokens e nenhuma página publicada, o link existe no header e no drawer', async () => {
+    vi.spyOn(dataSource, 'getTokens').mockResolvedValue(TOKENS);
+    vi.spyOn(dataSource, 'getNavTree').mockResolvedValue([]);
+    await render(<StaticSite at="/meu-repo/" />);
+    await settle();
+    expect(hrefs('.sb-public-menunav-header a')).toEqual(['/meu-repo/tokens']);
+    expect(hrefs('.sb-public-menunav-drawer a')).toEqual(['/meu-repo/tokens']);
+  });
+
   it('com tokens: link no header e a página com uma seção por grupo', async () => {
     vi.spyOn(dataSource, 'getTokens').mockResolvedValue(TOKENS);
     await render(<CmsSite at="/docs/tokens" />);

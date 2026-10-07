@@ -1,11 +1,11 @@
 import type { RouteObject } from 'react-router-dom';
+import { TOKENS_SEGMENT } from '@systembook/content/site';
 import { DocsRoutesProvider } from './docsRoutes.js';
 import { LegacyDocsRedirect } from './LegacyDocsRedirect.js';
 import { PublicHome } from './PublicHome.js';
 import { PublicLayout } from './PublicLayout.js';
 import { PublicPageView } from './PublicPageView.js';
 import { PublicTokensPage } from './PublicTokensPage.js';
-import { TOKENS_SEGMENT } from '@systembook/content/site';
 
 /**
  * Árvore de rotas da doc pública montada sob `prefix` (SYS-91): `/docs` no

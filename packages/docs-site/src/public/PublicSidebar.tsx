@@ -71,6 +71,8 @@ export function PublicSidebar({
         aria-label="Documentation navigation"
       >
         <PublicBrand onNavigate={onNavigate} />
+        {/* Sem páginas ainda pode haver a página Tokens (SYS-140). */}
+        <PublicMenuNav tree={tree} className="sb-public-menunav-drawer" onNavigate={onNavigate} />
         <p className="sb-public-empty">No pages published yet.</p>
       </nav>
     );
