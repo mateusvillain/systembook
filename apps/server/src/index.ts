@@ -14,6 +14,7 @@ import { seedBootstrapAdmin } from './db/seed.js';
 import { appRouter } from './trpc/router.js';
 import { createContext } from './trpc/context.js';
 import { handlePreviewUpload } from './previews/upload.js';
+import { handleTokensUpload } from './tokens/upload.js';
 import { handlePreviewRequest, PREVIEWS_URL_PREFIX } from './previews/serve.js';
 import { handleLogoRequest, parseLogoPath } from './logo/serve.js';
 import { handleMediaRequest, parseMediaPath } from './media/serve.js';
@@ -61,6 +62,12 @@ const server = createServer((req, res) => {
   // propósito: multipart + auth por token de upload, não sessão.
   if (url.pathname === '/api/previews' && req.method === 'POST') {
     void handlePreviewUpload(req, res, { db, previewsRoot: env.PREVIEWS_PATH });
+    return;
+  }
+
+  // Design tokens pelo CI (SYS-142): JSON + token de upload de escopo `tokens`.
+  if (url.pathname === '/api/tokens' && req.method === 'POST') {
+    void handleTokensUpload(req, res, { db });
     return;
   }
 

@@ -19,12 +19,18 @@ COPY packages/cli/package.json packages/cli/
 RUN pnpm install --frozen-lockfile
 
 COPY . .
-RUN pnpm --filter @systembook/server build \
+# @systembook/content roda no server (validação do upload de tokens, SYS-142):
+# compila para dist/ antes do deploy.
+RUN pnpm --filter @systembook/content build \
+ && pnpm --filter @systembook/server build \
  && pnpm --filter @systembook/admin build \
  # pnpm deploy produz uma pasta autossuficiente (node_modules de produção,
  # sem symlinks de workspace) pronta para copiar ao estágio final
- # --legacy: sem injeção de workspace — ok, @systembook/schema é types-only
- && pnpm --filter @systembook/server --prod deploy --legacy /deploy/server
+ # --legacy: sem injeção de workspace
+ && pnpm --filter @systembook/server --prod deploy --legacy /deploy/server \
+ # O deploy copia os pacotes do workspace com o exports apontando para src/
+ # (TypeScript); isto aplica o publishConfig (dist/), como o pnpm pack faria.
+ && node scripts/apply-publish-config.mjs /deploy/server
 
 # ---------- runner: imagem final enxuta ----------
 FROM node:24-slim AS runner

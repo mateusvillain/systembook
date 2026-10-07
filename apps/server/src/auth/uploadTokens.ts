@@ -21,25 +21,27 @@ export function hashUploadToken(token: string): string {
 export type UploadTokenRow = typeof uploadTokens.$inferSelect;
 
 /**
- * Resolve um token bruto (header Authorization das rotas de upload e de
- * migração: POST /api/previews, TASK-43; export/import, SYS-110; e o upload
- * de design tokens, SYS-142) para a linha ativa do escopo
- * pedido — null se desconhecido, revogado ou de outro escopo. Nunca logar o
- * token recebido, nem em caso de erro.
+ * A linha ativa de um token bruto (header Authorization das rotas de upload e
+ * de migração), qualquer que seja o escopo — `null` se desconhecido ou
+ * revogado. Nunca logar o token recebido, nem em caso de erro.
  */
-export function findActiveUploadToken(db: Db, rawToken: string, escopo: TokenScope): UploadTokenRow | null {
+export function activeUploadToken(db: Db, rawToken: string): UploadTokenRow | null {
   const row = db
     .select()
     .from(uploadTokens)
-    .where(
-      and(
-        eq(uploadTokens.tokenHash, hashUploadToken(rawToken)),
-        eq(uploadTokens.escopo, escopo),
-        isNull(uploadTokens.revogadoEm),
-      ),
-    )
+    .where(and(eq(uploadTokens.tokenHash, hashUploadToken(rawToken)), isNull(uploadTokens.revogadoEm)))
     .get();
   return row ?? null;
+}
+
+/**
+ * O token ativo **do escopo pedido** (POST /api/previews, TASK-43;
+ * export/import, SYS-110) — `null` também quando é de outro escopo. O upload
+ * de tokens (SYS-142) usa `activeUploadToken` para separar 401 de 403.
+ */
+export function findActiveUploadToken(db: Db, rawToken: string, escopo: TokenScope): UploadTokenRow | null {
+  const row = activeUploadToken(db, rawToken);
+  return row?.escopo === escopo ? row : null;
 }
 
 /** O token do header `Authorization: Bearer …`, ou `null`. */
