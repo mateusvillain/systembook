@@ -23,3 +23,4 @@ export {
   type ValidatedTokens,
 } from './types.js';
 export { isTokenType, TOKEN_TYPES, validateTokens } from './validate.js';
+export { TOKEN_MODE_ATTRIBUTE, tokenModeSelector, tokensToCss } from './variables.js';

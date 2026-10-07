@@ -28,18 +28,23 @@ function color(v: TokenValue): string | null {
   return typeof v.hex === 'string' ? v.hex : null;
 }
 
+/** Zero sem unidade só vale em comprimento: `<time>` exige `0ms`. */
 function measure(v: TokenValue, unit: 'px' | 'ms'): string | null {
   if (typeof v === 'string') return v;
-  if (isNumber(v)) return v === 0 ? '0' : `${num(v)}${unit}`;
+  if (isNumber(v)) return v === 0 && unit === 'px' ? '0' : `${num(v)}${unit}`;
   if (isObject(v) && isNumber(v.value) && typeof v.unit === 'string') return `${num(v.value)}${v.unit}`;
   return null;
 }
+
+/** Texto como string CSS entre aspas: aspas, barra e quebras de linha escapadas. */
+export const cssString = (text: string) =>
+  `"${text.replace(/["\\]/g, '\\$&').replace(/\n/g, '\\a ').replace(/\r/g, '\\d ')}"`;
 
 /** Nome de família com espaço vai entre aspas; genéricas (`sans-serif`) não. */
 function fontFamily(v: TokenValue): string | null {
   const list = typeof v === 'string' ? [v] : Array.isArray(v) ? v : null;
   if (!list?.every((f): f is string => typeof f === 'string')) return null;
-  return list.map((f) => (/^[\w-]+$/.test(f) ? f : `"${f.replace(/"/g, '\\"')}"`)).join(', ');
+  return list.map((f) => (/^[\w-]+$/.test(f) ? f : cssString(f))).join(', ');
 }
 
 function fontWeight(v: TokenValue): string | null {
@@ -127,11 +132,28 @@ export function typographyStyle(value: TokenValue): TypographyStyle {
   return style;
 }
 
-/** `font` não carrega `letter-spacing`: a amostra e o fallback usam os campos um a um. */
+/**
+ * `font` não carrega `letter-spacing`: a amostra e o fallback usam os campos um
+ * a um, e o preview ganha uma variável por campo (`typographyProperties`).
+ * Tamanho e família são obrigatórios no `font`; peso e altura de linha podem
+ * faltar, mas um campo presente que não converte torna o todo `null`.
+ */
 function typography(v: TokenValue): string | null {
+  if (!isObject(v)) return null;
   const s = typographyStyle(v);
-  const size = s.fontSize && s.lineHeight ? `${s.fontSize}/${s.lineHeight}` : null;
-  return join([s.fontWeight ?? null, size, s.fontFamily ?? null]);
+  const invalid = TYPOGRAPHY_FIELDS.some(([field]) => v[field] !== undefined && s[field as keyof TypographyStyle] === undefined);
+  if (invalid || !s.fontSize || !s.fontFamily) return null;
+  const size = s.lineHeight ? `${s.fontSize}/${s.lineHeight}` : s.fontSize;
+  return join([s.fontWeight ?? '', size, s.fontFamily])!.trim();
+}
+
+/** Os campos de uma tipografia que convertem, como pares propriedade CSS → valor. */
+export function typographyProperties(value: TokenValue): [property: string, css: string][] {
+  const style = typographyStyle(value);
+  return TYPOGRAPHY_FIELDS.flatMap(([field, property]) => {
+    const css = style[field as keyof TypographyStyle];
+    return css === undefined ? [] : [[property, css] as [string, string]];
+  });
 }
 
 const CONVERT: Record<TokenType, (v: TokenValue) => string | null> = {
