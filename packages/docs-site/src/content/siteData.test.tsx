@@ -5,7 +5,7 @@ import { getSchema } from '@tiptap/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, useRoutes } from 'react-router-dom';
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { BlockType, PageSnapshot, StaticSiteData } from '@systembook/schema';
+import type { BlockType, PageSnapshot, StaticSiteData, Token, TokenSet } from '@systembook/schema';
 import { buildContentTree, buildSiteData, siteDataFiles, STATIC_DATA_DIR } from '@systembook/content';
 import { createStaticDataSource } from '../static/staticDataSource.js';
 import { fsFetch, writeSiteDataDir } from '../../test/fsFetch.js';
@@ -39,14 +39,31 @@ const FILES: Record<string, string> = {
       '<DosDonts variant="do" title="Verbo" coverComponent="Button" coverVariant="primary">\n  Use <u>verbos</u>.\n</DosDonts>',
       '<DosDonts variant="dont" coverImage="./dont.png" coverAlt="Errado">\n  Sem verbo.\n</DosDonts>',
       '<TokenTable group="color.brand" />',
+      '<TokenTable group="color.nope" />',
     ].join('\n\n'),
   ),
+};
+
+const token = (path: string, type: Token['type'], value: string): Token => ({
+  path,
+  type,
+  byMode: { light: { value, resolvedValue: value }, dark: { value, resolvedValue: value } },
+});
+const TOKENS: TokenSet = {
+  modes: ['light', 'dark'],
+  tokens: [
+    token('color.brand.primary', 'color', '#4f46e5'),
+    token('color.brand.duration', 'duration', '200ms'),
+    token('color.brand.space', 'dimension', '8px'),
+    token('color.neutral', 'color', '#64748b'),
+  ],
 };
 
 const tree = buildContentTree(Object.entries(FILES).map(([path, source]) => ({ path, source })));
 const { data, diagnostics } = buildSiteData(tree, {
   settings: { nomeDesignSystem: 'Acme DS', logoUrl: null, logoDarkUrl: null },
   base: '/',
+  tokens: TOKENS,
 });
 
 function snapshots(site: StaticSiteData): [string, PageSnapshot][] {
@@ -177,6 +194,22 @@ describe('doc pública sobre os dados gerados', () => {
     expect([...container.querySelectorAll('.sb-public-content img')].map((i) => i.getAttribute('src'))).toEqual([
       '/components/actions/dont.png',
     ]);
+  });
+
+  it('bloco token-table: o grupo com o renderer de cada tipo; grupo sem tokens vira aviso', async () => {
+    await render('/components/actions/button', '.sb-token-block[data-state=ready]');
+    const [ready, empty] = [...container.querySelectorAll<HTMLElement>('.sb-token-block')];
+    expect(ready!.dataset.group).toBe('color.brand');
+    // cor (swatch), dimensão (barra) e o fallback, cada um na sua tabela, na ordem do primeiro token
+    expect([...ready!.querySelectorAll('table')].map((t) => t.getAttribute('aria-label'))).toEqual([
+      'color.brand (color)',
+      'color.brand (duration)',
+      'color.brand (dimension)',
+    ]);
+    expect(ready!.querySelector('.sb-token-color')).not.toBeNull();
+    expect(ready!.textContent).not.toContain('color.neutral');
+    expect(empty!.dataset.state).toBe('empty');
+    expect(empty!.textContent).toBe('No tokens in group color.nope.');
   });
 
   it('a tab abre pela URL', async () => {

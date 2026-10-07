@@ -893,3 +893,26 @@
   background: var(--sb-card, #ffffff);
   box-shadow: var(--sb-token-shadow);
 }
+
+/* Bloco token-table (SYS-139): as tabelas vêm dos renderers acima; aqui só o
+   aviso de carregando/sem tokens, com a cara do embed sem preview (âmbar). */
+.sb-token-block {
+  margin: 0.75rem 0;
+}
+
+.sb-token-block--notice {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid var(--sb-border, #e2e4e8);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  color: var(--sb-fg-muted, #59636e);
+  background: var(--sb-surface, #fafafa);
+}
+
+.sb-token-block--notice[data-state='empty'] {
+  border-color: #e8b04a;
+  background: #fdf6e7;
+  color: #7a5a12;
+}

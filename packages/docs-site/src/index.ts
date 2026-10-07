@@ -22,6 +22,7 @@ export {
   usePublicSearch,
   usePublicSettings,
   useResolvedPath,
+  useTokens,
 } from './content/docsQueries.js';
 
 export { createStaticDataSource, type StaticDataSourceOptions } from './static/staticDataSource.js';
@@ -59,6 +60,7 @@ export { ColorTokens } from './content/tokens/ColorTokens.js';
 export { TypographyTokens } from './content/tokens/TypographyTokens.js';
 export { DimensionTokens } from './content/tokens/DimensionTokens.js';
 export { ShadowTokens } from './content/tokens/ShadowTokens.js';
+export { TokenGroup, type TokenGroupProps } from './content/tokens/TokenGroup.js';
 
 // Doc pública
 export { PageRenderer, BODY_VIEW_LABEL, bodyViewLabel, type RenderableSnapshot } from './public/PageRenderer.js';
