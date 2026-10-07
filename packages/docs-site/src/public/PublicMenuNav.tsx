@@ -1,5 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import type { PublicNavTree } from '@systembook/schema';
+import { TOKENS_SEGMENT } from '@systembook/content/site';
+import { useTokens } from '../content/docsQueries.js';
 import { useDocsPaths, type DocsPaths } from './docsRoutes.js';
 
 type PublicMenu = PublicNavTree[number];
@@ -33,8 +35,10 @@ export function menuLandingPath(menu: PublicMenu, paths: DocsPaths): string {
  */
 export function useActiveMenu(tree: PublicNavTree): PublicMenu | undefined {
   const { pathname } = useLocation();
-  const [first] = useDocsPaths().segments(pathname);
-  return tree.find((menu) => menu.slug === first);
+  const segments = useDocsPaths().segments(pathname);
+  // Um segmento só é a página Tokens (SYS-140), nunca um menu.
+  if (segments.length < 2) return undefined;
+  return tree.find((menu) => menu.slug === segments[0]);
 }
 
 /**
@@ -45,6 +49,8 @@ export function useActiveMenu(tree: PublicNavTree): PublicMenu | undefined {
  *
  * Some quando há um único menu: instâncias que nunca criaram menus caem no
  * `DEFAULT_MENU_ID`, e uma barra com um só item não oferece escolha nenhuma.
+ * Com design tokens, a página Tokens gerada (SYS-140) entra no fim da barra —
+ * e aí um menu só já é uma escolha.
  */
 export function PublicMenuNav({
   tree,
@@ -58,8 +64,12 @@ export function PublicMenuNav({
 }) {
   const activeMenu = useActiveMenu(tree);
   const paths = useDocsPaths();
+  const { pathname } = useLocation();
+  const hasTokens = !!useTokens().data;
+  const segments = paths.segments(pathname);
+  const onTokens = segments.length === 1 && segments[0] === TOKENS_SEGMENT;
 
-  if (tree.length < 2) return null;
+  if (tree.length + (hasTokens ? 1 : 0) < 2) return null;
 
   return (
     <nav className={`sb-public-menunav ${className}`} aria-label="Documentation menus">
@@ -80,6 +90,17 @@ export function PublicMenuNav({
           </NavLink>
         );
       })}
+      {hasTokens && (
+        <NavLink
+          to={paths.tokens}
+          onClick={onNavigate}
+          className="sb-public-menupill"
+          aria-current={onTokens ? 'page' : undefined}
+          data-active={onTokens || undefined}
+        >
+          Tokens
+        </NavLink>
+      )}
     </nav>
   );
 }

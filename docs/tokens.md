@@ -148,6 +148,20 @@ Essa convenção é do Systembook. A spec DTCG não define modos dentro do forma
 de token; o módulo Resolver da spec compõe conjuntos de arquivos, e é a mesma
 ideia.
 
+## Na doc
+
+Com tokens, a doc ganha uma página **Tokens** (`/tokens`, ou `/docs/tokens` no
+CMS) com todos eles, e um link para ela no header. As seções seguem os grupos
+logo abaixo do prefixo que todo token compartilha: com `acme.palette.*`,
+`acme.space.*` e `acme.primary`, as seções são `acme.palette`, `acme.space` e
+`acme` (os tokens que moram direto no prefixo). Sem tokens, a página e o link
+não existem.
+
+Para mostrar um grupo dentro de uma página, use o bloco
+[`<TokenTable>`](./static-format.md#tokentable) (no CMS, "Token table" no menu
+de blocos). Nos dois casos, cada tipo usa a amostra própria — cor, tipografia,
+dimensão, sombra — e o resto aparece numa tabela de valores.
+
 ## Nomes para copiar
 
 A doc mostra, para cada token, o caminho e dois nomes prontos para copiar:

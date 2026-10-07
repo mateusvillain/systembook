@@ -4,7 +4,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, useLocation, useRoutes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Block, DocsDataSource, PageSnapshot, PublicNavTree } from '@systembook/schema';
+import type { Block, DocsDataSource, PageSnapshot, PublicNavTree, Token, TokenSet } from '@systembook/schema';
 import { DocsDataSourceProvider } from '../content/dataSource.js';
 import { createDocsRoute } from './createDocsRoute.js';
 import { DocsRoutesProvider, useDocsPaths, type DocsPaths } from './docsRoutes.js';
@@ -402,5 +402,51 @@ describe('doc pública sob /docs (modo CMS)', () => {
       '/docs/foundation/color/palette',
       '/docs/components/actions/button',
     ]);
+  });
+});
+
+describe('página Tokens gerada (SYS-140)', () => {
+  afterEach(() => vi.restoreAllMocks());
+  const TOKENS: TokenSet = {
+    modes: ['light', 'dark'],
+    tokens: [
+      ['acme.primary', 'color', '#4f46e5'],
+      ['acme.space.1', 'dimension', '4px'],
+      ['acme.palette.indigo.500', 'color', '#6366f1'],
+    ].map(([path, type, value]) => ({
+      path: path!,
+      type: type as Token['type'],
+      byMode: { light: { value, resolvedValue: value }, dark: { value, resolvedValue: value } },
+    })),
+  };
+
+  it('sem tokens: nem link no header, nem rota', async () => {
+    await render(<StaticSite at="/meu-repo/tokens" />);
+    await settle();
+    expect(container.querySelector('.sb-public-menunav-header')?.textContent).not.toContain('Tokens');
+    expect(container.querySelector('[data-testid=public-not-found]')).not.toBeNull();
+  });
+
+  it('com tokens: link no header e a página com uma seção por grupo', async () => {
+    vi.spyOn(dataSource, 'getTokens').mockResolvedValue(TOKENS);
+    await render(<CmsSite at="/docs/tokens" />);
+    await settle();
+
+    expect(hrefs('.sb-public-menunav-header a')).toEqual([
+      '/docs/foundation/color/palette',
+      '/docs/components/actions/button',
+      '/docs/tokens',
+    ]);
+    // Só o pill de Tokens ativo: o segmento único não é menu.
+    expect(
+      [...container.querySelectorAll('.sb-public-menunav-header [data-active]')].map((a) => a.textContent),
+    ).toEqual(['Tokens']);
+    expect(container.querySelector('.sb-public-title')?.textContent).toBe('Tokens');
+    expect([...container.querySelectorAll('.sb-tokens-page h2')].map((h) => h.textContent)).toEqual([
+      'acme',
+      'acme.space',
+      'acme.palette',
+    ]);
+    expect(container.querySelectorAll('.sb-tokens-page table')).toHaveLength(3);
   });
 });

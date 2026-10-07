@@ -173,6 +173,7 @@ describe('doc pública sobre os dados gerados', () => {
     expect([...container.querySelectorAll('.sb-public-menunav-header a')].map((a) => a.textContent)).toEqual([
       'Components',
       'Foundation',
+      'Tokens',
     ]);
   });
 
@@ -210,6 +211,14 @@ describe('doc pública sobre os dados gerados', () => {
     expect(ready!.textContent).not.toContain('color.neutral');
     expect(empty!.dataset.state).toBe('empty');
     expect(empty!.textContent).toBe('No tokens in group color.nope.');
+  });
+
+  it('página Tokens gerada sobre o tokens.json do site', async () => {
+    await render('/tokens', '.sb-tokens-page table');
+    expect([...container.querySelectorAll('.sb-tokens-page h2')].map((h) => h.textContent)).toEqual([
+      'color.brand',
+      'color',
+    ]);
   });
 
   it('a tab abre pela URL', async () => {

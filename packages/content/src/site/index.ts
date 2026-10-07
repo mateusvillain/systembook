@@ -3,5 +3,5 @@
  * consulta ao índice de busca, sem as dependências do parser — é o que o
  * `staticDataSource` da doc pública importa.
  */
-export { pageKey, parsePageKey, previewKey, sitePath, STATIC_DATA_DIR, staticDataPaths } from './paths.js';
+export { pageKey, parsePageKey, previewKey, sitePath, STATIC_DATA_DIR, staticDataPaths, TOKENS_SEGMENT } from './paths.js';
 export { loadSearchIndex, querySearchIndex, type SearchIndex, type SearchIndexJson } from './search.js';

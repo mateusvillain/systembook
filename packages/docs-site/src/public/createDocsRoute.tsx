@@ -4,6 +4,8 @@ import { LegacyDocsRedirect } from './LegacyDocsRedirect.js';
 import { PublicHome } from './PublicHome.js';
 import { PublicLayout } from './PublicLayout.js';
 import { PublicPageView } from './PublicPageView.js';
+import { PublicTokensPage } from './PublicTokensPage.js';
+import { TOKENS_SEGMENT } from '@systembook/content/site';
 
 /**
  * Árvore de rotas da doc pública montada sob `prefix` (SYS-91): `/docs` no
@@ -23,6 +25,8 @@ export function createDocsRoute(prefix: string): RouteObject {
     ),
     children: [
       { index: true, element: <PublicHome /> },
+      // Página Tokens gerada (SYS-140): um segmento, não colide com página nenhuma.
+      { path: TOKENS_SEGMENT, element: <PublicTokensPage /> },
       // Forma canônica (SYS-37), com o menu na URL.
       { path: ':menuSlug/:sectionSlug/:pageSlug', element: <PublicPageView /> },
       { path: ':menuSlug/:sectionSlug/:pageSlug/:tabId', element: <PublicPageView /> },
