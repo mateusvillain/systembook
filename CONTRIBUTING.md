@@ -124,6 +124,13 @@ Por isso, ao propor mudanças em `packages/schema`:
   - o schema zod de `PreviewConfig` em `packages/connector/src/preview-config-schema.ts`;
   - `TOKEN_TYPES` em `packages/content/src/tokens/validate.ts` (runtime de
     `TokenType`; uma asserção quebra o typecheck se divergirem);
+  - os literais anotados contra o schema — `type` das mensagens do preview
+    (`UPDATE_PROPS_MESSAGE_TYPE` e `SET_TOKENS_MESSAGE_TYPE` em
+    `packages/preview-kit/src/mount.tsx`, e o primeiro de novo em
+    `packages/docs-site/src/content/ControlsPanel.tsx`) e o atributo de modo
+    `TokenModeAttribute` (`TOKEN_MODE_ATTRIBUTE` em
+    `packages/content/src/tokens/variables.ts` e em `mount.tsx`). Mudar o
+    literal no schema quebra o typecheck; tirar o tipo, não — confira à mão;
   - o mapeamento block→nó Tiptap, duplicado em
     `apps/server/src/blocks/serialize.ts` e
     `apps/admin/src/features/revisions/blocksToTiptapDoc.ts`.

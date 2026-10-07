@@ -194,6 +194,12 @@ describe('preview-kit mount()', () => {
       });
     });
 
+    it('sem a mensagem, nada de tokens no documento', () => {
+      expect(tokenStyles()).toHaveLength(0);
+      expect(document.documentElement.hasAttribute('data-mode')).toBe(false);
+      expect(container.querySelector('button')?.textContent).toBe('Salvar');
+    });
+
     it('injeta as variáveis num <style> e põe o modo no <html>', async () => {
       await act(async () => dispatchSetTokens({ css: TOKENS_CSS, mode: 'light' }, PARENT_ORIGIN));
 

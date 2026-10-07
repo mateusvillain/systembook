@@ -204,6 +204,11 @@ O literal do `type` é exportado como `SET_TOKENS_MESSAGE_TYPE`; o tipo,
 `PreviewSetTokensMessage`, vem de `@systembook/schema`. Sem tokens publicados nada
 é enviado e o preview fica como antes.
 
+O iframe não guarda os tokens entre cargas nem avisa quando está pronto: quem
+embeda envia a mensagem no `load` do iframe, de novo a cada recarga e a cada
+troca de modo. O `css` é aplicado como está — um `url()` nele faz requisições a
+partir do iframe —, por isso a mensagem passa pela mesma checagem de origin abaixo.
+
 ### Segurança de origin
 
 O `mount()` só aceita mensagens da origin esperada. A origin permitida é resolvida

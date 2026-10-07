@@ -94,3 +94,9 @@ export interface TokenSet {
   /** Tokens na ordem em que aparecem nos arquivos. */
   tokens: Token[];
 }
+
+/**
+ * Atributo que escolhe o modo dos tokens num elemento: o dos seletores que
+ * `tokensToCss` gera e o que o preview-kit põe no `<html>` do iframe.
+ */
+export type TokenModeAttribute = 'data-mode';

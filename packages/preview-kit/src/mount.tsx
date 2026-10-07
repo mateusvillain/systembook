@@ -12,7 +12,7 @@ import type {
 export const UPDATE_PROPS_MESSAGE_TYPE: PreviewUpdatePropsMessage['type'] =
   'systembook:update-props';
 
-/** Valor de `type` da mensagem de design tokens (SYS-147). */
+/** Valor de `type` da mensagem de design tokens (contrato em @systembook/schema). */
 export const SET_TOKENS_MESSAGE_TYPE: PreviewSetTokensMessage['type'] = 'systembook:set-tokens';
 
 /** Atributo do `<html>` com o modo ativo — o dos seletores de `tokensToCss`. */
@@ -44,7 +44,7 @@ function resolveAllowedOrigin(explicit: string | undefined): string {
   return window.location.origin;
 }
 
-function asPreviewMessage(data: unknown): PreviewMessage | null {
+function parsePreviewMessage(data: unknown): PreviewMessage | null {
   if (typeof data !== 'object' || data === null) return null;
   const candidate = data as Record<string, unknown>;
   if (
@@ -80,6 +80,7 @@ function applyTokens({ css, mode }: PreviewSetTokensMessage) {
   document.documentElement.setAttribute(TOKEN_MODE_ATTRIBUTE, mode);
 }
 
+/** O artefato do connector tem um `mount()` por documento: o que ele aplicou, ele limpa. */
 function removeTokens() {
   document.head.querySelector(`style[${TOKENS_STYLE_ATTRIBUTE}]`)?.remove();
   document.documentElement.removeAttribute(TOKEN_MODE_ATTRIBUTE);
@@ -117,7 +118,7 @@ export function mount(
   const allowedOrigin = resolveAllowedOrigin(options.allowedOrigin);
 
   const onMessage = (event: MessageEvent) => {
-    const message = asPreviewMessage(event.data);
+    const message = parsePreviewMessage(event.data);
     if (!message) return;
     if (event.origin !== allowedOrigin) {
       console.warn(
