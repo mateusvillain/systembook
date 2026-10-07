@@ -40,6 +40,7 @@ import { usersRouter } from './routers/users.js';
  * | revisions | getLatestPublished                               | publicProcedure (doc pública)        |
  * | componentPreviews | listComponents, listVariants             | protectedProcedure (admin + editor)  |
  * | componentPreviews | getLatest                                | publicProcedure (embed público)      |
+ * | tokens    | getLatest                                         | publicProcedure (tokens na doc)      |
  * | search    | query                                             | publicProcedure (busca pública)      |
  * | search    | structure                                         | protectedProcedure (admin + editor)  |
  * | landing   | get                                               | publicProcedure (raiz pública)       |
@@ -47,7 +48,6 @@ import { usersRouter } from './routers/users.js';
  * | uploadTokens | list, create, revoke                          | adminProcedure (só admin)            |
  * | statusTags | list, create, update, reorder, delete           | protectedProcedure (admin + editor)  |
  * | settings  | getPublic                                         | publicProcedure (identidade na doc)  |
- * | tokens    | getLatest                                         | publicProcedure (tokens na doc)      |
  * | settings  | get, setNome, uploadLogo, removeLogo              | adminProcedure (só admin)            |
  * | migration | export                                            | migrationProcedure (token migration) |
  *
