@@ -18,6 +18,7 @@ export const docsQueryKeys = {
   search: (q: string) => [...docsQueryKeys.all, 'search', q] as const,
   componentPreview: (ref: ComponentPreviewRef) =>
     [...docsQueryKeys.all, 'componentPreview', ref] as const,
+  tokens: () => [...docsQueryKeys.all, 'tokens'] as const,
 };
 
 // Uma query por leitura do `DocsDataSource`. Os componentes públicos usam
@@ -74,6 +75,12 @@ export function usePublicSearch(q: string) {
     queryFn: () => ds.search(q),
     enabled: q.length > 0,
   });
+}
+
+/** Os design tokens; `null` sem nenhum (contrato do `getTokens`). */
+export function useTokens() {
+  const ds = useDocsDataSource();
+  return useQuery({ queryKey: docsQueryKeys.tokens(), queryFn: () => ds.getTokens() });
 }
 
 /** Um embed (ou cover) só tem preview a resolver com componente **e** variante escolhidos. */

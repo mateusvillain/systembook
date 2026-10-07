@@ -1183,6 +1183,13 @@ html:has(.sb-public[data-theme='dark']:not(.sb-public--preview)) {
   color: #f4c9c6;
 }
 
+/* ---- Aviso do bloco token-table no tema escuro (SYS-139; o par do callout warning) ---- */
+.sb-public[data-theme='dark'] .sb-token-block--notice {
+  --sb-token-notice-border: #b5851f;
+  --sb-token-notice-bg: #2c2410;
+  --sb-token-notice-fg: #f4e3b6;
+}
+
 /* ---- Busca: gatilho no header + Command Palette (TASK-54, SYS-116) ---- */
 .sb-searchbox {
   margin-left: auto;
