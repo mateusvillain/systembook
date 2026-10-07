@@ -130,8 +130,10 @@ export function typographyStyle(value: TokenValue): TypographyStyle {
 /** `font` não carrega `letter-spacing`: a amostra e o fallback usam os campos um a um. */
 function typography(v: TokenValue): string | null {
   const s = typographyStyle(v);
-  const size = s.fontSize && s.lineHeight ? `${s.fontSize}/${s.lineHeight}` : null;
-  return join([s.fontWeight ?? null, size, s.fontFamily ?? null]);
+  // O `font` exige tamanho e família; peso e altura de linha são opcionais.
+  if (!s.fontSize || !s.fontFamily) return null;
+  const size = s.lineHeight ? `${s.fontSize}/${s.lineHeight}` : s.fontSize;
+  return [s.fontWeight, size, s.fontFamily].filter(Boolean).join(' ');
 }
 
 const CONVERT: Record<TokenType, (v: TokenValue) => string | null> = {

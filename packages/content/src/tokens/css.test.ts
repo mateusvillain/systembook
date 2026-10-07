@@ -62,6 +62,13 @@ describe('toCssValue', () => {
     expect(toCssValue('border', { color: '#000', width: '1px' })).toBeNull();
     expect(toCssValue('number', 'x')).toBeNull();
   });
+
+  it('tipografia: `font` só exige tamanho e família', () => {
+    expect(toCssValue('typography', { fontFamily: 'Inter', fontSize: 14 })).toBe('14px Inter');
+    expect(toCssValue('typography', { fontFamily: 'Inter', fontWeight: 500, fontSize: 14 })).toBe('500 14px Inter');
+    expect(toCssValue('typography', { fontFamily: 'Inter', lineHeight: 1.5 })).toBeNull();
+    expect(toCssValue('typography', { fontSize: 14 })).toBeNull();
+  });
 });
 
 describe('toCssLines', () => {
