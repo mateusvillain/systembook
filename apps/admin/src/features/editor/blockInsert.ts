@@ -10,6 +10,7 @@ import {
   ListOrdered,
   Pilcrow,
   Puzzle,
+  SwatchBook,
   Table as TableIcon,
   ThumbsDown,
   ThumbsUp,
@@ -154,12 +155,15 @@ export function getBlockInsertContext(editor: Editor, pos: number): BlockInsertC
  * e, no futuro, pelo menu "/" (TASK-104), que insere na posição real do
  * cursor e por isso pode de fato estar dentro de um callout/célula de tabela.
  */
+/** Blocos fora do `CALLOUT_CONTENT` e do conteúdo de célula: tabela e token-table (SYS-137). */
+const OUTSIDE_CALLOUT_AND_CELL = new Set(['table', 'tokenTable']);
+
 export function filterBlockGroupsForContext(
   groups: BlockGroup[],
   context: BlockInsertContext,
 ): BlockGroup[] {
   const isAllowed = (item: BlockItem) => {
-    if (item.id === 'table' && (context.insideCallout || context.insideTableCell)) return false;
+    if (OUTSIDE_CALLOUT_AND_CELL.has(item.id) && (context.insideCallout || context.insideTableCell)) return false;
     if (item.id.startsWith('callout-') && context.insideTableCell) return false;
     return true;
   };
@@ -272,6 +276,13 @@ export const BLOCK_GROUPS: BlockGroup[] = [
         label: 'Component embed',
         icon: Puzzle,
         kind: 'embed',
+      },
+      {
+        // Entra com "All tokens"; o grupo se escolhe no seletor do próprio bloco.
+        id: 'tokenTable',
+        label: 'Token table',
+        icon: SwatchBook,
+        insert: (editor, atPos) => insertSimple(editor, atPos, { type: 'tokenTable', attrs: { group: '' } }),
       },
     ],
   },

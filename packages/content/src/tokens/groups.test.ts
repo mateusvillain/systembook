@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Token } from '@systembook/schema';
-import { tokensInGroup } from './groups.js';
+import { tokenGroups, tokensInGroup } from './groups.js';
 
 const token = (path: string): Token => ({ path, type: 'color', byMode: { default: { value: '#000', resolvedValue: '#000' } } });
 const TOKENS = ['color.brand', 'color.brand.hover', 'color.brandish', 'color.neutral', 'space.1'].map(token);
@@ -16,5 +16,13 @@ describe('tokensInGroup', () => {
     expect(paths('')).toEqual(TOKENS.map((t) => t.path));
     expect(paths('colour')).toEqual([]);
     expect(paths('color.')).toEqual([]);
+  });
+});
+
+describe('tokenGroups', () => {
+  it('todo caminho acima de um token, na ordem do primeiro token', () => {
+    expect(tokenGroups(TOKENS)).toEqual(['color', 'color.brand', 'space']);
+    expect(tokenGroups(['accent.$root', 'accent.muted', 'solo'].map(token))).toEqual(['accent']);
+    expect(tokenGroups([])).toEqual([]);
   });
 });

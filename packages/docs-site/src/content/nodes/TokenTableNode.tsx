@@ -1,9 +1,27 @@
+import type { ComponentType } from 'react';
 import { mergeAttributes, Node } from '@tiptap/core';
 import { NodeViewWrapper, ReactNodeViewRenderer, type NodeViewProps } from '@tiptap/react';
 import { TriangleAlert } from 'lucide-react';
-import { tokensInGroup } from '@systembook/content/tokens';
+import { tokenGroups, tokensInGroup } from '@systembook/content/tokens';
 import { useTokens } from '../docsQueries.js';
 import { TokenGroup } from '../tokens/TokenGroup.js';
+
+/** Situação dos tokens para o seletor: carregando, erro de leitura, nenhum publicado, ou disponíveis. */
+export type TokenTableTokensStatus = 'loading' | 'error' | 'none' | 'available';
+
+/** O que o seletor de grupo do editor precisa saber (SYS-138). */
+export interface TokenTableEditControlsProps {
+  group: string;
+  /** Grupos disponíveis (`tokenGroups`); vazio fora de `available`. */
+  groups: readonly string[];
+  status: TokenTableTokensStatus;
+  onSelect: (group: string) => void;
+}
+
+export interface TokenTableOptions {
+  /** Seletor de grupo; `null` na renderização read-only. */
+  EditControls: ComponentType<TokenTableEditControlsProps> | null;
+}
 
 /**
  * Bloco de tabela de design tokens: nó atômico que guarda só o grupo
@@ -14,51 +32,68 @@ import { TokenGroup } from '../tokens/TokenGroup.js';
  * mostrar — a página acompanha os tokens publicados sem ser editada — e usa o
  * renderer de cada tipo. Grupo sem nenhum token (inexistente, renomeado, ou
  * nenhum token publicado) e erro de leitura viram um aviso no lugar, sem quebrar a página.
+ *
+ * O seletor de grupo (SYS-138) é injetado pelo editor via a opção
+ * `EditControls`, como no `component-embed`.
  */
-function TokenTableView({ node }: NodeViewProps) {
+function TokenTableView({ node, updateAttributes, editor, extension }: NodeViewProps) {
   const group = node.attrs.group as string;
   const query = useTokens();
   const set = query.data ?? null;
   const tokens = set ? tokensInGroup(set.tokens, group) : [];
+  const state = query.isLoading ? 'loading' : query.isError ? 'error' : tokens.length ? 'ready' : 'empty';
 
-  if (query.isLoading) {
-    return (
-      <NodeViewWrapper className="sb-token-block sb-token-block--notice" data-group={group} data-state="loading" role="status">
-        Loading tokens…
-      </NodeViewWrapper>
-    );
-  }
-
-  if (!set || !tokens.length) {
-    return (
-      <NodeViewWrapper className="sb-token-block sb-token-block--notice" data-group={group} data-state={query.isError ? 'error' : 'empty'} role="note">
-        <TriangleAlert aria-hidden size={19} />
-        <span>
-          {query.isError ? (
-            'Could not load the design tokens.'
-          ) : !set ? (
-            'No design tokens published yet.'
-          ) : (
-            <>
-              No tokens in group <code>{group}</code>.
-            </>
-          )}
-        </span>
-      </NodeViewWrapper>
-    );
-  }
+  // O seletor só existe editando, e quando o editor o injetou (como o embed).
+  const { EditControls } = extension.options as TokenTableOptions;
+  const control =
+    editor.isEditable && EditControls ? (
+      <div className="sb-token-block-bar" contentEditable={false}>
+        <EditControls
+          group={group}
+          groups={set ? tokenGroups(set.tokens) : []}
+          status={query.isLoading ? 'loading' : query.isError ? 'error' : set ? 'available' : 'none'}
+          onSelect={(next) => updateAttributes({ group: next })}
+        />
+      </div>
+    ) : null;
 
   return (
-    <NodeViewWrapper className="sb-token-block" data-group={group} data-state="ready">
-      <TokenGroup tokens={tokens} modes={set.modes} label={group || 'All tokens'} />
+    <NodeViewWrapper className="sb-token-block" data-group={group} data-state={state}>
+      {control}
+      {state === 'loading' ? (
+        <div className="sb-token-block-notice" role="status">
+          Loading tokens…
+        </div>
+      ) : state === 'ready' ? (
+        <TokenGroup tokens={tokens} modes={set!.modes} label={group || 'All tokens'} />
+      ) : (
+        <div className="sb-token-block-notice" role="note">
+          <TriangleAlert aria-hidden size={19} />
+          <span>
+            {state === 'error' ? (
+              'Could not load the design tokens.'
+            ) : !set ? (
+              'No design tokens published yet.'
+            ) : (
+              <>
+                No tokens in group <code>{group}</code>.
+              </>
+            )}
+          </span>
+        </div>
+      )}
     </NodeViewWrapper>
   );
 }
 
-export const TokenTableNode = Node.create({
+export const TokenTableNode = Node.create<TokenTableOptions>({
   name: 'tokenTable',
   group: 'block',
   atom: true,
+
+  addOptions() {
+    return { EditControls: null };
+  },
 
   addAttributes() {
     return {

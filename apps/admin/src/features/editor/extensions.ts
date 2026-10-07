@@ -7,6 +7,7 @@ import {
   CodeLanguageSelect,
   DosDontsTitleField,
   DosDontsVariantSwitcher,
+  TokenTableGroupSelect,
 } from './NodeEditControls.js';
 
 /**
@@ -26,6 +27,7 @@ export const editorExtensions = [
       VariantSwitcher: DosDontsVariantSwitcher,
       TitleField: DosDontsTitleField,
     },
+    tokenTable: { EditControls: TokenTableGroupSelect },
   }),
   UndoRedo,
   Dropcursor,

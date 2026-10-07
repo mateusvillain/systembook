@@ -14,7 +14,7 @@ import { CodeBlock, codeBlockConfig, type CodeBlockOptions } from './nodes/CodeB
 import { ComponentEmbed, type ComponentEmbedOptions } from './nodes/ComponentEmbed.js';
 import { DosDonts, type DosDontsOptions } from './nodes/DosDonts.js';
 import { Image } from './nodes/Image.js';
-import { TokenTableNode } from './nodes/TokenTableNode.js';
+import { TokenTableNode, type TokenTableOptions } from './nodes/TokenTableNode.js';
 
 /**
  * Conteúdo de célula de tabela (TASK-101): enumera os blocos permitidos em vez
@@ -45,13 +45,15 @@ const TABLE_CELL_CONTENT = '(paragraph | heading | bulletList | orderedList | co
  * preview de revisões e o diff (`editable: false`). O editor parte daqui e
  * acrescenta o que só faz sentido editando (`editorExtensions`, no admin),
  * inclusive os controles de edição que cada NodeView recebe por opção
- * (switchers de variante, seletor de linguagem, (re)seleção de embed, cover). Mesmo modelo de conteúdo nos dois lados.
+ * (switchers de variante, seletor de linguagem, (re)seleção de embed, cover,
+ * grupo de tokens). Mesmo modelo de conteúdo nos dois lados.
  */
 export function createContentExtensions(options: {
   callout?: Partial<CalloutOptions>;
   codeBlock?: Partial<CodeBlockOptions>;
   componentEmbed?: Partial<ComponentEmbedOptions>;
   dosDonts?: Partial<DosDontsOptions>;
+  tokenTable?: Partial<TokenTableOptions>;
 } = {}) {
   return [
     Document,
@@ -87,7 +89,7 @@ export function createContentExtensions(options: {
     ComponentEmbed.configure(options.componentEmbed),
     DosDonts.configure(options.dosDonts),
     Image,
-    TokenTableNode,
+    TokenTableNode.configure(options.tokenTable),
   ];
 }
 
