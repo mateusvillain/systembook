@@ -267,6 +267,28 @@ export const componentPreviews = sqliteTable(
   ],
 );
 
+/**
+ * Design tokens publicados pelo CI (SYS-141), mesmo modelo de
+ * `component_previews`: append-only — cada upload é uma linha nova, com o
+ * `commit_sha` de origem — e "latest wins" via `getLatestTokenSet`. O conjunto
+ * inteiro vai num snapshot: `conteudo_json` é o `TokenSet` já resolvido e
+ * validado (o contrato da doc pública), não os arquivos DTCG de origem.
+ */
+export const tokenSets = sqliteTable(
+  'token_sets',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    commitSha: text('commit_sha').notNull(),
+    conteudoJson: text('conteudo_json').notNull(),
+    publicadoEm: integer('publicado_em', { mode: 'timestamp' })
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (table) => [index('token_sets_latest_idx').on(table.publicadoEm)],
+);
+
 // Linha única de configuração da instância (SYS-39). O id sentinela segue o
 // padrão da landing e das status tags padrão: a linha é materializada no boot
 // e nunca criada pelo usuário, então "não existe configuração" é um estado
