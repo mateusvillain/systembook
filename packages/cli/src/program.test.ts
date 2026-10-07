@@ -75,6 +75,7 @@ describe('systembook tokens (SYS-144)', () => {
   });
 
   afterEach(async () => {
+    vi.unstubAllEnvs();
     await new Promise<void>((resolve) => server.close(() => resolve()));
     rmSync(root, { recursive: true, force: true });
   });
@@ -95,11 +96,11 @@ describe('systembook tokens (SYS-144)', () => {
     ]);
   });
 
-  it('sem --commit, usa o GITHUB_SHA', async () => {
+  it('sem --commit (ou vazio), usa o GITHUB_SHA', async () => {
     vi.stubEnv('GITHUB_SHA', 'fromci0001');
     await tokens();
-    vi.unstubAllEnvs();
-    expect(received[0]!.body.commitSha).toBe('fromci0001');
+    await tokens('--commit', '');
+    expect(received.map((r) => r.body.commitSha)).toEqual(['fromci0001', 'fromci0001']);
   });
 
   it('erro local (de token ou de config) aborta antes de enviar', async () => {
@@ -135,15 +136,19 @@ describe('systembook tokens (SYS-144)', () => {
     expect(rejected.out).toContain('tokens/base.json  color.brand: ruim.');
     expect(rejected.out).toContain('nada foi publicado.');
 
-    const down = await run(createProgram(), ['tokens', '--to', 'http://localhost:1', '--token', 't', '--root', root, '--commit', 'a']);
+    // Uma porta que acabou de ficar livre: a conexão é recusada na hora.
+    const closed = createServer();
+    await new Promise<void>((resolve) => closed.listen(0, resolve));
+    const port = (closed.address() as { port: number }).port;
+    await new Promise<void>((resolve) => closed.close(() => resolve()));
+    const down = await run(createProgram(), ['tokens', '--to', `http://localhost:${port}`, '--token', 't', '--root', root, '--commit', 'a']);
     expect(down.exitCode).toBe(1);
-    expect(down.out).toContain('não foi possível conectar a http://localhost:1');
+    expect(down.out).toContain(`não foi possível conectar a http://localhost:${port}`);
   });
 
   it('sem token nem SYSTEMBOOK_TOKEN, e sem tokens na config', async () => {
     vi.stubEnv('SYSTEMBOOK_TOKEN', '');
     const noToken = await run(createProgram(), ['tokens', '--to', url, '--root', root]);
-    vi.unstubAllEnvs();
     expect(noToken.out).toContain('informe o token com --token ou na variável SYSTEMBOOK_TOKEN.');
 
     writeFileSync(path.join(root, 'systembook.config.json'), JSON.stringify({ name: 'T' }));

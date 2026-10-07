@@ -139,11 +139,8 @@ export function createProgram(): Command {
     .option('--out <dir>', 'pasta do projeto gerado', 'systembook-export')
     .option('-f, --force', 'escreve numa pasta que já tem arquivos, por cima dos de mesmo nome')
     .action(async (options: { from: string; token?: string; out: string; force?: boolean }) => {
-      const token = options.token ?? process.env.SYSTEMBOOK_TOKEN;
-      if (!token) {
-        reportProblems(['informe o token com --token ou na variável SYSTEMBOOK_TOKEN.']);
-        return;
-      }
+      const token = commandToken(options.token);
+      if (!token) return;
       try {
         const result = await exportProject({ from: options.from, token, out: options.out, force: options.force });
         reportWarnings(result.warnings);
@@ -173,11 +170,8 @@ export function createProgram(): Command {
     .option('--root <dir>', 'raiz do projeto, onde está a config', process.cwd())
     .option('--overwrite', 'substitui as páginas (e a landing) que já existem na instância, em vez de falhar')
     .action(async (options: { to: string; token?: string; root: string; overwrite?: boolean }) => {
-      const token = options.token ?? process.env.SYSTEMBOOK_TOKEN;
-      if (!token) {
-        reportProblems(['informe o token com --token ou na variável SYSTEMBOOK_TOKEN.']);
-        return;
-      }
+      const token = commandToken(options.token);
+      if (!token) return;
       const config = await loadProjectConfig(options.root);
       if (!config) return;
       try {
@@ -200,15 +194,12 @@ export function createProgram(): Command {
     .command('tokens')
     .description('publica os design tokens da config numa instância CMS (no CI, a cada mudança nos arquivos)')
     .requiredOption('--to <url>', 'URL da instância CMS')
-    .option('--token <token>', 'token de escopo Design tokens upload (ou a variável SYSTEMBOOK_TOKEN)')
+    .option('--token <token>', 'token de escopo Design tokens upload (CI) (ou a variável SYSTEMBOOK_TOKEN)')
     .option('--root <dir>', 'raiz do projeto, onde está a config', process.cwd())
     .option('--commit <sha>', 'commit dos arquivos (padrão: GITHUB_SHA, ou o HEAD do git)')
     .action(async (options: { to: string; token?: string; root: string; commit?: string }) => {
-      const token = options.token ?? process.env.SYSTEMBOOK_TOKEN;
-      if (!token) {
-        reportProblems(['informe o token com --token ou na variável SYSTEMBOOK_TOKEN.']);
-        return;
-      }
+      const token = commandToken(options.token);
+      if (!token) return;
       const config = await loadProjectConfig(options.root);
       if (!config) return;
       try {
@@ -237,6 +228,14 @@ function parsePort(value: string): number {
     throw new InvalidArgumentError('precisa ser um número de porta.');
   }
   return port;
+}
+
+/** O token da opção ou de `SYSTEMBOOK_TOKEN`; sem nenhum, reporta e devolve `null`. */
+function commandToken(option: string | undefined): string | null {
+  const token = option ?? process.env.SYSTEMBOOK_TOKEN;
+  if (token) return token;
+  reportProblems(['informe o token com --token ou na variável SYSTEMBOOK_TOKEN.']);
+  return null;
 }
 
 /** Carrega a config; problemas são reportados e viram exit code 1. */

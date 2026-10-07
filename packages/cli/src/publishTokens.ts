@@ -1,6 +1,8 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { formatTokenDiagnostic, type TokenDiagnostic } from '@systembook/content/tokens';
 import type { ResolvedConfig } from './config.js';
+import { instanceEndpoint } from './instance.js';
 import { loadProjectTokens } from './tokens.js';
 
 export interface PublishTokensOptions {
@@ -12,8 +14,6 @@ export interface PublishTokensOptions {
   commit?: string;
   /** Injetável nos testes. */
   fetch?: typeof fetch;
-  /** Injetável nos testes (o `GITHUB_SHA`). */
-  env?: NodeJS.ProcessEnv;
 }
 
 export interface PublishTokensOutcome {
@@ -32,19 +32,11 @@ export class PublishTokensError extends Error {
   }
 }
 
-interface ServerDiagnostic {
-  file: string;
-  path?: string;
-  message: string;
-}
-
-/** `arquivo  caminho: mensagem`, como o `formatTokenDiagnostic` da CLI. */
-const format = (d: ServerDiagnostic) => `${d.file}  ${d.path ? `${d.path}: ` : ''}${d.message}`;
 
 /** O commit dos arquivos: a opção, o do CI (GitHub Actions) ou o `HEAD` do repositório. */
 async function resolveCommit(root: string, options: PublishTokensOptions): Promise<string> {
-  const explicit = options.commit ?? (options.env ?? process.env).GITHUB_SHA;
-  if (explicit?.trim()) return explicit.trim();
+  const explicit = options.commit?.trim() || process.env.GITHUB_SHA?.trim();
+  if (explicit) return explicit;
   try {
     const { stdout } = await promisify(execFile)('git', ['rev-parse', 'HEAD'], { cwd: root });
     return stdout.trim();
@@ -78,7 +70,7 @@ export async function publishTokens(config: ResolvedConfig, options: PublishToke
   const commitSha = await resolveCommit(config.root, options);
 
   const doFetch = options.fetch ?? fetch;
-  const url = new URL('api/tokens', base.href.endsWith('/') ? base : `${base.href}/`);
+  const url = instanceEndpoint(base, 'api/tokens');
   let response: Response;
   try {
     response = await doFetch(url, {
@@ -93,14 +85,14 @@ export async function publishTokens(config: ResolvedConfig, options: PublishToke
   const body = (await response.json().catch(() => null)) as {
     modes?: string[];
     tokens?: number;
-    warnings?: ServerDiagnostic[];
-    diagnostics?: ServerDiagnostic[];
+    warnings?: TokenDiagnostic[];
+    diagnostics?: TokenDiagnostic[];
     error?: string;
   } | null;
 
-  if (response.status === 201 && body) {
+  if (response.ok && body) {
     // Os avisos locais e os da instância são os mesmos (mesmo parser); mostra uma vez.
-    const warnings = [...new Set([...loaded.warnings, ...(body.warnings ?? []).map(format)])];
+    const warnings = [...new Set([...loaded.warnings, ...(body.warnings ?? []).map(formatTokenDiagnostic)])];
     return { commitSha, modes: body.modes ?? [], tokens: body.tokens ?? 0, warnings };
   }
   if (response.status === 401) {
@@ -116,7 +108,7 @@ export async function publishTokens(config: ResolvedConfig, options: PublishToke
     throw new PublishTokensError(['os arquivos de tokens são maiores do que a instância (ou o proxy na frente dela) aceita.']);
   }
   if (response.status === 422 && body?.diagnostics?.length) {
-    throw new PublishTokensError([...body.diagnostics.map(format), 'a instância recusou os tokens; nada foi publicado.']);
+    throw new PublishTokensError([...body.diagnostics.map(formatTokenDiagnostic), 'a instância recusou os tokens; nada foi publicado.']);
   }
   throw new PublishTokensError([
     body?.error ? `a instância recusou os tokens: ${body.error}` : `a instância respondeu HTTP ${response.status} à publicação de tokens.`,

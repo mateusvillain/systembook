@@ -168,10 +168,10 @@ com um `manifest.json` listando `{ component, variantId, entryDir }` por variant
 ### 4a. Gerar o token (no painel admin)
 
 1. Logado como **admin**, abra o menu do usuário no topo → **Upload tokens**.
-2. Em **Novo token**, dê um **Label** descritivo (ex.: `GitHub Actions do design
-   system`) e clique em **Gerar token**.
-3. O token aparece **uma única vez** — clique em **Copiar** e guarde num lugar
-   seguro. Ele não volta a ser exibido; se perder, gere outro e **Revogue** o antigo.
+2. Em **New token**, dê um label descritivo (ex.: `GitHub Actions do design
+   system`), escolha o escopo **Preview upload (CI)** e clique em **Generate token**.
+3. O token aparece **uma única vez** — clique em **Copy** e guarde num lugar
+   seguro. Ele não volta a ser exibido; se perder, gere outro e revogue o antigo (**Revoke**).
 
 ### 4b. Configurar os segredos do CI
 
