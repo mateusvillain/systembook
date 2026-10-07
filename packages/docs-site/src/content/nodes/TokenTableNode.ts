@@ -7,7 +7,7 @@ import { mergeAttributes, Node } from '@tiptap/core';
  * `DocsDataSource.getTokens()` na hora de mostrar — a renderização é da
  * SYS-139; aqui o nó existe no schema, para o conteúdo com o bloco carregar.
  */
-export const TokenTable = Node.create({
+export const TokenTableNode = Node.create({
   name: 'tokenTable',
   group: 'block',
   atom: true,

@@ -147,7 +147,7 @@ function callout(el: JsxElement, ctx: ComponentContext): TiptapNode | null {
       );
       return false;
     }
-    if (child.type === 'mdxJsxFlowElement' && (child as unknown as JsxElement).name === 'TokenTable') {
+    if (child.type === 'mdxJsxFlowElement' && 'name' in child && child.name === 'TokenTable') {
       ctx.bag.report(child, '<TokenTable> não pode ficar dentro de <Callout> (como no editor do CMS) — tire a tabela de tokens do callout.');
       return false;
     }
@@ -181,7 +181,7 @@ function tokenTable(el: JsxElement, ctx: ComponentContext): TiptapNode | null {
     return null;
   }
   if (!props) return null;
-  return { type: 'tokenTable', attrs: { group: props.group?.value.trim() ?? '' } };
+  return { type: 'tokenTable', attrs: { group: props.group?.value ?? '' } };
 }
 
 function dosDonts(el: JsxElement, ctx: ComponentContext): TiptapNode | null {
