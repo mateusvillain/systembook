@@ -13,6 +13,7 @@ import { sectionsRouter } from './routers/sections.js';
 import { settingsRouter } from './routers/settings.js';
 import { statusTagsRouter } from './routers/statusTags.js';
 import { tabsRouter } from './routers/tabs.js';
+import { tokensRouter } from './routers/tokens.js';
 import { uploadTokensRouter } from './routers/uploadTokens.js';
 import { usersRouter } from './routers/users.js';
 
@@ -46,6 +47,7 @@ import { usersRouter } from './routers/users.js';
  * | uploadTokens | list, create, revoke                          | adminProcedure (só admin)            |
  * | statusTags | list, create, update, reorder, delete           | protectedProcedure (admin + editor)  |
  * | settings  | getPublic                                         | publicProcedure (identidade na doc)  |
+ * | tokens    | getLatest                                         | publicProcedure (tokens na doc)      |
  * | settings  | get, setNome, uploadLogo, removeLogo              | adminProcedure (só admin)            |
  * | migration | export                                            | migrationProcedure (token migration) |
  *
@@ -69,6 +71,7 @@ export const appRouter = router({
   blocks: blocksRouter,
   revisions: revisionsRouter,
   componentPreviews: componentPreviewsRouter,
+  tokens: tokensRouter,
   search: searchRouter,
   landing: landingRouter,
   uploadTokens: uploadTokensRouter,
