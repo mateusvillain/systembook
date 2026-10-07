@@ -1,5 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import type { PublicNavTree } from '@systembook/schema';
+import { TOKENS_SEGMENT } from '@systembook/content/site';
+import { useTokens } from '../content/docsQueries.js';
 import { useDocsPaths, type DocsPaths } from './docsRoutes.js';
 
 type PublicMenu = PublicNavTree[number];
@@ -34,7 +36,17 @@ export function menuLandingPath(menu: PublicMenu, paths: DocsPaths): string {
 export function useActiveMenu(tree: PublicNavTree): PublicMenu | undefined {
   const { pathname } = useLocation();
   const [first] = useDocsPaths().segments(pathname);
+  const onTokens = useOnTokensPage();
+  // A página Tokens (SYS-140) não é menu, mesmo que um menu se chame `tokens`.
+  if (onTokens) return undefined;
   return tree.find((menu) => menu.slug === first);
+}
+
+/** A URL é a página Tokens gerada (SYS-140): um segmento só, `tokens`. */
+export function useOnTokensPage(): boolean {
+  const { pathname } = useLocation();
+  const segments = useDocsPaths().segments(pathname);
+  return segments.length === 1 && segments[0] === TOKENS_SEGMENT;
 }
 
 /**
@@ -45,6 +57,8 @@ export function useActiveMenu(tree: PublicNavTree): PublicMenu | undefined {
  *
  * Some quando há um único menu: instâncias que nunca criaram menus caem no
  * `DEFAULT_MENU_ID`, e uma barra com um só item não oferece escolha nenhuma.
+ * Com design tokens, a página Tokens gerada (SYS-140) entra no fim da barra —
+ * e aí a barra sempre aparece: um menu só (ou nenhum) já é uma escolha.
  */
 export function PublicMenuNav({
   tree,
@@ -58,8 +72,12 @@ export function PublicMenuNav({
 }) {
   const activeMenu = useActiveMenu(tree);
   const paths = useDocsPaths();
+  // A mesma query da página e dos blocos (cacheada): o link só existe com tokens.
+  const hasTokens = !!useTokens().data;
+  const onTokens = useOnTokensPage();
 
-  if (tree.length < 2) return null;
+  // Com tokens, a barra aparece até sem menu nenhum: é o único caminho para a página.
+  if (!hasTokens && tree.length < 2) return null;
 
   return (
     <nav className={`sb-public-menunav ${className}`} aria-label="Documentation menus">
@@ -80,6 +98,17 @@ export function PublicMenuNav({
           </NavLink>
         );
       })}
+      {hasTokens && (
+        <NavLink
+          to={paths.tokens}
+          onClick={onNavigate}
+          className="sb-public-menupill"
+          aria-current={onTokens ? 'page' : undefined}
+          data-active={onTokens || undefined}
+        >
+          Tokens
+        </NavLink>
+      )}
     </nav>
   );
 }

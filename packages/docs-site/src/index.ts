@@ -69,6 +69,7 @@ export { PublicLayout, type PublicOutletContext } from './public/PublicLayout.js
 export { PublicHome } from './public/PublicHome.js';
 export { PublicPageView } from './public/PublicPageView.js';
 export { PublicPageById } from './public/PublicPageById.js';
+export { PublicTokensPage } from './public/PublicTokensPage.js';
 export { LegacyDocsRedirect } from './public/LegacyDocsRedirect.js';
 export { DocsRoutesProvider, useDocsPaths, type DocsPaths } from './public/docsRoutes.js';
 export { createDocsRoute } from './public/createDocsRoute.js';

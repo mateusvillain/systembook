@@ -1,6 +1,6 @@
 import type { Block, PageSnapshot, StaticSiteData } from '@systembook/schema';
 import { stripInlineMarkdown } from '@systembook/content/inline';
-import { parsePageKey, sitePath } from '@systembook/content/site';
+import { parsePageKey, sitePath, TOKENS_SEGMENT } from '@systembook/content/site';
 
 /** Uma rota do site e o que vai no `<head>` dela. */
 export interface RouteMeta {
@@ -45,9 +45,10 @@ function firstParagraph(blocks: Block[] | undefined): string | null {
 const primaryBlocks = (snapshot: PageSnapshot | null) => snapshot?.tabs.find((t) => t.isPrimary)?.blocks;
 
 /**
- * As rotas do site em ordem estável — landing, e cada página seguida das
- * suas tabs — com título e descrição: o subtítulo da página, ou o primeiro
- * parágrafo, ou o nome do design system.
+ * As rotas do site em ordem estável — landing, cada página seguida das suas
+ * tabs e, com design tokens, a página Tokens gerada (SYS-140) — com título e
+ * descrição: o subtítulo da página, ou o primeiro parágrafo, ou o nome do
+ * design system.
  */
 export function routeMetas(data: StaticSiteData, landingTitle: string | null): RouteMeta[] {
   const name = data.settings.nomeDesignSystem;
@@ -71,6 +72,9 @@ export function routeMetas(data: StaticSiteData, landingTitle: string | null): R
         description: subtitleText(page.subtitulo) ?? firstParagraph(tab.blocks) ?? description,
       });
     }
+  }
+  if (data.tokens) {
+    routes.push({ path: `/${TOKENS_SEGMENT}`, title: `Tokens · ${name}`, description: `Design tokens of ${name}.` });
   }
   return routes;
 }

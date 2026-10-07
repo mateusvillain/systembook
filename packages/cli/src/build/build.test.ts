@@ -215,6 +215,9 @@ describe('systembook build', { timeout: 60_000 }, () => {
       modes: ['default'],
       tokens: [{ path: 'ok', type: 'color' }],
     });
+    // Com tokens, a página Tokens gerada (SYS-140) vira rota; sem eles (primeiro teste), não.
+    expect(built).toMatchObject({ routes: 6 });
+    expect(tree(config.outDir).has('tokens/index.html')).toBe(true);
 
     // Com modos: os valores de cada modo vão para o site.
     mkdirSync(path.join(config.root, 'modes'));

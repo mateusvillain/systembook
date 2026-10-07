@@ -1,5 +1,6 @@
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import type { PublicPageRef } from '@systembook/schema';
+import { TOKENS_SEGMENT } from '@systembook/content/site';
 
 /**
  * Onde a doc pública mora dentro do router (SYS-91). São duas camadas, e só a
@@ -34,6 +35,8 @@ export interface DocsPaths {
   home: string;
   /** Endereço canônico de uma página, opcionalmente numa tab. */
   page(ref: PublicPageRef, tabId?: string | null): string;
+  /** Página Tokens gerada (SYS-140). */
+  tokens: string;
   /** Endereço sem o menu (forma anterior à SYS-37), que o redirect legado resolve. */
   legacyPage(sectionSlug: string, pageSlug: string): string;
   /**
@@ -51,6 +54,7 @@ export function useDocsPaths(): DocsPaths {
       home: prefix || '/',
       page: ({ menuSlug, sectionSlug, pageSlug }, tabId) =>
         `${prefix}/${menuSlug}/${sectionSlug}/${pageSlug}${tabId ? `/${tabId}` : ''}`,
+      tokens: `${prefix}/${TOKENS_SEGMENT}`,
       legacyPage: (sectionSlug, pageSlug) => `${prefix}/${sectionSlug}/${pageSlug}`,
       segments: (pathname) => {
         const rest =

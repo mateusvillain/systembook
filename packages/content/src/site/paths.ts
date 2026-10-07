@@ -23,6 +23,13 @@ export const staticDataPaths = {
  */
 export const STATIC_DATA_DIR = '_systembook/data/';
 
+/**
+ * Segmento da página Tokens gerada (SYS-140), logo abaixo da raiz da doc. Um
+ * segmento só não colide com nada: páginas têm três (`menu/seção/página`) e a
+ * forma legada, dois.
+ */
+export const TOKENS_SEGMENT = 'tokens';
+
 /** Chave de `StaticSiteData.previews` para um par componente/variante. */
 export function previewKey({ componentName, variantId }: ComponentPreviewRef): string {
   return `${componentName}/${variantId}`;
