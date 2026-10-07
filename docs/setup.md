@@ -167,7 +167,7 @@ com um `manifest.json` listando `{ component, variantId, entryDir }` por variant
 
 ### 4a. Gerar o token (no painel admin)
 
-1. Logado como **admin**, clique em **Tokens** no topo → página **Tokens de upload**.
+1. Logado como **admin**, abra o menu do usuário no topo → **Upload tokens**.
 2. Em **Novo token**, dê um **Label** descritivo (ex.: `GitHub Actions do design
    system`) e clique em **Gerar token**.
 3. O token aparece **uma única vez** — clique em **Copiar** e guarde num lugar

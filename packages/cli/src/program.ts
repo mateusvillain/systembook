@@ -9,6 +9,7 @@ import { startDevServer } from './dev/index.js';
 import { ExportError, exportProject } from './export/index.js';
 import { ImportError, importProject } from './import/index.js';
 import { initProject, PAGES_WORKFLOW_FILE } from './init.js';
+import { PublishTokensError, publishTokens } from './publishTokens.js';
 
 /**
  * O programa `systembook`. Os comandos de preview vêm do connector, que é a
@@ -191,6 +192,32 @@ export function createProgram(): Command {
         }
       } catch (error) {
         if (!(error instanceof ImportError)) throw error;
+        reportProblems(error.problems);
+      }
+    });
+
+  program
+    .command('tokens')
+    .description('publica os design tokens da config numa instância CMS (no CI, a cada mudança nos arquivos)')
+    .requiredOption('--to <url>', 'URL da instância CMS')
+    .option('--token <token>', 'token de escopo Design tokens upload (ou a variável SYSTEMBOOK_TOKEN)')
+    .option('--root <dir>', 'raiz do projeto, onde está a config', process.cwd())
+    .option('--commit <sha>', 'commit dos arquivos (padrão: GITHUB_SHA, ou o HEAD do git)')
+    .action(async (options: { to: string; token?: string; root: string; commit?: string }) => {
+      const token = options.token ?? process.env.SYSTEMBOOK_TOKEN;
+      if (!token) {
+        reportProblems(['informe o token com --token ou na variável SYSTEMBOOK_TOKEN.']);
+        return;
+      }
+      const config = await loadProjectConfig(options.root);
+      if (!config) return;
+      try {
+        const result = await publishTokens(config, { to: options.to, token, commit: options.commit });
+        reportWarnings(result.warnings);
+        const modes = result.modes.length > 1 ? ` em ${result.modes.length} modos (${result.modes.join(', ')})` : '';
+        console.log(`Publicado em ${options.to} — ${result.tokens} token(s)${modes}, commit ${result.commitSha.slice(0, 7)}.`);
+      } catch (error) {
+        if (!(error instanceof PublishTokensError)) throw error;
         reportProblems(error.problems);
       }
     });

@@ -32,7 +32,7 @@ O formato completo (frontmatter, blocos e componentes, com exemplos) está em
 
 ## CMS → estático
 
-1. Como admin, gere um token de escopo **Migration** em Settings → Tokens. Ele
+1. Como admin, gere um token de escopo **Migration** em **Upload tokens** (menu do usuário). Ele
    lê o conteúdo inteiro da instância: não o coloque no CI, e revogue-o depois
    da migração.
 2. Rode o export no repositório do design system:
@@ -84,7 +84,7 @@ simplifica para o equivalente mais próximo e avisa cada uma, com o arquivo:
 ## Estático → CMS
 
 1. Suba uma instância ([guia de setup](./setup.md)) e, como admin, gere um
-   token de escopo **Migration** em Settings → Tokens. Ele escreve o conteúdo
+   token de escopo **Migration** em **Upload tokens** (menu do usuário). Ele escreve o conteúdo
    inteiro da instância: não o coloque no CI, e revogue-o depois da migração.
 2. Rode o import na raiz do projeto:
 

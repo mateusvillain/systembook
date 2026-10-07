@@ -30,7 +30,7 @@ const color = (value: string) => ({ $type: 'color', $value: value });
 
 describe('loadProjectTokens', () => {
   it('sem tokens na config: nada', async () => {
-    expect(await project(undefined, {})).toEqual({ set: null, problems: [], warnings: [] });
+    expect(await project(undefined, {})).toEqual({ set: null, problems: [], warnings: [], sources: [] });
   });
 
   it('globs dos arquivos base, em ordem estável', async () => {

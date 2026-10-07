@@ -8,8 +8,8 @@ Este documento é a referência do formato que o parser
 (`@systembook/content/tokens`) aceita. Se os dois divergirem, o parser e os
 testes dele valem, e este documento precisa ser corrigido.
 
-> O comando de publicação no modo CMS ainda está em desenvolvimento e entra
-> aqui quando chegar.
+No modo estático os tokens vão no build; no modo CMS, o CI os publica na
+instância com `systembook tokens` (ver [Publicar no CMS](#publicar-no-cms)).
 
 ## Configuração
 
@@ -161,6 +161,40 @@ Para mostrar um grupo dentro de uma página, use o bloco
 [`<TokenTable>`](./static-format.md#tokentable) (no CMS, "Token table" no menu
 de blocos). Nos dois casos, cada tipo usa a amostra própria — cor, tipografia,
 dimensão, sombra — e o resto aparece numa tabela de valores.
+
+## Publicar no CMS
+
+No modo CMS os arquivos continuam no repositório do design system, e o CI
+publica na instância a cada mudança:
+
+```bash
+npx systembook tokens --to https://docs.acme.dev
+```
+
+O comando lê a `tokens` da config (a mesma do modo estático), valida como o
+`systembook check` e envia os arquivos para `POST /api/tokens`. A instância
+valida de novo e publica; a doc passa a mostrar a versão nova sem editar
+página nenhuma. Com qualquer erro, local ou da instância, nada é publicado e
+os erros saem todos de uma vez. Cada publicação substitui a anterior inteira:
+um token apagado do arquivo some da doc.
+
+| Opção | O que é |
+| --- | --- |
+| `--to <url>` | URL da instância (obrigatória). |
+| `--token <token>` | Token de escopo **Design tokens upload (CI)**, gerado em **Upload tokens** (menu do usuário, só admin). Sem a opção, vem de `SYSTEMBOOK_TOKEN`. |
+| `--root <dir>` | Raiz do projeto, onde está a config. Padrão: a pasta atual. |
+| `--commit <sha>` | Commit dos arquivos, registrado com a publicação. Padrão: `GITHUB_SHA`, ou o `HEAD` do git. |
+
+No GitHub Actions, com o token num secret:
+
+```yaml
+- run: npx systembook tokens --to ${{ vars.SYSTEMBOOK_INSTANCE_URL }}
+  env:
+    SYSTEMBOOK_TOKEN: ${{ secrets.SYSTEMBOOK_TOKENS_TOKEN }}
+```
+
+Use um token só para isto, separado do de previews: revogar um não derruba o
+outro.
 
 ## Nomes para copiar
 
