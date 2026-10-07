@@ -409,13 +409,15 @@ describe('página Tokens gerada (SYS-140)', () => {
   afterEach(() => vi.restoreAllMocks());
   const TOKENS: TokenSet = {
     modes: ['light', 'dark'],
-    tokens: [
-      ['acme.primary', 'color', '#4f46e5'],
-      ['acme.space.1', 'dimension', '4px'],
-      ['acme.palette.indigo.500', 'color', '#6366f1'],
-    ].map(([path, type, value]) => ({
-      path: path!,
-      type: type as Token['type'],
+    tokens: (
+      [
+        ['acme.primary', 'color', '#4f46e5'],
+        ['acme.space.1', 'dimension', '4px'],
+        ['acme.palette.indigo.500', 'color', '#6366f1'],
+      ] as const
+    ).map(([path, type, value]): Token => ({
+      path,
+      type,
       byMode: { light: { value, resolvedValue: value }, dark: { value, resolvedValue: value } },
     })),
   };
