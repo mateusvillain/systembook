@@ -22,8 +22,8 @@ componentes na sua instância Systembook a cada push. O fluxo tem três partes:
 
 ### 1. Gere um token de upload
 
-No painel da sua instância, como **admin**, acesse **Tokens**
-(`/admin/settings/tokens`), gere um token com um label descritivo (ex.:
+No painel da sua instância, como **admin**, acesse **Upload tokens**
+(`/admin/settings/tokens`), gere um token de escopo **Preview upload (CI)** com um label descritivo (ex.:
 "GitHub Actions do design system") e **copie o valor na hora** — ele é
 mostrado uma única vez; depois disso só o hash fica armazenado. Se o token
 vazar, revogue-o na mesma tela e gere outro.

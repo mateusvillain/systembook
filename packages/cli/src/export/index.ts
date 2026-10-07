@@ -3,6 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { InstanceExport, UnpublishedPageRef } from '@systembook/schema';
 import { buildExportProject } from './project.js';
+import { instanceEndpoint } from '../instance.js';
 
 export interface ExportOptions {
   /** URL da instância CMS (`https://docs.acme.dev`). */
@@ -87,7 +88,7 @@ export async function exportProject(options: ExportOptions): Promise<ExportResul
 }
 
 async function fetchExport(doFetch: typeof fetch, base: URL, token: string): Promise<InstanceExport> {
-  const url = new URL('trpc/migration.export', base.href.endsWith('/') ? base : `${base.href}/`);
+  const url = instanceEndpoint(base, 'trpc/migration.export');
   let response: Response;
   try {
     response = await doFetch(url, { headers: { authorization: `Bearer ${token}` } });

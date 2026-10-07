@@ -4,6 +4,7 @@ import { blocksToTiptapDoc, buildSiteData, pageKey, type TiptapDoc } from '@syst
 import type { ExportedFile, ImportedImage, ImportResult, InstanceImport, PageSnapshot } from '@systembook/schema';
 import { prepareSite } from '../build/prepare.js';
 import type { ResolvedConfig } from '../config.js';
+import { instanceEndpoint } from '../instance.js';
 
 export interface ImportOptions {
   /** URL da instância CMS (`https://docs.acme.dev`). */
@@ -170,7 +171,7 @@ export async function importProject(config: ResolvedConfig, options: ImportOptio
   const { payload, warnings } = await buildImportPayload(config, options.overwrite);
 
   const doFetch = options.fetch ?? fetch;
-  const url = new URL('trpc/migration.import', base.href.endsWith('/') ? base : `${base.href}/`);
+  const url = instanceEndpoint(base, 'trpc/migration.import');
   let response: Response;
   try {
     response = await doFetch(url, {

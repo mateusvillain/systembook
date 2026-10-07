@@ -12,6 +12,8 @@ export interface ProjectTokens {
   problems: string[];
   /** Avisos (não falham), já formatados. */
   warnings: string[];
+  /** Os arquivos lidos, como foram ao parser — o que o `systembook tokens` envia ao CMS. */
+  sources: TokenSource[];
 }
 
 /** Caminho com `/`, relativo à raiz, para os globs e as mensagens. */
@@ -29,7 +31,7 @@ const isOutside = (relative: string) =>
  * um padrão errado não esconde os erros dos arquivos que casaram.
  */
 export async function loadProjectTokens(config: ResolvedConfig): Promise<ProjectTokens> {
-  const result: ProjectTokens = { set: null, problems: [], warnings: [] };
+  const result: ProjectTokens = { set: null, problems: [], warnings: [], sources: [] };
   if (!config.tokens) return result;
 
   const root = await realpath(config.root);
@@ -93,6 +95,7 @@ export async function loadProjectTokens(config: ResolvedConfig): Promise<Project
     }
   }
 
+  result.sources = sources;
   const { set, diagnostics } = loadTokenSet(sources);
   for (const d of diagnostics) (d.severity === 'error' ? result.problems : result.warnings).push(formatTokenDiagnostic(d));
   result.set = nonEmptyTokenSet(set);
