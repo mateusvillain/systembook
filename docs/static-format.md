@@ -214,7 +214,7 @@ o Markdown e viram espaço.
 
 Só em arquivos `.mdx`. **Lista fechada**, com **props literais**: string entre
 aspas, sem `{expressões}`. Qualquer outro JSX, prop desconhecida, repetida ou
-vazia (exceto `title`), prop obrigatória faltando, valor fora do permitido ou
+vazia (exceto `title` e `group`), prop obrigatória faltando, valor fora do permitido ou
 expressão é erro. Comentários `{/* … */}` também são expressões e não são
 aceitos.
 
@@ -275,7 +275,22 @@ precisa existir nos `*.preview.tsx` do repo; se não existir, é erro.
 | `coverComponent` + `coverVariant` | mesmo par do `<ComponentEmbed>` | não (os dois juntos) |
 
 `coverImage` e `coverComponent` juntos é erro: o cover é uma imagem **ou** um
-componente. Conteúdo: o mesmo do `<Callout>`, e tabela também é permitida.
+componente. Conteúdo: o mesmo do `<Callout>`, e tabela e `<TokenTable>`
+também são permitidas.
+
+### `<TokenTable>`
+
+```mdx
+<TokenTable group="color.brand" />
+```
+
+| Prop | Obrigatória | O que é |
+| --- | --- | --- |
+| `group` | não | Caminho do grupo de tokens (`color.brand`). Sem a prop, ou vazia, mostra todos os tokens. |
+
+Sem conteúdo (use a forma auto-fechada). O bloco guarda só a referência ao
+grupo: os valores vêm dos tokens do projeto (ver [tokens.md](./tokens.md)) na
+hora de mostrar, então a página acompanha os tokens sem ser editada.
 
 ### `<u>`
 
@@ -287,7 +302,7 @@ Segue as mesmas regras do editor do CMS:
 
 | Dentro de | Não pode |
 | --- | --- |
-| `<Callout>` (filho direto) | tabela — numa lista ou num `<DosDonts>` dentro do callout, pode |
+| `<Callout>` (filho direto) | tabela, `<TokenTable>` — numa lista ou num `<DosDonts>` dentro do callout, pode |
 | célula de tabela | tabela, `<Callout>` |
 
 A sintaxe de tabela do GFM só comporta conteúdo inline na célula (texto com
@@ -337,7 +352,7 @@ uma vez. No `systembook dev`, os mesmos erros aparecem no terminal e num
 overlay no navegador, sem derrubar o servidor:
 
 ```
-docs/components/actions/button.mdx:14:1  <Badge> não é um componente aceito. Use <Callout>, <ComponentEmbed>, <DosDonts> ou <u>.
+docs/components/actions/button.mdx:14:1  <Badge> não é um componente aceito. Use <Callout>, <ComponentEmbed>, <DosDonts>, <TokenTable> ou <u>.
 docs/foundation/color/palette.mdx:3:1    frontmatter: "titel" não é um campo conhecido (quis dizer "title"?).
 docs/foundation/color/palette.mdx:22:3   heading de nível 4 não é suportado — use até ###.
 ```

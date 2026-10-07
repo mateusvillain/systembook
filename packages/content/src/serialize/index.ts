@@ -228,6 +228,12 @@ function dosDonts(node: TiptapNode, ctx: Context): string | null {
   return out;
 }
 
+/** Sem grupo (todos os tokens), a prop some. */
+function tokenTable(node: TiptapNode): string {
+  const group = String(node.attrs?.group ?? '');
+  return group ? `<TokenTable ${jsxProp('group', group)} />` : '<TokenTable />';
+}
+
 function block(node: TiptapNode, ctx: Context, alternateList: boolean): string | null {
   switch (node.type) {
     case 'heading':
@@ -249,6 +255,8 @@ function block(node: TiptapNode, ctx: Context, alternateList: boolean): string |
       return componentEmbed(node, ctx);
     case 'dosDonts':
       return dosDonts(node, ctx);
+    case 'tokenTable':
+      return tokenTable(node);
     default:
       ctx.warn(`o bloco "${node.type}" não existe no formato de arquivo e foi removido.`);
       return null;

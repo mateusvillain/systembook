@@ -6,7 +6,7 @@ import type { BlockContentFor, NewBlock } from '../db/blocks.js';
  * Funções puras — a persistência fica em db/blocks.ts e o transporte no
  * router. O mapeamento canônico por tipo está documentado em
  * packages/schema/src/block.ts; round-trip sem perda é coberto por teste
- * para os 9 tipos. É uma cópia do canônico de `@systembook/content/blocks`
+ * para todos os tipos. É uma cópia do canônico de `@systembook/content/blocks`
  * (SYS-93) — o server roda compilado e não importa o pacote em runtime —, e o
  * teste de paridade em serialize.test.ts trava as duas juntas.
  *
@@ -91,6 +91,8 @@ function nodeToBlock(node: TiptapNode): { tipo: BlockType; conteudo: unknown } {
           descricao: node.content,
         },
       };
+    case 'tokenTable':
+      return { tipo: 'token-table', conteudo: { group: (node.attrs?.group as string | undefined) ?? '' } };
     default:
       throw new UnknownNodeTypeError(node.type);
   }
@@ -141,6 +143,8 @@ function blockToNode(tipo: BlockType, conteudo: unknown): TiptapNode {
         content: c.descricao as TiptapNode[],
       };
     }
+    case 'token-table':
+      return { type: 'tokenTable', attrs: { group: (conteudo as BlockContentFor<'token-table'>).group } };
   }
 }
 

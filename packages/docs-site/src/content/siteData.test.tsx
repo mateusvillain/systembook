@@ -38,6 +38,7 @@ const FILES: Record<string, string> = {
       '<ComponentEmbed component="Button" variant="secondary" />',
       '<DosDonts variant="do" title="Verbo" coverComponent="Button" coverVariant="primary">\n  Use <u>verbos</u>.\n</DosDonts>',
       '<DosDonts variant="dont" coverImage="./dont.png" coverAlt="Errado">\n  Sem verbo.\n</DosDonts>',
+      '<TokenTable group="color.brand" />',
     ].join('\n\n'),
   ),
 };
@@ -72,6 +73,7 @@ describe('dados do site estático ↔ schema do conteúdo', () => {
       callout: true,
       'component-embed': true,
       'dos-donts': true,
+      'token-table': true,
     };
     const types = new Set(snapshots(data).flatMap(([, s]) => s.tabs.flatMap((t) => t.blocks.map((b) => b.type))));
     expect([...types].sort()).toEqual(Object.keys(all).sort());

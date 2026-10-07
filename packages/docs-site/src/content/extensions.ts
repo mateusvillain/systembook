@@ -14,6 +14,7 @@ import { CodeBlock, codeBlockConfig, type CodeBlockOptions } from './nodes/CodeB
 import { ComponentEmbed, type ComponentEmbedOptions } from './nodes/ComponentEmbed.js';
 import { DosDonts, type DosDontsOptions } from './nodes/DosDonts.js';
 import { Image } from './nodes/Image.js';
+import { TokenTableNode } from './nodes/TokenTableNode.js';
 
 /**
  * Conteúdo de célula de tabela (TASK-101): enumera os blocos permitidos em vez
@@ -86,6 +87,7 @@ export function createContentExtensions(options: {
     ComponentEmbed.configure(options.componentEmbed),
     DosDonts.configure(options.dosDonts),
     Image,
+    TokenTableNode,
   ];
 }
 

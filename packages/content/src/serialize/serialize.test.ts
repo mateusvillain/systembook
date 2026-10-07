@@ -141,6 +141,9 @@ const ALL_BLOCKS: (BlockData & { ordem: number })[] = [
     },
   },
   { type: 'dos-donts', content: { variant: 'do', titulo: '', cover: undefined, descricao: [p(text('Sem cover nem título.'))] } },
+  { type: 'token-table', content: { group: 'color.brand' } },
+  { type: 'token-table', content: { group: '' } },
+  { type: 'token-table', content: { group: ' a"b&c ' } },
 ].map((b, ordem) => ({ ...b, ordem }) as BlockData & { ordem: number });
 
 describe('round-trip Block[] → MDX → Block[]', () => {

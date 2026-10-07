@@ -13,7 +13,8 @@ export type BlockType =
   | 'table'
   | 'callout'
   | 'component-embed'
-  | 'dos-donts';
+  | 'dos-donts'
+  | 'token-table';
 
 /** JSON de conteúdo Tiptap (ProseMirror doc/node). Não re-validado neste pacote. */
 export type TiptapJson = unknown;
@@ -117,6 +118,18 @@ export interface DosDontsBlockContent {
   cover?: DosDontsCover;
 }
 
+/**
+ * Tabela de design tokens (SYS-137): mostra os tokens de um grupo, com o
+ * renderer do tipo deles. Guarda só a referência ao grupo — os valores vêm do
+ * `DocsDataSource.getTokens()` na hora de mostrar, então a página acompanha
+ * os tokens publicados sem ser editada. O nó Tiptap é atômico:
+ * `{ type: 'tokenTable', attrs: { group } }`.
+ */
+export interface TokenTableBlockContent {
+  /** Caminho do grupo (`color.brand`); `""` = todos os tokens. */
+  group: string;
+}
+
 export type HeadingBlock = BlockBase<'heading', HeadingBlockContent>;
 export type ParagraphBlock = BlockBase<'paragraph', ParagraphBlockContent>;
 export type ListBlock = BlockBase<'list', ListBlockContent>;
@@ -126,6 +139,7 @@ export type TableBlock = BlockBase<'table', TableBlockContent>;
 export type CalloutBlock = BlockBase<'callout', CalloutBlockContent>;
 export type ComponentEmbedBlock = BlockBase<'component-embed', ComponentEmbedBlockContent>;
 export type DosDontsBlock = BlockBase<'dos-donts', DosDontsBlockContent>;
+export type TokenTableBlock = BlockBase<'token-table', TokenTableBlockContent>;
 
 export type Block =
   | HeadingBlock
@@ -136,7 +150,8 @@ export type Block =
   | TableBlock
   | CalloutBlock
   | ComponentEmbedBlock
-  | DosDontsBlock;
+  | DosDontsBlock
+  | TokenTableBlock;
 
 /**
  * Forma do `snapshot_json` de `revisions` (TASK-33): snapshot da **página

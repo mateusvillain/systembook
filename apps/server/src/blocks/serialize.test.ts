@@ -11,7 +11,7 @@ const text = (t: string, marks?: unknown[]): TiptapNode =>
   marks ? { type: 'text', text: t, marks } : { type: 'text', text: t };
 
 /**
- * Um nó top-level de cada um dos 8 tipos do MVP, com os detalhes que já
+ * Um nó top-level de cada tipo, com os detalhes que já
  * derrubariam um mapeamento ingênuo: marks inline, attrs de lista (start),
  * colwidth de tabela, callout aninhando dois blocos.
  */
@@ -62,11 +62,12 @@ const FULL_DOC: TiptapDoc = {
       attrs: { variant: 'do', titulo: 'Use espaçamento consistente', cover: null },
       content: [{ type: 'paragraph', content: [text('Alinhe os elementos à grade de 8px')] }],
     },
+    { type: 'tokenTable', attrs: { group: 'color.brand' } },
   ],
 };
 
 describe('serialização doc ↔ blocks (TASK-31)', () => {
-  it('round-trip dos 9 tipos preserva o doc (inclusive via JSON de banco)', () => {
+  it('round-trip dos 10 tipos preserva o doc (inclusive via JSON de banco)', () => {
     const inserts = tiptapDocToBlocks(FULL_DOC, 'tab-1');
     expect(inserts.map((b) => b.tipo)).toEqual([
       'heading',
@@ -78,8 +79,9 @@ describe('serialização doc ↔ blocks (TASK-31)', () => {
       'callout',
       'component-embed',
       'dos-donts',
+      'token-table',
     ]);
-    expect(inserts.map((b) => b.ordem)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8]);
+    expect(inserts.map((b) => b.ordem)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
     expect(inserts.every((b) => b.tabId === 'tab-1')).toBe(true);
 
     // simula a ida e volta pelo banco: conteudo vira string e volta
@@ -189,7 +191,7 @@ describe('paridade com @systembook/content/blocks', () => {
     }));
     const shared = canonical.tiptapDocToBlocks(FULL_DOC);
     expect(server).toEqual(shared);
-    expect(new Set(server.map((b) => b.type)).size).toBe(9);
+    expect(new Set(server.map((b) => b.type)).size).toBe(10);
 
     const rows = server.map(({ type, content, ordem }) => ({ tipo: type, conteudo: content, ordem }));
     expect(blocksToTiptapDoc(rows)).toEqual(canonical.blocksToTiptapDoc(shared));
