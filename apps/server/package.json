@@ -19,6 +19,7 @@
     "db:seed": "tsx --env-file-if-exists=../../.env.local src/db/seed-cli.ts"
   },
   "dependencies": {
+    "@systembook/content": "workspace:*",
     "@systembook/schema": "workspace:*",
     "@trpc/server": "^11.0.0",
     "argon2": "^0.45.0",
@@ -29,7 +30,6 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@systembook/content": "workspace:*",
     "@types/better-sqlite3": "^7.6.12",
     "@types/busboy": "^1.5.4",
     "@types/node": "^22.13.0",

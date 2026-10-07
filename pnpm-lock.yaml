@@ -126,6 +126,9 @@ importers:
 
   apps/server:
     dependencies:
+      '@systembook/content':
+        specifier: workspace:*
+        version: link:../../packages/content
       '@systembook/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -151,9 +154,6 @@ importers:
         specifier: ^4.4.3
         version: 4.4.3
     devDependencies:
-      '@systembook/content':
-        specifier: workspace:*
-        version: link:../../packages/content
       '@types/better-sqlite3':
         specifier: ^7.6.12
         version: 7.6.13

@@ -42,6 +42,20 @@ export function findActiveUploadToken(db: Db, rawToken: string, escopo: TokenSco
   return row ?? null;
 }
 
+/**
+ * Escopo de um token ativo, qualquer que seja — `null` se desconhecido ou
+ * revogado. Separa o 401 (token que não vale nada) do 403 (token válido para
+ * outra coisa) nas rotas que pedem isso (SYS-142).
+ */
+export function activeUploadTokenScope(db: Db, rawToken: string): TokenScope | null {
+  const row = db
+    .select({ escopo: uploadTokens.escopo })
+    .from(uploadTokens)
+    .where(and(eq(uploadTokens.tokenHash, hashUploadToken(rawToken)), isNull(uploadTokens.revogadoEm)))
+    .get();
+  return row?.escopo ?? null;
+}
+
 /** O token do header `Authorization: Bearer …`, ou `null`. */
 export function parseBearer(headers: Pick<IncomingHttpHeaders, 'authorization'>): string | null {
   const header = headers.authorization ?? '';
