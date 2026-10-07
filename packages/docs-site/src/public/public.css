@@ -1025,7 +1025,7 @@ html:has(.sb-public[data-theme='dark']:not(.sb-public--preview)) {
   text-underline-offset: 3px;
 }
 
-.sb-public .sb-editor .ProseMirror code {
+.sb-public .sb-editor .ProseMirror code:where(:not(.sb-tokens *)) {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.88em;
   background: var(--sb-code-bg);
@@ -1074,7 +1074,7 @@ html:has(.sb-public[data-theme='dark']:not(.sb-public--preview)) {
 /* Na leitura pública a tabela usa layout automático: as colunas se dimensionam
    pelo conteúdo e o excedente rola no `.tableWrapper`. O editor admin mantém o
    layout fixo redimensionável — este override é escopado a `.sb-public`. */
-.sb-public .sb-editor .ProseMirror table {
+.sb-public .sb-editor .ProseMirror table:where(:not(.sb-tokens)) {
   table-layout: auto;
   width: auto;
   min-width: 100%;
@@ -1100,8 +1100,8 @@ html:has(.sb-public[data-theme='dark']:not(.sb-public--preview)) {
    leitura. É a soma desses pisos que estoura o container numa tabela larga e
    devolve o scroll — o mesmo mecanismo da TASK-57, agora acionado pela
    quantidade de colunas em vez de pelo comprimento do texto. */
-.sb-public .sb-editor .ProseMirror th,
-.sb-public .sb-editor .ProseMirror td {
+.sb-public .sb-editor .ProseMirror th:where(:not(.sb-tokens *)),
+.sb-public .sb-editor .ProseMirror td:where(:not(.sb-tokens *)) {
   white-space: normal;
   /* Só entra em ação quando a *palavra* sozinha não cabe (URL, token, hash):
      nesses casos quebrar no meio é melhor que estourar a coluna. */
@@ -1117,11 +1117,11 @@ html:has(.sb-public[data-theme='dark']:not(.sb-public--preview)) {
 
 /* O `margin: 1rem` dos parágrafos vale dentro de célula também e era o que
    inflava a altura das linhas: o respiro da tabela vem só do padding. */
-.sb-public .sb-editor .ProseMirror :is(th, td) > :is(p, ul, ol) {
+.sb-public .sb-editor .ProseMirror :is(th, td):where(:not(.sb-tokens *)) > :is(p, ul, ol) {
   margin: 0;
 }
 
-.sb-public .sb-editor .ProseMirror :is(th, td) > * + * {
+.sb-public .sb-editor .ProseMirror :is(th, td):where(:not(.sb-tokens *)) > * + * {
   margin-top: 0.35rem;
 }
 
@@ -1129,7 +1129,7 @@ html:has(.sb-public[data-theme='dark']:not(.sb-public--preview)) {
 /* Header em caixa normal, menor e em tom suave, sobre o fundo de superfície:
    rotula as colunas sem competir com o conteúdo. O divisor segue a mesma linha
    de 1px das linhas de dado. */
-.sb-public .sb-editor .ProseMirror th {
+.sb-public .sb-editor .ProseMirror th:where(:not(.sb-tokens *)) {
   background: var(--sb-th-bg);
   color: var(--sb-fg-muted);
   font-size: 0.8125rem;
@@ -1142,11 +1142,11 @@ html:has(.sb-public[data-theme='dark']:not(.sb-public--preview)) {
    faz esse papel. Vale para `th` também: o cabeçalho é uma linha de `th` dentro do
    `tbody` (Tiptap), então tabela só com cabeçalho ou com coluna de cabeçalho na
    última linha teria o traço duplicado com a borda do wrapper. */
-.sb-public .sb-editor .ProseMirror tr:last-child :is(th, td) {
+.sb-public .sb-editor .ProseMirror tr:last-child :is(th, td):where(:not(.sb-tokens *)) {
   border-bottom: none;
 }
 
-.sb-public .sb-editor .ProseMirror tbody tr:hover td {
+.sb-public .sb-editor .ProseMirror tbody tr:hover td:where(:not(.sb-tokens *)) {
   background: var(--sb-hover);
 }
 

@@ -230,8 +230,13 @@
   font-weight: 600;
 }
 
-/* Tabelas (TASK-27) — layout fixo e seleção de células visível */
-.sb-editor .ProseMirror table {
+/* Tabelas (TASK-27) — layout fixo e seleção de células visível. As regras de
+   tabela de conteúdo (aqui e em public.css) excluem a tabela de tokens
+   (`.sb-tokens`, SYS-139), que mora dentro do ProseMirror pelo bloco
+   token-table mas tem o próprio desenho. A exclusão vai em `:where()` para
+   não somar especificidade: as regras que sobrescrevem estas (`pre code`,
+   `a code`, os overrides da doc pública) continuam vencendo como antes. */
+.sb-editor .ProseMirror table:where(:not(.sb-tokens)) {
   border-collapse: collapse;
   table-layout: fixed;
   width: 100%;
@@ -248,8 +253,8 @@
   overflow-x: auto;
 }
 
-.sb-editor .ProseMirror th,
-.sb-editor .ProseMirror td {
+.sb-editor .ProseMirror th:where(:not(.sb-tokens *)),
+.sb-editor .ProseMirror td:where(:not(.sb-tokens *)) {
   border: 1px solid var(--sb-border, #ccc);
   padding: 0.35rem 0.5rem;
   vertical-align: top;
@@ -257,7 +262,7 @@
   min-width: 3rem;
 }
 
-.sb-editor .ProseMirror th {
+.sb-editor .ProseMirror th:where(:not(.sb-tokens *)) {
   background: var(--sb-th-bg, #f4f4f4);
   font-weight: 600;
   text-align: left;
@@ -620,8 +625,9 @@
 
 /* Código inline (SYS-93). A doc pública já tinha a regra (`public.css`); esta
    é a base para as outras superfícies (editor, diff, preview de revisões), com
-   os mesmos tokens. `pre code` (bloco) fica de fora. */
-.sb-editor .ProseMirror :not(pre) > code {
+   os mesmos tokens. `pre code` (bloco) fica de fora, e a tabela de tokens
+   também (SYS-139): nome e valor têm o próprio desenho. */
+.sb-editor .ProseMirror :not(pre) > code:where(:not(.sb-tokens *)) {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.88em;
   background: var(--sb-code-bg, #f4f5f7);
