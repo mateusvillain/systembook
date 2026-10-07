@@ -1,5 +1,5 @@
-import type { TokenSet } from '@systembook/schema';
-import { toCssValue } from './css.js';
+import type { Token, TokenSet } from '@systembook/schema';
+import { cssString, toCssValue, typographyProperties } from './css.js';
 import { toCssVar } from './names.js';
 
 /**
@@ -7,7 +7,9 @@ import { toCssVar } from './names.js';
  * injeta no iframe. Um bloco por modo, com os valores resolvidos: o primeiro
  * modo vale em `:root`, e cada modo também vale num elemento com
  * `data-mode="<modo>"` — trocar o atributo no `<html>` troca os valores, e um
- * trecho com outro modo dentro da página também funciona.
+ * trecho com outro modo dentro da página também funciona. Os blocos saem na
+ * ordem dos modos: `:root` e `[data-mode]` têm a mesma especificidade, então
+ * um modo no `<html>` vence o primeiro por vir depois.
  *
  * Todo bloco traz todos os tokens (não só os que mudam), para um modo aninhado
  * nunca herdar o valor do modo de fora.
@@ -16,28 +18,49 @@ import { toCssVar } from './names.js';
 /** Atributo que escolhe o modo dos tokens num elemento. */
 export const TOKEN_MODE_ATTRIBUTE = 'data-mode';
 
-/** Seletor de atributo com o modo como string CSS (aspas, barra e quebra de linha escapadas). */
 export function tokenModeSelector(mode: string): string {
-  const escaped = mode.replace(/["\\]/g, '\\$&').replace(/\n/g, '\\a ').replace(/\r/g, '\\d ');
-  return `[${TOKEN_MODE_ATTRIBUTE}="${escaped}"]`;
+  return `[${TOKEN_MODE_ATTRIBUTE}=${cssString(mode)}]`;
 }
 
 /**
- * Valor que fecharia a declaração ou o bloco antes da hora. A validação não
- * deixa passar nada assim; a checagem é a última barreira de quem injeta o CSS.
+ * Valor que escaparia da própria declaração: chave, `;`, comentário, quebra de
+ * linha, `<` (um `</style>`), barra solta (escaparia o `;` que fecha) ou aspa
+ * sem par (engoliria a declaração seguinte). A validação não deixa passar nada
+ * assim; a checagem é a última barreira de quem injeta o CSS.
  */
-const UNSAFE_VALUE = /[{};\n\r]|\/\*/;
+function isSafeValue(value: string): boolean {
+  if (/[{};<\n\r]|\/\*/.test(value)) return false;
+  const unescaped = value.replace(/\\./g, '');
+  if (unescaped.includes('\\')) return false;
+  return [`"`, `'`].every((quote) => unescaped.split(quote).length % 2 === 1);
+}
+
+/**
+ * As declarações de um token num modo. A tipografia ganha, além do `font`, uma
+ * variável por campo (`--font-body-letter-spacing`) — o `font` não carrega o
+ * `letter-spacing`, e o componente pode querer um campo só.
+ */
+function declarations(token: Token, mode: string): [name: string, value: string][] {
+  const entry = token.byMode[mode];
+  if (!entry) return [];
+  const name = toCssVar(token.path);
+  const value = toCssValue(token.type, entry.resolvedValue);
+  const fields =
+    token.type === 'typography'
+      ? typographyProperties(entry.resolvedValue).map(([property, css]): [string, string] => [`${name}-${property}`, css])
+      : [];
+  return [...(value === null ? [] : [[name, value] as [string, string]]), ...fields];
+}
 
 export function tokensToCss(set: TokenSet): string {
   return set.modes
     .map((mode, i) => {
       const selector = i === 0 ? `:root, ${tokenModeSelector(mode)}` : tokenModeSelector(mode);
-      const declarations = set.tokens.flatMap((token) => {
-        const entry = token.byMode[mode];
-        const value = entry && toCssValue(token.type, entry.resolvedValue);
-        return value && !UNSAFE_VALUE.test(value) ? [`  ${toCssVar(token.path)}: ${value};`] : [];
-      });
-      return `${selector} {\n${declarations.join('\n')}\n}`;
+      const lines = set.tokens
+        .flatMap((token) => declarations(token, mode))
+        .filter(([, value]) => isSafeValue(value))
+        .map(([name, value]) => `  ${name}: ${value};\n`);
+      return `${selector} {\n${lines.join('')}}`;
     })
     .join('\n\n');
 }

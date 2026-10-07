@@ -46,7 +46,7 @@ describe('tokensToCss', () => {
       modes: ['default'],
       tokens: [
         token('font.body', 'typography', {
-          default: { fontFamily: ['Inter Variable', 'sans-serif'], fontSize: 16, fontWeight: 'Regular', letterSpacing: 0, lineHeight: 1.5 },
+          default: { fontFamily: ['Inter Variable', 'sans-serif'], fontSize: 16, fontWeight: 'Regular', letterSpacing: -0.2, lineHeight: 1.5 },
         }),
         token('shadow.raised', 'shadow', {
           default: [
@@ -56,6 +56,7 @@ describe('tokensToCss', () => {
         }),
         token('border.subtle', 'border', { default: { color: '#e5e5e5', width: 1, style: 'solid' } }),
         token('motion.enter', 'transition', { default: { duration: 200, delay: 0, timingFunction: [0.2, 0, 0, 1] } }),
+        token('motion.instant', 'duration', { default: 0 }),
         token('gradient.brand', 'gradient', {
           default: [
             { color: '#0a84ff', position: 0 },
@@ -67,9 +68,15 @@ describe('tokensToCss', () => {
     expect(tokensToCss(set)).toMatchInlineSnapshot(`
       ":root, [data-mode="default"] {
         --font-body: 400 16px/1.5 "Inter Variable", sans-serif;
+        --font-body-font-family: "Inter Variable", sans-serif;
+        --font-body-font-size: 16px;
+        --font-body-font-weight: 400;
+        --font-body-letter-spacing: -0.2px;
+        --font-body-line-height: 1.5;
         --shadow-raised: 0 1px 2px 0 #0000001a, inset 0 4px 12px -2px #00000026;
         --border-subtle: 1px solid #e5e5e5;
-        --motion-enter: 200ms cubic-bezier(0.2, 0, 0, 1) 0;
+        --motion-enter: 200ms cubic-bezier(0.2, 0, 0, 1) 0ms;
+        --motion-instant: 0ms;
         --gradient-brand: linear-gradient(90deg, #0a84ff 0%, #5e5ce6 100%);
       }"
     `);
@@ -82,10 +89,14 @@ describe('tokensToCss', () => {
         token('a', 'color', { default: { colorSpace: 'nope', components: [1, 1, 1] } }),
         token('b', 'color', { default: 'red; } body { display: none' }),
         token('c', 'dimension', { default: '4px /* x */' }),
+        token('e', 'color', { default: 'red"' }),
+        token('f', 'dimension', { default: '4px\\' }),
+        token('g', 'fontFamily', { default: '</style>' }),
         token('d', 'color', { default: '#000' }),
+        token('h', 'fontFamily', { default: 'My "Font"' }),
       ],
     };
-    expect(tokensToCss(set)).toBe(':root, [data-mode="default"] {\n  --d: #000;\n}');
+    expect(tokensToCss(set)).toBe(':root, [data-mode="default"] {\n  --d: #000;\n  --h: "My \\"Font\\"";\n}');
   });
 
   it('escapa o nome do modo no seletor', () => {

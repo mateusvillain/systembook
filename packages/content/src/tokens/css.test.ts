@@ -29,7 +29,8 @@ describe('toCssValue', () => {
     ['strokeStyle', 'Dashed', 'dashed'],
     ['strokeStyle', { dashArray: ['2px'], lineCap: 'round' }, 'dashed'],
     ['border', { color: '#000', width: 1, style: 'solid' }, '1px solid #000'],
-    ['transition', { duration: '200ms', delay: 0, timingFunction: 'ease' }, '200ms ease 0'],
+    ['transition', { duration: '200ms', delay: 0, timingFunction: 'ease' }, '200ms ease 0ms'],
+    ['duration', 0, '0ms'],
     ['shadow', { color: '#0003', offsetX: '0px', offsetY: '2px', blur: '8px', spread: '0px' }, '0px 2px 8px 0px #0003'],
     [
       'shadow',
@@ -68,6 +69,11 @@ describe('toCssValue', () => {
     expect(toCssValue('typography', { fontFamily: 'Inter', fontWeight: 500, fontSize: 14 })).toBe('500 14px Inter');
     expect(toCssValue('typography', { fontFamily: 'Inter', lineHeight: 1.5 })).toBeNull();
     expect(toCssValue('typography', { fontSize: 14 })).toBeNull();
+    expect(toCssValue('typography', { fontFamily: 'Inter', fontSize: 14, fontWeight: 'heavyish' })).toBeNull();
+  });
+
+  it('família com aspas ou barra vira string CSS escapada', () => {
+    expect(toCssValue('fontFamily', ['My "Font"', 'Back\\slash'])).toBe('"My \\"Font\\"", "Back\\\\slash"');
   });
 });
 
