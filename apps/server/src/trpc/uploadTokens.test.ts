@@ -81,6 +81,19 @@ describe('uploadTokens (TASK-44)', () => {
     expect(listed[0]?.revogadoEm).toBeInstanceOf(Date);
   });
 
+  it('escopo tokens (SYS-145): token próprio, que não serve aos outros escopos nem eles a ele', async () => {
+    const caller = callerFor(db, admin);
+    const tokens = await caller.uploadTokens.create({ label: 'Tokens CI', escopo: 'tokens' });
+    const ci = await caller.uploadTokens.create({ label: 'Previews CI' });
+    expect(tokens.escopo).toBe('tokens');
+    expect(findActiveUploadToken(db, tokens.token, 'tokens')?.criadoPor).toBe(admin.userId);
+    expect(findActiveUploadToken(db, tokens.token, 'previews')).toBeNull();
+    expect(findActiveUploadToken(db, tokens.token, 'migration')).toBeNull();
+    expect(findActiveUploadToken(db, ci.token, 'tokens')).toBeNull();
+    const listed = await caller.uploadTokens.list();
+    expect(listed.find((t) => t.label === 'Tokens CI')?.escopo).toBe('tokens');
+  });
+
   it('escopo (SYS-110): previews por padrão, migration sob pedido, e o criador fica registrado', async () => {
     const caller = callerFor(db, admin);
     const ci = await caller.uploadTokens.create({ label: 'CI' });

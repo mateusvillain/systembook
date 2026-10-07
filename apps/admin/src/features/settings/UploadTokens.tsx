@@ -24,6 +24,10 @@ const SCOPES: Record<TokenScope, { label: string; revokeEffect: string }> = {
     label: 'Migration (export/import)',
     revokeEffect: 'The CLI using it will no longer be able to export or import content.',
   },
+  tokens: {
+    label: 'Design tokens upload (CI)',
+    revokeEffect: 'The CI using it will no longer be able to publish design tokens.',
+  },
 };
 
 /**
@@ -56,6 +60,8 @@ export function UploadTokens() {
         <p className="text-muted-foreground text-sm">
           Each token does one thing. <strong>Preview upload</strong> tokens authenticate the team CI
           when uploading preview artifacts (<code>POST /api/previews</code>).{' '}
+          <strong>Design tokens upload</strong> tokens let the CI publish the design tokens with{' '}
+          <code>systembook tokens</code> (<code>POST /api/tokens</code>).{' '}
           <strong>Migration</strong> tokens let the <code>systembook</code> CLI export this instance
           to files or import files into it — they read and write all content, so keep them out of
           CI. Revoke any token that leaks.
