@@ -211,10 +211,12 @@ export const blocks = sqliteTable('blocks', {
  * `escopo` (SYS-110): um token serve a uma coisa só. `previews` é o do CI;
  * `migration` lê e escreve o conteúdo inteiro da instância (export/import do
  * modo estático), então não pode ser o mesmo valor que mora no CI. Tokens
- * antigos viram `previews` pelo default. `criado_por` é o admin que gerou o
- * token: o import registra as revisões em nome dele.
+ * antigos viram `previews` pelo default. `tokens` (SYS-145) publica os design
+ * tokens pelo CI (`systembook tokens` → `POST /api/tokens`, SYS-142/144) —
+ * separado de `previews` para revogar um sem derrubar o outro. `criado_por`
+ * é o admin que gerou o token: o import registra as revisões em nome dele.
  */
-export const TOKEN_SCOPES = ['previews', 'migration'] as const;
+export const TOKEN_SCOPES = ['previews', 'migration', 'tokens'] as const;
 export type TokenScope = (typeof TOKEN_SCOPES)[number];
 
 export const uploadTokens = sqliteTable('upload_tokens', {

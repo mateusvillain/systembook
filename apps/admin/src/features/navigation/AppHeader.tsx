@@ -370,7 +370,8 @@ function UserMenu({
           <DropdownMenuItem asChild>
             <Link to="/admin/settings/tokens">
               <KeyRound />
-              Tokens
+              {/* "Upload tokens", não "Tokens": design tokens são outra coisa (SYS-145). */}
+              Upload tokens
             </Link>
           </DropdownMenuItem>
         )}
