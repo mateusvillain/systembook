@@ -99,6 +99,8 @@ export function nodeToBlock(node: TiptapNode): BlockData {
           descricao: node.content,
         },
       };
+    case 'tokenTable':
+      return { type: 'token-table', content: { group: (node.attrs?.group as string | undefined) ?? '' } };
     default:
       throw new UnknownNodeTypeError(node.type);
   }
@@ -146,6 +148,8 @@ export function blockToNode(block: BlockData): TiptapNode {
         attrs: { variant: block.content.variant, titulo: block.content.titulo, cover: block.content.cover ?? null },
         content: block.content.descricao as TiptapNode[],
       };
+    case 'token-table':
+      return { type: 'tokenTable', attrs: { group: block.content.group } };
   }
 }
 

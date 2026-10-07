@@ -61,6 +61,34 @@ describe('<ComponentEmbed>', () => {
   });
 });
 
+describe('<TokenTable> (SYS-137)', () => {
+  it('grupo; sem grupo são todos os tokens', () => {
+    const { doc, diagnostics } = mdx('<TokenTable group="color.brand" />\n\n<TokenTable />\n\n<TokenTable group="" />');
+    expect(diagnostics).toEqual([]);
+    expect(doc.content).toEqual([
+      { type: 'tokenTable', attrs: { group: 'color.brand' } },
+      { type: 'tokenTable', attrs: { group: '' } },
+      { type: 'tokenTable', attrs: { group: '' } },
+    ]);
+  });
+
+  it('dentro de <DosDonts> pode; dentro de <Callout> não, como no CMS', () => {
+    expect(mdx('<DosDonts variant="do">\n  Veja.\n\n  <TokenTable group="space" />\n</DosDonts>').diagnostics).toEqual([]);
+    expect(mdx('<Callout>\n  Veja.\n\n  <TokenTable group="space" />\n</Callout>').diagnostics.map((d) => d.message)).toEqual([
+      '<TokenTable> não pode ficar dentro de <Callout> (como no editor do CMS) — tire a tabela de tokens do callout.',
+    ]);
+  });
+
+  it('com conteúdo ou prop desconhecida é erro', () => {
+    expect(mdx('<TokenTable group="x">texto</TokenTable>').diagnostics.map((d) => d.message)).toEqual([
+      '<TokenTable> não tem conteúdo — use a forma auto-fechada: <TokenTable group="…" />.',
+    ]);
+    expect(mdx('<TokenTable grup="x" />').diagnostics.map((d) => d.message)).toEqual([
+      '<TokenTable>: a prop "grup" não existe (quis dizer "group"?) — aceitas: "group".',
+    ]);
+  });
+});
+
 describe('<DosDonts>', () => {
   it('com cover de componente e título', () => {
     const { doc, diagnostics } = mdx(

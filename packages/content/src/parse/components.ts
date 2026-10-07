@@ -5,8 +5,8 @@ import type { DiagnosticBag, Positioned } from '../diagnostics.js';
 import { didYouMean } from '../diagnostics.js';
 
 /**
- * Componentes MDX (SYS-94): os de bloco `<Callout>`, `<ComponentEmbed>` e
- * `<DosDonts>`, com **props literais** (string entre aspas), e o inline `<u>`
+ * Componentes MDX (SYS-94): os de bloco `<Callout>`, `<ComponentEmbed>`,
+ * `<DosDonts>` e `<TokenTable>` (SYS-137), com **props literais** (string entre aspas), e o inline `<u>`
  * (tratado em `toTiptap.ts`). O contrato está em `docs/static-format.md`,
  * "Componentes MDX". Nada é executado: o elemento é lido do AST e vira o nó
  * Tiptap correspondente.
@@ -24,7 +24,7 @@ type JsxAttribute =
   | ({ type: 'mdxJsxAttribute'; name: string; value: string | null | { type: string } } & Positioned)
   | ({ type: 'mdxJsxExpressionAttribute' } & Positioned);
 
-const BLOCK_COMPONENTS = ['Callout', 'ComponentEmbed', 'DosDonts'] as const;
+const BLOCK_COMPONENTS = ['Callout', 'ComponentEmbed', 'DosDonts', 'TokenTable'] as const;
 type BlockComponent = (typeof BLOCK_COMPONENTS)[number];
 
 /** Todos os componentes aceitos, para as mensagens: `<Callout>, …, ou <u>`. */
@@ -140,12 +140,18 @@ function callout(el: JsxElement, ctx: ComponentContext): TiptapNode | null {
   // Regra do editor do CMS (`CALLOUT_CONTENT`): tabela não pode ser filha
   // direta do callout — dentro de uma lista ou de um <DosDonts> do callout, pode.
   const allowed = children.filter((child) => {
-    if (child.type !== 'table') return true;
-    ctx.bag.report(
-      child,
-      'tabela não pode ficar direto dentro de <Callout> (como no editor do CMS) — use um <DosDonts> ou tire a tabela do callout.',
-    );
-    return false;
+    if (child.type === 'table') {
+      ctx.bag.report(
+        child,
+        'tabela não pode ficar direto dentro de <Callout> (como no editor do CMS) — use um <DosDonts> ou tire a tabela do callout.',
+      );
+      return false;
+    }
+    if (child.type === 'mdxJsxFlowElement' && (child as unknown as JsxElement).name === 'TokenTable') {
+      ctx.bag.report(child, '<TokenTable> não pode ficar dentro de <Callout> (como no editor do CMS) — tire a tabela de tokens do callout.');
+      return false;
+    }
+    return true;
   });
   const content = ctx.convertChildren(allowed);
   if (!children.length) ctx.bag.report(el, '<Callout> vazio — escreva o conteúdo entre as tags.');
@@ -166,6 +172,16 @@ function componentEmbed(el: JsxElement, ctx: ComponentContext): TiptapNode | nul
     type: 'componentEmbed',
     attrs: { componentName: props.component!.value, variantId: props.variant!.value },
   };
+}
+
+function tokenTable(el: JsxElement, ctx: ComponentContext): TiptapNode | null {
+  const props = readProps(el, { group: { allowEmpty: true } }, ctx.bag);
+  if (meaningful(el.children as RootContent[]).length) {
+    ctx.bag.report(el, '<TokenTable> não tem conteúdo — use a forma auto-fechada: <TokenTable group="…" />.');
+    return null;
+  }
+  if (!props) return null;
+  return { type: 'tokenTable', attrs: { group: props.group?.value.trim() ?? '' } };
 }
 
 function dosDonts(el: JsxElement, ctx: ComponentContext): TiptapNode | null {
@@ -228,6 +244,8 @@ export function blockComponent(el: JsxElement, ctx: ComponentContext): TiptapNod
       return componentEmbed(el, ctx);
     case 'DosDonts':
       return dosDonts(el, ctx);
+    case 'TokenTable':
+      return tokenTable(el, ctx);
     default:
       ctx.bag.report(el, componentMessage(el.name));
       return null;

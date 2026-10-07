@@ -36,6 +36,7 @@ const SAMPLES: { [T in BlockType]: BlockContentFor<T> } = {
     descricao: [{ type: 'paragraph', content: [] }],
     cover: { kind: 'image', src: '/uploads/do.png', alt: 'Exemplo correto' },
   },
+  'token-table': { group: 'color.brand' },
 };
 
 describe('blocks (TASK-30)', () => {
