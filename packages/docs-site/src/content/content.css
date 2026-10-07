@@ -525,6 +525,50 @@
   font-size: 0.8rem;
 }
 
+.sb-component-embed-actions {
+  /* À direita mesmo com a âncora do bloco (BlockAnchors) portalada no fim da barra. */
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Modo dos design tokens no preview (SYS-148): botões segmentados. */
+.sb-preview-mode {
+  display: inline-flex;
+  border: 1px solid var(--sb-border, #ccc);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.sb-preview-mode-option {
+  border: 0;
+  background: var(--sb-bg, #fff);
+  color: var(--sb-fg-muted, #666);
+  padding: 0.15rem 0.5rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.sb-preview-mode-option + .sb-preview-mode-option {
+  border-left: 1px solid var(--sb-border, #ccc);
+}
+
+.sb-preview-mode-option:hover {
+  background: var(--sb-hover, #f3f4f6);
+}
+
+.sb-preview-mode-option[aria-pressed='true'] {
+  background: var(--sb-hover, #f3f4f6);
+  color: var(--sb-fg, inherit);
+  font-weight: 600;
+}
+
+.sb-preview-mode-option:focus-visible {
+  outline: 2px solid var(--sb-accent, #1d4ed8);
+  outline-offset: -2px;
+}
+
 /* Altura padrão 240px, redimensionável verticalmente pelo autor
    (resize exige overflow != visible). */
 .sb-editor .sb-component-embed-frame {

@@ -4,6 +4,7 @@ import { NodeViewWrapper, ReactNodeViewRenderer, type NodeViewProps } from '@tip
 import { Puzzle, TriangleAlert } from 'lucide-react';
 import { hasPreviewSelection, useComponentPreview } from '../docsQueries.js';
 import { ControlsPanel } from '../ControlsPanel.js';
+import { PreviewModeToggle, usePreviewTokens } from '../previewTokens.js';
 
 /**
  * Slot de preview de componente. O nó atômico (TASK-29) reserva
@@ -73,6 +74,7 @@ function ComponentEmbedView({ node, updateAttributes, editor, extension }: NodeV
   const hasSelection = hasPreviewSelection(componentName, variantId);
 
   const previewQuery = useComponentPreview(componentName, variantId);
+  const tokens = usePreviewTokens(iframeRef);
 
   const state: ComponentEmbedState = !hasSelection
     ? 'unset'
@@ -182,7 +184,10 @@ function ComponentEmbedView({ node, updateAttributes, editor, extension }: NodeV
           <Puzzle aria-hidden size={13} />
           {componentName} / {variantId}
         </span>
-        {control}
+        <span className="sb-component-embed-actions">
+          <PreviewModeToggle modes={tokens.modes} mode={tokens.mode} setMode={tokens.setMode} />
+          {control}
+        </span>
       </div>
       <iframe
         ref={iframeRef}
@@ -190,6 +195,7 @@ function ComponentEmbedView({ node, updateAttributes, editor, extension }: NodeV
         src={preview.url}
         title={`Preview of ${componentName} (${variantId})`}
         loading="lazy"
+        onLoad={tokens.onLoad}
         /*
          * Política de sandbox (acceptance criteria da TASK-47):
          * - `allow-scripts` é OBRIGATÓRIO — o artefato é o bundle React do
