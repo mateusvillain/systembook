@@ -18,6 +18,19 @@ const TOKENS: TokenSet = {
   tokens: [
     { path: 'space.1', type: 'dimension', byMode: { default: { value: '4px', resolvedValue: '4px' } } },
     { path: 'color.fg', type: 'color', byMode: { default: { value: '#111', resolvedValue: '#111' } } },
+    { path: 'font.weight.bold', type: 'fontWeight', byMode: { default: { value: 700, resolvedValue: 700 } } },
+    {
+      path: 'shadow.card',
+      type: 'shadow',
+      byMode: {
+        default: {
+          value: { color: '#0003', offsetX: '0px', offsetY: '1px', blur: '2px', spread: '0px' },
+          resolvedValue: { color: '#0003', offsetX: '0px', offsetY: '1px', blur: '2px', spread: '0px' },
+        },
+      },
+    },
+    { path: 'font.family.sans', type: 'fontFamily', byMode: { default: { value: 'Inter', resolvedValue: 'Inter' } } },
+    { path: 'motion.fast', type: 'duration', byMode: { default: { value: '100ms', resolvedValue: '100ms' } } },
   ],
 };
 
@@ -46,7 +59,14 @@ describe('bloco token-table (SYS-139)', () => {
     expect([...block.querySelectorAll('table')].map((t) => t.getAttribute('aria-label'))).toEqual([
       'All tokens (dimension)',
       'All tokens (color)',
+      'All tokens (fontWeight, fontFamily)',
+      'All tokens (shadow)',
+      'All tokens (duration)',
     ]);
+    // cada uma com a amostra do seu renderer; o fallback, sem amostra
+    expect(block.querySelectorAll('.sb-token-type-sample')).toHaveLength(2);
+    expect(block.querySelector('table[aria-label="All tokens (shadow)"] .sb-token-cell')!.children.length).toBeGreaterThan(1);
+    expect(block.querySelector('table[aria-label="All tokens (duration)"] .sb-token-cell')!.children).toHaveLength(1);
   });
 
   it('sem nenhum token publicado, aviso no lugar', async () => {
@@ -57,7 +77,7 @@ describe('bloco token-table (SYS-139)', () => {
 
   it('erro na leitura vira aviso, sem quebrar a página', async () => {
     const failed = await renderBlock(() => Promise.reject(new Error('rede')));
-    expect(failed.dataset.state).toBe('empty');
+    expect(failed.dataset.state).toBe('error');
     expect(failed.textContent).toBe('Could not load the design tokens.');
   });
 });

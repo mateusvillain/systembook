@@ -13,7 +13,7 @@ import { TokenGroup } from '../tokens/TokenGroup.js';
  * O NodeView (SYS-139) lê os tokens do `DocsDataSource.getTokens()` na hora de
  * mostrar — a página acompanha os tokens publicados sem ser editada — e usa o
  * renderer de cada tipo. Grupo sem nenhum token (inexistente, renomeado, ou
- * nenhum token publicado) vira um aviso no lugar, sem quebrar a página.
+ * nenhum token publicado) e erro de leitura viram um aviso no lugar, sem quebrar a página.
  */
 function TokenTableView({ node }: NodeViewProps) {
   const group = node.attrs.group as string;
@@ -23,7 +23,7 @@ function TokenTableView({ node }: NodeViewProps) {
 
   if (query.isLoading) {
     return (
-      <NodeViewWrapper className="sb-token-block sb-token-block--notice" data-group={group} data-state="loading">
+      <NodeViewWrapper className="sb-token-block sb-token-block--notice" data-group={group} data-state="loading" role="status">
         Loading tokens…
       </NodeViewWrapper>
     );
@@ -31,7 +31,7 @@ function TokenTableView({ node }: NodeViewProps) {
 
   if (!set || !tokens.length) {
     return (
-      <NodeViewWrapper className="sb-token-block sb-token-block--notice" data-group={group} data-state="empty" role="note">
+      <NodeViewWrapper className="sb-token-block sb-token-block--notice" data-group={group} data-state={query.isError ? 'error' : 'empty'} role="note">
         <TriangleAlert aria-hidden size={19} />
         <span>
           {query.isError ? (

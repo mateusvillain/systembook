@@ -895,7 +895,8 @@
 }
 
 /* Bloco token-table (SYS-139): as tabelas vêm dos renderers acima; aqui só o
-   aviso de carregando/sem tokens, com a cara do embed sem preview (âmbar). */
+   aviso de carregando/sem tokens/erro, âmbar como o callout `warning` (o
+   tema escuro redefine as variáveis em public.css). */
 .sb-token-block {
   margin: 0.75rem 0;
 }
@@ -911,8 +912,8 @@
   background: var(--sb-surface, #fafafa);
 }
 
-.sb-token-block--notice[data-state='empty'] {
-  border-color: #e8b04a;
-  background: #fdf6e7;
-  color: #7a5a12;
+.sb-token-block--notice:is([data-state='empty'], [data-state='error']) {
+  border-color: var(--sb-token-notice-border, #e8b04a);
+  background: var(--sb-token-notice-bg, #fdf6e7);
+  color: var(--sb-token-notice-fg, #7a5a12);
 }

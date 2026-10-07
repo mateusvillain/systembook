@@ -35,17 +35,19 @@ export function TokenGroup({ tokens, modes, label }: TokenGroupProps) {
   const tables = new Map<Renderer, Token[]>();
   for (const token of tokens) {
     const renderer = RENDERERS[token.type] ?? TokenTable;
-    tables.set(renderer, [...(tables.get(renderer) ?? []), token]);
+    const rows = tables.get(renderer);
+    if (rows) rows.push(token);
+    else tables.set(renderer, [token]);
   }
   const single = tables.size === 1;
   return (
     <>
-      {[...tables].map(([Renderer, group]) => (
+      {[...tables].map(([Renderer, rows]) => (
         <Renderer
-          key={group[0]!.path}
-          tokens={group}
+          key={rows[0]!.path}
+          tokens={rows}
           modes={modes}
-          label={single ? label : `${label} (${[...new Set(group.map((t) => t.type))].join(', ')})`}
+          label={single ? label : `${label} (${[...new Set(rows.map((t) => t.type))].join(', ')})`}
         />
       ))}
     </>
