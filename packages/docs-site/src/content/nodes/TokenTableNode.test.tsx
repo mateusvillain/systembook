@@ -6,6 +6,9 @@ import type { DocsDataSource, TokenSet } from '@systembook/schema';
 import { setupDom } from '../../../test/dom.js';
 import { DocsDataSourceProvider } from '../dataSource.js';
 import { PageRenderer } from '../../public/PageRenderer.js';
+import { EditorContent, useEditor, type Editor } from '@tiptap/react';
+import { createContentExtensions } from '../extensions.js';
+import type { TokenTableEditControlsProps } from './TokenTableNode.js';
 
 const dom = setupDom();
 
@@ -79,5 +82,56 @@ describe('bloco token-table (SYS-139)', () => {
     const failed = await renderBlock(() => Promise.reject(new Error('rede')));
     expect(failed.dataset.state).toBe('error');
     expect(failed.textContent).toBe('Could not load the design tokens.');
+  });
+});
+
+describe('seletor de grupo no editor (SYS-138)', () => {
+  /** Controle stub: registra as props e escolhe `space` ao clicar. */
+  const seen: TokenTableEditControlsProps[] = [];
+  function Picker(props: TokenTableEditControlsProps) {
+    seen.push(props);
+    return <button type="button" onClick={() => props.onSelect('space')}>pick</button>;
+  }
+  const extensions = createContentExtensions({ tokenTable: { EditControls: Picker } });
+
+  async function renderEditor(editable: boolean, getTokens: DocsDataSource['getTokens']) {
+    seen.length = 0;
+    let editor: Editor | null = null;
+    function Host() {
+      editor = useEditor({ extensions, editable, content: { type: 'doc', content: [{ type: 'tokenTable', attrs: { group: 'color' } }] } });
+      return <EditorContent editor={editor} />;
+    }
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    await dom.render(
+      <QueryClientProvider client={client}>
+        <DocsDataSourceProvider dataSource={{ getTokens } as DocsDataSource}>
+          <Host />
+        </DocsDataSourceProvider>
+      </QueryClientProvider>,
+    );
+    await act(async () => {
+      await vi.waitFor(() => {
+        if (!dom.container().querySelector('.sb-token-block:not([data-state=loading])')) throw new Error('carregando');
+      });
+    });
+    return () => editor!;
+  }
+
+  it('editando: recebe os grupos e troca o grupo do nó', async () => {
+    const editor = await renderEditor(true, async () => TOKENS);
+    expect(seen.at(-1)).toMatchObject({ group: 'color', groups: ['space', 'color', 'font', 'font.weight', 'shadow', 'font.family', 'motion'], hasTokens: true, loading: false });
+    await act(async () => dom.container().querySelector<HTMLButtonElement>('.sb-token-block-bar button')!.click());
+    expect(editor().getJSON().content![0]).toEqual({ type: 'tokenTable', attrs: { group: 'space' } });
+  });
+
+  it('sem tokens, o seletor sabe que não há o que escolher', async () => {
+    await renderEditor(true, async () => null);
+    expect(seen.at(-1)).toMatchObject({ groups: [], hasTokens: false, loading: false });
+  });
+
+  it('read-only não mostra o seletor', async () => {
+    await renderEditor(false, async () => TOKENS);
+    expect(seen).toEqual([]);
+    expect(dom.container().querySelector('.sb-token-block-bar')).toBeNull();
   });
 });

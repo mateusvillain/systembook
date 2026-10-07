@@ -283,6 +283,42 @@
   outline-offset: 2px;
 }
 
+/* Seletor de grupo do bloco token-table (SYS-138): mesmo peso visual dos
+   botões de ação do embed, na barra acima das tabelas. */
+.sb-token-group-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--sb-fg-muted, #666);
+}
+
+.sb-token-group-select {
+  border: 1px solid var(--sb-border, #ccc);
+  border-radius: 6px;
+  background: var(--sb-bg, #fff);
+  color: var(--sb-fg, inherit);
+  padding: 0.2rem 0.4rem;
+  font: inherit;
+  max-width: 20rem;
+  cursor: pointer;
+}
+
+.sb-token-group-select:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.sb-token-group-select:focus-visible {
+  outline: 2px solid var(--sb-accent, #1d4ed8);
+  outline-offset: 2px;
+}
+
+.sb-token-group-hint {
+  font-size: 0.8rem;
+  color: var(--sb-fg-muted, #666);
+}
+
 .sb-embed-action-btn:disabled {
   cursor: not-allowed;
   opacity: 0.6;

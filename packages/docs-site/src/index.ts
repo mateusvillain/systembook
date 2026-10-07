@@ -52,6 +52,7 @@ export {
   type DosDontsTitleFieldProps,
 } from './content/nodes/DosDonts.js';
 export { EmbedCoverPreview, type DosDontsCoverFieldProps } from './content/nodes/DosDontsCover.js';
+export type { TokenTableEditControlsProps, TokenTableOptions } from './content/nodes/TokenTableNode.js';
 export { blocksToTiptapDoc } from './content/blocksToTiptapDoc.js';
 
 // Design tokens

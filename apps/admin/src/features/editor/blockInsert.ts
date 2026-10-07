@@ -10,6 +10,7 @@ import {
   ListOrdered,
   Pilcrow,
   Puzzle,
+  SwatchBook,
   Table as TableIcon,
   ThumbsDown,
   ThumbsUp,
@@ -161,6 +162,8 @@ export function filterBlockGroupsForContext(
   const isAllowed = (item: BlockItem) => {
     if (item.id === 'table' && (context.insideCallout || context.insideTableCell)) return false;
     if (item.id.startsWith('callout-') && context.insideTableCell) return false;
+    // Fora do `CALLOUT_CONTENT` e do conteúdo de célula (SYS-137).
+    if (item.id === 'tokenTable' && (context.insideCallout || context.insideTableCell)) return false;
     return true;
   };
   return groups
@@ -272,6 +275,13 @@ export const BLOCK_GROUPS: BlockGroup[] = [
         label: 'Component embed',
         icon: Puzzle,
         kind: 'embed',
+      },
+      {
+        // Entra com "All tokens"; o grupo se escolhe no seletor do próprio bloco.
+        id: 'tokenTable',
+        label: 'Token table',
+        icon: SwatchBook,
+        insert: (editor, atPos) => insertSimple(editor, atPos, { type: 'tokenTable', attrs: { group: '' } }),
       },
     ],
   },

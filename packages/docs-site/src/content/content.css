@@ -901,7 +901,7 @@
   margin: 0.75rem 0;
 }
 
-.sb-token-block--notice {
+.sb-token-block-notice {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -912,8 +912,16 @@
   background: var(--sb-surface, #fafafa);
 }
 
-.sb-token-block--notice:is([data-state='empty'], [data-state='error']) {
+.sb-token-block:is([data-state='empty'], [data-state='error']) .sb-token-block-notice {
   border-color: var(--sb-token-notice-border, #e8b04a);
   background: var(--sb-token-notice-bg, #fdf6e7);
   color: var(--sb-token-notice-fg, #7a5a12);
+}
+
+/* Seletor de grupo no editor (SYS-138), acima das tabelas. */
+.sb-token-block-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
 }
