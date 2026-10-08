@@ -33,7 +33,7 @@ const TOKENS: TokenSet = {
       },
     },
     { path: 'font.family.sans', type: 'fontFamily', byMode: { default: { value: 'Inter', resolvedValue: 'Inter' } } },
-    { path: 'motion.fast', type: 'duration', byMode: { default: { value: '100ms', resolvedValue: '100ms' } } },
+    { path: 'line.dashed', type: 'strokeStyle', byMode: { default: { value: 'dashed', resolvedValue: 'dashed' } } },
   ],
 };
 
@@ -64,12 +64,12 @@ describe('bloco token-table (SYS-139)', () => {
       'All tokens (color)',
       'All tokens (fontWeight, fontFamily)',
       'All tokens (shadow)',
-      'All tokens (duration)',
+      'All tokens (strokeStyle)',
     ]);
     // cada uma com a amostra do seu renderer; o fallback, sem amostra
     expect(block.querySelectorAll('.sb-token-type-sample')).toHaveLength(2);
     expect(block.querySelector('table[aria-label="All tokens (shadow)"] .sb-token-cell')!.children.length).toBeGreaterThan(1);
-    expect(block.querySelector('table[aria-label="All tokens (duration)"] .sb-token-cell')!.children).toHaveLength(1);
+    expect(block.querySelector('table[aria-label="All tokens (strokeStyle)"] .sb-token-cell')!.children).toHaveLength(1);
   });
 
   it('sem nenhum token publicado, aviso no lugar', async () => {
@@ -119,7 +119,7 @@ describe('seletor de grupo no editor (SYS-138)', () => {
 
   it('editando: recebe os grupos e troca o grupo do nó', async () => {
     const editor = await renderEditor(true, async () => TOKENS);
-    expect(seen.at(-1)).toMatchObject({ group: 'color', groups: ['space', 'color', 'font', 'font.weight', 'shadow', 'font.family', 'motion'], status: 'available' });
+    expect(seen.at(-1)).toMatchObject({ group: 'color', groups: ['space', 'color', 'font', 'font.weight', 'shadow', 'font.family', 'line'], status: 'available' });
     await act(async () => dom.container().querySelector<HTMLButtonElement>('.sb-token-block-bar button')!.click());
     expect(editor().getJSON().content![0]).toEqual({ type: 'tokenTable', attrs: { group: 'space' } });
   });

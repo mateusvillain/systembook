@@ -3,6 +3,7 @@ import { Play } from 'lucide-react';
 import type { Token, TokenValue } from '@systembook/schema';
 import { toCssValue } from '@systembook/content/tokens';
 import { TokenTable, type TokenTableProps } from './TokenTable.js';
+import { modesToShow } from './tokenModes.js';
 
 /**
  * Tokens de movimento (SYS-151): `cubicBezier`, `duration` e `transition`
@@ -76,11 +77,15 @@ function motionOf(token: Token, value: TokenValue, css: string | null): Motion |
   return null;
 }
 
-/** O gráfico da curva: x é o tempo, y o progresso (para cima), com folga para curvas que passam de 0 ou 1. */
+/**
+ * O gráfico da curva: x é o tempo, y o progresso (para cima), com folga para
+ * curvas que passam de 0 ou 1 — até um limite, para uma alça extrema não
+ * esticar a linha da tabela; o que passa dele transborda o SVG.
+ */
 function Curve({ bezier: [x1, y1, x2, y2] }: { bezier: Bezier }) {
   const pad = 0.1;
-  const low = Math.min(0, y1, y2);
-  const high = Math.max(1, y1, y2);
+  const low = Math.max(-1, Math.min(0, y1, y2));
+  const high = Math.min(2, Math.max(1, y1, y2));
   return (
     <svg className="sb-token-curve" viewBox={`${-pad} ${-high - pad} ${1 + 2 * pad} ${high - low + 2 * pad}`} aria-hidden>
       <rect className="sb-token-curve-frame" x={0} y={-1} width={1} height={1} />
@@ -92,7 +97,7 @@ function Curve({ bezier: [x1, y1, x2, y2] }: { bezier: Bezier }) {
 }
 
 /** O trilho: cada clique em "play" remonta o ponto, que reinicia a animação. */
-function Run({ motion, path }: { motion: Motion; path: string }) {
+function Run({ motion, label }: { motion: Motion; label: string }) {
   const [run, setRun] = useState(0);
   const style = {
     '--sb-motion-easing': motion.easing,
@@ -104,7 +109,7 @@ function Run({ motion, path }: { motion: Motion; path: string }) {
       <button
         type="button"
         className="sb-token-motion-play"
-        aria-label={`Play ${path}`}
+        aria-label={`Play ${label}`}
         // Não tira o foco do editor quando a tabela está no ProseMirror.
         onMouseDown={(e) => e.preventDefault()}
         onClick={() => setRun((n) => n + 1)}
@@ -119,6 +124,8 @@ function Run({ motion, path }: { motion: Motion; path: string }) {
 }
 
 export function MotionTokens(props: Omit<TokenTableProps, 'preview'>) {
+  // Com uma coluna por modo, o modo entra no nome do botão: senão os dois "play" da linha se chamam igual.
+  const perMode = modesToShow(props.tokens, props.modes).length > 1;
   // A barra de duração mede contra a maior duração da tabela, para comparar as linhas.
   const longest = Math.max(
     1,
@@ -144,7 +151,7 @@ export function MotionTokens(props: Omit<TokenTableProps, 'preview'>) {
                 style={{ '--sb-token-duration': `${(motion.durationMs! / longest) * 100}%` } as CSSProperties}
               />
             ) : null}
-            <Run motion={motion} path={token.path} />
+            <Run motion={motion} label={perMode ? `${token.path} (${mode})` : token.path} />
           </span>
         );
       }}

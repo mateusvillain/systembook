@@ -85,6 +85,26 @@ describe('MotionTokens (SYS-151)', () => {
     expect(dot(row('duration.fast'))).not.toBe(first);
   });
 
+  it('com uma coluna por modo, o modo entra no nome do play; alça extrema não estica o gráfico', () => {
+    const twoModes = (path: string, type: TokenType, light: TokenValue, dark: TokenValue): Token => ({
+      path,
+      type,
+      byMode: { light: { value: light, resolvedValue: light }, dark: { value: dark, resolvedValue: dark } },
+    });
+    const wild = [0.5, 10, 0.5, -10];
+    dom.render(
+      <MotionTokens
+        tokens={[twoModes('duration.base', 'duration', '200ms', '300ms'), twoModes('easing.wild', 'cubicBezier', wild, wild)]}
+        modes={['light', 'dark']}
+      />,
+    );
+    expect([...row('duration.base').querySelectorAll('.sb-token-motion-play')].map((b) => b.getAttribute('aria-label'))).toEqual([
+      'Play duration.base (light)',
+      'Play duration.base (dark)',
+    ]);
+    expect(row('easing.wild').querySelector('svg')!.getAttribute('viewBox')).toBe('-0.1 -2.1 1.2 3.2');
+  });
+
   it('sem amostra quando não há curva nem tempo: steps(), valor sem conversão', () => {
     dom.render(
       <MotionTokens
