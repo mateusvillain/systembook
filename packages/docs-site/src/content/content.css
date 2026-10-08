@@ -977,6 +977,82 @@
   margin: 0;
 }
 
+/* Escalas de cor (SYS-153): uma faixa por escala, os passos em grade que
+   quebra linha em tela estreita. O swatch reaproveita o xadrez de
+   `.sb-token-color`. Os botões de copiar aparecem no hover ou no foco do
+   passo; em tela de toque (sem hover) ficam sempre visíveis. */
+.sb-color-scales {
+  margin: 1rem 0;
+}
+
+.sb-color-scale {
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--sb-border, #e2e4e8);
+}
+
+.sb-color-scale:first-child {
+  border-top: 1px solid var(--sb-border, #e2e4e8);
+}
+
+.sb-color-scale > * + *,
+.sb-color-scale-mode > * + * {
+  margin-top: 0.5rem;
+}
+
+.sb-color-scale-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr));
+  gap: 0.75rem 0.5rem;
+}
+
+.sb-color-scale-step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.sb-color-scale-swatch.sb-token-color {
+  max-width: none;
+  height: 3.5rem;
+}
+
+.sb-color-scale-step-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.sb-color-scale-step[data-deprecated] .sb-color-scale-step-name {
+  text-decoration: line-through;
+}
+
+.sb-color-scale-step .sb-token-copy-button {
+  min-width: 0;
+  padding-inline: 0.3rem;
+}
+
+/* Com hover, os botões ficam sobre o swatch (sem ocupar altura na faixa) e
+   aparecem no hover/foco, com fundo opaco para ler sobre qualquer cor. */
+@media (hover: hover) {
+  .sb-color-scale-step .sb-token-copy {
+    position: absolute;
+    top: 0.3rem;
+    left: 0.3rem;
+    right: 0.3rem;
+    opacity: 0;
+  }
+
+  .sb-color-scale-step .sb-token-copy-button {
+    background: var(--sb-bg, #fff);
+    color: var(--sb-fg, inherit);
+  }
+
+  .sb-color-scale-step:is(:hover, :focus-within) .sb-token-copy {
+    opacity: 1;
+  }
+}
+
 /* Amostras de dimensão e sombra (SYS-135). A barra de espaçamento tem a
    largura do valor, limitada à célula — um valor maior que ela mostra a
    célula cheia, e o número escrito ao lado diz o resto. `font-size: 1rem`
