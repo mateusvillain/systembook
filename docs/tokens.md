@@ -162,6 +162,25 @@ Para mostrar um grupo dentro de uma página, use o bloco
 de blocos). Nos dois casos, cada tipo usa a amostra própria — cor, tipografia,
 dimensão, sombra — e o resto aparece numa tabela de valores.
 
+### No preview dos componentes
+
+O iframe de cada preview recebe os tokens como variáveis CSS, com os nomes da
+coluna "Variável CSS" ([Nomes para copiar](#nomes-para-copiar)). O componente
+reage aos modos lendo as variáveis:
+
+```tsx
+<button style={{ background: 'var(--acme-primary, #4f46e5)' }} />
+```
+
+O primeiro modo vale de saída; com mais de um, a barra do preview ganha um
+seletor (`light` / `dark`) que troca o modo só daquele preview. Por baixo, cada
+modo é um bloco `[data-mode="<modo>"]` e o seletor muda o `data-mode` do
+`<html>` do iframe. A tipografia ganha, além do `font`, uma variável por campo
+(`--acme-font-body-letter-spacing`), porque o `font` não carrega o
+`letter-spacing`. O segundo valor do `var()` é o que vale fora da doc, sem os
+tokens injetados. O contrato da mensagem está em
+[`docs/preview-tsx-schema.md`](./preview-tsx-schema.md#design-tokens-systembookset-tokens).
+
 ## Publicar no CMS
 
 No modo CMS os arquivos continuam no repositório do design system, e o CI

@@ -1,5 +1,7 @@
+import { useRef } from 'react';
 import type { DosDontsCover } from '@systembook/schema';
 import { hasPreviewSelection, useComponentPreview } from '../docsQueries.js';
+import { usePreviewTokens } from '../previewTokens.js';
 
 /**
  * Renderização do cover do bloco dos-donts (TASK-73, separada da edição na
@@ -9,8 +11,9 @@ import { hasPreviewSelection, useComponentPreview } from '../docsQueries.js';
  * — a superfície do component-embed top-level já é validada por E2E das
  * TASK-47/48/51 e extrair alteraria seu DOM; mantenha os dois em sincronia se
  * a máquina de estados mudar. Diferente do embed top-level, o cover não expõe
- * o painel de controles interativos (`ControlsPanel`) — é um slot de apoio
- * visual, não o embed principal da página.
+ * o painel de controles interativos (`ControlsPanel`) nem o seletor de modo
+ * dos tokens (fica no primeiro modo) — é um slot de apoio visual, não o embed
+ * principal da página.
  */
 
 export function EmbedCoverPreview({
@@ -22,6 +25,8 @@ export function EmbedCoverPreview({
 }) {
   const hasSelection = hasPreviewSelection(componentName, variantId);
   const previewQuery = useComponentPreview(componentName, variantId);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const { onLoad } = usePreviewTokens(iframeRef);
 
   if (!hasSelection) {
     return (
@@ -50,6 +55,8 @@ export function EmbedCoverPreview({
   }
   return (
     <iframe
+      ref={iframeRef}
+      onLoad={onLoad}
       className="sb-dos-donts-cover-embed-frame"
       data-preview-state="live"
       src={previewQuery.data.url}

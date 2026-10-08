@@ -1,12 +1,18 @@
 import type { PreviewConfig } from '@systembook/schema';
 import { Button, BUTTON_VARIANTS, type ButtonVariant } from './Button';
 
-/** O que o iframe do preview renderiza, com as props da variante e dos controles. */
+/**
+ * O que o iframe do preview renderiza, com as props da variante e dos
+ * controles. O fundo é a superfície do modo escolhido na doc (`--acme-surface`),
+ * para o botão aparecer sobre a cor em que ele é usado.
+ */
 export function Preview(props: Record<string, unknown>) {
   return (
-    <Button variant={isVariant(props.variant) ? props.variant : 'primary'} disabled={Boolean(props.disabled)}>
-      {String(props.children ?? 'Salvar')}
-    </Button>
+    <div style={{ position: 'fixed', inset: 0, overflow: 'auto', padding: 16, background: 'var(--acme-surface, #f8fafc)' }}>
+      <Button variant={isVariant(props.variant) ? props.variant : 'primary'} disabled={Boolean(props.disabled)}>
+        {String(props.children ?? 'Salvar')}
+      </Button>
+    </div>
   );
 }
 
