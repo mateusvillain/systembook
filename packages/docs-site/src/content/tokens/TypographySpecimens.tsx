@@ -3,7 +3,7 @@ import { toCssLines, typographyStyle } from '@systembook/content/tokens';
 import { TYPE_SAMPLE } from './FontTokens.js';
 import { TokenCopy, useCopyAnnouncer } from './TokenCopy.js';
 import type { TokenTableProps } from './TokenTable.js';
-import { modesToShow } from './tokenModes.js';
+import { modesForToken, modesToShow } from './tokenModes.js';
 
 /** Rótulo de cada linha de `toCssLines('typography')`, na ordem dela. */
 const PROPERTY_LABELS: Record<string, string> = {
@@ -49,11 +49,11 @@ export function TypographySpecimens({ tokens, modes, label }: Omit<TokenTablePro
               <span className="sb-token-deprecated-reason">{token.deprecated}</span>
             ) : null}
             {token.description ? <span className="sb-token-description">{token.description}</span> : null}
-            {shown.map((mode) => {
+            {modesForToken(token, shown).map((mode, _i, specimens) => {
               const { resolvedValue, aliasOf } = token.byMode[mode]!;
               return (
                 <div key={mode} className="sb-type-specimen-mode">
-                  {shown.length > 1 ? <span className="sb-type-specimen-mode-name">{mode}</span> : null}
+                  {specimens.length > 1 ? <span className="sb-type-specimen-mode-name">{mode}</span> : null}
                   <span className="sb-type-specimen-sample" aria-hidden style={typographyStyle(resolvedValue)}>
                     {TYPE_SAMPLE}
                   </span>

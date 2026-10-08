@@ -163,9 +163,12 @@ de blocos). Nos dois casos, cada tipo usa o formato próprio — swatch de cor,
 specimen de tipografia (a frase com o estilo inteiro e as propriedades
 rotuladas), barra de dimensão, cartão com a sombra, gráfico da curva de
 easing e barra de duração (com um botão ▶ que anda um ponto no tempo e na
-curva do token; nada anima sozinho, e some com `prefers-reduced-motion`) — e o
-resto aparece numa tabela de valores. As colunas por modo (`light`, `dark`) só aparecem quando
-algum valor muda entre eles; senão, uma coluna "Value".
+curva do token; nada anima sozinho, e some com `prefers-reduced-motion`),
+caixa com a borda, linha com o traço (`dashArray` em SVG) e faixa com o
+gradiente — e um tipo desconhecido aparece numa tabela de valores. As colunas
+por modo (`light`, `dark`) só aparecem quando algum valor muda entre eles;
+senão, uma coluna "Value". Com colunas, o token igual em todos os modos ocupa
+uma célula só ("Same in all modes").
 
 ### No preview dos componentes
 

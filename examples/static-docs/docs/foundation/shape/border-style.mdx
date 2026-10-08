@@ -1,0 +1,29 @@
+---
+title: Estilos de borda
+subtitle: O traço da borda e as bordas prontas para cada situação.
+order: 3
+status: Beta
+---
+
+## Estilo do traço
+
+`solid` é o padrão; os outros estilos carregam significado e não devem ser usados só para enfeitar.
+
+| Token | Uso |
+| --- | --- |
+| `acme.border.style.solid` | Bordas e divisores |
+| `acme.border.style.dashed` | Área de soltar arquivos, rascunhos |
+| `acme.border.style.dotted` | Sublinhado de termo com definição |
+| `acme.border.style.focus` | Contorno de seleção múltipla (traço e espaço sob medida) |
+
+<Callout variant="info">
+  `acme.border.style.focus` define o tamanho de cada traço (`dashArray`), o que o `border-style` do CSS não representa: numa borda CSS ele vira `dashed`. Para o traço exato, use SVG (`stroke-dasharray`) — é o que a amostra da tabela mostra.
+</Callout>
+
+<TokenTable group="acme.border.style" />
+
+## Bordas prontas
+
+Cada borda combina largura, estilo e cor por alias. Como as cores mudam com o modo, a tabela tem uma coluna por modo.
+
+<TokenTable group="acme.border.preset" />

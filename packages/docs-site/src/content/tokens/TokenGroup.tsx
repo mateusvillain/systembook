@@ -3,9 +3,11 @@ import type { Token, TokenType } from '@systembook/schema';
 import { ColorTokens } from './ColorTokens.js';
 import { DimensionTokens } from './DimensionTokens.js';
 import { FontTokens } from './FontTokens.js';
+import { GradientTokens } from './GradientTokens.js';
 import { MotionTokens } from './MotionTokens.js';
 import { NumberTokens } from './NumberTokens.js';
 import { ShadowTokens } from './ShadowTokens.js';
+import { StrokeTokens } from './StrokeTokens.js';
 import { TokenTable, type TokenTableProps } from './TokenTable.js';
 import { TypographySpecimens } from './TypographySpecimens.js';
 
@@ -23,6 +25,9 @@ const RENDERERS: Partial<Record<TokenType, Renderer>> = {
   duration: MotionTokens,
   cubicBezier: MotionTokens,
   transition: MotionTokens,
+  border: StrokeTokens,
+  strokeStyle: StrokeTokens,
+  gradient: GradientTokens,
 };
 
 export interface TokenGroupProps {
@@ -35,7 +40,8 @@ export interface TokenGroupProps {
 /**
  * Tokens de qualquer tipo com o renderer certo (SYS-139): um bloco por
  * renderer, na ordem em que o primeiro token de cada um aparece. Família e
- * peso dividem uma tabela, e os três tipos de movimento outra; a tipografia composta tem specimens próprios
+ * peso dividem uma tabela, os três tipos de movimento outra, borda e traço
+ * outra; a tipografia composta tem specimens próprios
  * (SYS-149); o que não tem renderer próprio vai junto para o fallback.
  */
 export function TokenGroup({ tokens, modes, label }: TokenGroupProps) {

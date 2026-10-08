@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import type { Token } from '@systembook/schema';
 import { toCssLines, toCssValue } from '@systembook/content/tokens';
 import { TokenCopy, useCopyAnnouncer } from './TokenCopy.js';
-import { modesToShow } from './tokenModes.js';
+import { modesForToken, modesToShow } from './tokenModes.js';
 import '../content.css';
 
 /** O valor de um token num modo como CSS; `null` quando não há conversão. */
@@ -46,7 +46,8 @@ function TokenValueLines({ lines }: { lines: string[] }) {
  * deprecated — o leitor de tela o repete em cada célula), uma coluna por modo
  * com a amostra, o valor e o alias, e "Details" com o tipo, a descrição e os
  * botões de copiar. Sem nenhum valor que mude entre os modos (ou com um modo
- * só), uma coluna "Value" no lugar das colunas por modo (`modesToShow`).
+ * só), uma coluna "Value" no lugar das colunas por modo (`modesToShow`); com
+ * colunas, a linha que não muda ocupa todas numa célula (`modesForToken`).
  *
  * Sem `preview`, é o renderer de fallback (SYS-136): serve a qualquer tipo,
  * inclusive os que não têm amostra própria.
@@ -81,11 +82,13 @@ export function TokenTable({ tokens, modes, label, preview }: TokenTableProps) {
                 <code className="sb-token-name">{token.path}</code>
                 {token.deprecated ? <span className="sb-token-deprecated">Deprecated</span> : null}
               </th>
-              {shown.map((mode) => {
+              {modesForToken(token, shown).map((mode, _i, cells) => {
                 const css = cssValue(token, mode);
                 const { resolvedValue, aliasOf } = token.byMode[mode]!;
+                const spans = cells.length < shown.length;
                 return (
-                  <td key={mode} className="sb-token-cell">
+                  <td key={mode} className="sb-token-cell" colSpan={spans ? shown.length : undefined}>
+                    {spans ? <span className="sb-token-all-modes">Same in all modes</span> : null}
                     {preview?.(token, mode, css)}
                     <TokenValueLines lines={toCssLines(token.type, resolvedValue) ?? [css ?? JSON.stringify(resolvedValue)]} />
                     {aliasOf ? <span className="sb-token-alias">→ {aliasOf}</span> : null}

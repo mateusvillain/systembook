@@ -3,7 +3,7 @@ import { Play } from 'lucide-react';
 import type { Token, TokenValue } from '@systembook/schema';
 import { toCssValue } from '@systembook/content/tokens';
 import { TokenTable, type TokenTableProps } from './TokenTable.js';
-import { modesToShow } from './tokenModes.js';
+import { modesForToken, modesToShow } from './tokenModes.js';
 
 /**
  * Tokens de movimento (SYS-151): `cubicBezier`, `duration` e `transition`
@@ -124,8 +124,8 @@ function Run({ motion, label }: { motion: Motion; label: string }) {
 }
 
 export function MotionTokens(props: Omit<TokenTableProps, 'preview'>) {
-  // Com uma coluna por modo, o modo entra no nome do botão: senão os dois "play" da linha se chamam igual.
-  const perMode = modesToShow(props.tokens, props.modes).length > 1;
+  // Quando a linha tem uma célula por modo, o modo entra no nome do botão: senão os dois "play" se chamam igual.
+  const shown = modesToShow(props.tokens, props.modes);
   // A barra de duração mede contra a maior duração da tabela, para comparar as linhas.
   const longest = Math.max(
     1,
@@ -151,7 +151,7 @@ export function MotionTokens(props: Omit<TokenTableProps, 'preview'>) {
                 style={{ '--sb-token-duration': `${(motion.durationMs! / longest) * 100}%` } as CSSProperties}
               />
             ) : null}
-            <Run motion={motion} label={perMode ? `${token.path} (${mode})` : token.path} />
+            <Run motion={motion} label={modesForToken(token, shown).length > 1 ? `${token.path} (${mode})` : token.path} />
           </span>
         );
       }}

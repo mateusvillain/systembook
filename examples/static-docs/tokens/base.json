@@ -64,6 +64,39 @@
         "thin": { "$value": "1px", "$description": "Divisores e campos em repouso." },
         "medium": { "$value": "2px", "$description": "Anel de foco e campo selecionado." },
         "thick": { "$value": "4px", "$description": "Indicador de aba ativa." }
+      },
+      "style": {
+        "$type": "strokeStyle",
+        "solid": { "$value": "solid", "$description": "Padrão de bordas e divisores." },
+        "dashed": { "$value": "dashed", "$description": "Área de soltar arquivos e rascunhos." },
+        "dotted": { "$value": "dotted", "$description": "Sublinhado de termo com definição." },
+        "focus": {
+          "$value": { "dashArray": ["4px", "3px"], "lineCap": "round" },
+          "$description": "Contorno de seleção múltipla; em CSS de borda vira dashed."
+        }
+      },
+      "preset": {
+        "$type": "border",
+        "default": {
+          "$value": { "width": "{acme.border.width.thin}", "style": "{acme.border.style.solid}", "color": "{acme.neutral-subtle}" },
+          "$description": "Cartões, campos e divisores."
+        },
+        "strong": {
+          "$value": { "width": "{acme.border.width.thin}", "style": "{acme.border.style.solid}", "color": "{acme.neutral}" },
+          "$description": "Campo em hover e tabelas densas."
+        },
+        "focus": {
+          "$value": { "width": "{acme.border.width.medium}", "style": "{acme.border.style.solid}", "color": "{acme.primary}" },
+          "$description": "Anel de foco."
+        },
+        "danger": {
+          "$value": { "width": "{acme.border.width.thin}", "style": "{acme.border.style.solid}", "color": "{acme.danger}" },
+          "$description": "Campo com erro."
+        },
+        "dropzone": {
+          "$value": { "width": "{acme.border.width.medium}", "style": "{acme.border.style.dashed}", "color": "{acme.neutral}" },
+          "$description": "Área de soltar arquivos."
+        }
       }
     },
     "font": {
@@ -100,6 +133,38 @@
           "letterSpacing": "-0.5px",
           "lineHeight": 1.25
         }
+      }
+    },
+    "gradient": {
+      "$type": "gradient",
+      "brand": {
+        "$value": [
+          { "color": "{acme.palette.indigo.700}", "position": 0 },
+          { "color": "{acme.palette.indigo.300}", "position": 1 }
+        ],
+        "$description": "Destaques de marketing e capas."
+      },
+      "warm": {
+        "$value": [
+          { "color": "{acme.palette.amber.400}", "position": 0 },
+          { "color": "{acme.palette.red.600}", "position": 1 }
+        ],
+        "$description": "Banners de campanha."
+      },
+      "spectrum": {
+        "$value": [
+          { "color": "{acme.palette.indigo.600}", "position": 0 },
+          { "color": "{acme.palette.green.400}", "position": 0.5 },
+          { "color": "{acme.palette.amber.400}", "position": 1 }
+        ],
+        "$description": "Três paradas: gráficos de calor e progresso."
+      },
+      "fade": {
+        "$value": [
+          { "color": "{acme.surface}", "position": 0 },
+          { "color": "#ffffff00", "position": 1 }
+        ],
+        "$description": "Esmaecer o fim de uma lista rolável; a superfície muda com o modo."
       }
     },
     "elevation": {
