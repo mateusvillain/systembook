@@ -167,7 +167,27 @@ curva do token; nada anima sozinho, e some com `prefers-reduced-motion`),
 caixa com a borda, linha com o traço (`dashArray` em SVG) e faixa com o
 gradiente — e um tipo desconhecido aparece numa tabela de valores. Escalas de
 cor (duas ou mais cores irmãs de nome numérico, como `palette.indigo.50…900`)
-viram uma faixa de swatches em ordem, com copiar por passo. As colunas
+viram uma faixa de swatches em ordem, com copiar por passo.
+
+`dimension` e `number` não dizem o que medem; a amostra sai das palavras do
+caminho (inteiras, em qualquer grafia: `zIndex`, `z-index`, `z_index`):
+
+| Palavras no caminho | Tipo | Amostra |
+| --- | --- | --- |
+| `radius`, `rounded`, `corner`, `shape` | dimension | Quadrado com aquele arredondamento (não com `blur`, `ring`, `spread`, `shadow`, `outline`) |
+| `stroke`; `border`/`outline` + `width`/`thickness`/`weight` | dimension | Caixa com a borda |
+| `breakpoint`, `screen` | dimension | Marca numa régua, na escala do maior breakpoint da tabela |
+| `icon` + `size`, `avatar` | dimension | Quadrado no tamanho real |
+| `letter-spacing`, `tracking` | dimension | Palavra com aquele espaçamento |
+| `line-height`, `leading` | dimension/number | Três linhas com aquela entrelinha |
+| `blur` (sem `shadow`) | dimension | Forma desfocada |
+| `opacity`, `alpha` | number | Cor de destaque naquela opacidade |
+| `z-index`, `layer` | number | Pilha, com a camada do token destacada |
+| `aspect` (`aspect-ratio`) | number | Retângulo naquela proporção |
+
+Nenhuma palavra conhecida: a dimensão vira uma barra com a largura do valor,
+e o número fica só com o valor. Valor que deixaria a amostra mentir (`%`,
+`vw`, fora da faixa) também fica só com o valor. As colunas
 por modo (`light`, `dark`) só aparecem quando algum valor muda entre eles;
 senão, uma coluna "Value". Com colunas, o token igual em todos os modos ocupa
 uma célula só ("Same in all modes").

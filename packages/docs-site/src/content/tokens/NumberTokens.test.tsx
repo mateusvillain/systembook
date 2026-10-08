@@ -34,4 +34,29 @@ describe('NumberTokens (SYS-150)', () => {
     expect(dom.container().querySelector('.sb-token-opacity')!.getAttribute('aria-hidden')).toBe('true');
     expect([...dom.container().querySelectorAll('.sb-token-value')].map((v) => v.textContent)).toEqual(['0.5', '0.64', '1', '1000', '1.5', '0.5']);
   });
+
+  it('convenções por nome (SYS-154): camada, entrelinha, proporção', () => {
+    dom.render(
+      <NumberTokens
+        tokens={[
+          token('zIndex.base', 0),
+          token('z-index.modal', 1400),
+          token('layer.toast', 1500),
+          token('lineHeight.normal', 1.5),
+          token('leading.huge', 9),
+          token('aspect-ratio.video', 1.7778),
+          token('contrast.ratio.aa', 4.5),
+        ]}
+        modes={['default']}
+      />,
+    );
+    const stacks = [...dom.container().querySelectorAll('.sb-token-stack')];
+    expect(stacks).toHaveLength(3);
+    // três valores distintos: cada token destaca a sua altura na pilha
+    expect(stacks.map((s) => [...s.children].findIndex((l) => l.hasAttribute('data-current')))).toEqual([0, 1, 2]);
+    expect([...dom.container().querySelectorAll<HTMLElement>('.sb-token-text-sample')].map((t) => t.style.lineHeight)).toEqual(['1.5']);
+    expect(
+      [...dom.container().querySelectorAll<HTMLElement>('.sb-token-aspect-ratio')].map((a) => a.style.getPropertyValue('--sb-token-aspect-ratio')),
+    ).toEqual(['1.7778']);
+  });
 });

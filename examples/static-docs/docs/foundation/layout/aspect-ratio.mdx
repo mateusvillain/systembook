@@ -1,0 +1,21 @@
+---
+title: Proporções
+subtitle: Largura sobre altura de mídias e miniaturas.
+order: 2
+status: Beta
+---
+
+## Princípios
+
+Reserve a proporção antes da mídia carregar (`aspect-ratio` no contêiner): a página não pula quando a imagem chega. O valor é largura ÷ altura — `1.7778` é 16:9.
+
+| Token | Proporção | Uso |
+| --- | --- | --- |
+| `acme.aspect-ratio.square` | 1:1 | Avatares e miniaturas |
+| `acme.aspect-ratio.photo` | 3:2 | Fotos |
+| `acme.aspect-ratio.video` | 16:9 | Vídeo |
+| `acme.aspect-ratio.portrait` | 3:4 | Capas na vertical |
+
+## Tokens
+
+<TokenTable group="acme.aspect-ratio" />

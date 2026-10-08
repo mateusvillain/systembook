@@ -1276,6 +1276,113 @@
   }
 }
 
+/* Convenções por nome (SYS-154). Breakpoint: uma marca numa régua, na escala
+   do maior breakpoint da tabela. */
+.sb-token-ruler {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: 9rem;
+  height: 0.75rem;
+  border-bottom: 1px solid var(--sb-fg-muted, #59636e);
+  background: repeating-linear-gradient(
+      to right,
+      var(--sb-border, #e2e4e8) 0 1px,
+      transparent 1px 10%
+    )
+    bottom / 100% 40% no-repeat;
+}
+
+.sb-token-ruler-mark {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: var(--sb-token-ruler);
+  height: 100%;
+  border-right: 2px solid var(--sb-accent, #1d4ed8);
+  background: color-mix(in srgb, var(--sb-accent, #1d4ed8) 15%, transparent);
+}
+
+/* Ícone e avatar: um quadrado no tamanho real, limitado à célula. */
+.sb-token-square {
+  display: block;
+  font-size: 1rem;
+  width: var(--sb-token-square);
+  height: var(--sb-token-square);
+  max-width: 100%;
+  max-height: 6rem;
+  border-radius: 4px;
+  border: 1px solid var(--sb-accent, #1d4ed8);
+  background: var(--sb-accent-soft, #eef4ff);
+}
+
+/* Blur: uma forma com aquele desfoque, dentro de uma moldura que segura o
+   espalhamento. */
+.sb-token-blur {
+  display: block;
+  font-size: 1rem;
+  width: 4rem;
+  height: 2.5rem;
+  border-radius: 6px;
+  background: linear-gradient(135deg, var(--sb-accent, #1d4ed8) 0 45%, transparent 45% 55%, var(--sb-fg, #1f2328) 55%);
+  filter: blur(var(--sb-token-blur));
+}
+
+/* Proporção: um retângulo de largura fixa e altura pela proporção. */
+.sb-token-aspect-ratio {
+  display: block;
+  width: 4rem;
+  max-height: 6rem;
+  aspect-ratio: var(--sb-token-aspect-ratio);
+  border-radius: 4px;
+  border: 1px solid var(--sb-accent, #1d4ed8);
+  background: var(--sb-accent-soft, #eef4ff);
+}
+
+/* Espaçamento entre letras e entrelinha: o texto com o valor aplicado. A
+   entrelinha mostra três linhas, com as caixas de linha marcadas. */
+.sb-token-text-sample {
+  display: block;
+  max-width: 9rem;
+  font-size: 1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+  color: var(--sb-fg, inherit);
+}
+
+.sb-token-text-sample--lines {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  max-height: none;
+  background: color-mix(in srgb, var(--sb-accent, #1d4ed8) 8%, transparent);
+}
+
+/* Camadas: uma pilha em perspectiva, uma camada por valor distinto da tabela;
+   a do token em destaque. */
+.sb-token-stack {
+  position: relative;
+  display: block;
+  width: 5rem;
+  height: calc(1.5rem + var(--sb-token-stack-layers) * 0.35rem);
+}
+
+.sb-token-stack-layer {
+  position: absolute;
+  left: calc(var(--sb-token-stack-i) * 0.35rem);
+  bottom: calc(var(--sb-token-stack-i) * 0.35rem);
+  width: 3rem;
+  height: 1.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--sb-border, #e2e4e8);
+  background: var(--sb-bg, #fff);
+}
+
+.sb-token-stack-layer[data-current] {
+  border-color: var(--sb-accent, #1d4ed8);
+  background: var(--sb-accent, #1d4ed8);
+}
+
 /* Bandeja: a sombra precisa de um fundo diferente do cartão para aparecer —
    no tema escuro, cartão e célula têm a mesma cor e a sombra sumiria. A
    folga deixa o blur aparecer sem encostar no valor escrito. */

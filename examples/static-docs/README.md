@@ -53,10 +53,13 @@ static-docs/
     │   │   ├── _section.yml
     │   │   ├── scale.mdx         # headings e marks; `slug: type-scale` no frontmatter
     │   │   ├── families.mdx      # fontFamily
-    │   │   └── weights.mdx       # fontWeight
+    │   │   ├── weights.mdx       # fontWeight
+    │   │   └── rhythm.mdx        # line-height (number) e letter-spacing
     │   ├── spacing/scale.mdx     # cada página de fundamentos termina num <TokenTable>
     │   ├── shape/                # border-radius.mdx, border-width.mdx, border-style.mdx (strokeStyle e border)
-    │   ├── depth/                # elevation.mdx (sombra por modo), opacity.mdx, z-index.mdx (number)
+    │   ├── depth/                # elevation.mdx (sombra por modo), opacity.mdx, z-index.mdx, blur.mdx
+    │   ├── layout/               # breakpoints.mdx, aspect-ratio.mdx
+    │   ├── icons/                # sizes.mdx
     │   └── motion/               # duration-easing.mdx: curvas, durações e transições
     └── components/               # menu "Componentes"
         ├── _menu.yml

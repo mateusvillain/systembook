@@ -210,6 +210,49 @@
       "disabled": { "$value": 0.5, "$description": "Componentes desabilitados." },
       "overlay": { "$value": 0.64, "$description": "Fundo atrás de modais." }
     },
+    "breakpoint": {
+      "$type": "dimension",
+      "$description": "Larguras mínimas de cada faixa de layout (min-width).",
+      "sm": { "$value": "640px", "$description": "Celular na horizontal." },
+      "md": { "$value": "768px", "$description": "Tablet." },
+      "lg": { "$value": "1024px", "$description": "Notebook; a navegação lateral aparece." },
+      "xl": { "$value": "1280px", "$description": "Desktop." }
+    },
+    "icon": {
+      "size": {
+        "$type": "dimension",
+        "sm": { "$value": "16px", "$description": "Dentro de texto e de botões compactos." },
+        "md": { "$value": "20px", "$description": "Padrão: botões e campos." },
+        "lg": { "$value": "24px", "$description": "Navegação e cabeçalhos." },
+        "xl": { "$value": "32px", "$description": "Estados vazios e ilustrações pequenas." }
+      }
+    },
+    "line-height": {
+      "$type": "number",
+      "tight": { "$value": 1.25, "$description": "Títulos." },
+      "normal": { "$value": 1.5, "$description": "Texto corrido." },
+      "relaxed": { "$value": 1.75, "$description": "Texto longo em colunas largas." }
+    },
+    "letter-spacing": {
+      "$type": "dimension",
+      "tight": { "$value": "-0.5px", "$description": "Títulos grandes." },
+      "normal": { "$value": "0px", "$description": "Texto corrido." },
+      "wide": { "$value": "0.5px", "$description": "Texto pequeno." },
+      "caps": { "$value": "0.08em", "$description": "Rótulos em maiúsculas." }
+    },
+    "aspect-ratio": {
+      "$type": "number",
+      "square": { "$value": 1, "$description": "Avatares e miniaturas." },
+      "photo": { "$value": 1.5, "$description": "Fotos 3:2." },
+      "video": { "$value": 1.7778, "$description": "Vídeo 16:9." },
+      "portrait": { "$value": 0.75, "$description": "Capas na vertical (3:4)." }
+    },
+    "blur": {
+      "$type": "dimension",
+      "sm": { "$value": "4px", "$description": "Fundo de menus translúcidos." },
+      "md": { "$value": "8px", "$description": "Fundo atrás de modais." },
+      "lg": { "$value": "16px", "$description": "Imagem de capa sob texto." }
+    },
     "z-index": {
       "$type": "number",
       "$description": "Ordem de empilhamento das camadas da interface.",
