@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react';
 import type { Token, TokenType } from '@systembook/schema';
+import { ColorScales, colorScaleParents } from './ColorScales.js';
 import { ColorTokens } from './ColorTokens.js';
 import { DimensionTokens } from './DimensionTokens.js';
 import { FontTokens } from './FontTokens.js';
@@ -42,12 +43,16 @@ export interface TokenGroupProps {
  * renderer, na ordem em que o primeiro token de cada um aparece. Família e
  * peso dividem uma tabela, os três tipos de movimento outra, borda e traço
  * outra; a tipografia composta tem specimens próprios
- * (SYS-149); o que não tem renderer próprio vai junto para o fallback.
+ * (SYS-149), e as escalas de cor (`palette.indigo.50…900`) faixas próprias
+ * (SYS-153) — as outras cores seguem na tabela; o que não tem renderer
+ * próprio vai junto para o fallback.
  */
 export function TokenGroup({ tokens, modes, label }: TokenGroupProps) {
+  const scales = colorScaleParents(tokens);
   const tables = new Map<Renderer, Token[]>();
   for (const token of tokens) {
-    const renderer = RENDERERS[token.type] ?? TokenTable;
+    const inScale = token.type === 'color' && scales.has(token.path.slice(0, token.path.lastIndexOf('.')));
+    const renderer = inScale ? ColorScales : (RENDERERS[token.type] ?? TokenTable);
     const rows = tables.get(renderer);
     if (rows) rows.push(token);
     else tables.set(renderer, [token]);
@@ -60,7 +65,11 @@ export function TokenGroup({ tokens, modes, label }: TokenGroupProps) {
           key={rows[0]!.path}
           tokens={rows}
           modes={modes}
-          label={single ? label : `${label} (${[...new Set(rows.map((t) => t.type))].join(', ')})`}
+          label={
+            single
+              ? label
+              : `${label} (${Renderer === ColorScales ? 'color scales' : [...new Set(rows.map((t) => t.type))].join(', ')})`
+          }
         />
       ))}
     </>
