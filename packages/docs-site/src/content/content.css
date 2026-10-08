@@ -1026,6 +1026,124 @@
     repeating-conic-gradient(var(--sb-token-check-a) 0 25%, var(--sb-token-check-b) 0 50%) 0 0 / 12px 12px;
 }
 
+/* Movimento (SYS-151): a curva em SVG e a barra de duração são a amostra
+   parada; o trilho com o ponto só anda no "play" e some para quem pediu menos
+   movimento — a amostra parada continua dizendo o mesmo. */
+.sb-token-motion {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-width: 9rem;
+}
+
+.sb-token-curve {
+  display: block;
+  /* Largura fixa; a altura segue o viewBox, que cresce com a curva que passa
+     de 0 ou 1 — o quadro de 0 a 1 fica do mesmo tamanho em toda linha. */
+  width: 4rem;
+  height: auto;
+  overflow: visible;
+  color: var(--sb-accent, #1d4ed8);
+}
+
+.sb-token-curve-frame {
+  fill: none;
+  stroke: var(--sb-border, #e2e4e8);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.sb-token-curve-handle {
+  stroke: var(--sb-fg-muted, #59636e);
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.sb-token-curve-path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.sb-token-duration {
+  display: block;
+  width: var(--sb-token-duration);
+  min-width: 1px;
+  height: 0.5rem;
+  border-radius: 2px;
+  background: var(--sb-accent, #1d4ed8);
+  opacity: 0.75;
+}
+
+.sb-token-motion-run {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.sb-token-motion-play {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1px solid var(--sb-border, #e2e4e8);
+  border-radius: 50%;
+  background: var(--sb-bg, #fff);
+  color: var(--sb-fg, inherit);
+  cursor: pointer;
+}
+
+.sb-token-motion-play:hover {
+  background: var(--sb-hover, #f3f4f6);
+}
+
+.sb-token-motion-play:focus-visible {
+  outline: 2px solid var(--sb-accent, #1d4ed8);
+  outline-offset: 2px;
+}
+
+.sb-token-motion-track {
+  position: relative;
+  flex: 1;
+  height: 0.375rem;
+  border-radius: 999px;
+  background: var(--sb-hover, #f3f4f6);
+}
+
+.sb-token-motion-dot {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 0.75rem;
+  height: 0.75rem;
+  margin-top: -0.375rem;
+  border-radius: 50%;
+  background: var(--sb-accent, #1d4ed8);
+}
+
+/* `both`: parado no começo durante o atraso, e no fim depois. Uma curva que
+   passa de 1 leva o ponto além do trilho, como o elemento iria. */
+.sb-token-motion-dot[data-running] {
+  animation: sb-token-motion-run var(--sb-motion-duration) var(--sb-motion-easing) var(--sb-motion-delay) both;
+}
+
+@keyframes sb-token-motion-run {
+  to {
+    left: calc(100% - 0.75rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sb-token-motion-run {
+    display: none;
+  }
+}
+
 /* Bandeja: a sombra precisa de um fundo diferente do cartão para aparecer —
    no tema escuro, cartão e célula têm a mesma cor e a sombra sumiria. A
    folga deixa o blur aparecer sem encostar no valor escrito. */

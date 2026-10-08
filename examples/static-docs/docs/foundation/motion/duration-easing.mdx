@@ -1,0 +1,25 @@
+---
+title: Duração e easing
+subtitle: Quanto tempo um movimento leva e como ele acelera.
+order: 1
+status: Beta
+---
+
+## Princípios
+
+- **Rápido por padrão.** A maior parte da interface anda em `acme.motion.duration.fast` ou `base`; movimento longo é para elementos grandes que entram ou saem da tela.
+- **Quem entra desacelera, quem sai acelera.** A entrada chega rápido e assenta (`decelerate`); a saída ganha velocidade até sumir (`accelerate`) e dura menos que a entrada.
+- **Ênfase é exceção.** A curva `emphasized` passa do ponto e volta — use só no que precisa chamar atenção, como uma notificação.
+- **Respeite quem pediu menos movimento.** Com `prefers-reduced-motion`, troque deslocamento por fade ou tire a animação.
+
+## Na tabela
+
+A curva aparece como um gráfico: o tempo no eixo horizontal, o progresso no vertical, e as alças tracejadas são os pontos de controle. A duração vira uma barra na escala da mais longa. O botão ▶ de cada linha anda um ponto com a curva, a duração e o atraso do token — nada se move sozinho.
+
+<Callout variant="tip">
+  As transições (`acme.motion.transition.*`) combinam os tokens de duração e easing por alias: mudar `duration.slow` muda a entrada de todos os modais.
+</Callout>
+
+## Tokens
+
+<TokenTable group="acme.motion" />

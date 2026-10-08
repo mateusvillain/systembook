@@ -158,12 +158,31 @@
     "motion": {
       "duration": {
         "$type": "duration",
-        "fast": { "$value": "120ms" },
-        "base": { "$value": "200ms" }
+        "fast": { "$value": "120ms", "$description": "Hover, foco, troca de cor." },
+        "base": { "$value": "200ms", "$description": "Menus, tooltips, expandir e recolher." },
+        "slow": { "$value": "320ms", "$description": "Modais e painéis que entram na tela." }
       },
       "easing": {
         "$type": "cubicBezier",
-        "standard": { "$value": [0.2, 0, 0, 1] }
+        "standard": { "$value": [0.2, 0, 0, 1], "$description": "Movimento dentro da tela." },
+        "decelerate": { "$value": [0, 0, 0, 1], "$description": "Elementos que entram: chegam rápido e assentam." },
+        "accelerate": { "$value": [0.3, 0, 1, 1], "$description": "Elementos que saem: ganham velocidade até sumir." },
+        "emphasized": { "$value": [0.3, 0, 0, 1.3], "$description": "Passa do ponto e volta: só para chamar atenção." }
+      },
+      "transition": {
+        "$type": "transition",
+        "enter": {
+          "$value": { "duration": "{acme.motion.duration.slow}", "delay": "0ms", "timingFunction": "{acme.motion.easing.decelerate}" },
+          "$description": "Modal ou painel entrando."
+        },
+        "exit": {
+          "$value": { "duration": "{acme.motion.duration.base}", "delay": "0ms", "timingFunction": "{acme.motion.easing.accelerate}" },
+          "$description": "Saída mais curta que a entrada."
+        },
+        "toast": {
+          "$value": { "duration": "{acme.motion.duration.base}", "delay": "120ms", "timingFunction": "{acme.motion.easing.emphasized}" },
+          "$description": "Notificação, com atraso para não competir com a ação que a disparou."
+        }
       }
     }
   }
