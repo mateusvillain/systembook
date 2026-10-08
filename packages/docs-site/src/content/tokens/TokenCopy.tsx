@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toCssVar, toJsPath } from '@systembook/content/tokens';
 import { copyText } from '../clipboard.js';
 
@@ -18,6 +18,25 @@ const FEEDBACK_MS = 2000;
  * manual do code block — expirar em 2s apagaria antes de o leitor agir.
  */
 const FAILURE_MS = 10000;
+
+/**
+ * Uma região viva para os botões de copiar de uma tabela (ou lista) inteira.
+ * O espaço alternado no fim muda o texto mesmo quando a mensagem se repete,
+ * para o leitor de tela anunciar de novo.
+ */
+export function useCopyAnnouncer() {
+  const [announcement, setAnnouncement] = useState('');
+  const announce = useCallback(
+    (message: string) => setAnnouncement((previous) => (previous === message ? `${message} ` : message)),
+    [],
+  );
+  const region = (
+    <span className="sr-only" role="status" aria-live="polite">
+      {announcement}
+    </span>
+  );
+  return { announce, region };
+}
 
 /**
  * Botões de copiar o nome de um token (SYS-133): a variável CSS (`var(--x)`),

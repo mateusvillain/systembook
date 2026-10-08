@@ -897,6 +897,80 @@
   color: var(--sb-fg, inherit);
 }
 
+/* Specimens de tipografia composta (SYS-149): um por token, a frase com o
+   estilo inteiro na largura da coluna e as propriedades rotuladas embaixo —
+   o formato próprio do tipo, em vez das colunas por modo da tabela. */
+.sb-type-specimens {
+  margin: 1rem 0;
+}
+
+.sb-type-specimen {
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--sb-border, #e2e4e8);
+}
+
+.sb-type-specimen:first-child {
+  border-top: 1px solid var(--sb-border, #e2e4e8);
+}
+
+.sb-type-specimen > * + * {
+  margin-top: 0.4rem;
+}
+
+.sb-type-specimen-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+.sb-type-specimen-head .sb-token-copy {
+  margin-left: auto;
+}
+
+.sb-type-specimen-mode > * + * {
+  margin-top: 0.5rem;
+}
+
+.sb-type-specimen-mode + .sb-type-specimen-mode {
+  margin-top: 1rem;
+}
+
+.sb-type-specimen-mode-name {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--sb-fg-muted, #59636e);
+  text-transform: capitalize;
+}
+
+/* Duas linhas no máximo: quebrar mostra a altura de linha; o resto corta. */
+.sb-type-specimen-sample {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  color: var(--sb-fg, inherit);
+}
+
+.sb-type-specimen-props {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  margin: 0.75rem 0 0;
+}
+
+.sb-type-specimen-props dt {
+  font-size: 0.75rem;
+  color: var(--sb-fg-muted, #59636e);
+}
+
+.sb-type-specimen-props dd {
+  margin: 0;
+}
+
 /* Amostras de dimensão e sombra (SYS-135). A barra de espaçamento tem a
    largura do valor, limitada à célula — um valor maior que ela mostra a
    célula cheia, e o número escrito ao lado diz o resto. `font-size: 1rem`

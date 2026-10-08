@@ -2,18 +2,19 @@ import type { ComponentType } from 'react';
 import type { Token, TokenType } from '@systembook/schema';
 import { ColorTokens } from './ColorTokens.js';
 import { DimensionTokens } from './DimensionTokens.js';
+import { FontTokens } from './FontTokens.js';
 import { ShadowTokens } from './ShadowTokens.js';
 import { TokenTable, type TokenTableProps } from './TokenTable.js';
-import { TypographyTokens } from './TypographyTokens.js';
+import { TypographySpecimens } from './TypographySpecimens.js';
 
 type Renderer = ComponentType<Omit<TokenTableProps, 'preview'>>;
 
 /** O renderer de cada tipo com amostra própria; o resto cai na tabela de fallback (SYS-136). */
 const RENDERERS: Partial<Record<TokenType, Renderer>> = {
   color: ColorTokens,
-  typography: TypographyTokens,
-  fontFamily: TypographyTokens,
-  fontWeight: TypographyTokens,
+  typography: TypographySpecimens,
+  fontFamily: FontTokens,
+  fontWeight: FontTokens,
   dimension: DimensionTokens,
   shadow: ShadowTokens,
 };
@@ -26,10 +27,10 @@ export interface TokenGroupProps {
 }
 
 /**
- * Tokens de qualquer tipo com o renderer certo (SYS-139): uma tabela por
- * renderer, na ordem em que o primeiro token de cada um aparece. A tipografia
- * (`typography`, `fontFamily`, `fontWeight`) divide uma tabela, como no
- * renderer; o que não tem renderer próprio vai junto para o fallback.
+ * Tokens de qualquer tipo com o renderer certo (SYS-139): um bloco por
+ * renderer, na ordem em que o primeiro token de cada um aparece. Família e
+ * peso dividem uma tabela; a tipografia composta tem specimens próprios
+ * (SYS-149); o que não tem renderer próprio vai junto para o fallback.
  */
 export function TokenGroup({ tokens, modes, label }: TokenGroupProps) {
   const tables = new Map<Renderer, Token[]>();

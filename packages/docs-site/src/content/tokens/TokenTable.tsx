@@ -1,7 +1,8 @@
-import { useCallback, useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import type { Token } from '@systembook/schema';
-import { DEFAULT_TOKEN_MODE, toCssLines, toCssValue } from '@systembook/content/tokens';
-import { TokenCopy } from './TokenCopy.js';
+import { toCssLines, toCssValue } from '@systembook/content/tokens';
+import { TokenCopy, useCopyAnnouncer } from './TokenCopy.js';
+import { modesToShow } from './tokenModes.js';
 import '../content.css';
 
 /** O valor de um token num modo como CSS; `null` quando não há conversão. */
@@ -44,20 +45,16 @@ function TokenValueLines({ lines }: { lines: string[] }) {
  * linha por token: o caminho (cabeçalho da linha, só o nome e o selo de
  * deprecated — o leitor de tela o repete em cada célula), uma coluna por modo
  * com a amostra, o valor e o alias, e "Details" com o tipo, a descrição e os
- * botões de copiar. Um modo só (`default`) não ganha cabeçalho de modo.
+ * botões de copiar. Sem nenhum valor que mude entre os modos (ou com um modo
+ * só), uma coluna "Value" no lugar das colunas por modo (`modesToShow`).
  *
  * Sem `preview`, é o renderer de fallback (SYS-136): serve a qualquer tipo,
  * inclusive os que não têm amostra própria.
  */
 export function TokenTable({ tokens, modes, label, preview }: TokenTableProps) {
-  const single = modes.length === 1 && modes[0] === DEFAULT_TOKEN_MODE;
-  // Uma região viva por tabela. O espaço alternado no fim muda o texto mesmo
-  // quando a mensagem se repete, para o leitor de tela anunciar de novo.
-  const [announcement, setAnnouncement] = useState('');
-  const announce = useCallback(
-    (message: string) => setAnnouncement((previous) => (previous === message ? `${message} ` : message)),
-    [],
-  );
+  const shown = modesToShow(tokens, modes);
+  const single = shown.length === 1;
+  const { announce, region } = useCopyAnnouncer();
 
   return (
     <div className="sb-tokens-scroll">
@@ -68,7 +65,7 @@ export function TokenTable({ tokens, modes, label, preview }: TokenTableProps) {
             {single ? (
               <th scope="col">Value</th>
             ) : (
-              modes.map((mode) => (
+              shown.map((mode) => (
                 <th key={mode} scope="col">
                   {mode}
                 </th>
@@ -84,7 +81,7 @@ export function TokenTable({ tokens, modes, label, preview }: TokenTableProps) {
                 <code className="sb-token-name">{token.path}</code>
                 {token.deprecated ? <span className="sb-token-deprecated">Deprecated</span> : null}
               </th>
-              {modes.map((mode) => {
+              {shown.map((mode) => {
                 const css = cssValue(token, mode);
                 const { resolvedValue, aliasOf } = token.byMode[mode]!;
                 return (
@@ -108,9 +105,7 @@ export function TokenTable({ tokens, modes, label, preview }: TokenTableProps) {
           ))}
         </tbody>
       </table>
-      <span className="sr-only" role="status" aria-live="polite">
-        {announcement}
-      </span>
+      {region}
     </div>
   );
 }
