@@ -1307,10 +1307,9 @@
 .sb-token-square {
   display: block;
   font-size: 1rem;
-  width: var(--sb-token-square);
-  height: var(--sb-token-square);
-  max-width: 100%;
-  max-height: 6rem;
+  /* Os dois lados com o mesmo limite, para continuar quadrado. */
+  width: min(var(--sb-token-square), 6rem);
+  height: min(var(--sb-token-square), 6rem);
   border-radius: 4px;
   border: 1px solid var(--sb-accent, #1d4ed8);
   background: var(--sb-accent-soft, #eef4ff);

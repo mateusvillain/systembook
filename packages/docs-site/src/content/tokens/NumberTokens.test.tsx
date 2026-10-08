@@ -42,6 +42,7 @@ describe('NumberTokens (SYS-150)', () => {
           token('zIndex.base', 0),
           token('z-index.modal', 1400),
           token('layer.toast', 1500),
+          token('layer.odd', 1.23456),
           token('lineHeight.normal', 1.5),
           token('leading.huge', 9),
           token('aspect-ratio.video', 1.7778),
@@ -51,9 +52,9 @@ describe('NumberTokens (SYS-150)', () => {
       />,
     );
     const stacks = [...dom.container().querySelectorAll('.sb-token-stack')];
-    expect(stacks).toHaveLength(3);
-    // três valores distintos: cada token destaca a sua altura na pilha
-    expect(stacks.map((s) => [...s.children].findIndex((l) => l.hasAttribute('data-current')))).toEqual([0, 1, 2]);
+    expect(stacks).toHaveLength(4);
+    // quatro valores distintos: cada token destaca a sua altura na pilha (1.23456 entre 0 e 1400, mesmo com o CSS arredondado)
+    expect(stacks.map((s) => [...s.children].findIndex((l) => l.hasAttribute('data-current')))).toEqual([0, 2, 3, 1]);
     expect([...dom.container().querySelectorAll<HTMLElement>('.sb-token-text-sample')].map((t) => t.style.lineHeight)).toEqual(['1.5']);
     expect(
       [...dom.container().querySelectorAll<HTMLElement>('.sb-token-aspect-ratio')].map((a) => a.style.getPropertyValue('--sb-token-aspect-ratio')),

@@ -49,8 +49,9 @@ function sampleKind(token: Token): Kind {
  */
 const ABSOLUTE_LENGTH = /^(?:0|(?:\d+(?:\.\d+)?|\.\d+)(?:px|rem|em|pt|pc|cm|mm|in|q|ch|ex))$/i;
 
-/** Espaçamento entre letras e entrelinha aceitam negativo (letter-spacing) e `em`, relativos à própria fonte. */
-const TEXT_LENGTH = /^-?(?:0|(?:\d+(?:\.\d+)?|\.\d+)(?:px|rem|em|ch|ex)?)$/i;
+/** Espaçamento entre letras e entrelinha aceitam `em`, relativo à própria fonte; só o espaçamento aceita negativo. */
+const TEXT_LENGTH = /^(?:0|(?:\d+(?:\.\d+)?|\.\d+)(?:px|rem|em|ch|ex))$/i;
+const LETTER_SPACING = /^-?(?:0|(?:\d+(?:\.\d+)?|\.\d+)(?:px|rem|em|ch|ex))$/i;
 
 /** Em px, para a régua comparar breakpoints; `rem`/`em` a 16px. `null` para o resto. */
 function toPx(css: string): number | null {
@@ -114,7 +115,8 @@ export function DimensionTokens(props: Omit<TokenTableProps, 'preview'>) {
       preview={(token, _mode, css) => {
         if (css === null || token.type !== 'dimension') return null;
         const kind = sampleKind(token);
-        const valid = kind === 'letter-spacing' || kind === 'line-height' ? TEXT_LENGTH.test(css) : ABSOLUTE_LENGTH.test(css);
+        const pattern = kind === 'letter-spacing' ? LETTER_SPACING : kind === 'line-height' ? TEXT_LENGTH : ABSOLUTE_LENGTH;
+        const valid = pattern.test(css);
         return valid ? <Sample kind={kind} css={css} longestBreakpoint={longestBreakpoint} /> : null;
       }}
     />

@@ -64,10 +64,11 @@ export function NumberTokens(props: Omit<TokenTableProps, 'preview'>) {
   return (
     <TokenTable
       {...props}
-      preview={(token, _mode, css) => {
+      preview={(token, mode, css) => {
         if (css === null || token.type !== 'number') return null;
         const kind = kindOf(token);
-        const n = Number(css);
+        // O valor do token, não o CSS: a conversão arredonda (`1.23456` → `1.2346`) e a pilha procura o valor exato.
+        const n = token.byMode[mode]!.resolvedValue as number;
         if (kind === null || !Number.isFinite(n) || n < RANGE[kind][0] || n > RANGE[kind][1]) return null;
         switch (kind) {
           case 'opacity':

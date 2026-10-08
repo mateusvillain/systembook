@@ -77,6 +77,7 @@ describe('DimensionTokens', () => {
           token('letterSpacing.tight', '-0.02em'),
           token('tracking.wide', '0.5px'),
           token('line-height.body', '24px'),
+          token('line-height.broken', '-4px'),
           token('blur.md', '8px'),
           token('shadow.blur', '8px'),
           token('icon.gap', '4px'),
