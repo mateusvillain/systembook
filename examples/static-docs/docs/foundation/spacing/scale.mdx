@@ -1,0 +1,29 @@
+---
+title: Escala de espaçamento
+subtitle: Margens, paddings e gaps saem de uma escala de múltiplos de 4px.
+order: 1
+# Sem isto, o slug viria do nome do arquivo (scale).
+slug: spacing-scale
+status: Stable
+---
+
+## Princípios
+
+- **Múltiplos de 4px.** Todo espaço da interface sai da escala; um valor fora dela (`10px`, `18px`) é sinal de layout a revisar.
+- **Proximidade é agrupamento.** Elementos relacionados ficam mais perto entre si do que do resto: o rótulo encosta no campo (`acme.space.1`), os campos de um grupo se separam por `acme.space.4`.
+- **Espaço interno ≤ externo.** O padding de um cartão nunca é maior que o gap entre cartões.
+
+## Quando usar cada passo
+
+| Passo | Valor | Uso típico |
+| --- | --- | --- |
+| `acme.space.1` | 4px | Ícone e texto, rótulo e campo |
+| `acme.space.2` | 8px | Itens de uma lista compacta, chips |
+| `acme.space.3` | 12px | Padding de botões e campos |
+| `acme.space.4` | 16px | Padding de cartões, gap entre campos |
+| `acme.space.6` | 24px | Entre grupos de conteúdo |
+| `acme.space.8` | 32px | Entre seções de uma página |
+
+## Tokens
+
+<TokenTable group="acme.space" />

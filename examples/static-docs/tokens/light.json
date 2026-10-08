@@ -11,6 +11,13 @@
     "danger": { "$value": "{acme.palette.red.600}", "$description": "Erros e ações destrutivas." },
     "on-danger": { "$value": "{acme.palette.white}", "$description": "Texto e ícones sobre acme.danger." },
     "surface": { "$value": "{acme.palette.slate.50}" },
-    "text": { "$value": "{acme.palette.slate.900}" }
+    "text": { "$value": "{acme.palette.slate.900}" },
+    "elevation": {
+      "color": {
+        "$type": "color",
+        "key": { "$value": "#0f172a29", "$description": "Sombra de contato." },
+        "ambient": { "$value": "#0f172a14", "$description": "Sombra difusa." }
+      }
+    }
   }
 }

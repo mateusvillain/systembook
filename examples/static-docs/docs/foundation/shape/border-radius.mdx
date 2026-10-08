@@ -1,0 +1,25 @@
+---
+title: Border radius
+subtitle: O arredondamento dos cantos, do campo ao avatar.
+order: 1
+status: Stable
+---
+
+## Princípios
+
+O raio acompanha o tamanho: componentes pequenos têm cantos discretos, superfícies grandes podem arredondar mais. Um componente aninhado usa raio **menor ou igual** ao do contêiner — o canto de dentro maior que o de fora parece desencaixado.
+
+| Token | Uso |
+| --- | --- |
+| `acme.radius.sm` | Chips, tags, checkbox |
+| `acme.radius.md` | Botões, campos, menus |
+| `acme.radius.lg` | Cartões, modais |
+| `acme.radius.full` | Pílulas e avatares |
+
+<Callout variant="tip">
+  Para um canto que deve virar meia-lua em qualquer altura, use `acme.radius.full` em vez de calcular metade da altura.
+</Callout>
+
+## Tokens
+
+<TokenTable group="acme.radius" />

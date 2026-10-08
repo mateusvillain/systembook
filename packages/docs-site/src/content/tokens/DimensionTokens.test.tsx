@@ -47,6 +47,25 @@ describe('DimensionTokens', () => {
     expect(samples('size')).toEqual(['24px', '2px', '4px']);
   });
 
+  it('largura de borda pelo caminho (SYS-150); raio de borda continua raio', () => {
+    dom.render(
+      <DimensionTokens
+        tokens={[
+          token('acme.border.width.thin', '1px'),
+          token('strokeWidth.md', 2),
+          token('focus.outline-width', '3px'),
+          token('border.radius.sm', '4px'),
+          token('stroke.md', '2px'),
+          token('space.border-gap', '6px'),
+        ]}
+        modes={['default']}
+      />,
+    );
+    expect(samples('border')).toEqual(['1px', '2px', '3px', '2px']);
+    expect(samples('radius')).toEqual(['4px']);
+    expect(samples('size')).toEqual(['6px']);
+  });
+
   it('sem amostra quando ela mentiria: negativo, relativo, não comprimento, outro tipo', () => {
     dom.render(
       <DimensionTokens

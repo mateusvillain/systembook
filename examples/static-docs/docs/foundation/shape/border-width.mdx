@@ -1,0 +1,21 @@
+---
+title: Border width
+subtitle: A espessura de bordas, divisores e indicadores.
+order: 2
+status: Beta
+---
+
+## Princípios
+
+- **Uma borda fina separa; uma grossa indica.** Divisores e contornos de campo usam `acme.border.width.thin`; estados (foco, seleção, aba ativa) ganham espessura.
+- **O foco nunca depende só da cor.** O anel de foco usa `acme.border.width.medium`, visível mesmo para quem não distingue a cor de destaque.
+
+| Token | Valor | Uso |
+| --- | --- | --- |
+| `acme.border.width.thin` | 1px | Divisores, campos e cartões em repouso |
+| `acme.border.width.medium` | 2px | Anel de foco, campo selecionado |
+| `acme.border.width.thick` | 4px | Indicador de aba ativa |
+
+## Tokens
+
+<TokenTable group="acme.border.width" />

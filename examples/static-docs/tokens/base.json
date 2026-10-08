@@ -54,7 +54,17 @@
       "$type": "dimension",
       "sm": { "$value": "4px" },
       "md": { "$value": "8px" },
+      "lg": { "$value": "12px" },
       "full": { "$value": "9999px", "$description": "Pílulas e avatares." }
+    },
+    "border": {
+      "width": {
+        "$type": "dimension",
+        "$description": "Espessura de bordas e divisores.",
+        "thin": { "$value": "1px", "$description": "Divisores e campos em repouso." },
+        "medium": { "$value": "2px", "$description": "Anel de foco e campo selecionado." },
+        "thick": { "$value": "4px", "$description": "Indicador de aba ativa." }
+      }
     },
     "font": {
       "family": {
@@ -89,11 +99,48 @@
         }
       }
     },
+    "elevation": {
+      "$type": "shadow",
+      "$description": "Duas camadas por nível: a sombra de contato (key) e a difusa (ambient). As cores mudam com o modo.",
+      "1": {
+        "$description": "Cartões e campos em repouso.",
+        "$value": [
+          { "color": "{acme.elevation.color.key}", "offsetX": "0px", "offsetY": "1px", "blur": "2px", "spread": "0px" },
+          { "color": "{acme.elevation.color.ambient}", "offsetX": "0px", "offsetY": "1px", "blur": "3px", "spread": "0px" }
+        ]
+      },
+      "2": {
+        "$description": "Cartão em hover e menus.",
+        "$value": [
+          { "color": "{acme.elevation.color.key}", "offsetX": "0px", "offsetY": "2px", "blur": "4px", "spread": "-1px" },
+          { "color": "{acme.elevation.color.ambient}", "offsetX": "0px", "offsetY": "4px", "blur": "8px", "spread": "0px" }
+        ]
+      },
+      "3": {
+        "$description": "Popovers e dropdowns.",
+        "$value": [
+          { "color": "{acme.elevation.color.key}", "offsetX": "0px", "offsetY": "4px", "blur": "8px", "spread": "-2px" },
+          { "color": "{acme.elevation.color.ambient}", "offsetX": "0px", "offsetY": "12px", "blur": "24px", "spread": "-4px" }
+        ]
+      },
+      "4": {
+        "$description": "Modais e diálogos.",
+        "$value": [
+          { "color": "{acme.elevation.color.key}", "offsetX": "0px", "offsetY": "8px", "blur": "16px", "spread": "-4px" },
+          { "color": "{acme.elevation.color.ambient}", "offsetX": "0px", "offsetY": "24px", "blur": "48px", "spread": "-8px" }
+        ]
+      }
+    },
     "shadow": {
       "$type": "shadow",
-      "card": {
-        "$value": { "color": "#0f172a1f", "offsetX": "0px", "offsetY": "2px", "blur": "8px", "spread": "0px" }
-      }
+      "card": { "$value": "{acme.elevation.1}", "$description": "Alias de acme.elevation.1." }
+    },
+    "opacity": {
+      "$type": "number",
+      "hover": { "$value": 0.08, "$description": "Camada de estado sobre a cor do componente no hover." },
+      "pressed": { "$value": 0.16, "$description": "Camada de estado ao pressionar." },
+      "disabled": { "$value": 0.5, "$description": "Componentes desabilitados." },
+      "overlay": { "$value": 0.64, "$description": "Fundo atrás de modais." }
     },
     "motion": {
       "duration": {

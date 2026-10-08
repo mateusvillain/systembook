@@ -1,0 +1,25 @@
+---
+title: Opacidade
+subtitle: Estados de interação, desabilitado e fundos de modal.
+order: 2
+status: Beta
+---
+
+## Princípios
+
+Opacidade aplicada a uma **camada de estado** (uma cor sobreposta ao componente) mantém o contraste do texto; aplicada ao componente inteiro, apaga também o rótulo. Use a segunda forma só para o estado desabilitado, que não precisa ser lido com o mesmo contraste.
+
+| Token | Valor | Uso |
+| --- | --- | --- |
+| `acme.opacity.hover` | 0.08 | Camada de estado no hover |
+| `acme.opacity.pressed` | 0.16 | Camada de estado ao pressionar |
+| `acme.opacity.disabled` | 0.5 | Componente desabilitado inteiro |
+| `acme.opacity.overlay` | 0.64 | Fundo escurecido atrás de modais |
+
+<Callout variant="info">
+  Um componente desabilitado não precisa passar o contraste de 4,5:1 (WCAG 1.4.3), mas precisa deixar claro que está desabilitado — não dependa só da opacidade para isso.
+</Callout>
+
+## Tokens
+
+<TokenTable group="acme.opacity" />

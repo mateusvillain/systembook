@@ -1,0 +1,29 @@
+---
+title: Elevação
+subtitle: Sombras que dizem o que está acima do quê.
+order: 1
+status: Stable
+---
+
+## Princípios
+
+Quanto mais alto o nível, mais o elemento flutua sobre a página — e mais ele interrompe. Cada nível combina duas camadas: a sombra de **contato** (`key`), curta e mais escura, e a **difusa** (`ambient`), longa e clara.
+
+| Nível | Uso |
+| --- | --- |
+| `acme.elevation.1` | Cartões e campos em repouso |
+| `acme.elevation.2` | Cartão em hover, menus |
+| `acme.elevation.3` | Popovers e dropdowns |
+| `acme.elevation.4` | Modais e diálogos |
+
+## Modo escuro
+
+Sobre fundo escuro uma sombra clara some: as cores das camadas mudam com o modo (`acme.elevation.color.*`), e os níveis as referenciam. Por isso a tabela abaixo tem uma coluna por modo.
+
+<Callout variant="warning">
+  Elevação não substitui borda: em superfícies escuras, combine o nível com `acme.border.width.thin` para o contorno continuar visível.
+</Callout>
+
+## Tokens
+
+<TokenTable group="acme.elevation" />

@@ -115,7 +115,7 @@
 }
 
 /* Xadrez do swatch de cor (SYS-133): o claro brilharia sobre o cartão escuro. */
-.sb-public[data-theme='dark'] .sb-token-color {
+.sb-public[data-theme='dark'] :is(.sb-token-color, .sb-token-opacity) {
   --sb-token-check-a: #2a313c;
   --sb-token-check-b: #161b22;
 }

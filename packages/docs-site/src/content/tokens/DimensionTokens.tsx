@@ -19,9 +19,22 @@ const words = (segment: string) =>
     .split(/[\s_-]+/)
     .filter(Boolean);
 
-function isRadiusToken(token: Token): boolean {
+/**
+ * Largura de traço (SYS-150), se não for raio: `stroke` sozinho (`stroke.md`),
+ * ou borda/contorno com uma palavra de espessura (`border.width.thin`,
+ * `outline-width`) — `space.border-gap` é espaço, não borda.
+ */
+const BORDER_WORDS = new Set(['border', 'outline']);
+const THICKNESS_WORDS = new Set(['width', 'thickness', 'weight']);
+
+const isBorderWidth = (all: string[]) =>
+  all.includes('stroke') || (all.some((w) => BORDER_WORDS.has(w)) && all.some((w) => THICKNESS_WORDS.has(w)));
+
+/** A amostra de uma dimensão, pelas palavras do caminho: raio, largura de borda ou medida. */
+function sampleKind(token: Token): 'radius' | 'border' | 'size' {
   const all = token.path.split('.').flatMap(words);
-  return all.some((w) => RADIUS_WORDS.has(w)) && !all.some((w) => NOT_RADIUS_WORDS.has(w));
+  if (all.some((w) => RADIUS_WORDS.has(w)) && !all.some((w) => NOT_RADIUS_WORDS.has(w))) return 'radius';
+  return isBorderWidth(all) ? 'border' : 'size';
 }
 
 /**
@@ -34,7 +47,8 @@ const ABSOLUTE_LENGTH = /^(?:0|(?:\d+(?:\.\d+)?|\.\d+)(?:px|rem|em|pt|pc|cm|mm|i
 /**
  * Tokens de dimensão (SYS-135): espaçamento como uma barra com a largura do
  * valor (limitada à célula — o número escrito diz o resto), raio como um
- * quadrado com aquele arredondamento. Sem amostra quando ela não seria fiel:
+ * quadrado com aquele arredondamento, largura de borda como uma caixa com
+ * aquela borda (SYS-150). Sem amostra quando ela não seria fiel:
  * valor negativo, relativo a um contexto (`%`, `vw`) ou que não é comprimento.
  */
 export function DimensionTokens(props: Omit<TokenTableProps, 'preview'>) {
@@ -43,7 +57,7 @@ export function DimensionTokens(props: Omit<TokenTableProps, 'preview'>) {
       {...props}
       preview={(token, _mode, css) => {
         if (css === null || token.type !== 'dimension' || !ABSOLUTE_LENGTH.test(css)) return null;
-        return <TokenSample kind={isRadiusToken(token) ? 'radius' : 'size'} value={css} />;
+        return <TokenSample kind={sampleKind(token)} value={css} />;
       }}
     />
   );
