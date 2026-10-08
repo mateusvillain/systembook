@@ -1013,9 +1013,18 @@
   min-width: 0;
 }
 
+.sb-color-scale-swatch {
+  display: block;
+  height: 3.5rem;
+  border-radius: 6px;
+}
+
 .sb-color-scale-swatch.sb-token-color {
   max-width: none;
-  height: 3.5rem;
+}
+
+.sb-color-scale-swatch--missing {
+  border: 1px dashed var(--sb-border, #e2e4e8);
 }
 
 .sb-color-scale-step-name {

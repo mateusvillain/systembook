@@ -54,6 +54,15 @@ describe('TokenGroup com escalas (SYS-153)', () => {
     expect([...dom.container().querySelectorAll('table tbody th')].map((th) => th.textContent)).toEqual(['palette.white']);
   });
 
+  it('passo sem conversão: quadro tracejado, sem xadrez, e o valor cru', () => {
+    const tokens = [color('ramp.100', '#eee'), color('ramp.200', { colorSpace: 'nope', components: [1, 1, 1] })];
+    dom.render(<TokenGroup tokens={tokens} modes={['light']} label="ramp" />);
+    const [, broken] = [...dom.container().querySelectorAll('[role=listitem]')];
+    expect(broken!.querySelector('.sb-color-scale-swatch--missing')).not.toBeNull();
+    expect(broken!.querySelector('.sb-token-color')).toBeNull();
+    expect(broken!.querySelector('.sb-token-value')!.textContent).toBe('{"colorSpace":"nope","components":[1,1,1]}');
+  });
+
   it('escala que muda com o modo: uma faixa por modo', () => {
     const tokens = [color('ramp.100', '#eee', '#111'), color('ramp.200', '#ddd', '#222'), color('ramp.300', '#ccc', '#333')];
     dom.render(<TokenGroup tokens={tokens} modes={['light', 'dark']} label="ramp" />);

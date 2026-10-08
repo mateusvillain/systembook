@@ -37,7 +37,12 @@ function Step({ token, mode, onAnnounce }: { token: Token; mode: string; onAnnou
   const css = toCssValue('color', token.byMode[mode]!.resolvedValue);
   return (
     <div role="listitem" className="sb-color-scale-step" data-deprecated={token.deprecated ? '' : undefined}>
-      <span className="sb-token-color sb-color-scale-swatch" aria-hidden style={css === null ? undefined : ({ '--sb-token-color': css } as CSSProperties)} />
+      {/* Sem conversão, um quadro tracejado no lugar: xadrez vazio leria como "transparente". */}
+      {css === null ? (
+        <span className="sb-color-scale-swatch sb-color-scale-swatch--missing" aria-hidden />
+      ) : (
+        <span className="sb-token-color sb-color-scale-swatch" aria-hidden style={{ '--sb-token-color': css } as CSSProperties} />
+      )}
       <span className="sb-color-scale-step-name">
         {stepOf(token.path)}
         {token.deprecated ? <span className="sb-token-deprecated">Deprecated</span> : null}
