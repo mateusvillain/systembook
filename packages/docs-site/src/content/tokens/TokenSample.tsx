@@ -6,6 +6,6 @@ import type { CSSProperties } from 'react';
  * variável (em vez de `style.background` etc.) deixa cada regra no
  * `content.css` decidir onde aplicar, sem estilo inline concorrendo com o tema.
  */
-export function TokenSample({ kind, value }: { kind: 'color' | 'size' | 'radius' | 'border' | 'shadow' | 'opacity'; value: string }) {
+export function TokenSample({ kind, value }: { kind: 'color' | 'size' | 'radius' | 'border-width' | 'border' | 'stroke' | 'gradient' | 'shadow' | 'opacity'; value: string }) {
   return <span className={`sb-token-${kind}`} aria-hidden style={{ [`--sb-token-${kind}`]: value } as CSSProperties} />;
 }

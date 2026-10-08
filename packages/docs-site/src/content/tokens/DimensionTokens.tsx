@@ -31,10 +31,10 @@ const isBorderWidth = (all: string[]) =>
   all.includes('stroke') || (all.some((w) => BORDER_WORDS.has(w)) && all.some((w) => THICKNESS_WORDS.has(w)));
 
 /** A amostra de uma dimensão, pelas palavras do caminho: raio, largura de borda ou medida. */
-function sampleKind(token: Token): 'radius' | 'border' | 'size' {
+function sampleKind(token: Token): 'radius' | 'border-width' | 'size' {
   const all = token.path.split('.').flatMap(words);
   if (all.some((w) => RADIUS_WORDS.has(w)) && !all.some((w) => NOT_RADIUS_WORDS.has(w))) return 'radius';
-  return isBorderWidth(all) ? 'border' : 'size';
+  return isBorderWidth(all) ? 'border-width' : 'size';
 }
 
 /**

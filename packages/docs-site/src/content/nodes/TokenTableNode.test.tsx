@@ -2,7 +2,7 @@
 import { act } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { describe, expect, it, vi } from 'vitest';
-import type { DocsDataSource, TokenSet } from '@systembook/schema';
+import type { DocsDataSource, TokenSet, TokenType } from '@systembook/schema';
 import { setupDom } from '../../../test/dom.js';
 import { DocsDataSourceProvider } from '../dataSource.js';
 import { PageRenderer } from '../../public/PageRenderer.js';
@@ -33,7 +33,8 @@ const TOKENS: TokenSet = {
       },
     },
     { path: 'font.family.sans', type: 'fontFamily', byMode: { default: { value: 'Inter', resolvedValue: 'Inter' } } },
-    { path: 'line.dashed', type: 'strokeStyle', byMode: { default: { value: 'dashed', resolvedValue: 'dashed' } } },
+    // Tipo de um schema mais novo: sem renderer, cai no fallback.
+    { path: 'line.future', type: 'futureType' as TokenType, byMode: { default: { value: 'x', resolvedValue: 'x' } } },
   ],
 };
 
@@ -64,12 +65,12 @@ describe('bloco token-table (SYS-139)', () => {
       'All tokens (color)',
       'All tokens (fontWeight, fontFamily)',
       'All tokens (shadow)',
-      'All tokens (strokeStyle)',
+      'All tokens (futureType)',
     ]);
     // cada uma com a amostra do seu renderer; o fallback, sem amostra
     expect(block.querySelectorAll('.sb-token-type-sample')).toHaveLength(2);
     expect(block.querySelector('table[aria-label="All tokens (shadow)"] .sb-token-cell')!.children.length).toBeGreaterThan(1);
-    expect(block.querySelector('table[aria-label="All tokens (strokeStyle)"] .sb-token-cell')!.children).toHaveLength(1);
+    expect(block.querySelector('table[aria-label="All tokens (futureType)"] .sb-token-cell')!.children).toHaveLength(1);
   });
 
   it('sem nenhum token publicado, aviso no lugar', async () => {

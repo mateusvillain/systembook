@@ -1,0 +1,23 @@
+---
+title: Gradientes
+subtitle: Transições de cor para capas, banners e esmaecimentos.
+order: 3
+status: Beta
+---
+
+## Princípios
+
+- **Gradiente é decoração.** Nunca ponha texto sobre a parte de menor contraste de um gradiente; quando houver texto, garanta 4,5:1 contra a parada **mais clara** sob ele.
+- **As paradas vêm da paleta.** Cada parada é um alias de `acme.palette.*` — trocar a paleta atualiza os gradientes.
+- **A direção é do produto.** O token guarda só as paradas; a amostra usa da esquerda para a direita, e cada uso escolhe o ângulo (`linear-gradient(180deg, …)`).
+
+| Token | Uso |
+| --- | --- |
+| `acme.gradient.brand` | Destaques de marketing e capas |
+| `acme.gradient.warm` | Banners de campanha |
+| `acme.gradient.spectrum` | Gráficos de calor e progresso |
+| `acme.gradient.fade` | Esmaecer o fim de uma lista rolável |
+
+## Tokens
+
+<TokenTable group="acme.gradient" />

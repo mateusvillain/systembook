@@ -83,6 +83,14 @@ describe('TokenTable como fallback (SYS-136)', () => {
     dom.render(<TokenTable tokens={[twoModes('a', 1, 1), twoModes('b', 2, 3)]} modes={['light', 'dark']} />);
     expect(headers()).toEqual(['Token', 'light', 'dark', 'Details']);
 
+    // A linha que não muda ocupa as colunas de modo numa célula só.
+    const cells = (path: string) => [...dom.container().querySelectorAll('tbody tr')].find((r) => r.querySelector('th')!.textContent === path)!.querySelectorAll('td.sb-token-cell');
+    expect(cells('b')).toHaveLength(2);
+    expect(cells('a')).toHaveLength(1);
+    expect(cells('a')[0]!.getAttribute('colspan')).toBe('2');
+    expect(cells('a')[0]!.querySelector('.sb-token-all-modes')!.textContent).toBe('Same in all modes');
+    expect(cells('b')[0]!.querySelector('.sb-token-all-modes')).toBeNull();
+
     // Mesmo valor por caminhos diferentes também é diferença: o alias aparece.
     dom.render(<TokenTable tokens={[twoModes('a', 1, 1, 'x.one')]} modes={['light', 'dark']} />);
     expect(headers()).toEqual(['Token', 'light', 'dark', 'Details']);

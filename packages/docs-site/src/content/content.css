@@ -837,6 +837,12 @@
   min-width: 9rem;
 }
 
+.sb-token-all-modes {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--sb-fg-muted, #59636e);
+}
+
 .sb-token-cell > * + * {
   margin-top: 0.3rem;
 }
@@ -998,13 +1004,54 @@
 }
 
 /* Largura de borda (SYS-150): uma caixa com aquela borda, na cor do texto. */
+.sb-token-border-width {
+  display: block;
+  font-size: 1rem;
+  width: 4rem;
+  height: 2.5rem;
+  border-radius: 4px;
+  border: var(--sb-token-border-width) solid var(--sb-fg, currentColor);
+}
+
+/* Borda composta (SYS-152): a caixa com o `border` inteiro do token —
+   largura, estilo e cor. */
 .sb-token-border {
   display: block;
   font-size: 1rem;
   width: 4rem;
   height: 2.5rem;
   border-radius: 4px;
-  border: var(--sb-token-border) solid var(--sb-fg, currentColor);
+  border: var(--sb-token-border);
+}
+
+/* Estilo de traço (SYS-152): uma linha de 2px com o estilo. `double` precisa
+   de 3px para mostrar as duas linhas. O traço com `dashArray` vem em SVG
+   (`sb-token-dash`), que o `border-style` não representa. */
+.sb-token-stroke {
+  display: block;
+  width: 6rem;
+  margin: 0.5rem 0;
+  border-top: 3px var(--sb-token-stroke) var(--sb-fg, currentColor);
+}
+
+.sb-token-dash {
+  display: block;
+  width: 6rem;
+  height: 0.75rem;
+  overflow: visible;
+  color: var(--sb-fg, currentColor);
+}
+
+/* Gradiente (SYS-152): uma faixa. A direção é a dos 90deg da conversão — o
+   DTCG não guarda ângulo. */
+.sb-token-gradient {
+  display: block;
+  width: 100%;
+  max-width: 9rem;
+  height: 2.5rem;
+  border-radius: 6px;
+  border: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+  background: var(--sb-token-gradient);
 }
 
 /* Opacidade (SYS-150): a cor de destaque naquela opacidade sobre o mesmo

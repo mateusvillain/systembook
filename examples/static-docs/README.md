@@ -43,6 +43,7 @@ static-docs/
     │   ├── color/
     │   │   ├── _section.yml
     │   │   ├── palette.mdx       # página com imagem, tabela e callout
+    │   │   ├── gradients.mdx     # gradient
     │   │   ├── img/palette.svg
     │   │   └── tokens/           # página com tabs: index.mdx é o Overview,
     │   │       ├── index.mdx     # os outros arquivos são as tabs
@@ -54,7 +55,7 @@ static-docs/
     │   │   ├── families.mdx      # fontFamily
     │   │   └── weights.mdx       # fontWeight
     │   ├── spacing/scale.mdx     # cada página de fundamentos termina num <TokenTable>
-    │   ├── shape/                # border-radius.mdx, border-width.mdx
+    │   ├── shape/                # border-radius.mdx, border-width.mdx, border-style.mdx (strokeStyle e border)
     │   ├── depth/                # elevation.mdx (sombra por modo), opacity.mdx, z-index.mdx (number)
     │   └── motion/               # duration-easing.mdx: curvas, durações e transições
     └── components/               # menu "Componentes"

@@ -61,7 +61,7 @@ describe('DimensionTokens', () => {
         modes={['default']}
       />,
     );
-    expect(samples('border')).toEqual(['1px', '2px', '3px', '2px']);
+    expect(samples('border-width')).toEqual(['1px', '2px', '3px', '2px']);
     expect(samples('radius')).toEqual(['4px']);
     expect(samples('size')).toEqual(['6px']);
   });
