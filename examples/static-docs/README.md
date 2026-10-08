@@ -26,7 +26,7 @@ static-docs/
 ├── systembook.config.ts          # nome, logos, base, status tags e tokens
 ├── brand/                        # logo e logo do tema escuro
 ├── tokens/                       # design tokens DTCG
-│   ├── base.json                 # paleta, espaço, raio, borda, tipografia, elevação, opacidade e movimento
+│   ├── base.json                 # paleta, espaço, raio, borda, tipografia, elevação, opacidade, z-index e movimento
 │   ├── light.json                # cores de papel e da sombra no modo light
 │   └── dark.json                 # as mesmas no modo dark
 ├── src/components/
@@ -50,10 +50,12 @@ static-docs/
     │   │       └── code.mdx
     │   ├── typography/
     │   │   ├── _section.yml
-    │   │   └── scale.mdx         # headings e marks; `slug: type-scale` no frontmatter
+    │   │   ├── scale.mdx         # headings e marks; `slug: type-scale` no frontmatter
+    │   │   ├── families.mdx      # fontFamily
+    │   │   └── weights.mdx       # fontWeight
     │   ├── spacing/scale.mdx     # cada página de fundamentos termina num <TokenTable>
     │   ├── shape/                # border-radius.mdx, border-width.mdx
-    │   └── depth/                # elevation.mdx (sombra por modo), opacity.mdx
+    │   └── depth/                # elevation.mdx (sombra por modo), opacity.mdx, z-index.mdx (number)
     └── components/               # menu "Componentes"
         ├── _menu.yml
         └── actions/
@@ -84,7 +86,7 @@ static-docs/
 | `<ComponentEmbed>` | `components/actions/button/index.mdx` |
 | `<DosDonts>` (sem cover, sem título, cover de componente, cover de imagem) | `foundation/color/tokens/usage.mdx`, `components/actions/button/index.mdx` |
 | Aninhamento (`<DosDonts>` dentro de `<Callout>`) | `components/actions/button/accessibility.mdx` |
-| `<TokenTable>` (um formato por tipo; colunas por modo só quando o valor muda) | `foundation/color/palette.mdx`, `foundation/typography/scale.mdx`, `foundation/spacing/`, `foundation/shape/`, `foundation/depth/` |
+| `<TokenTable>` (um formato por tipo; colunas por modo só quando o valor muda) | `foundation/color/palette.mdx`, `foundation/typography/`, `foundation/spacing/`, `foundation/shape/`, `foundation/depth/` |
 
 O formato completo está em [`docs/static-format.md`](../../docs/static-format.md).
 

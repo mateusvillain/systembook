@@ -69,13 +69,16 @@
     "font": {
       "family": {
         "$type": "fontFamily",
-        "sans": { "$value": ["Inter", "system-ui", "sans-serif"] },
-        "mono": { "$value": ["JetBrains Mono", "ui-monospace", "monospace"] }
+        "sans": { "$value": ["Inter", "system-ui", "sans-serif"], "$description": "Interface e texto corrido." },
+        "serif": { "$value": ["Georgia", "Times New Roman", "serif"], "$description": "Citações e conteúdo editorial longo." },
+        "mono": { "$value": ["JetBrains Mono", "ui-monospace", "monospace"], "$description": "Código, tokens e valores tabulares." }
       },
       "weight": {
         "$type": "fontWeight",
-        "regular": { "$value": 400 },
-        "semibold": { "$value": 600 }
+        "regular": { "$value": 400, "$description": "Texto corrido." },
+        "medium": { "$value": 500, "$description": "Rótulos de botão e de campo." },
+        "semibold": { "$value": 600, "$description": "Títulos." },
+        "bold": { "$value": 700, "$description": "Display e números de destaque." }
       }
     },
     "type": {
@@ -141,6 +144,16 @@
       "pressed": { "$value": 0.16, "$description": "Camada de estado ao pressionar." },
       "disabled": { "$value": 0.5, "$description": "Componentes desabilitados." },
       "overlay": { "$value": 0.64, "$description": "Fundo atrás de modais." }
+    },
+    "z-index": {
+      "$type": "number",
+      "$description": "Ordem de empilhamento das camadas da interface.",
+      "base": { "$value": 0, "$description": "Conteúdo da página." },
+      "dropdown": { "$value": 1000, "$description": "Menus e listas suspensas." },
+      "sticky": { "$value": 1100, "$description": "Cabeçalhos e barras fixas." },
+      "overlay": { "$value": 1300, "$description": "Fundo escurecido atrás de modais." },
+      "modal": { "$value": 1400, "$description": "Modais e diálogos." },
+      "toast": { "$value": 1500, "$description": "Notificações, sempre por cima." }
     },
     "motion": {
       "duration": {

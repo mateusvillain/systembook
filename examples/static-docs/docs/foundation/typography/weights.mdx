@@ -1,0 +1,23 @@
+---
+title: Pesos
+subtitle: Hierarquia pelo peso, não só pelo tamanho.
+order: 3
+status: Stable
+---
+
+## Princípios
+
+- **Quatro pesos bastam.** Mais que isso dilui a hierarquia e aumenta o download de fontes.
+- **Peso não é ênfase de parágrafo.** Para destacar um trecho no texto corrido, use `<strong>` — ele herda `acme.font.weight.semibold` do tema.
+- **Texto pequeno pede peso maior.** Abaixo de 14px, prefira `medium` a `regular` para manter a legibilidade.
+
+| Token | Valor | Uso |
+| --- | --- | --- |
+| `acme.font.weight.regular` | 400 | Texto corrido |
+| `acme.font.weight.medium` | 500 | Rótulos de botão e de campo |
+| `acme.font.weight.semibold` | 600 | Títulos |
+| `acme.font.weight.bold` | 700 | Display e números de destaque |
+
+## Tokens
+
+<TokenTable group="acme.font.weight" />

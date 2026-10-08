@@ -1,0 +1,24 @@
+---
+title: Famílias tipográficas
+subtitle: As três famílias do sistema e onde cada uma entra.
+order: 2
+status: Stable
+---
+
+## Princípios
+
+Cada família é uma **pilha**: a primeira fonte disponível vence, e as seguintes garantem um fallback parecido quando ela não carregou. Por isso a pilha termina sempre numa família genérica (`sans-serif`, `serif`, `monospace`).
+
+| Token | Uso |
+| --- | --- |
+| `acme.font.family.sans` | Interface e texto corrido |
+| `acme.font.family.serif` | Citações e conteúdo editorial longo |
+| `acme.font.family.mono` | Código, tokens e números que precisam alinhar em coluna |
+
+<Callout variant="tip">
+  A amostra da tabela usa as fontes instaladas neste navegador: sem a Inter, você vê a próxima da pilha — o mesmo que o usuário veria.
+</Callout>
+
+## Tokens
+
+<TokenTable group="acme.font.family" />

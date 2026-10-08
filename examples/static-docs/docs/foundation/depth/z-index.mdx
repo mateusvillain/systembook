@@ -1,0 +1,27 @@
+---
+title: Z-index
+subtitle: A ordem em que as camadas se empilham.
+order: 3
+status: Beta
+---
+
+## Princípios
+
+O z-index só vem da escala: um `z-index: 9999` avulso vence tudo hoje e briga com o próximo `99999` amanhã. Os degraus são espaçados de 100 em 100 (a partir de 1000) para caber um caso intermediário sem renumerar a escala.
+
+| Token | Valor | Camada |
+| --- | --- | --- |
+| `acme.z-index.base` | 0 | Conteúdo da página |
+| `acme.z-index.dropdown` | 1000 | Menus e listas suspensas |
+| `acme.z-index.sticky` | 1100 | Cabeçalhos e barras fixas |
+| `acme.z-index.overlay` | 1300 | Fundo escurecido atrás de modais |
+| `acme.z-index.modal` | 1400 | Modais e diálogos |
+| `acme.z-index.toast` | 1500 | Notificações |
+
+<Callout variant="info">
+  Os tokens são do tipo `number` do DTCG: sem amostra visual na tabela, só o valor — um número de camada não tem forma a desenhar. A opacidade, também `number`, ganha amostra porque o caminho diz o que ela mede.
+</Callout>
+
+## Tokens
+
+<TokenTable group="acme.z-index" />
