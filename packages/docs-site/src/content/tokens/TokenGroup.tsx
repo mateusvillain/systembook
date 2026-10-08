@@ -3,6 +3,7 @@ import type { Token, TokenType } from '@systembook/schema';
 import { ColorTokens } from './ColorTokens.js';
 import { DimensionTokens } from './DimensionTokens.js';
 import { FontTokens } from './FontTokens.js';
+import { NumberTokens } from './NumberTokens.js';
 import { ShadowTokens } from './ShadowTokens.js';
 import { TokenTable, type TokenTableProps } from './TokenTable.js';
 import { TypographySpecimens } from './TypographySpecimens.js';
@@ -17,6 +18,7 @@ const RENDERERS: Partial<Record<TokenType, Renderer>> = {
   fontWeight: FontTokens,
   dimension: DimensionTokens,
   shadow: ShadowTokens,
+  number: NumberTokens,
 };
 
 export interface TokenGroupProps {

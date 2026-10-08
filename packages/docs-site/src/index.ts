@@ -62,6 +62,7 @@ export { FontTokens } from './content/tokens/FontTokens.js';
 export { TypographySpecimens } from './content/tokens/TypographySpecimens.js';
 export { DimensionTokens } from './content/tokens/DimensionTokens.js';
 export { ShadowTokens } from './content/tokens/ShadowTokens.js';
+export { NumberTokens } from './content/tokens/NumberTokens.js';
 export { TokenGroup, type TokenGroupProps } from './content/tokens/TokenGroup.js';
 
 // Doc pública

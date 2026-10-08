@@ -997,6 +997,35 @@
   background: var(--sb-accent-soft, #eef4ff);
 }
 
+/* Largura de borda (SYS-150): uma caixa com aquela borda, na cor do texto. */
+.sb-token-border {
+  display: block;
+  font-size: 1rem;
+  width: 4rem;
+  height: 2.5rem;
+  border-radius: 4px;
+  border: var(--sb-token-border) solid var(--sb-fg, currentColor);
+}
+
+/* Opacidade (SYS-150): a cor de destaque naquela opacidade sobre o mesmo
+   xadrez do swatch de cor — o quanto se vê através dela. */
+.sb-token-opacity {
+  --sb-token-check-a: #d4d7dd;
+  --sb-token-check-b: #ffffff;
+
+  display: block;
+  width: 4rem;
+  height: 2.5rem;
+  border-radius: 6px;
+  border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+  background:
+    linear-gradient(
+      color-mix(in srgb, var(--sb-accent, #1d4ed8) calc(var(--sb-token-opacity) * 100%), transparent),
+      color-mix(in srgb, var(--sb-accent, #1d4ed8) calc(var(--sb-token-opacity) * 100%), transparent)
+    ),
+    repeating-conic-gradient(var(--sb-token-check-a) 0 25%, var(--sb-token-check-b) 0 50%) 0 0 / 12px 12px;
+}
+
 /* Bandeja: a sombra precisa de um fundo diferente do cartão para aparecer —
    no tema escuro, cartão e célula têm a mesma cor e a sombra sumiria. A
    folga deixa o blur aparecer sem encostar no valor escrito. */
