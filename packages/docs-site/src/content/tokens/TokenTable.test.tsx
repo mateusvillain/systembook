@@ -67,4 +67,24 @@ describe('TokenTable como fallback (SYS-136)', () => {
     dom.render((<TokenTable tokens={[token('border', { color: '#000' })]} modes={['default']} />));
     expect(dom.container().querySelector('.sb-token-value')!.textContent).toBe('{"color":"#000"}');
   });
+
+  it('colunas por modo só quando algum valor ou alias muda entre eles', () => {
+    const twoModes = (path: string, light: TokenValue, dark: TokenValue, darkAlias?: string): Token => ({
+      path,
+      type: 'number',
+      byMode: { light: { value: light, resolvedValue: light }, dark: { value: dark, resolvedValue: dark, ...(darkAlias ? { aliasOf: darkAlias } : {}) } },
+    });
+    const headers = () => [...dom.container().querySelectorAll('thead th')].map((th) => th.textContent);
+
+    dom.render(<TokenTable tokens={[twoModes('a', 1, 1), twoModes('b', 2, 2)]} modes={['light', 'dark']} />);
+    expect(headers()).toEqual(['Token', 'Value', 'Details']);
+    expect(dom.container().querySelectorAll('tbody td.sb-token-cell')).toHaveLength(2);
+
+    dom.render(<TokenTable tokens={[twoModes('a', 1, 1), twoModes('b', 2, 3)]} modes={['light', 'dark']} />);
+    expect(headers()).toEqual(['Token', 'light', 'dark', 'Details']);
+
+    // Mesmo valor por caminhos diferentes também é diferença: o alias aparece.
+    dom.render(<TokenTable tokens={[twoModes('a', 1, 1, 'x.one')]} modes={['light', 'dark']} />);
+    expect(headers()).toEqual(['Token', 'light', 'dark', 'Details']);
+  });
 });

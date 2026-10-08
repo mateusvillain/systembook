@@ -58,7 +58,8 @@ export { blocksToTiptapDoc } from './content/blocksToTiptapDoc.js';
 // Design tokens
 export { TokenTable, type TokenTableProps } from './content/tokens/TokenTable.js';
 export { ColorTokens } from './content/tokens/ColorTokens.js';
-export { TypographyTokens } from './content/tokens/TypographyTokens.js';
+export { FontTokens } from './content/tokens/FontTokens.js';
+export { TypographySpecimens } from './content/tokens/TypographySpecimens.js';
 export { DimensionTokens } from './content/tokens/DimensionTokens.js';
 export { ShadowTokens } from './content/tokens/ShadowTokens.js';
 export { TokenGroup, type TokenGroupProps } from './content/tokens/TokenGroup.js';
