@@ -55,7 +55,8 @@ static-docs/
     │   │   └── weights.mdx       # fontWeight
     │   ├── spacing/scale.mdx     # cada página de fundamentos termina num <TokenTable>
     │   ├── shape/                # border-radius.mdx, border-width.mdx
-    │   └── depth/                # elevation.mdx (sombra por modo), opacity.mdx, z-index.mdx (number)
+    │   ├── depth/                # elevation.mdx (sombra por modo), opacity.mdx, z-index.mdx (number)
+    │   └── motion/               # duration-easing.mdx: curvas, durações e transições
     └── components/               # menu "Componentes"
         ├── _menu.yml
         └── actions/
@@ -86,7 +87,7 @@ static-docs/
 | `<ComponentEmbed>` | `components/actions/button/index.mdx` |
 | `<DosDonts>` (sem cover, sem título, cover de componente, cover de imagem) | `foundation/color/tokens/usage.mdx`, `components/actions/button/index.mdx` |
 | Aninhamento (`<DosDonts>` dentro de `<Callout>`) | `components/actions/button/accessibility.mdx` |
-| `<TokenTable>` (um formato por tipo; colunas por modo só quando o valor muda) | `foundation/color/palette.mdx`, `foundation/typography/`, `foundation/spacing/`, `foundation/shape/`, `foundation/depth/` |
+| `<TokenTable>` (um formato por tipo; colunas por modo só quando o valor muda) | `foundation/color/palette.mdx`, `foundation/typography/`, `foundation/spacing/`, `foundation/shape/`, `foundation/depth/`, `foundation/motion/` |
 
 O formato completo está em [`docs/static-format.md`](../../docs/static-format.md).
 

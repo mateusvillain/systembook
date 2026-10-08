@@ -161,8 +161,10 @@ Para mostrar um grupo dentro de uma página, use o bloco
 [`<TokenTable>`](./static-format.md#tokentable) (no CMS, "Token table" no menu
 de blocos). Nos dois casos, cada tipo usa o formato próprio — swatch de cor,
 specimen de tipografia (a frase com o estilo inteiro e as propriedades
-rotuladas), barra de dimensão, cartão com a sombra — e o resto aparece numa
-tabela de valores. As colunas por modo (`light`, `dark`) só aparecem quando
+rotuladas), barra de dimensão, cartão com a sombra, gráfico da curva de
+easing e barra de duração (com um botão ▶ que anda um ponto no tempo e na
+curva do token; nada anima sozinho, e some com `prefers-reduced-motion`) — e o
+resto aparece numa tabela de valores. As colunas por modo (`light`, `dark`) só aparecem quando
 algum valor muda entre eles; senão, uma coluna "Value".
 
 ### No preview dos componentes
