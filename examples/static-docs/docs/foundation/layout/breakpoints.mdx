@@ -1,0 +1,24 @@
+---
+title: Breakpoints
+subtitle: As larguras em que o layout muda.
+order: 1
+status: Stable
+---
+
+## Princípios
+
+- **Mobile first.** Os breakpoints são larguras **mínimas**: o estilo base é o do celular, e cada faixa acrescenta (`@media (min-width: …)`).
+- **Quebre pelo conteúdo.** Os quatro passos cobrem os layouts do sistema; um componente que quebra antes do próximo passo pede revisão do componente, não um breakpoint novo.
+
+| Token | Valor | Faixa |
+| --- | --- | --- |
+| `acme.breakpoint.sm` | 640px | Celular na horizontal |
+| `acme.breakpoint.md` | 768px | Tablet |
+| `acme.breakpoint.lg` | 1024px | Notebook: a navegação lateral aparece |
+| `acme.breakpoint.xl` | 1280px | Desktop |
+
+## Tokens
+
+Cada linha marca o breakpoint numa régua que vai até o maior.
+
+<TokenTable group="acme.breakpoint" />

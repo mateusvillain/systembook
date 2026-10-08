@@ -66,6 +66,36 @@ describe('DimensionTokens', () => {
     expect(samples('size')).toEqual(['6px']);
   });
 
+  it('convenções por nome (SYS-154): breakpoint, ícone/avatar, letter-spacing, line-height, blur', () => {
+    dom.render(
+      <DimensionTokens
+        tokens={[
+          token('breakpoint.md', '768px'),
+          token('screens.xl', '80rem'),
+          token('icon.size.md', '20px'),
+          token('avatarLg', '48px'),
+          token('letterSpacing.tight', '-0.02em'),
+          token('tracking.wide', '0.5px'),
+          token('line-height.body', '24px'),
+          token('line-height.broken', '-4px'),
+          token('blur.md', '8px'),
+          token('shadow.blur', '8px'),
+          token('icon.gap', '4px'),
+        ]}
+        modes={['default']}
+      />,
+    );
+    const marks = [...dom.container().querySelectorAll<HTMLElement>('.sb-token-ruler-mark')].map((m) => m.style.getPropertyValue('--sb-token-ruler'));
+    // 768px na escala do maior (80rem = 1280px)
+    expect(marks).toEqual(['60%', '100%']);
+    expect(samples('square')).toEqual(['20px', '48px']);
+    const texts = [...dom.container().querySelectorAll<HTMLElement>('.sb-token-text-sample')];
+    expect(texts.map((t) => t.style.letterSpacing || t.style.lineHeight)).toEqual(['-0.02em', '0.5px', '24px']);
+    expect(samples('blur')).toEqual(['8px']);
+    // `shadow.blur` é campo de sombra e `icon.gap` é espaço: barra
+    expect(samples('size')).toEqual(['8px', '4px']);
+  });
+
   it('sem amostra quando ela mentiria: negativo, relativo, não comprimento, outro tipo', () => {
     dom.render(
       <DimensionTokens
