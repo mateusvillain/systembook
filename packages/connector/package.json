@@ -1,6 +1,6 @@
 {
   "name": "@systembook/connector",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "license": "MIT",
   "description": "CLI do Systembook para descobrir arquivos *.preview.tsx no repo do time e buildar o artefato estático de preview.",
   "keywords": [
