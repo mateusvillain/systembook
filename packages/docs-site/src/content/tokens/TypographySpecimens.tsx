@@ -1,25 +1,28 @@
 import type { Token } from '@systembook/schema';
 import { toCssLines, typographyStyle } from '@systembook/content/tokens';
-import { TYPE_SAMPLE } from './FontTokens.js';
 import { TokenCopy, useCopyAnnouncer } from './TokenCopy.js';
 import type { TokenTableProps } from './TokenTable.js';
 import { modesForToken, modesToShow } from './tokenModes.js';
+import { useMessages } from '../../i18n/UiLocale.js';
+import type { DocsMessageKey } from '../../i18n/messages/en.js';
+import type { Translator } from '../../i18n/format.js';
 
 /** Rótulo de cada linha de `toCssLines('typography')`, na ordem dela. */
-const PROPERTY_LABELS: Record<string, string> = {
-  'font-family': 'Family',
-  'font-size': 'Size',
-  'font-weight': 'Weight',
-  'letter-spacing': 'Letter spacing',
-  'line-height': 'Line height',
+const PROPERTY_LABELS: Record<string, DocsMessageKey> = {
+  'font-family': 'tokens.fontFamily',
+  'font-size': 'tokens.fontSize',
+  'font-weight': 'tokens.fontWeight',
+  'letter-spacing': 'tokens.letterSpacing',
+  'line-height': 'tokens.lineHeight',
 };
 
 /** As propriedades da tipografia num modo: campo faltando é "—", o que não converte sai cru. */
-function properties(token: Token, mode: string): [label: string, value: string][] {
+function properties(token: Token, mode: string, t: Translator<DocsMessageKey>): [label: string, value: string][] {
   const lines = toCssLines('typography', token.byMode[mode]!.resolvedValue) ?? [];
   return lines.map((line) => {
     const [property, value] = line.split(/: (.*)/s) as [string, string];
-    return [PROPERTY_LABELS[property] ?? property, value];
+    const key = PROPERTY_LABELS[property];
+    return [key ? t(key) : property, value];
   });
 }
 
@@ -32,6 +35,7 @@ function properties(token: Token, mode: string): [label: string, value: string][
 export function TypographySpecimens({ tokens, modes, label }: Omit<TokenTableProps, 'preview'>) {
   const shown = modesToShow(tokens, modes);
   const { announce, region } = useCopyAnnouncer();
+  const t = useMessages();
   return (
     // `sb-tokens`: as regras de conteúdo do ProseMirror (código inline, tabela)
     // já excluem o que mora dentro dela. `div` com role de lista em vez de
@@ -42,7 +46,7 @@ export function TypographySpecimens({ tokens, modes, label }: Omit<TokenTablePro
           <div role="listitem" key={token.path} className="sb-type-specimen" data-deprecated={token.deprecated ? '' : undefined}>
             <div className="sb-type-specimen-head">
               <code className="sb-token-name">{token.path}</code>
-              {token.deprecated ? <span className="sb-token-deprecated">Deprecated</span> : null}
+              {token.deprecated ? <span className="sb-token-deprecated">{t('tokens.deprecated')}</span> : null}
               <TokenCopy path={token.path} onAnnounce={announce} />
             </div>
             {typeof token.deprecated === 'string' ? (
@@ -55,10 +59,10 @@ export function TypographySpecimens({ tokens, modes, label }: Omit<TokenTablePro
                 <div key={mode} className="sb-type-specimen-mode">
                   {specimens.length > 1 ? <span className="sb-type-specimen-mode-name">{mode}</span> : null}
                   <span className="sb-type-specimen-sample" aria-hidden style={typographyStyle(resolvedValue)}>
-                    {TYPE_SAMPLE}
+                    {t('tokens.typeSample')}
                   </span>
                   <dl className="sb-type-specimen-props">
-                    {properties(token, mode).map(([name, value]) => (
+                    {properties(token, mode, t).map(([name, value]) => (
                       <div key={name}>
                         <dt>{name}</dt>
                         <dd>

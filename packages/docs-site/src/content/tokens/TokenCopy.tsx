@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toCssVar, toJsPath } from '@systembook/content/tokens';
 import { copyText } from '../clipboard.js';
+import { useMessages } from '../../i18n/UiLocale.js';
+import type { DocsMessageKey } from '../../i18n/messages/en.js';
 
 /** Os nomes que o leitor copia de um token — as regras moram em `@systembook/content/tokens`. */
 const FORMATS = [
-  { id: 'css', label: 'CSS', name: 'CSS variable', text: (path: string) => `var(${toCssVar(path)})` },
-  { id: 'js', label: 'JS', name: 'JS path', text: toJsPath },
-  { id: 'path', label: 'Path', name: 'token path', text: (path: string) => path },
-] as const;
+  { id: 'css', label: 'tokens.copyCss', name: 'tokens.copyCssName', text: (path: string) => `var(${toCssVar(path)})` },
+  { id: 'js', label: 'tokens.copyJs', name: 'tokens.copyJsName', text: toJsPath },
+  { id: 'path', label: 'tokens.copyPath', name: 'tokens.copyPathName', text: (path: string) => path },
+] as const satisfies readonly { id: string; label: DocsMessageKey; name: DocsMessageKey; text: (path: string) => string }[];
 
 type FormatId = (typeof FORMATS)[number]['id'];
 
@@ -47,13 +49,14 @@ export function useCopyAnnouncer() {
  */
 export function TokenCopy({ path, onAnnounce }: { path: string; onAnnounce: (message: string) => void }) {
   const [result, setResult] = useState<{ id: FormatId; ok: boolean } | null>(null);
+  const t = useMessages();
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => void (timer.current && clearTimeout(timer.current)), []);
 
   function copy(id: FormatId, name: string, text: string) {
     void copyText(text).then((ok) => {
       setResult({ id, ok });
-      onAnnounce(ok ? `Copied ${name} ${text}` : `Could not copy ${name} — select ${text} and copy it`);
+      onAnnounce(t(ok ? 'tokens.copyAnnounce' : 'tokens.copyFailedAnnounce', { name, value: text }));
       if (timer.current) clearTimeout(timer.current);
       timer.current = setTimeout(() => setResult(null), ok ? FEEDBACK_MS : FAILURE_MS);
     });
@@ -61,10 +64,11 @@ export function TokenCopy({ path, onAnnounce }: { path: string; onAnnounce: (mes
 
   return (
     <span className="sb-token-copy">
-      {FORMATS.map(({ id, label, name, text }) => {
+      {FORMATS.map(({ id, label, name: nameKey, text }) => {
         const value = text(path);
+        const name = t(nameKey);
         const state = result?.id === id ? (result.ok ? 'copied' : 'failed') : undefined;
-        const shown = state === 'copied' ? 'Copied' : state === 'failed' ? 'Failed' : label;
+        const shown = t(state === 'copied' ? 'tokens.copyCopied' : state === 'failed' ? 'tokens.copyFailed' : label);
         return (
           <button
             key={id}
@@ -73,7 +77,7 @@ export function TokenCopy({ path, onAnnounce }: { path: string; onAnnounce: (mes
             data-state={state}
             title={value}
             // Começa pelo texto visível (WCAG 2.5.3): quem fala "CSS" aciona o botão.
-            aria-label={`${shown}: copy ${name} ${value}`}
+            aria-label={t('tokens.copyLabel', { state: shown, name, value })}
             onClick={() => copy(id, name, value)}
           >
             {shown}

@@ -44,6 +44,7 @@ export {
   type PluralMessage,
   type Translator,
 } from './i18n/format.js';
+export { formatRich } from './i18n/rich.js';
 export type { DocsMessageKey, DocsMessages } from './i18n/messages/en.js';
 
 // Conteúdo: extensões Tiptap, nós e utilitários

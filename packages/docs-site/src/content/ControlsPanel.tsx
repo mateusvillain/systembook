@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { PreviewControl, PreviewUpdatePropsMessage } from '@systembook/schema';
 import { Input } from '../ui/input.js';
 import { Switch } from '../ui/switch.js';
+import { useMessages } from '../i18n/UiLocale.js';
 
 /**
  * Painel de controles interativos do preview (TASK-49). Renderiza um input por
@@ -43,6 +44,7 @@ export function ControlsPanel({
   iframeRef: React.RefObject<HTMLIFrameElement | null>;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const t = useMessages();
   const [values, setValues] = useState<Record<string, unknown>>(() => {
     const initial: Record<string, unknown> = {};
     for (const c of controls) initial[c.propName] = initialValue(c, variantProps);
@@ -81,11 +83,11 @@ export function ControlsPanel({
         ) : (
           <ChevronRight className="inline size-4 align-middle" />
         )}{' '}
-        Controls ({controls.length})
+        {t('embed.controls', { count: controls.length })}
       </button>
 
       {expanded && (
-        <div className="sb-controls-fields" role="group" aria-label="Preview controls">
+        <div className="sb-controls-fields" role="group" aria-label={t('embed.controlsLabel')}>
           {controls.map((control) => {
             const label = control.label ?? control.propName;
             const value = values[control.propName];

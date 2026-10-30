@@ -11,6 +11,7 @@ import { ShadowTokens } from './ShadowTokens.js';
 import { StrokeTokens } from './StrokeTokens.js';
 import { TokenTable, type TokenTableProps } from './TokenTable.js';
 import { TypographySpecimens } from './TypographySpecimens.js';
+import { useMessages } from '../../i18n/UiLocale.js';
 
 type Renderer = ComponentType<Omit<TokenTableProps, 'preview'>>;
 
@@ -48,6 +49,7 @@ export interface TokenGroupProps {
  * próprio vai junto para o fallback.
  */
 export function TokenGroup({ tokens, modes, label }: TokenGroupProps) {
+  const t = useMessages();
   const scales = colorScaleParents(tokens);
   const tables = new Map<Renderer, Token[]>();
   for (const token of tokens) {
@@ -68,7 +70,13 @@ export function TokenGroup({ tokens, modes, label }: TokenGroupProps) {
           label={
             single
               ? label
-              : `${label} (${Renderer === ColorScales ? 'color scales' : [...new Set(rows.map((t) => t.type))].join(', ')})`
+              : t('tokens.tableLabel', {
+                  label,
+                  kinds:
+                    Renderer === ColorScales
+                      ? t('tokens.colorScales')
+                      : [...new Set(rows.map((token) => token.type))].join(', '),
+                })
           }
         />
       ))}

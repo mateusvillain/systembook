@@ -4,6 +4,7 @@ import { toCssValue } from '@systembook/content/tokens';
 import { TokenCopy, useCopyAnnouncer } from './TokenCopy.js';
 import type { TokenTableProps } from './TokenTable.js';
 import { modesToShow } from './tokenModes.js';
+import { useMessages } from '../../i18n/UiLocale.js';
 
 /** Passo de escala: nome só de dígitos (`50`, `600`, `950`). */
 const STEP = /^\d+$/;
@@ -35,6 +36,7 @@ export function colorScaleParents(tokens: readonly Token[]): Set<string> {
 
 function Step({ token, mode, onAnnounce }: { token: Token; mode: string; onAnnounce: (message: string) => void }) {
   const css = toCssValue('color', token.byMode[mode]!.resolvedValue);
+  const t = useMessages();
   return (
     <div role="listitem" className="sb-color-scale-step" data-deprecated={token.deprecated ? '' : undefined}>
       {/* Sem conversão, um quadro tracejado no lugar: xadrez vazio leria como "transparente". */}
@@ -45,7 +47,7 @@ function Step({ token, mode, onAnnounce }: { token: Token; mode: string; onAnnou
       )}
       <span className="sb-color-scale-step-name">
         {stepOf(token.path)}
-        {token.deprecated ? <span className="sb-token-deprecated">Deprecated</span> : null}
+        {token.deprecated ? <span className="sb-token-deprecated">{t('tokens.deprecated')}</span> : null}
       </span>
       <code className="sb-token-value">{css ?? JSON.stringify(token.byMode[mode]!.resolvedValue)}</code>
       <TokenCopy path={token.path} onAnnounce={onAnnounce} />

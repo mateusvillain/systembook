@@ -4,7 +4,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, useRoutes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Block, DocsDataSource, PageSnapshot, PublicNavTree, Token, TokenSet } from '@systembook/schema';
+import type { Block, DocsDataSource, PageSnapshot, PublicNavTree, Token, TokenSet, TokenValue } from '@systembook/schema';
 import { DocsDataSourceProvider } from '../content/dataSource.js';
 import { UiLocaleProvider } from '../i18n/UiLocale.js';
 import { en } from '../i18n/messages/en.js';
@@ -37,6 +37,7 @@ const tree: PublicNavTree = [
         pages: [
           { id: 'p1', titulo: 'Paleta', slug: 'paleta' },
           { id: 'p3', titulo: 'Rascunho', slug: 'rascunho' },
+          { id: 'p4', titulo: 'Blocos', slug: 'blocos' },
         ],
       },
     ],
@@ -69,14 +70,72 @@ const snapshot: PageSnapshot = {
   ],
 };
 
-const color = (path: string, value: string): Token => ({
+/** Blocos de conteúdo (SYS-168): tabela de tokens, exemplos sem preview e do's & don'ts com capa. */
+const blocks: PageSnapshot = {
+  tabs: [
+    {
+      tabId: 'blocos',
+      titulo: 'Blocos',
+      isPrimary: true,
+      blocks: [
+        { id: 'tt', tabId: 'blocos', type: 'token-table', ordem: 0, content: { group: '' } },
+        { id: 'tv', tabId: 'blocos', type: 'token-table', ordem: 1, content: { group: 'nada' } },
+        { id: 'e1', tabId: 'blocos', type: 'component-embed', ordem: 2, content: { componentName: '', variantId: null } },
+        { id: 'e2', tabId: 'blocos', type: 'component-embed', ordem: 3, content: { componentName: 'Botao', variantId: 'primario' } },
+        {
+          id: 'dd',
+          tabId: 'blocos',
+          type: 'dos-donts',
+          ordem: 4,
+          content: {
+            variant: 'do',
+            titulo: 'Faça',
+            descricao: [{ type: 'paragraph', content: text('Use um rótulo curto.') }],
+            cover: { kind: 'component-embed', componentName: 'Botao', variantId: 'primario' },
+          },
+        },
+      ] as Block[],
+    },
+  ],
+};
+
+const both = (value: TokenValue) => ({ claro: { value, resolvedValue: value }, escuro: { value, resolvedValue: value } });
+const token = (path: string, type: Token['type'], value: TokenValue, extra: Partial<Token> = {}): Token => ({
   path,
-  type: 'color',
-  byMode: { claro: { value, resolvedValue: value }, escuro: { value: '#000', resolvedValue: '#000' } },
+  type,
+  byMode: both(value),
+  ...extra,
 });
 
-// `primaria` mora na raiz (sem grupo) e `acme.fundo` no grupo `acme`.
-const TOKENS: TokenSet = { modes: ['claro', 'escuro'], tokens: [color('primaria', '#4f46e5'), color('acme.fundo', '#fff')] };
+/**
+ * Um token de cada renderer: `primaria` mora na raiz (sem grupo); `acme.fundo`
+ * muda com o modo e os outros não ("Igual em todos os modos"); a escala de cor
+ * tem duas irmãs numéricas; um token obsoleto.
+ */
+const TOKENS: TokenSet = {
+  modes: ['claro', 'escuro'],
+  tokens: [
+    token('primaria', 'color', '#4f46e5'),
+    {
+      path: 'acme.fundo',
+      type: 'color',
+      byMode: { claro: { value: '#fff', resolvedValue: '#fff' }, escuro: { value: '#000', resolvedValue: '#000' } },
+    },
+    token('acme.borda', 'color', '#ddd', { deprecated: true }),
+    token('acme.azul.100', 'color', '#dbeafe'),
+    token('acme.azul.200', 'color', '#bfdbfe'),
+    token('acme.espaco.1', 'dimension', '4px'),
+    token('acme.fonte.base', 'fontFamily', ['Inter', 'sans-serif']),
+    token('acme.texto.corpo', 'typography', {
+      fontFamily: ['Inter'],
+      fontSize: '16px',
+      fontWeight: 400,
+      letterSpacing: '0px',
+      lineHeight: 1.5,
+    }),
+    token('acme.duracao.rapida', 'duration', '100ms'),
+  ],
+};
 
 const dataSource: DocsDataSource = {
   getNavTree: async () => tree,
@@ -85,6 +144,7 @@ const dataSource: DocsDataSource = {
   getPageBySlug: async ({ pageSlug }) => {
     if (pageSlug === 'paleta') return { pageId: 'p1', titulo: 'Paleta', subtitulo: null, snapshot };
     if (pageSlug === 'rascunho') return { pageId: 'p3', titulo: 'Rascunho', subtitulo: null, snapshot: null };
+    if (pageSlug === 'blocos') return { pageId: 'p4', titulo: 'Blocos', subtitulo: null, snapshot: blocks };
     return null;
   },
   getPageById: async () => null,
@@ -130,6 +190,9 @@ const ENGLISH_WORDS = [
   'page', 'pages', 'copy', 'copied', 'search', 'open', 'close', 'loading', 'failed', 'load', 'result',
   'results', 'found', 'navigate', 'navigation', 'select', 'switch', 'theme', 'light', 'dark',
   'documentation', 'contents', 'views', 'overview', 'published', 'example', 'block', 'section', 'ungrouped',
+  'run', 'play', 'nothing', 'none', 'all', 'same', 'value', 'details', 'family', 'size', 'weight', 'spacing',
+  'height', 'preview', 'controls', 'component', 'selected', 'variant', 'cover', 'deprecated', 'path', 'group',
+  'press', 'could',
 ];
 const ENGLISH_WORD = new RegExp(`(^|[^\\p{L}])(${ENGLISH_WORDS.join('|')})(?=[^\\p{L}]|$)`, 'iu');
 
@@ -231,7 +294,7 @@ async function typeInto(input: HTMLInputElement, query: string) {
   });
 }
 
-describe('doc pública em pt-BR (SYS-167)', () => {
+describe('doc pública em pt-BR (SYS-167, SYS-168)', () => {
   it('as redes de detecção funcionam', () => {
     expect(EN_ONLY).toContain('On this page');
     expect(ENGLISH_WORD.test('Open docs')).toBe(true);
@@ -266,9 +329,8 @@ describe('doc pública em pt-BR (SYS-167)', () => {
     expect($('.sb-heading-anchor')?.getAttribute('aria-label')).toBe('Copiar link para esta seção');
     const codeAnchor = await until(() => $('.sb-block-anchor'));
     expect(codeAnchor.getAttribute('aria-label')).toBe('Copiar link para este bloco de código');
-    // O bloco de código (botão "Copy", rótulo da linguagem) é da SYS-168; a
-    // âncora dele já foi conferida acima.
-    expectNoEnglish('.sb-code-block');
+    expect($('.sb-code-copy')?.textContent).toBe('Copiar');
+    expectNoEnglish();
   });
 
   it('página ainda não publicada', async () => {
@@ -308,9 +370,26 @@ describe('doc pública em pt-BR (SYS-167)', () => {
   it('página Tokens', async () => {
     await renderAt('/docs/tokens');
     const subtitle = await until(() => $('.sb-page-subtitle'));
-    expect(subtitle.textContent).toBe('2 design tokens em 2 modos (claro, escuro).');
+    expect(subtitle.textContent).toBe('9 design tokens em 2 modos (claro, escuro).');
     expect([...container.querySelectorAll('.sb-tokens-page h2')].map((h) => h.textContent)).toContain('Sem grupo');
-    // Os renderers de token (`src/content/tokens`) são da SYS-168: aqui só o shell e o cabeçalho.
-    expectNoEnglish('.sb-tokens-page section > :not(h2)');
+    expect(container.textContent).toContain('Igual em todos os modos');
+    expect(container.textContent).toContain('Obsoleto');
+    expect(container.querySelector('.sb-type-specimen-props dt')?.textContent).toBe('Família');
+    expectNoEnglish();
+  });
+
+  it('blocos: tabela de tokens, exemplos sem preview e capa do do\'s & don\'ts', async () => {
+    await renderAt('/docs/fundamentos/cor/blocos');
+    await until(() => $('.sb-tokens'));
+    const embeds = await until(() => {
+      const all = [...container.querySelectorAll<HTMLElement>('.sb-component-embed')];
+      return all.length === 2 && all[1]!.dataset.previewState === 'empty' ? all : null;
+    });
+    expect(embeds[0]!.textContent).toContain('Nenhum componente selecionado');
+    expect(embeds[1]!.textContent).toBe('Nenhuma prévia publicada para Botao / primario ainda.');
+    expect(container.querySelector('[data-group=nada]')?.textContent).toBe('Nenhum token no grupo nada.');
+    const cover = await until(() => container.querySelector<HTMLElement>('.sb-dos-donts-cover-embed[data-preview-state=empty]'));
+    expect(cover.textContent).toBe('Nenhuma prévia publicada para Botao / primario ainda.');
+    expectNoEnglish();
   });
 });

@@ -2,6 +2,8 @@ import { useRef } from 'react';
 import type { DosDontsCover } from '@systembook/schema';
 import { hasPreviewSelection, useComponentPreview } from '../docsQueries.js';
 import { usePreviewTokens } from '../previewTokens.js';
+import { useMessages } from '../../i18n/UiLocale.js';
+import { formatRich } from '../../i18n/rich.js';
 
 /**
  * Renderização do cover do bloco dos-donts (TASK-73, separada da edição na
@@ -27,29 +29,32 @@ export function EmbedCoverPreview({
   const previewQuery = useComponentPreview(componentName, variantId);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const { onLoad } = usePreviewTokens(iframeRef);
+  const t = useMessages();
 
   if (!hasSelection) {
     return (
       <div className="sb-dos-donts-cover-embed" data-preview-state="unset">
-        Nenhum componente selecionado
+        {t('embed.noComponent')}
       </div>
     );
   }
   if (previewQuery.isLoading) {
     return (
       <div className="sb-dos-donts-cover-embed" data-preview-state="loading">
-        Carregando preview…
+        {t('embed.loadingCover')}
       </div>
     );
   }
   if (previewQuery.isError || !previewQuery.data) {
     return (
       <div className="sb-dos-donts-cover-embed" data-preview-state="empty">
-        Nenhum preview publicado para{' '}
-        <strong>
-          {componentName} / {variantId}
-        </strong>{' '}
-        ainda.
+        {formatRich(t('embed.notPublished'), {
+          component: (
+            <strong>
+              {componentName} / {variantId}
+            </strong>
+          ),
+        })}
       </div>
     );
   }
@@ -60,7 +65,7 @@ export function EmbedCoverPreview({
       className="sb-dos-donts-cover-embed-frame"
       data-preview-state="live"
       src={previewQuery.data.url}
-      title={`Cover of ${componentName} (${variantId})`}
+      title={t('embed.coverTitle', { component: componentName, variant: variantId ?? '' })}
       loading="lazy"
       // Mesma política de sandbox do component-embed top-level (TASK-47):
       // allow-scripts sem allow-same-origin (artefato de terceiros opaco ao

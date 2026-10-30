@@ -30,6 +30,8 @@ import swift from 'highlight.js/lib/languages/swift';
 import typescript from 'highlight.js/lib/languages/typescript';
 import xml from 'highlight.js/lib/languages/xml';
 import yaml from 'highlight.js/lib/languages/yaml';
+import { useMessages } from '../../i18n/UiLocale.js';
+import type { DocsMessageKey } from '../../i18n/messages/en.js';
 
 /**
  * Code block com syntax highlighting (SYS-27/28). Substitui o
@@ -136,29 +138,29 @@ type CopyState = 'idle' | 'copied' | 'manual' | 'select';
  */
 const COPY_LABELS: Record<
   CopyState,
-  { short: string; icon: LucideIcon; title: string; ariaLabel: string; announce: string }
+  { short: DocsMessageKey; icon: LucideIcon; title: DocsMessageKey; ariaLabel: DocsMessageKey; announce: DocsMessageKey | null }
 > = {
-  idle: { short: 'Copy', icon: Copy, title: 'Copy code', ariaLabel: 'Copy code', announce: '' },
+  idle: { short: 'code.copy', icon: Copy, title: 'code.copyTitle', ariaLabel: 'code.copyTitle', announce: null },
   copied: {
-    short: 'Copied',
+    short: 'code.copied',
     icon: Check,
-    title: 'Code copied',
-    ariaLabel: 'Code copied',
-    announce: 'Code copied to clipboard',
+    title: 'code.copiedLabel',
+    ariaLabel: 'code.copiedLabel',
+    announce: 'code.copiedAnnounce',
   },
   manual: {
-    short: 'Press ⌘C',
+    short: 'code.pressCopy',
     icon: Copy,
-    title: 'Press Ctrl+C or Cmd+C to copy',
-    ariaLabel: 'Could not copy automatically — the code is selected, press Ctrl+C or Cmd+C',
-    announce: 'Could not copy automatically. The code is selected — press Ctrl+C or Cmd+C.',
+    title: 'code.manualTitle',
+    ariaLabel: 'code.manualLabel',
+    announce: 'code.manualAnnounce',
   },
   select: {
-    short: 'Press ⌘C',
+    short: 'code.pressCopy',
     icon: Copy,
-    title: 'Select the code and press Ctrl+C or Cmd+C',
-    ariaLabel: 'Could not copy automatically — select the code and press Ctrl+C or Cmd+C',
-    announce: 'Could not copy automatically. Select the code and press Ctrl+C or Cmd+C.',
+    title: 'code.selectTitle',
+    ariaLabel: 'code.selectLabel',
+    announce: 'code.selectAnnounce',
   },
 };
 
@@ -166,6 +168,7 @@ function CodeBlockView({ node, updateAttributes, editor, extension }: NodeViewPr
   const { LanguageSelect } = extension.options as CodeBlockOptions;
   const language = node.attrs.language as string | null;
   const [copyState, setCopyState] = useState<CopyState>('idle');
+  const t = useMessages();
   const preRef = useRef<HTMLPreElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -237,11 +240,11 @@ function CodeBlockView({ node, updateAttributes, editor, extension }: NodeViewPr
           onClick={copy}
           data-copied={copied || undefined}
           data-copy-manual={copyState === 'manual' || copyState === 'select' || undefined}
-          aria-label={labels.ariaLabel}
-          title={labels.title}
+          aria-label={t(labels.ariaLabel)}
+          title={t(labels.title)}
         >
           <Icon aria-hidden size={14} />
-          <span>{labels.short}</span>
+          <span>{t(labels.short)}</span>
         </button>
       </div>
       {/* `aria-live`: o rótulo do botão muda, mas quem acionou por teclado ou
@@ -252,7 +255,7 @@ function CodeBlockView({ node, updateAttributes, editor, extension }: NodeViewPr
           editor admin), virando um nó que o cursor alcança e que o observador de
           DOM do ProseMirror pode ler de volta para o documento. */}
       <span className="sr-only" role="status" aria-live="polite" contentEditable={false}>
-        {labels.announce}
+        {labels.announce ? t(labels.announce) : ''}
       </span>
       <pre ref={preRef}>
         {/* Argumento de tipo explícito: `as` é `NoInfer<T>` e o default do

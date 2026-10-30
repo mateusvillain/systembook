@@ -73,6 +73,69 @@ export const en = {
     other: '{count} design tokens in {modeCount} modes ({modes}).',
   },
   'tokens.ungrouped': 'Ungrouped',
+
+  // Bloco de código: botão de copiar
+  'code.copy': 'Copy',
+  'code.copyTitle': 'Copy code',
+  'code.copied': 'Copied',
+  'code.copiedLabel': 'Code copied',
+  'code.copiedAnnounce': 'Code copied to clipboard',
+  'code.pressCopy': 'Press ⌘C',
+  'code.manualTitle': 'Press Ctrl+C or Cmd+C to copy',
+  'code.manualLabel': 'Could not copy automatically — the code is selected, press Ctrl+C or Cmd+C',
+  'code.manualAnnounce': 'Could not copy automatically. The code is selected — press Ctrl+C or Cmd+C.',
+  'code.selectTitle': 'Select the code and press Ctrl+C or Cmd+C',
+  'code.selectLabel': 'Could not copy automatically — select the code and press Ctrl+C or Cmd+C',
+  'code.selectAnnounce': 'Could not copy automatically. Select the code and press Ctrl+C or Cmd+C.',
+
+  // Exemplo de componente e cover do do's & don'ts. `{component}` é o nome em negrito.
+  'embed.noComponent': 'No component selected',
+  'embed.selectVariant': 'Preview of {component} — select a variant',
+  'embed.loading': 'Loading preview of {component}…',
+  'embed.loadingCover': 'Loading preview…',
+  'embed.notPublished': 'No preview published for {component} yet.',
+  'embed.publishHint': 'Publish it via the connector in the component repository.',
+  'embed.frameTitle': 'Preview of {component} ({variant})',
+  'embed.coverTitle': 'Cover of {component} ({variant})',
+  'embed.controls': 'Controls ({count})',
+  'embed.controlsLabel': 'Preview controls',
+  'embed.tokenMode': 'Token mode',
+
+  // Bloco de tabela de tokens. `{group}` é o caminho do grupo em código.
+  'tokenBlock.loading': 'Loading tokens…',
+  'tokenBlock.all': 'All tokens',
+  'tokenBlock.loadFailed': 'Could not load the design tokens.',
+  'tokenBlock.none': 'No design tokens published yet.',
+  'tokenBlock.emptyGroup': 'No tokens in group {group}.',
+
+  // Renderers de tokens
+  'tokens.colToken': 'Token',
+  'tokens.colValue': 'Value',
+  'tokens.colDetails': 'Details',
+  'tokens.deprecated': 'Deprecated',
+  'tokens.sameInAllModes': 'Same in all modes',
+  'tokens.tableLabel': '{label} ({kinds})',
+  'tokens.colorScales': 'color scales',
+  'tokens.play': 'Play {name}',
+  'tokens.typeSample': 'The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.',
+  'tokens.fontFamily': 'Family',
+  'tokens.fontSize': 'Size',
+  'tokens.fontWeight': 'Weight',
+  'tokens.letterSpacing': 'Letter spacing',
+  'tokens.lineHeight': 'Line height',
+
+  // Copiar o nome de um token. `{name}` é o formato ("CSS variable"), `{value}` o texto copiado.
+  'tokens.copyCss': 'CSS',
+  'tokens.copyCssName': 'CSS variable',
+  'tokens.copyJs': 'JS',
+  'tokens.copyJsName': 'JS path',
+  'tokens.copyPath': 'Path',
+  'tokens.copyPathName': 'token path',
+  'tokens.copyCopied': 'Copied',
+  'tokens.copyFailed': 'Failed',
+  'tokens.copyLabel': '{state}: copy {name} {value}',
+  'tokens.copyAnnounce': 'Copied {name} {value}',
+  'tokens.copyFailedAnnounce': 'Could not copy {name} — select {value} and copy it',
 } satisfies Record<string, MessageValue>;
 
 export type DocsMessageKey = keyof typeof en;

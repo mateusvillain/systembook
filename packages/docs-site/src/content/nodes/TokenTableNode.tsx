@@ -5,6 +5,8 @@ import { TriangleAlert } from 'lucide-react';
 import { tokenGroups, tokensInGroup } from '@systembook/content/tokens';
 import { useTokens } from '../docsQueries.js';
 import { TokenGroup } from '../tokens/TokenGroup.js';
+import { useMessages } from '../../i18n/UiLocale.js';
+import { formatRich } from '../../i18n/rich.js';
 
 /** Situação dos tokens para o seletor: carregando, erro de leitura, nenhum publicado, ou disponíveis. */
 export type TokenTableTokensStatus = 'loading' | 'error' | 'none' | 'available';
@@ -39,6 +41,7 @@ export interface TokenTableOptions {
 function TokenTableView({ node, updateAttributes, editor, extension }: NodeViewProps) {
   const group = node.attrs.group as string;
   const query = useTokens();
+  const t = useMessages();
   const set = query.data ?? null;
   const tokens = set ? tokensInGroup(set.tokens, group) : [];
   const state = query.isLoading ? 'loading' : query.isError ? 'error' : tokens.length ? 'ready' : 'empty';
@@ -62,23 +65,19 @@ function TokenTableView({ node, updateAttributes, editor, extension }: NodeViewP
       {control}
       {state === 'loading' ? (
         <div className="sb-token-block-notice" role="status">
-          Loading tokens…
+          {t('tokenBlock.loading')}
         </div>
       ) : state === 'ready' ? (
-        <TokenGroup tokens={tokens} modes={set!.modes} label={group || 'All tokens'} />
+        <TokenGroup tokens={tokens} modes={set!.modes} label={group || t('tokenBlock.all')} />
       ) : (
         <div className="sb-token-block-notice" role="note">
           <TriangleAlert aria-hidden size={19} />
           <span>
-            {state === 'error' ? (
-              'Could not load the design tokens.'
-            ) : !set ? (
-              'No design tokens published yet.'
-            ) : (
-              <>
-                No tokens in group <code>{group}</code>.
-              </>
-            )}
+            {state === 'error'
+              ? t('tokenBlock.loadFailed')
+              : !set
+                ? t('tokenBlock.none')
+                : formatRich(t('tokenBlock.emptyGroup'), { group: <code>{group}</code> })}
           </span>
         </div>
       )}

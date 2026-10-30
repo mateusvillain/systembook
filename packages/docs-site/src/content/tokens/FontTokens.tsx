@@ -1,13 +1,13 @@
 import type { CSSProperties } from 'react';
 import type { TokenType } from '@systembook/schema';
 import { TokenTable, type TokenTableProps } from './TokenTable.js';
+import { useMessages } from '../../i18n/UiLocale.js';
 
 /**
  * Texto da amostra: ascendentes, descendentes e as letras que mais mudam entre
  * fontes, longo o bastante para quebrar em duas linhas — e a altura de linha
  * aparecer. O specimen da tipografia composta usa o mesmo.
  */
-export const TYPE_SAMPLE = 'The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.';
 
 /** A propriedade que a amostra aplica, por tipo. */
 const SAMPLE_STYLE: Partial<Record<TokenType, (css: string) => CSSProperties>> = {
@@ -23,6 +23,7 @@ const SAMPLE_STYLE: Partial<Record<TokenType, (css: string) => CSSProperties>> =
  * tipografia composta tem formato próprio (`TypographySpecimens`).
  */
 export function FontTokens(props: Omit<TokenTableProps, 'preview'>) {
+  const t = useMessages();
   return (
     <TokenTable
       {...props}
@@ -30,7 +31,7 @@ export function FontTokens(props: Omit<TokenTableProps, 'preview'>) {
         const style = css === null ? null : SAMPLE_STYLE[token.type]?.(css);
         return style ? (
           <span className="sb-token-type-sample" aria-hidden style={style}>
-            {TYPE_SAMPLE}
+            {t('tokens.typeSample')}
           </span>
         ) : null;
       }}

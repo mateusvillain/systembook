@@ -5,6 +5,8 @@ import { Puzzle, TriangleAlert } from 'lucide-react';
 import { hasPreviewSelection, useComponentPreview } from '../docsQueries.js';
 import { ControlsPanel } from '../ControlsPanel.js';
 import { PreviewModeToggle, usePreviewTokens } from '../previewTokens.js';
+import { useMessages } from '../../i18n/UiLocale.js';
+import { formatRich } from '../../i18n/rich.js';
 
 /**
  * Slot de preview de componente. O nó atômico (TASK-29) reserva
@@ -75,6 +77,8 @@ function ComponentEmbedView({ node, updateAttributes, editor, extension }: NodeV
 
   const previewQuery = useComponentPreview(componentName, variantId);
   const tokens = usePreviewTokens(iframeRef);
+  const t = useMessages();
+  const name = <strong>{componentName}</strong>;
 
   const state: ComponentEmbedState = !hasSelection
     ? 'unset'
@@ -113,13 +117,7 @@ function ComponentEmbedView({ node, updateAttributes, editor, extension }: NodeV
         state="unset"
         control={control}
         message={
-          componentName ? (
-            <>
-              Preview of <strong>{componentName}</strong> — select a variant
-            </>
-          ) : (
-            'No component selected'
-          )
+          componentName ? formatRich(t('embed.selectVariant'), { component: name }) : t('embed.noComponent')
         }
       />
     );
@@ -132,11 +130,7 @@ function ComponentEmbedView({ node, updateAttributes, editor, extension }: NodeV
         variantId={variantId}
         state="loading"
         control={control}
-        message={
-          <>
-            Loading preview of <strong>{componentName}</strong>…
-          </>
-        }
+        message={formatRich(t('embed.loading'), { component: name })}
       />
     );
   }
@@ -155,12 +149,14 @@ function ComponentEmbedView({ node, updateAttributes, editor, extension }: NodeV
       >
         <TriangleAlert aria-hidden size={19} />
         <span className="sb-component-embed-message">
-          No preview published for{' '}
-          <strong>
-            {componentName} / {variantId}
-          </strong>{' '}
-          yet.
-          {editor.isEditable && ' Publish it via the connector in the component repository.'}
+          {formatRich(t('embed.notPublished'), {
+            component: (
+              <strong>
+                {componentName} / {variantId}
+              </strong>
+            ),
+          })}
+          {editor.isEditable && ` ${t('embed.publishHint')}`}
         </span>
         {control}
       </NodeViewWrapper>
@@ -193,7 +189,7 @@ function ComponentEmbedView({ node, updateAttributes, editor, extension }: NodeV
         ref={iframeRef}
         className="sb-component-embed-frame"
         src={preview.url}
-        title={`Preview of ${componentName} (${variantId})`}
+        title={t('embed.frameTitle', { component: componentName, variant: variantId ?? '' })}
         loading="lazy"
         onLoad={tokens.onLoad}
         /*
