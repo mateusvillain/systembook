@@ -27,6 +27,27 @@ export {
 
 export { createStaticDataSource, type StaticDataSourceOptions } from './static/staticDataSource.js';
 
+// Idioma da interface (SYS-161). `createTranslator`/`resolveLocale` servem
+// também a quem traz um dicionário próprio (o admin).
+export {
+  DEFAULT_UI_LOCALE,
+  UI_LOCALES,
+  UiLocaleProvider,
+  resolveUiLocale,
+  useMessages,
+  useUiLocale,
+  type UiLocale,
+} from './i18n/UiLocale.js';
+export {
+  createTranslator,
+  resolveLocale,
+  type MessageValue,
+  type MessageVars,
+  type PluralMessage,
+  type Translator,
+} from './i18n/format.js';
+export type { DocsMessageKey, DocsMessages } from './i18n/messages/en.js';
+
 // Conteúdo: extensões Tiptap, nós e utilitários
 export { createContentExtensions, contentExtensions } from './content/extensions.js';
 export {
