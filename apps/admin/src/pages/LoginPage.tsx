@@ -16,7 +16,8 @@ export function LoginPage() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  // Chave, não texto: o erro na tela acompanha uma troca de idioma.
+  const [error, setError] = useState<'login.invalid' | null>(null);
 
   const login = useMutation(
     trpc.auth.login.mutationOptions({
@@ -26,7 +27,7 @@ export function LoginPage() {
       },
       onError: () => {
         // Mensagem genérica — o server não distingue email de senha (anti-enumeração)
-        setError(t('login.invalid'));
+        setError('login.invalid');
       },
     }),
   );
@@ -84,7 +85,7 @@ export function LoginPage() {
                 não toast. Mensagem genérica anti-enumeração (TASK-10). */}
             {error && (
               <p role="alert" className="text-destructive text-sm">
-                {error}
+                {t(error)}
               </p>
             )}
           </form>

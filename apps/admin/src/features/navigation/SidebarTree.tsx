@@ -460,7 +460,7 @@ function CreatePageForm({
   const [titulo, setTitulo] = useState('');
   const t = useT();
   const [slug, setSlug] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<AdminMessageKey | null>(null);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -471,7 +471,7 @@ function CreatePageForm({
       setSlug('');
       setOpen(false);
     } catch (err) {
-      setError(t(createPageErrorKey(err, slug.trim() !== '')));
+      setError(createPageErrorKey(err, slug.trim() !== ''));
     }
   }
 
@@ -511,7 +511,7 @@ function CreatePageForm({
       </span>
       {error && (
         <span role="alert" className="text-destructive w-full text-xs">
-          {error}
+          {t(error)}
         </span>
       )}
     </form>
@@ -525,7 +525,7 @@ function CreatePageForm({
  */
 function createPageErrorKey(err: unknown, slugGiven: boolean): AdminMessageKey {
   if (!(err instanceof TRPCClientError)) return 'tree.createPageFailed';
-  const code = (err.data as { code?: string } | undefined)?.code;
+  const code: unknown = err.data?.code;
   if (code === 'CONFLICT') return 'tree.slugTaken';
   if (code === 'BAD_REQUEST') return slugGiven ? 'tree.slugInvalid' : 'tree.titleNoSlug';
   return 'tree.createPageFailed';

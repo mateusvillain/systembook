@@ -30,8 +30,11 @@ import { DragHandle, useDragReorder, type DragHandleProps, type DragRowProps } f
 import { CopyLinkItem } from './RowActionItems.js';
 import { LanguageSubmenu } from './LanguageSubmenu.js';
 import { useT } from '../../i18n/AdminLocale.js';
+import type { AdminMessageKey } from '../../i18n/messages/en.js';
 import { createLinkClass } from '@/lib/styles';
 import { cn } from '@/lib/utils';
+
+const ROLE_LABEL = { admin: 'roles.admin', editor: 'roles.editor' } as const satisfies Record<string, AdminMessageKey>;
 
 interface MenuRow {
   id: string;
@@ -321,7 +324,7 @@ function UserMenu({
 }) {
   const isAdmin = role === 'admin';
   const t = useT();
-  const roleLabel = role === 'admin' ? t('roles.admin') : role === 'editor' ? t('roles.editor') : role;
+  const roleLabel = role in ROLE_LABEL ? t(ROLE_LABEL[role as keyof typeof ROLE_LABEL]) : role;
 
   return (
     <DropdownMenu>
