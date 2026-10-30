@@ -1,6 +1,7 @@
 import { useRef, useState, type ComponentProps, type DragEvent, type KeyboardEvent } from 'react';
 import { GripVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useT } from '../../i18n/AdminLocale.js';
 
 /**
  * Reordenação por drag-and-drop das listas de navegação (TASK-108): menus do
@@ -139,11 +140,12 @@ export function DragHandle({
   className,
   ...props
 }: { label: string } & ComponentProps<'button'>) {
+  const t = useT();
   return (
     <button
       type="button"
       aria-label={label}
-      title="Drag (or use the arrow keys) to reorder"
+      title={t('common.dragToReorder')}
       className={cn(
         'text-muted-foreground hover:text-foreground hover:bg-accent inline-flex size-6 shrink-0 cursor-grab touch-none items-center justify-center rounded-editorial-sm transition-colors active:cursor-grabbing',
         className,

@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { queryClient, useTRPC } from '../lib/trpc.js';
+import { useT } from '../i18n/AdminLocale.js';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -10,11 +11,13 @@ import { Label } from '@/components/ui/label';
 export function LoginPage() {
   const trpc = useTRPC();
   const navigate = useNavigate();
+  const t = useT();
   const me = useQuery(trpc.auth.me.queryOptions());
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  // Chave, não texto: o erro na tela acompanha uma troca de idioma.
+  const [error, setError] = useState<'login.invalid' | null>(null);
 
   const login = useMutation(
     trpc.auth.login.mutationOptions({
@@ -24,7 +27,7 @@ export function LoginPage() {
       },
       onError: () => {
         // Mensagem genérica — o server não distingue email de senha (anti-enumeração)
-        setError('Invalid email or password');
+        setError('login.invalid');
       },
     }),
   );
@@ -45,12 +48,12 @@ export function LoginPage() {
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="text-2xl">Systembook</CardTitle>
-          <CardDescription>Sign in to manage the documentation.</CardDescription>
+          <CardDescription>{t('login.description')}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="grid gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="login-email">Email</Label>
+              <Label htmlFor="login-email">{t('login.email')}</Label>
               <Input
                 id="login-email"
                 type="email"
@@ -63,7 +66,7 @@ export function LoginPage() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="login-password">Password</Label>
+              <Label htmlFor="login-password">{t('login.password')}</Label>
               <Input
                 id="login-password"
                 type="password"
@@ -76,13 +79,13 @@ export function LoginPage() {
               />
             </div>
             <Button type="submit" disabled={login.isPending} className="w-full">
-              {login.isPending ? 'Signing in…' : 'Sign in'}
+              {login.isPending ? t('login.submitting') : t('login.submit')}
             </Button>
             {/* Erro de login é de campo/formulário → inline (convenção TASK-76),
                 não toast. Mensagem genérica anti-enumeração (TASK-10). */}
             {error && (
               <p role="alert" className="text-destructive text-sm">
-                {error}
+                {t(error)}
               </p>
             )}
           </form>

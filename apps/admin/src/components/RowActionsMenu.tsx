@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ArrowDown, ArrowUp, MoreHorizontal, Pencil, Trash2, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useT } from '@/i18n/AdminLocale';
 
 /**
  * Menu de ações contextuais de uma linha/item (TASK-89).
@@ -42,8 +43,8 @@ export function RowActionsMenu({
   onRename,
   onMovePrev,
   onMoveNext,
-  movePrevLabel = 'Move up',
-  moveNextLabel = 'Move down',
+  movePrevLabel,
+  moveNextLabel,
   movePrevIcon: MovePrevIcon = ArrowUp,
   moveNextIcon: MoveNextIcon = ArrowDown,
   onDelete,
@@ -75,6 +76,7 @@ export function RowActionsMenu({
   /** Estilos de posição/revelação por contexto (ex.: opacity-0 group-hover…). */
   triggerClassName?: string;
 }) {
+  const t = useT();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -92,19 +94,19 @@ export function RowActionsMenu({
       <DropdownMenuContent align={align}>
         <DropdownMenuItem onSelect={onRename}>
           <Pencil />
-          Rename
+          {t('common.rename')}
         </DropdownMenuItem>
         {extraItems}
         {onMovePrev && (
           <DropdownMenuItem onSelect={onMovePrev}>
             <MovePrevIcon />
-            {movePrevLabel}
+            {movePrevLabel ?? t('common.moveUp')}
           </DropdownMenuItem>
         )}
         {onMoveNext && (
           <DropdownMenuItem onSelect={onMoveNext}>
             <MoveNextIcon />
-            {moveNextLabel}
+            {moveNextLabel ?? t('common.moveDown')}
           </DropdownMenuItem>
         )}
         {onDelete && (
@@ -112,7 +114,7 @@ export function RowActionsMenu({
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive" onSelect={onDelete}>
               <Trash2 />
-              Delete
+              {t('common.delete')}
             </DropdownMenuItem>
           </>
         )}

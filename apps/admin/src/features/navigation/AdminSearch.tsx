@@ -12,6 +12,8 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useTRPC } from '../../lib/trpc.js';
+import { useT } from '../../i18n/AdminLocale.js';
+import type { AdminMessageKey } from '../../i18n/messages/en.js';
 import { EmptyState } from '@/components/EmptyState';
 import { adminTypography } from '@/lib/typography';
 import { cn } from '@/lib/utils';
@@ -80,11 +82,11 @@ const STRUCTURE_ICON: Record<StructureResult['type'], LucideIcon> = {
   tab: File,
 };
 
-const STRUCTURE_KIND_LABEL: Record<StructureResult['type'], string> = {
-  menu: 'Menu',
-  section: 'Section',
-  page: 'Page',
-  tab: 'Tab',
+const STRUCTURE_KIND_LABEL: Record<StructureResult['type'], AdminMessageKey> = {
+  menu: 'search.kind.menu',
+  section: 'search.kind.section',
+  page: 'search.kind.page',
+  tab: 'search.kind.tab',
 };
 
 /**
@@ -109,6 +111,7 @@ export function AdminSearch({
   onSelectMenu: (menuId: string) => void;
 }) {
   const trpc = useTRPC();
+  const t = useT();
   const navigate = useNavigate();
   const listboxId = useId();
 
@@ -231,7 +234,7 @@ export function AdminSearch({
           className="fixed inset-0 z-50 flex items-start justify-center px-4 pt-[12vh]"
           role="dialog"
           aria-modal="true"
-          aria-label="Search the panel"
+          aria-label={t('search.dialog')}
           data-testid="admin-search-dialog"
         >
           {/* Backdrop: fecha ao clicar fora. */}
@@ -252,8 +255,8 @@ export function AdminSearch({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={onKeyDown}
-                placeholder="Search menus, pages, content…"
-                aria-label="Search the panel"
+                placeholder={t('search.placeholder')}
+                aria-label={t('search.dialog')}
                 role="combobox"
                 aria-expanded={showResults}
                 aria-controls={listboxId}
@@ -267,21 +270,21 @@ export function AdminSearch({
             <div ref={listRef} className="min-h-0 flex-1 overflow-y-auto py-2" id={listboxId} role="listbox">
               {!showResults ? (
                 <p className={cn(adminTypography.metadata, 'px-4 py-6 text-center')} data-testid="admin-search-hint">
-                  Type to search the structure and published content.
+                  {t('search.hint')}
                 </p>
               ) : isLoading ? (
-                <p className={cn(adminTypography.metadata, 'px-4 py-6 text-center')}>Searching…</p>
+                <p className={cn(adminTypography.metadata, 'px-4 py-6 text-center')}>{t('search.searching')}</p>
               ) : noResults ? (
                 <EmptyState
                   size="sm"
                   icon={Search}
-                  title="No results"
-                  description={`Nothing matches “${debounced}”. Try another term.`}
+                  title={t('search.noResults')}
+                  description={t('search.noResultsFor', { query: debounced })}
                 />
               ) : (
                 <>
                   {structureCount > 0 && (
-                    <Group label="Structure and drafts">
+                    <Group label={t('search.structure')}>
                       {structure.map((r, i) => (
                         <ResultRow
                           key={`s-${r.type}-${r.id}-${r.matchedIn}`}
@@ -293,11 +296,11 @@ export function AdminSearch({
                           // (SYS-63/64): dois itens homônimos em menus
                           // diferentes eram indistinguíveis com um rótulo só.
                           meta={r.path.length > 0 ? r.path.join(' › ') : undefined}
-                          badge={STRUCTURE_KIND_LABEL[r.type]}
+                          badge={t(STRUCTURE_KIND_LABEL[r.type])}
                           // O casamento em rascunho é dito por texto, não só
                           // pelo ícone: "isto ainda não está publicado" é a
                           // informação que muda o que a pessoa faz a seguir.
-                          note={r.matchedIn === 'content' ? 'Draft' : undefined}
+                          note={r.matchedIn === 'content' ? t('search.draft') : undefined}
                           snippet={r.snippet ? highlight(r.snippet) : undefined}
                           onActivate={() => setActive(i)}
                           onSelect={() => select({ kind: 'structure', data: r })}
@@ -306,7 +309,7 @@ export function AdminSearch({
                     </Group>
                   )}
                   {content.length > 0 && (
-                    <Group label="Published content">
+                    <Group label={t('search.content')}>
                       {content.map((r, ci) => {
                         const i = structureCount + ci;
                         return (
@@ -334,17 +337,17 @@ export function AdminSearch({
               <span className="flex items-center gap-1">
                 <kbd className="bg-muted rounded px-1 py-0.5">↑</kbd>
                 <kbd className="bg-muted rounded px-1 py-0.5">↓</kbd>
-                navegar
+                {t('search.navigate')}
               </span>
               <span className="flex items-center gap-1">
                 <kbd className="bg-muted inline-flex items-center rounded px-1 py-0.5">
                   <CornerDownLeft className="size-3" />
                 </kbd>
-                abrir
+                {t('search.open')}
               </span>
               <span className="flex items-center gap-1">
                 <kbd className="bg-muted rounded px-1 py-0.5">esc</kbd>
-                fechar
+                {t('search.close')}
               </span>
             </div>
           </div>
@@ -442,17 +445,18 @@ function ResultRow({
  * tempo.
  */
 export function AdminSearchTrigger({ onOpen }: { onOpen: () => void }) {
+  const t = useT();
   return (
     <button
       type="button"
       onClick={onOpen}
-      aria-label="Search"
+      aria-label={t('search.trigger')}
       aria-keyshortcuts="Meta+K Control+K"
       className="text-muted-foreground hover:text-foreground hover:bg-accent inline-flex size-11 items-center justify-center gap-2 rounded-editorial-sm text-sm transition-colors sm:h-8 sm:w-auto sm:justify-start sm:px-2.5"
       data-testid="admin-search-trigger"
     >
       <Search className="size-4" />
-      <span className="hidden sm:inline">Search</span>
+      <span className="hidden sm:inline">{t('search.trigger')}</span>
       <kbd className="bg-muted text-muted-foreground ml-1 hidden rounded px-1.5 py-0.5 text-[0.6875rem] font-medium sm:inline-block">
         ⌘K
       </kbd>
@@ -469,17 +473,18 @@ export function AdminSearchTrigger({ onOpen }: { onOpen: () => void }) {
  * estados independentes seria duas verdades sobre o mesmo termo.
  */
 export function SidebarSearchTrigger({ onOpen }: { onOpen: () => void }) {
+  const t = useT();
   return (
     <button
       type="button"
       onClick={onOpen}
-      aria-label="Search the navigation"
+      aria-label={t('search.navigationTrigger')}
       aria-keyshortcuts="Meta+K Control+K"
       className="border-input text-muted-foreground hover:border-ring/60 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 mb-1 flex min-h-9 w-full items-center gap-2 rounded-editorial-sm border px-2.5 text-left text-sm transition-colors outline-none focus-visible:ring-[3px]"
       data-testid="sidebar-search-trigger"
     >
       <Search className="size-4 shrink-0" aria-hidden />
-      <span className="min-w-0 flex-1 truncate">Search…</span>
+      <span className="min-w-0 flex-1 truncate">{t('search.navigationPlaceholder')}</span>
       <kbd className="bg-muted text-muted-foreground hidden shrink-0 rounded px-1.5 py-0.5 text-[0.6875rem] font-medium md:inline-block">
         ⌘K
       </kbd>

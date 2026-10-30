@@ -7,6 +7,8 @@ import { queryClient, useTRPC } from '../../lib/trpc.js';
 import { RowActionsMenu } from '@/components/RowActionsMenu';
 import { DragHandle, useDragReorder, type DragHandleProps, type DragRowProps } from './dragReorder.js';
 import { CopyLinkItem, MoveToMenuSub, invalidateNavAfterMove } from './RowActionItems.js';
+import { useT } from '../../i18n/AdminLocale.js';
+import type { AdminMessageKey } from '../../i18n/messages/en.js';
 import { createLinkClass } from '@/lib/styles';
 import { cn } from '@/lib/utils';
 
@@ -47,6 +49,7 @@ export function SidebarTree({
   onNavigate?: () => void;
 }) {
   const trpc = useTRPC();
+  const t = useT();
   const sectionsQuery = useQuery({
     ...trpc.sections.listByMenu.queryOptions({ menuId: activeMenuId ?? '' }),
     enabled: activeMenuId != null,
@@ -74,16 +77,16 @@ export function SidebarTree({
 
   if (!activeMenuId) {
     // O header ainda está resolvendo qual menu está ativo (menus.list).
-    return <p className="text-muted-foreground px-2 py-1 text-sm">Loading menu…</p>;
+    return <p className="text-muted-foreground px-2 py-1 text-sm">{t('tree.loadingMenu')}</p>;
   }
 
   return (
     <OnNavigateContext.Provider value={onNavigate}>
     <MenuSlugContext.Provider value={activeMenuSlug}>
-    <nav aria-label="Documentation structure" className="grid content-start gap-6 text-sm">
-      {sectionsQuery.isPending && <span className="text-muted-foreground px-2 text-sm">Loading…</span>}
+    <nav aria-label={t('tree.label')} className="grid content-start gap-6 text-sm">
+      {sectionsQuery.isPending && <span className="text-muted-foreground px-2 text-sm">{t('common.loading')}</span>}
       {!sectionsQuery.isPending && sections.length === 0 && (
-        <p className="text-muted-foreground px-2 text-sm">No sections in this menu yet.</p>
+        <p className="text-muted-foreground px-2 text-sm">{t('tree.noSections')}</p>
       )}
       {sections.map((section, i) => (
         <SectionGroup
@@ -93,18 +96,15 @@ export function SidebarTree({
           dragHandle={dnd.getHandleProps(section.id, i)}
           onRename={(titulo) => rename.mutate({ id: section.id, titulo })}
           onDelete={() => {
-            if (
-              window.confirm(
-                `Delete the section "${section.titulo}"? All pages inside it will also be removed.`,
-              )
-            ) {
+            if (window.confirm(t('tree.deleteSectionConfirm', { name: section.titulo }))) {
               remove.mutate({ id: section.id });
             }
           }}
         />
       ))}
       <InlineCreate
-        label="New section"
+        label={t('tree.newSection')}
+        submitLabel={t('tree.createSection')}
         onCreate={(titulo) => create.mutateAsync({ menuId: activeMenuId, titulo })}
       />
     </nav>
@@ -137,6 +137,7 @@ function SectionGroup({
   dragRow: DragRowProps;
   dragHandle: DragHandleProps;
 }) {
+  const t = useT();
   const [expanded, setExpanded] = useState(true);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(section.titulo);
@@ -145,7 +146,8 @@ function SectionGroup({
     <div className="grid gap-0.5">
       {editing ? (
         <RenameForm
-          label={`section ${section.titulo}`}
+          inputLabel={t('tree.renameSection', { name: section.titulo })}
+          submitLabel={t('tree.saveSectionTitle', { name: section.titulo })}
           initial={section.titulo}
           draft={draft}
           setDraft={setDraft}
@@ -159,14 +161,14 @@ function SectionGroup({
         <div {...dragRow} className="group/section flex items-center gap-1 pr-1">
           <DragHandle
             {...dragHandle}
-            label={`Reorder section ${section.titulo}`}
+            label={t('tree.reorderSection', { name: section.titulo })}
             className="-ml-1 opacity-0 group-hover/section:opacity-100 group-focus-within/section:opacity-100"
           />
           <button
             type="button"
             className="text-muted-foreground hover:text-foreground flex min-h-11 min-w-0 flex-1 items-center gap-1 rounded-editorial-sm px-1 py-0.5 text-left text-xs font-semibold uppercase tracking-[0.1em] transition-colors md:min-h-0"
             aria-expanded={expanded}
-            aria-label={`${expanded ? 'Collapse' : 'Expand'} section ${section.titulo}`}
+            aria-label={t(expanded ? 'tree.collapseSection' : 'tree.expandSection', { name: section.titulo })}
             onClick={() => setExpanded((v) => !v)}
           >
             <ChevronDown
@@ -175,7 +177,7 @@ function SectionGroup({
             <span className="truncate">{section.titulo}</span>
           </button>
           <RowActionsMenu
-            triggerLabel={`More actions for section ${section.titulo}`}
+            triggerLabel={t('tree.sectionActions', { name: section.titulo })}
             onRename={() => {
               setDraft(section.titulo);
               setEditing(true);
@@ -192,6 +194,7 @@ function SectionGroup({
 
 function PagesList({ sectionId, sectionSlug }: { sectionId: string; sectionSlug?: string | null }) {
   const trpc = useTRPC();
+  const t = useT();
   const pagesQuery = useQuery(trpc.pages.listBySection.queryOptions({ sectionId }));
   const invalidate = () =>
     queryClient.invalidateQueries(trpc.pages.listBySection.queryFilter({ sectionId }));
@@ -227,7 +230,7 @@ function PagesList({ sectionId, sectionSlug }: { sectionId: string; sectionSlug?
 
   return (
     <div className="grid gap-0.5 pl-2">
-      {pagesQuery.isPending && <span className="text-muted-foreground px-2 text-sm">Loading…</span>}
+      {pagesQuery.isPending && <span className="text-muted-foreground px-2 text-sm">{t('common.loading')}</span>}
       {pages.map((page, i) => (
         <PageRow
           key={page.id}
@@ -239,7 +242,7 @@ function PagesList({ sectionId, sectionSlug }: { sectionId: string; sectionSlug?
           dragHandle={dnd.getHandleProps(page.id, i)}
           onRename={(titulo) => rename.mutate({ id: page.id, titulo })}
           onDelete={() => {
-            if (window.confirm(`Delete the page "${page.titulo}" and all of its content?`)) {
+            if (window.confirm(t('tree.deletePageConfirm', { name: page.titulo }))) {
               remove.mutate({ id: page.id });
             }
           }}
@@ -276,6 +279,7 @@ function PageRow({
   dragHandle: DragHandleProps;
 }) {
   const trpc = useTRPC();
+  const t = useT();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(page.titulo);
   const onNavigate = useContext(OnNavigateContext);
@@ -284,7 +288,8 @@ function PageRow({
   if (editing) {
     return (
       <RenameForm
-        label={`page ${page.titulo}`}
+        inputLabel={t('tree.renamePage', { name: page.titulo })}
+        submitLabel={t('tree.savePageTitle', { name: page.titulo })}
         initial={page.titulo}
         draft={draft}
         setDraft={setDraft}
@@ -301,7 +306,7 @@ function PageRow({
     <div {...dragRow} className="group/page flex items-center gap-1">
       <DragHandle
         {...dragHandle}
-        label={`Reorder page ${page.titulo}`}
+        label={t('tree.reorderPage', { name: page.titulo })}
         className="opacity-0 group-hover/page:opacity-100 group-focus-within/page:opacity-100"
       />
       <NavLink
@@ -324,7 +329,7 @@ function PageRow({
         <DraftDot neverPublished={draftStatus.neverPublished} titulo={page.titulo} />
       )}
       <RowActionsMenu
-        triggerLabel={`More actions for page ${page.titulo}`}
+        triggerLabel={t('tree.pageActions', { name: page.titulo })}
         onRename={() => {
           setDraft(page.titulo);
           setEditing(true);
@@ -336,7 +341,7 @@ function PageRow({
               menuSlug={menuSlug}
               sectionSlug={sectionSlug}
               pageSlug={page.slug}
-              disabledReason="This page has no slug yet"
+              disabledReason={t('tree.pageNoSlug')}
             />
             <MoveToMenuSub
               pageId={page.id}
@@ -353,19 +358,22 @@ function PageRow({
 
 /** Edição inline de título (compartilhada por seção e página). */
 function RenameForm({
-  label,
+  inputLabel,
+  submitLabel,
   draft,
   setDraft,
   onSubmit,
   onCancel,
 }: {
-  label: string;
+  inputLabel: string;
+  submitLabel: string;
   initial: string;
   draft: string;
   setDraft: (v: string) => void;
   onSubmit: () => void;
   onCancel: () => void;
 }) {
+  const t = useT();
   return (
     <form
       className="flex items-center gap-1"
@@ -378,13 +386,13 @@ function RenameForm({
         autoFocus
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
-        aria-label={`New title for ${label}`}
+        aria-label={inputLabel}
         className={treeInputClass}
       />
-      <button type="submit" className={iconBtnClass} aria-label={`Save title for ${label}`}>
+      <button type="submit" className={iconBtnClass} aria-label={submitLabel}>
         <Check className="size-4" />
       </button>
-      <button type="button" className={iconBtnClass} aria-label="Cancel" onClick={onCancel}>
+      <button type="button" className={iconBtnClass} aria-label={t('common.cancel')} onClick={onCancel}>
         <X className="size-4" />
       </button>
     </form>
@@ -394,11 +402,14 @@ function RenameForm({
 /** Botão "+" que expande para um input de título (Nova seção). */
 function InlineCreate({
   label,
+  submitLabel,
   onCreate,
 }: {
   label: string;
+  submitLabel: string;
   onCreate: (titulo: string) => Promise<unknown>;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [titulo, setTitulo] = useState('');
 
@@ -428,10 +439,10 @@ function InlineCreate({
         aria-label={label}
         className={treeInputClass}
       />
-      <button type="submit" className={iconBtnClass} aria-label={`Create ${label.toLowerCase()}`}>
+      <button type="submit" className={iconBtnClass} aria-label={submitLabel}>
         <Check className="size-4" />
       </button>
-      <button type="button" className={iconBtnClass} aria-label="Cancel" onClick={() => setOpen(false)}>
+      <button type="button" className={iconBtnClass} aria-label={t('common.cancel')} onClick={() => setOpen(false)}>
         <X className="size-4" />
       </button>
     </form>
@@ -447,8 +458,9 @@ function CreatePageForm({
 }) {
   const [open, setOpen] = useState(false);
   const [titulo, setTitulo] = useState('');
+  const t = useT();
   const [slug, setSlug] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<AdminMessageKey | null>(null);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -459,14 +471,14 @@ function CreatePageForm({
       setSlug('');
       setOpen(false);
     } catch (err) {
-      setError(err instanceof TRPCClientError ? err.message : 'Error creating page');
+      setError(createPageErrorKey(err, slug.trim() !== ''));
     }
   }
 
   if (!open) {
     return (
       <button className={cn(createLinkClass, 'px-2 py-1')} onClick={() => setOpen(true)}>
-        <Plus className="size-3.5" /> Add page
+        <Plus className="size-3.5" /> {t('tree.addPage')}
       </button>
     );
   }
@@ -475,35 +487,48 @@ function CreatePageForm({
     <form onSubmit={handleSubmit} className="flex flex-wrap items-center gap-1 py-0.5">
       <input
         autoFocus
-        placeholder="Page title"
+        placeholder={t('tree.pageTitle')}
         value={titulo}
         onChange={(e) => setTitulo(e.target.value)}
-        aria-label="New page title"
+        aria-label={t('tree.newPageTitle')}
         className={treeInputClass}
       />
       <input
-        placeholder="slug (optional)"
+        placeholder={t('tree.slugOptional')}
         value={slug}
         onChange={(e) => setSlug(e.target.value)}
-        aria-label="New page slug (optional)"
+        aria-label={t('tree.newPageSlug')}
         className={treeInputClass}
       />
-      <button type="submit" className={iconBtnClass} aria-label="Create page">
+      <button type="submit" className={iconBtnClass} aria-label={t('tree.createPage')}>
         <Check className="size-4" />
       </button>
-      <button type="button" className={iconBtnClass} aria-label="Cancel" onClick={() => setOpen(false)}>
+      <button type="button" className={iconBtnClass} aria-label={t('common.cancel')} onClick={() => setOpen(false)}>
         <X className="size-4" />
       </button>
       <span className="text-muted-foreground w-full text-xs">
-        Leave the slug blank to generate it from the title.
+        {t('tree.slugHint')}
       </span>
       {error && (
         <span role="alert" className="text-destructive w-full text-xs">
-          {error}
+          {t(error)}
         </span>
       )}
     </form>
   );
+}
+
+/**
+ * Mensagem do erro de criar página pelo código do tRPC — a `message` do server
+ * é inglês fixo. BAD_REQUEST com slug informado = slug fora do formato; sem
+ * slug = o título não gerou um (o server deriva).
+ */
+function createPageErrorKey(err: unknown, slugGiven: boolean): AdminMessageKey {
+  if (!(err instanceof TRPCClientError)) return 'tree.createPageFailed';
+  const code: unknown = err.data?.code;
+  if (code === 'CONFLICT') return 'tree.slugTaken';
+  if (code === 'BAD_REQUEST') return slugGiven ? 'tree.slugInvalid' : 'tree.titleNoSlug';
+  return 'tree.createPageFailed';
 }
 
 /**
@@ -523,13 +548,12 @@ function CreatePageForm({
  * espaço sempre, então o ponto não dança quando o mouse passa pela linha.
  */
 function DraftDot({ neverPublished, titulo }: { neverPublished: boolean; titulo: string }) {
-  const label = neverPublished
-    ? `${titulo}: not published yet`
-    : `${titulo}: unpublished changes`;
+  const t = useT();
+  const label = t(neverPublished ? 'tree.pageNotPublished' : 'tree.pageUnpublishedChanges', { name: titulo });
   return (
     <span
       className="flex size-4 shrink-0 items-center justify-center"
-      title={neverPublished ? 'Not published yet' : 'Unpublished changes'}
+      title={t(neverPublished ? 'tree.notPublished' : 'tree.unpublishedChanges')}
       data-testid="draft-dot"
     >
       {/* `amber-600` e não `amber-500`: sobre o branco do painel o 500 mede

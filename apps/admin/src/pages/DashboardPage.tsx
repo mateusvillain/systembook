@@ -3,6 +3,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, useOutletContext } from 'react-router-dom';
 import { Check, FilePlus2, FolderPlus, Plus, X } from 'lucide-react';
 import { queryClient, useTRPC } from '../lib/trpc.js';
+import { useT } from '../i18n/AdminLocale.js';
 import type { AdminOutletContext } from '../components/AdminLayout.js';
 import { EmptyState } from '@/components/EmptyState';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,7 @@ import { adminTypography } from '@/lib/typography';
 export function DashboardPage() {
   const { activeMenuId } = useOutletContext<AdminOutletContext>();
   const trpc = useTRPC();
+  const t = useT();
   const sectionsQuery = useQuery({
     ...trpc.sections.listByMenu.queryOptions({ menuId: activeMenuId ?? '' }),
     enabled: activeMenuId != null,
@@ -36,7 +38,7 @@ export function DashboardPage() {
   const createSection = useMutation(trpc.sections.create.mutationOptions({ onSuccess: invalidate }));
 
   if (!activeMenuId || sectionsQuery.isPending) {
-    return <p className="text-muted-foreground">Loading…</p>;
+    return <p className="text-muted-foreground">{t('common.loading')}</p>;
   }
 
   const sections = sectionsQuery.data ?? [];
@@ -45,12 +47,12 @@ export function DashboardPage() {
     return (
       <EmptyState
         icon={FolderPlus}
-        title="No sections yet"
-        description="Sections group the pages in this menu. Create the first one to start building your documentation."
+        title={t('dashboard.noSections')}
+        description={t('dashboard.noSectionsDescription')}
         action={
           <CreateFirstButton
-            label="Create first section"
-            placeholder="Section name"
+            label={t('dashboard.createFirstSection')}
+            placeholder={t('dashboard.sectionName')}
             onCreate={(titulo) => createSection.mutateAsync({ menuId: activeMenuId, titulo })}
           />
         }
@@ -61,9 +63,9 @@ export function DashboardPage() {
   return (
     <div className="grid gap-8">
       <header className="grid gap-2">
-        <h1 className={adminTypography.title}>Home</h1>
+        <h1 className={adminTypography.title}>{t('dashboard.title')}</h1>
         <p className={adminTypography.metadata}>
-          Pick a page in the sidebar to edit, or keep building the structure below.
+          {t('dashboard.intro')}
         </p>
       </header>
       <div className="grid gap-6">
@@ -78,6 +80,7 @@ export function DashboardPage() {
 /** Uma seção no home: rótulo + suas páginas como links, ou o zero-state de página. */
 function SectionOverview({ sectionId, titulo }: { sectionId: string; titulo: string }) {
   const trpc = useTRPC();
+  const t = useT();
   const pagesQuery = useQuery(trpc.pages.listBySection.queryOptions({ sectionId }));
   const invalidate = () =>
     queryClient.invalidateQueries(trpc.pages.listBySection.queryFilter({ sectionId }));
@@ -90,17 +93,17 @@ function SectionOverview({ sectionId, titulo }: { sectionId: string; titulo: str
     <section className="grid gap-2">
       <h2 className={adminTypography.category}>{titulo}</h2>
       {pagesQuery.isPending ? (
-        <p className="text-muted-foreground text-sm">Loading…</p>
+        <p className="text-muted-foreground text-sm">{t('common.loading')}</p>
       ) : pages.length === 0 ? (
         <EmptyState
           size="sm"
           icon={FilePlus2}
-          title="No pages in this section"
-          description="Create the first page to start writing."
+          title={t('dashboard.noPages')}
+          description={t('dashboard.noPagesDescription')}
           action={
             <CreateFirstButton
-              label="Create first page"
-              placeholder="Page title"
+              label={t('dashboard.createFirstPage')}
+              placeholder={t('tree.pageTitle')}
               onCreate={(titulo) => createPage.mutateAsync({ sectionId, titulo })}
             />
           }
@@ -139,6 +142,7 @@ function CreateFirstButton({
   placeholder: string;
   onCreate: (titulo: string) => Promise<unknown>;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [titulo, setTitulo] = useState('');
   const [pending, setPending] = useState(false);
@@ -175,14 +179,14 @@ function CreateFirstButton({
         aria-label={label}
         className="border-input min-w-0 rounded-editorial-sm border bg-transparent px-3 py-1.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
       />
-      <Button type="submit" size="icon" disabled={pending} aria-label="Confirm">
+      <Button type="submit" size="icon" disabled={pending} aria-label={t('common.confirm')}>
         <Check className="size-4" />
       </Button>
       <Button
         type="button"
         variant="ghost"
         size="icon"
-        aria-label="Cancel"
+        aria-label={t('common.cancel')}
         onClick={() => setOpen(false)}
       >
         <X className="size-4" />
