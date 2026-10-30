@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import { Clock } from 'lucide-react';
 import { adminTypography } from '../../lib/typography.js';
-import { formatAbsolute, formatRelative } from '../../lib/dates.js';
+import { useDateFormat } from '../../lib/dates.js';
 import { cn } from '@/lib/utils';
 
 /**
@@ -122,14 +122,15 @@ function DescriptionField({
 }
 
 function MetaRow({ published, meta }: { published: boolean; meta: SectionHeaderMeta }) {
+  const dates = useDateFormat();
   return (
     <p className={cn(adminTypography.metadata, 'flex items-center gap-1.5')}>
       <Clock className="size-3.5 shrink-0 opacity-70" aria-hidden />
       {published && meta.updatedAt != null ? (
         <span>
           Updated{' '}
-          <time dateTime={new Date(meta.updatedAt).toISOString()} title={formatAbsolute(meta.updatedAt)}>
-            {formatRelative(meta.updatedAt)}
+          <time dateTime={new Date(meta.updatedAt).toISOString()} title={dates.absolute(meta.updatedAt)}>
+            {dates.relative(meta.updatedAt)}
           </time>{' '}
           by {meta.author ?? 'removed user'}
         </span>

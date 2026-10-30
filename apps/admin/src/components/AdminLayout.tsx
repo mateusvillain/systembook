@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Navigate, Outlet, useMatch, useNavigate } from 'react-router-dom';
-import { queryClient, useTRPC } from '../lib/trpc.js';
+import { queryClient, useTRPC, type RouterOutput } from '../lib/trpc.js';
 import { SidebarTree } from '../features/navigation/SidebarTree.js';
 import { AppHeader, useActiveMenu } from '../features/navigation/AppHeader.js';
 import { AdminSearch, SidebarSearchTrigger } from '../features/navigation/AdminSearch.js';
@@ -12,7 +12,7 @@ const MOBILE_BREAKPOINT = 768;
 
 /** Contexto passado aos filhos via Outlet (auth + menu ativo/seletor). */
 export interface AdminOutletContext {
-  me: { userId: string; role: 'admin' | 'editor' };
+  me: NonNullable<RouterOutput['auth']['me']>;
   activeMenuId: string | null;
   setActiveMenuId: (menuId: string) => void;
 }

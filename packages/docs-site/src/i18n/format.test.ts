@@ -69,6 +69,8 @@ describe('resolveLocale (SYS-161)', () => {
   it('cai no fallback sem correspondência ou sem locale', () => {
     expect(resolveLocale('fr', available, 'en')).toBe('en');
     expect(resolveLocale(undefined, available, 'en')).toBe('en');
+    // `null` como fallback: o chamador tenta o próximo candidato (SYS-175).
+    expect(resolveLocale('fr', available, null)).toBeNull();
     expect(resolveLocale('', available, 'en')).toBe('en');
   });
 });

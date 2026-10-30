@@ -286,8 +286,46 @@ describe('auth + autorização', () => {
       await expect(callerFor(db, user).auth.me()).resolves.toEqual({
         userId: adminId,
         role: 'admin',
+        idiomaInterface: null,
       });
       await expect(callerFor(db, null).auth.me()).resolves.toBeNull();
+    });
+  });
+
+  describe('auth.setInterfaceLanguage (SYS-175)', () => {
+    it('grava o idioma do próprio usuário, devolvido pelo me; null volta ao navegador', async () => {
+      const { sessionId } = await loginAs(db, EDITOR);
+      const caller = callerFor(db, authUser(db, sessionId));
+
+      await expect(caller.auth.setInterfaceLanguage({ idioma: 'pt-BR' })).resolves.toEqual({
+        idiomaInterface: 'pt-BR',
+      });
+      expect((await caller.auth.me())?.idiomaInterface).toBe('pt-BR');
+
+      // Só o próprio usuário muda: o admin segue sem preferência.
+      const admin = db.select().from(users).where(eq(users.id, adminId)).get();
+      expect(admin!.idiomaInterface).toBeNull();
+
+      await caller.auth.setInterfaceLanguage({ idioma: null });
+      expect((await caller.auth.me())?.idiomaInterface).toBeNull();
+    });
+
+    it('aceita qualquer tag BCP 47 bem formada e rejeita o resto', async () => {
+      const { sessionId } = await loginAs(db, EDITOR);
+      const caller = callerFor(db, authUser(db, sessionId));
+
+      await expect(caller.auth.setInterfaceLanguage({ idioma: 'zh-Hant-TW' })).resolves.toBeDefined();
+      for (const idioma of ['', 'portuguese', 'pt_BR', 'pt-', '<script>']) {
+        await expect(caller.auth.setInterfaceLanguage({ idioma })).rejects.toMatchObject({
+          code: 'BAD_REQUEST',
+        });
+      }
+    });
+
+    it('sem sessão retorna UNAUTHORIZED', async () => {
+      await expect(callerFor(db, null).auth.setInterfaceLanguage({ idioma: 'en' })).rejects.toMatchObject({
+        code: 'UNAUTHORIZED',
+      });
     });
   });
 });

@@ -59,13 +59,14 @@ const baseOf = (normalized: string) => normalized.split('-')[0];
 /**
  * Melhor locale disponível para `requested`: o próprio (sem diferenciar
  * caixa nem `_`/`-`), senão o primeiro disponível com o mesmo idioma base
- * (`pt-PT` → `pt-BR`), senão `fallback`.
+ * (`pt-PT` → `pt-BR`), senão `fallback` (que pode ser `null`, para quem
+ * quer tentar outro candidato antes de desistir).
  */
-export function resolveLocale<L extends string>(
+export function resolveLocale<L extends string, F = L>(
   requested: string | null | undefined,
   available: readonly L[],
-  fallback: L,
-): L {
+  fallback: F,
+): L | F {
   if (!requested) return fallback;
   const wanted = normalize(requested);
   const exact = available.find((locale) => normalize(locale) === wanted);

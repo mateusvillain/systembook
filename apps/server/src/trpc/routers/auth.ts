@@ -6,6 +6,16 @@ import { hashPassword, needsRehash, verifyPassword } from '../../auth/password.j
 import { sessions, users, memberships } from '../../db/schema.js';
 import { protectedProcedure, publicProcedure, router } from '../init.js';
 
+/**
+ * Tag BCP 47 de idioma (`en`, `pt-BR`, `zh-Hant-TW`). Só a forma é validada:
+ * qual dicionário existe é assunto do admin, que resolve a tag para o mais
+ * próximo — assim um idioma novo no painel não exige mudança no server.
+ */
+const languageTagSchema = z
+  .string()
+  .max(35)
+  .regex(/^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{1,8})*$/);
+
 // Mesma mensagem para email desconhecido e senha errada — evita enumeração de usuários.
 const invalidCredentials = () =>
   new TRPCError({ code: 'UNAUTHORIZED', message: 'Invalid credentials' });
@@ -53,7 +63,21 @@ export const authRouter = router({
     return { ok: true };
   }),
 
-  me: publicProcedure.query(({ ctx }) =>
-    ctx.user ? { userId: ctx.user.userId, role: ctx.user.role } : null,
-  ),
+  me: publicProcedure.query(({ ctx }) => {
+    if (!ctx.user) return null;
+    const row = ctx.db
+      .select({ idiomaInterface: users.idiomaInterface })
+      .from(users)
+      .where(eq(users.id, ctx.user.userId))
+      .get();
+    return { userId: ctx.user.userId, role: ctx.user.role, idiomaInterface: row?.idiomaInterface ?? null };
+  }),
+
+  /** Idioma da interface do próprio usuário (SYS-175); `null` volta a seguir o navegador. */
+  setInterfaceLanguage: protectedProcedure
+    .input(z.object({ idioma: languageTagSchema.nullable() }))
+    .mutation(({ ctx, input }) => {
+      ctx.db.update(users).set({ idiomaInterface: input.idioma }).where(eq(users.id, ctx.user.userId)).run();
+      return { idiomaInterface: input.idioma };
+    }),
 });

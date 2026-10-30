@@ -3,6 +3,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { queryClient, useTRPC } from '../../lib/trpc.js';
+import { useDateFormat } from '../../lib/dates.js';
 import { RevisionSnapshotPreview } from './RevisionSnapshotPreview.js';
 import { RevisionDiffView } from './RevisionDiffView.js';
 import { Button } from '@/components/ui/button';
@@ -34,6 +35,7 @@ export function RevisionHistoryList({ pageId, firstTabId }: Props) {
   const trpc = useTRPC();
   const navigate = useNavigate();
   const list = useQuery(trpc.revisions.listByPage.queryOptions({ pageId }));
+  const dates = useDateFormat();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const preview = useQuery({
     ...trpc.revisions.getById.queryOptions({ id: selectedId ?? '' }),
@@ -141,7 +143,7 @@ export function RevisionHistoryList({ pageId, firstTabId }: Props) {
                     checked={comparing}
                     onCheckedChange={() => toggleCompare(rev.id)}
                     className="mt-0.5"
-                    aria-label={`Compare the revision from ${new Date(rev.criadoEm).toLocaleString('en-US')}`}
+                    aria-label={`Compare the revision from ${dates.absolute(rev.criadoEm)}`}
                   />
                   {/* O papel de cada marcada é dito por texto, não pela ordem
                       visual: a lista é cronológica e a direção do diff não. */}
@@ -162,7 +164,7 @@ export function RevisionHistoryList({ pageId, firstTabId }: Props) {
                     rev.id === selectedId ? 'bg-accent' : 'hover:bg-muted/50',
                   )}
                 >
-                  <strong>{new Date(rev.criadoEm).toLocaleString('en-US')}</strong>
+                  <strong>{dates.absolute(rev.criadoEm)}</strong>
                   <div className="text-muted-foreground text-xs">{rev.autorEmail ?? 'Removed author'}</div>
                   {rev.mensagem && <div className="mt-1 text-sm">{rev.mensagem}</div>}
                 </button>

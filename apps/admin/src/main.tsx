@@ -18,28 +18,35 @@ import { GlobalHistoryPage } from './pages/GlobalHistoryPage.js';
 import { createDocsRoute, DocsDataSourceProvider, PublicPageById } from '@systembook/docs-site';
 import { AdminLayout } from './components/AdminLayout.js';
 import { Toaster } from './components/ui/sonner.js';
+import { AdminLocaleRoute } from './i18n/AdminLocale.js';
 
 const router = createBrowserRouter([
-  { path: '/login', element: <LoginPage /> },
   // Doc pública navegável (TASK-52) — árvore de rotas separada do AdminLayout:
   // sem auth, sem chrome de admin. Rotas e links sob `/docs` (SYS-91).
   createDocsRoute('/docs'),
   // Link direto por id (TASK-50) — mantido para bookmarks/preview sem slug.
   { path: '/p/:pageId', element: <PublicPageById /> },
   {
-    path: '/',
-    element: <AdminLayout />,
+    // Idioma do admin (SYS-175): envolve login e painel, não a doc pública.
+    element: <AdminLocaleRoute />,
     children: [
-      { index: true, element: <DashboardPage /> },
-      { path: 'admin/users', element: <UsersPage /> },
-      { path: 'admin/settings/tokens', element: <UploadTokensPage /> },
-      { path: 'admin/settings/status-tags', element: <StatusTagsPage /> },
-      { path: 'admin/settings/identity', element: <BrandSettingsPage /> },
-      { path: 'admin/settings/landing-page', element: <LandingPageSettingsPage /> },
-      { path: 'admin/history', element: <GlobalHistoryPage /> },
-      { path: 'pages/:pageId', element: <PageContentPage /> },
-      { path: 'pages/:pageId/tabs/:tabId', element: <PageContentPage /> },
-      { path: 'pages/:pageId/history', element: <PageHistoryPage /> },
+      { path: '/login', element: <LoginPage /> },
+      {
+        path: '/',
+        element: <AdminLayout />,
+        children: [
+          { index: true, element: <DashboardPage /> },
+          { path: 'admin/users', element: <UsersPage /> },
+          { path: 'admin/settings/tokens', element: <UploadTokensPage /> },
+          { path: 'admin/settings/status-tags', element: <StatusTagsPage /> },
+          { path: 'admin/settings/identity', element: <BrandSettingsPage /> },
+          { path: 'admin/settings/landing-page', element: <LandingPageSettingsPage /> },
+          { path: 'admin/history', element: <GlobalHistoryPage /> },
+          { path: 'pages/:pageId', element: <PageContentPage /> },
+          { path: 'pages/:pageId/tabs/:tabId', element: <PageContentPage /> },
+          { path: 'pages/:pageId/history', element: <PageHistoryPage /> },
+        ],
+      },
     ],
   },
 ]);

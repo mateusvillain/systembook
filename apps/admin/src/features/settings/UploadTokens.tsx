@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { queryClient, useTRPC, type RouterOutput } from '../../lib/trpc.js';
+import { useDateFormat } from '../../lib/dates.js';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -126,15 +127,16 @@ export function UploadTokens() {
 
 function TokenTableRow({ token, onRevoke }: { token: TokenRow; onRevoke: () => void }) {
   const revogado = token.revogadoEm != null;
+  const dates = useDateFormat();
   return (
     <TableRow className={revogado ? 'opacity-60' : undefined}>
       <TableCell>{token.label}</TableCell>
       <TableCell>{SCOPES[token.escopo].label}</TableCell>
-      <TableCell>{new Date(token.criadoEm).toLocaleString('en-US')}</TableCell>
+      <TableCell>{dates.absolute(token.criadoEm)}</TableCell>
       <TableCell>
         {revogado ? (
           <Badge variant="secondary">
-            Revoked on {new Date(token.revogadoEm!).toLocaleString('en-US')}
+            Revoked on {dates.absolute(token.revogadoEm!)}
           </Badge>
         ) : (
           <Badge>Active</Badge>
