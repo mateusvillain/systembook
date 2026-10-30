@@ -171,7 +171,7 @@ const dataSource: DocsDataSource = {
           url: 'about:blank',
           config: {
             component: 'Cartao',
-            variants: [{ id: 'padrao', props: {} }],
+            variants: [{ id: 'padrao', label: 'Padrão', props: {} }],
             controls: [{ kind: 'text', propName: 'titulo', label: 'Título' }],
           },
         }
