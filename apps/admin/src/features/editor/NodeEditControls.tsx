@@ -20,7 +20,6 @@ import type { AdminMessageKey } from '@/i18n/messages/en';
  * o editor editável.
  */
 
-/** Switcher de variante do callout: overlay no canto superior direito (SYS-24). */
 const CALLOUT_LABEL = {
   info: 'editor.callout.info',
   warning: 'editor.callout.warning',
@@ -32,6 +31,7 @@ const DOS_DONTS_LABEL = {
   dont: 'editor.dosDonts.dont',
 } as const satisfies Record<DosDontsVariant, AdminMessageKey>;
 
+/** Switcher de variante do callout: overlay no canto superior direito (SYS-24). */
 export function CalloutVariantSwitcher({ variant, onChange }: VariantSwitcherProps<CalloutVariant>) {
   const t = useT();
   return (
@@ -47,7 +47,7 @@ export function CalloutVariantSwitcher({ variant, onChange }: VariantSwitcherPro
           <button
             key={v}
             type="button"
-            title={t('editor.callout.changeTo', { name: t(CALLOUT_LABEL[v]) })}
+            title={t('editor.variant.changeTo', { name: t(CALLOUT_LABEL[v]) })}
             aria-pressed={v === variant}
             className="sb-callout-switch"
             data-active={v === variant || undefined}
@@ -85,7 +85,7 @@ export function DosDontsVariantSwitcher({
           <button
             key={v}
             type="button"
-            title={t('editor.callout.changeTo', { name: t(DOS_DONTS_LABEL[v]) })}
+            title={t('editor.variant.changeTo', { name: t(DOS_DONTS_LABEL[v]) })}
             aria-pressed={v === variant}
             className="sb-dos-donts-switch"
             data-active={v === variant || undefined}

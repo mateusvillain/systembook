@@ -28,6 +28,7 @@ export const en = {
   'common.linkCopied': 'Link copied',
   'common.linkCopyFailed': 'Could not copy the link',
   'common.copyLink': 'Copy link',
+  'common.close': 'Close',
   'common.notifications': 'Notifications',
 
   // Login
@@ -160,14 +161,13 @@ export const en = {
   'editor.cover.altLabel': 'Cover alt text',
   'editor.cover.remove': 'Remove cover',
   'editor.emptyHint': 'Start typing, or type "/" to open the block menu. Markdown works (**bold**, # heading, - list).',
-  'common.close': 'Close',
 
   // Editor: controles dos nós (variante, título, linguagem, grupo de tokens)
+  'editor.variant.changeTo': 'Change to {name}',
   'editor.callout.variants': 'Callout variant',
   'editor.callout.info': 'Info',
   'editor.callout.warning': 'Warning',
   'editor.callout.tip': 'Tip',
-  'editor.callout.changeTo': 'Change to {name}',
   'editor.dosDonts.variants': "Do/Don't block variant",
   'editor.dosDonts.do': 'Do',
   'editor.dosDonts.dont': "Don't",

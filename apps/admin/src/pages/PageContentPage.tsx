@@ -256,6 +256,12 @@ type BrokenEmbed = RouterOutput['pages']['validateEmbeds'][number];
  * outra confirmação desta mesma tela (exclusão de tab) — o admin ainda não
  * tem primitiva de dialog.
  */
+const BROKEN_EMBED_REASON = {
+  'variant-unset': 'page.brokenEmbedVariantUnset',
+  'no-publication': 'page.brokenEmbedNoPublication',
+  'artifact-missing': 'page.brokenEmbedArtifactMissing',
+} as const satisfies Record<BrokenEmbed['reason'], AdminMessageKey>;
+
 function brokenEmbedsWarning(broken: BrokenEmbed[], t: Translator<AdminMessageKey>): string {
   // O servidor reporta por bloco (a UI precisa saber quais corrigir), mas a
   // mesma variante embutida N vezes na mesma tab renderia N linhas idênticas —
@@ -263,15 +269,7 @@ function brokenEmbedsWarning(broken: BrokenEmbed[], t: Translator<AdminMessageKe
   const grupos = new Map<string, { linha: string; blocos: number }>();
   for (const e of broken) {
     const alvo = e.variantId ? `"${e.componentName}" (${e.variantId})` : `"${e.componentName}"`;
-    const motivo = t(
-      (
-        {
-          'variant-unset': 'page.brokenEmbedVariantUnset',
-          'no-publication': 'page.brokenEmbedNoPublication',
-          'artifact-missing': 'page.brokenEmbedArtifactMissing',
-        } as const
-      )[e.reason],
-    );
+    const motivo = t(BROKEN_EMBED_REASON[e.reason]);
 
     const linha = t('page.brokenEmbedLine', { target: alvo, tab: e.tabTitulo, reason: motivo });
     const grupo = grupos.get(linha);

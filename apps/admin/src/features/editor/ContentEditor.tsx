@@ -58,6 +58,16 @@ export const ContentEditor = forwardRef<ContentEditorHandle, { tabId: string }>(
   return <EditorInner ref={ref} tabId={tabId} initialDoc={query.data.doc as JSONContent | null} />;
 });
 
+/**
+ * Atributos do `contenteditable`. O `role` repete o que o Tiptap põe na
+ * criação (`{ role: 'textbox', ...attributes }`), que um `setOptions` posterior
+ * apagaria. Objeto, não função: o Tiptap espalha `attributes` e uma função
+ * não teria nada para espalhar.
+ */
+function editorAttributes(label: string, tabId: string): Record<string, string> {
+  return { role: 'textbox', 'aria-label': label, 'data-tab-id': tabId };
+}
+
 const EditorInner = forwardRef<ContentEditorHandle, { tabId: string; initialDoc: JSONContent | null }>(
   function EditorInner({ tabId, initialDoc }, ref) {
     const trpc = useTRPC();
@@ -131,8 +141,7 @@ const EditorInner = forwardRef<ContentEditorHandle, { tabId: string; initialDoc:
         extensions,
         content: initialDoc ?? '',
         editorProps: {
-          // Função: o ProseMirror reavalia a cada atualização do estado.
-          attributes: () => ({ 'aria-label': tRef.current('editor.tabContent'), 'data-tab-id': tabId }),
+          attributes: editorAttributes(tRef.current('editor.tabContent'), tabId),
         },
         onUpdate: ({ editor: e }) => {
           pendingDocRef.current = e.getJSON();
@@ -144,6 +153,17 @@ const EditorInner = forwardRef<ContentEditorHandle, { tabId: string; initialDoc:
       },
       [tabId],
     );
+
+    // Troca de idioma com o editor aberto: o `useEditor` só lê os atributos na
+    // criação. `setOptions` repassa o `editorProps` inteiro ao ProseMirror —
+    // por isso o objeto completo, `role` incluído.
+    const tabContentLabel = t('editor.tabContent');
+    useEffect(() => {
+      if (!editor || editor.isDestroyed) return;
+      editor.setOptions({
+        editorProps: { ...editor.options.editorProps, attributes: editorAttributes(tabContentLabel, tabId) },
+      });
+    }, [editor, tabContentLabel, tabId]);
 
     // Doc sem nenhum bloco → mostra o Empty State do editor (TASK-90) em vez de
     // um editor em branco. Checagem **estrutural** (não `editor.isEmpty`, que é
