@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useT } from '../../i18n/AdminLocale.js';
 
 type Variant = 'light' | 'dark';
 
@@ -39,6 +40,7 @@ function readAsBase64(file: File): Promise<string> {
  */
 export function BrandSettings() {
   const trpc = useTRPC();
+  const t = useT();
   const settings = useQuery(trpc.settings.get.queryOptions());
   const invalidate = () =>
     Promise.all([
@@ -49,10 +51,9 @@ export function BrandSettings() {
   return (
     <section className="grid gap-6">
       <div className="grid gap-1">
-        <h1 className="text-2xl font-semibold">Design system identity</h1>
+        <h1 className="text-2xl font-semibold">{t('brand.title')}</h1>
         <p className="text-muted-foreground text-sm">
-          The name and logo shown at the top of the public documentation sidebar. Without a logo,
-          the name is shown as text.
+          {t('brand.description')}
         </p>
       </div>
 
@@ -64,16 +65,16 @@ export function BrandSettings() {
 
       <LogoSlot
         variant="light"
-        title="Logo"
-        hint="Used on the light theme, and on both themes when no dark version is set."
+        title={t('brand.logo')}
+        hint={t('brand.logoHint')}
         url={settings.data?.logoUrl ?? null}
         name={settings.data?.nomeDesignSystem ?? ''}
         onChanged={invalidate}
       />
       <LogoSlot
         variant="dark"
-        title="Logo — dark theme"
-        hint="Optional. Set one if your logo is dark ink and disappears on the dark background."
+        title={t('brand.logoDark')}
+        hint={t('brand.logoDarkHint')}
         url={settings.data?.logoDarkUrl ?? null}
         name={settings.data?.nomeDesignSystem ?? ''}
         onChanged={invalidate}
@@ -92,6 +93,7 @@ function NameForm({
   onSaved: () => Promise<unknown>;
 }) {
   const trpc = useTRPC();
+  const t = useT();
   const [draft, setDraft] = useState(value);
   // A query resolve depois do primeiro render: sincroniza o rascunho quando o
   // valor salvo chega ou muda por fora.
@@ -101,9 +103,9 @@ function NameForm({
     trpc.settings.setNome.mutationOptions({
       onSuccess: async () => {
         await onSaved();
-        toast.success('Name saved.');
+        toast.success(t('brand.nameSaved'));
       },
-      onError: () => toast.error('Could not save the name.'),
+      onError: () => toast.error(t('brand.nameSaveFailed')),
     }),
   );
 
@@ -119,7 +121,7 @@ function NameForm({
       <CardContent className="pt-6">
         <form className="grid gap-3 sm:max-w-md" onSubmit={onSubmit}>
           <div className="grid gap-2">
-            <Label htmlFor="ds-name">Name</Label>
+            <Label htmlFor="ds-name">{t('brand.name')}</Label>
             <Input
               id="ds-name"
               value={draft}
@@ -130,7 +132,7 @@ function NameForm({
           </div>
           <div>
             <Button type="submit" disabled={save.isPending || !draft.trim() || draft === value}>
-              Save name
+              {t('brand.saveName')}
             </Button>
           </div>
         </form>
@@ -155,6 +157,7 @@ function LogoSlot({
   onChanged: () => Promise<unknown>;
 }) {
   const trpc = useTRPC();
+  const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
 
@@ -165,11 +168,11 @@ function LogoSlot({
     if (!file) return;
     // Valida antes de enviar: o erro fica específico e não gasta round-trip.
     if (!ACCEPTED_MIMES.includes(file.type as (typeof ACCEPTED_MIMES)[number])) {
-      toast.error('Use a PNG, JPG or SVG file.');
+      toast.error(t('brand.badType'));
       return;
     }
     if (file.size > MAX_BYTES) {
-      toast.error(`The file must be at most ${MAX_BYTES / 1024} KB.`);
+      toast.error(t('brand.tooLarge', { size: MAX_BYTES / 1024 }));
       return;
     }
     setBusy(true);
@@ -177,9 +180,9 @@ function LogoSlot({
       const dataBase64 = await readAsBase64(file);
       await upload.mutateAsync({ variant, mime: file.type as (typeof ACCEPTED_MIMES)[number], dataBase64 });
       await onChanged();
-      toast.success('Logo updated.');
+      toast.success(t('brand.logoUpdated'));
     } catch {
-      toast.error('Could not upload the logo.');
+      toast.error(t('brand.uploadFailed'));
     } finally {
       setBusy(false);
       // Permite reenviar o mesmo arquivo depois de remover.
@@ -192,9 +195,9 @@ function LogoSlot({
     try {
       await remove.mutateAsync({ variant });
       await onChanged();
-      toast.success('Logo removed.');
+      toast.success(t('brand.logoRemoved'));
     } catch {
-      toast.error('Could not remove the logo.');
+      toast.error(t('brand.removeFailed'));
     } finally {
       setBusy(false);
     }
@@ -220,22 +223,22 @@ function LogoSlot({
           data-testid={`logo-preview-${variant}`}
         >
           {url ? (
-            <img src={url} alt={`${name} logo`} className="max-h-10 max-w-[220px]" />
+            <img src={url} alt={t('brand.logoAlt', { name })} className="max-h-10 max-w-[220px]" />
           ) : (
             <span
               className="text-sm"
               style={{ color: variant === 'dark' ? '#9aa4b2' : '#57606a' }}
             >
               {variant === 'dark'
-                ? 'No dark version — the light logo is used.'
-                : `No logo — “${name}” is shown as text.`}
+                ? t('brand.noDark')
+                : t('brand.noLogo', { name })}
             </span>
           )}
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
           <Label htmlFor={inputId} className="sr-only">
-            {title} file
+            {t('brand.file', { title })}
           </Label>
           <Input
             ref={inputRef}
@@ -248,11 +251,11 @@ function LogoSlot({
           />
           {url && (
             <Button type="button" variant="ghost" disabled={busy} onClick={() => void onRemove()}>
-              Remove
+              {t('brand.remove')}
             </Button>
           )}
         </div>
-        <p className="text-muted-foreground text-xs">PNG, JPG or SVG, up to 512 KB.</p>
+        <p className="text-muted-foreground text-xs">{t('brand.formats', { size: MAX_BYTES / 1024 })}</p>
       </CardContent>
     </Card>
   );

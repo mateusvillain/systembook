@@ -1,5 +1,6 @@
 import { useOutletContext } from 'react-router-dom';
 import { BrandSettings } from '../features/settings/BrandSettings.js';
+import { useT } from '../i18n/AdminLocale.js';
 
 interface OutletCtx {
   me: { userId: string; role: 'admin' | 'editor' };
@@ -7,6 +8,7 @@ interface OutletCtx {
 
 export function BrandSettingsPage() {
   const { me } = useOutletContext<OutletCtx>();
+  const t = useT();
 
   // Admin-only (SYS-39): identidade é configuração da instância, não estrutura
   // de conteúdo — o mesmo gate de `UploadTokensPage`, espelhando o
@@ -14,7 +16,7 @@ export function BrandSettingsPage() {
   if (me.role !== 'admin') {
     return (
       <p role="alert" style={{ color: '#b00020' }}>
-        Access denied — this area is admin-only.
+        {t('common.accessDenied')}
       </p>
     );
   }

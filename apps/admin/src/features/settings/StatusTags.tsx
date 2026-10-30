@@ -11,6 +11,7 @@ import { RowActionsMenu } from '@/components/RowActionsMenu';
 import { StatusTagPill } from '@/components/StatusTagPill';
 import { createLinkClass } from '@/lib/styles';
 import { cn } from '@/lib/utils';
+import { useT } from '../../i18n/AdminLocale.js';
 
 type StatusTagRow = RouterOutput['statusTags']['list'][number];
 
@@ -24,24 +25,36 @@ const DEFAULT_NEW_COLOR = '#64748b';
  */
 export function StatusTags() {
   const trpc = useTRPC();
+  const t = useT();
   const tags = useQuery(trpc.statusTags.list.queryOptions());
   const invalidate = () => queryClient.invalidateQueries(trpc.statusTags.list.queryFilter());
 
-  const update = useMutation(trpc.statusTags.update.mutationOptions({ onSuccess: invalidate }));
-  const reorder = useMutation(trpc.statusTags.reorder.mutationOptions({ onSuccess: invalidate }));
+  const update = useMutation(
+    trpc.statusTags.update.mutationOptions({
+      onSuccess: invalidate,
+      onError: () => toast.error(t('statusTags.saveFailed')),
+    }),
+  );
+  const reorder = useMutation(
+    trpc.statusTags.reorder.mutationOptions({
+      onSuccess: invalidate,
+      onError: () => toast.error(t('statusTags.saveFailed')),
+    }),
+  );
   const remove = useMutation(
     trpc.statusTags.delete.mutationOptions({
       onSuccess: () => {
         invalidate();
-        toast.success('Status tag deleted.');
+        toast.success(t('statusTags.deleted'));
       },
+      onError: () => toast.error(t('statusTags.deleteFailed')),
     }),
   );
 
   const list = tags.data ?? [];
 
   function move(index: number, delta: -1 | 1) {
-    const ids = list.map((t) => t.id);
+    const ids = list.map((tag) => tag.id);
     const [id] = ids.splice(index, 1);
     ids.splice(index + delta, 0, id!);
     reorder.mutate({ orderedIds: ids });
@@ -50,25 +63,24 @@ export function StatusTags() {
   return (
     <section className="grid gap-6">
       <div className="grid gap-1">
-        <h1 className="text-2xl font-semibold">Status tags</h1>
+        <h1 className="text-2xl font-semibold">{t('statusTags.title')}</h1>
         <p className="text-muted-foreground text-sm">
-          Rótulos de status atribuíveis a cada página (ex.: To do, In progress, Deprecated, Beta).
-          Substituem o antigo selo automático de rascunho/publicado.
+          {t('statusTags.description')}
         </p>
       </div>
 
       <CreateTagForm
         onCreated={() => {
           void invalidate();
-          toast.success('Status tag created.');
+          toast.success(t('statusTags.created'));
         }}
       />
 
       <Card>
         <CardContent className="pt-6">
-          {tags.isPending && <p className="text-muted-foreground">Loading tags…</p>}
+          {tags.isPending && <p className="text-muted-foreground">{t('statusTags.loading')}</p>}
           {tags.data?.length === 0 && (
-            <p className="text-muted-foreground">No status tags yet.</p>
+            <p className="text-muted-foreground">{t('statusTags.empty')}</p>
           )}
           <ul className="grid gap-1">
             {list.map((tag, i) => (
@@ -81,9 +93,7 @@ export function StatusTags() {
                 onMoveDown={i < list.length - 1 ? () => move(i, 1) : undefined}
                 onDelete={() => {
                   if (
-                    window.confirm(
-                      `Delete the tag "${tag.titulo}"? Pages using it will have no status.`,
-                    )
+                    window.confirm(t('statusTags.deleteConfirm', { name: tag.titulo }))
                   ) {
                     remove.mutate({ id: tag.id });
                   }
@@ -112,6 +122,7 @@ function StatusTagRowItem({
   onMoveDown?: () => void;
   onDelete: () => void;
 }) {
+  const t = useT();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(tag.titulo);
 
@@ -128,7 +139,7 @@ function StatusTagRowItem({
           type="color"
           value={tag.cor}
           onChange={(e) => onRecolor(e.target.value)}
-          aria-label={`Color for tag ${tag.titulo}`}
+          aria-label={t('statusTags.colorFor', { name: tag.titulo })}
           className="absolute inset-0 cursor-pointer opacity-0"
         />
       </label>
@@ -146,15 +157,15 @@ function StatusTagRowItem({
             autoFocus
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            aria-label={`New title for tag ${tag.titulo}`}
+            aria-label={t('statusTags.renameTag', { name: tag.titulo })}
             className="h-8 max-w-xs"
           />
-          <button type="submit" aria-label="Save" className="text-muted-foreground hover:text-foreground p-1">
+          <button type="submit" aria-label={t('common.save')} className="text-muted-foreground hover:text-foreground p-1">
             <Check className="size-3.5" />
           </button>
           <button
             type="button"
-            aria-label="Cancel"
+            aria-label={t('common.cancel')}
             className="text-muted-foreground hover:text-foreground p-1"
             onClick={() => setEditing(false)}
           >
@@ -165,7 +176,7 @@ function StatusTagRowItem({
         <>
           <StatusTagPill titulo={tag.titulo} cor={tag.cor} />
           <RowActionsMenu
-            triggerLabel={`More actions for tag ${tag.titulo}`}
+            triggerLabel={t('statusTags.tagActions', { name: tag.titulo })}
             onRename={() => {
               setDraft(tag.titulo);
               setEditing(true);
@@ -183,6 +194,7 @@ function StatusTagRowItem({
 
 function CreateTagForm({ onCreated }: { onCreated: () => void }) {
   const trpc = useTRPC();
+  const t = useT();
   const [titulo, setTitulo] = useState('');
   const [cor, setCor] = useState(DEFAULT_NEW_COLOR);
   const create = useMutation(
@@ -192,6 +204,7 @@ function CreateTagForm({ onCreated }: { onCreated: () => void }) {
         setCor(DEFAULT_NEW_COLOR);
         onCreated();
       },
+      onError: () => toast.error(t('statusTags.saveFailed')),
     }),
   );
 
@@ -203,28 +216,28 @@ function CreateTagForm({ onCreated }: { onCreated: () => void }) {
   return (
     <form onSubmit={submit} className="flex flex-wrap items-end gap-3">
       <div className="grid gap-2">
-        <Label htmlFor="new-tag-color">Color</Label>
+        <Label htmlFor="new-tag-color">{t('statusTags.color')}</Label>
         <input
           id="new-tag-color"
           type="color"
           value={cor}
           onChange={(e) => setCor(e.target.value)}
-          aria-label="New tag color"
+          aria-label={t('statusTags.newColor')}
           className="h-9 w-12 cursor-pointer rounded-editorial-sm border border-input bg-transparent"
         />
       </div>
       <div className="grid flex-1 gap-2" style={{ maxWidth: 320 }}>
-        <Label htmlFor="new-tag-title">New status tag</Label>
+        <Label htmlFor="new-tag-title">{t('statusTags.new')}</Label>
         <Input
           id="new-tag-title"
           value={titulo}
           onChange={(e) => setTitulo(e.target.value)}
-          placeholder="ex.: Needs review"
+          placeholder={t('statusTags.placeholder')}
         />
       </div>
       <Button type="submit" disabled={create.isPending || !titulo.trim()} className={cn('shrink-0')}>
         <Plus className="size-4" />
-        Add
+        {t('statusTags.add')}
       </Button>
     </form>
   );

@@ -10,26 +10,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { nativeSelectClass } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useT } from '../../i18n/AdminLocale.js';
+import type { AdminMessageKey } from '../../i18n/messages/en.js';
+import { formatRich } from '@systembook/docs-site';
 
 type TokenRow = RouterOutput['uploadTokens']['list'][number];
 type TokenScope = TokenRow['escopo'];
 
 
 /** Rótulo e efeito da revogação de cada escopo (SYS-110). */
-const SCOPES: Record<TokenScope, { label: string; revokeEffect: string }> = {
-  previews: {
-    label: 'Preview upload (CI)',
-    revokeEffect: 'The CI using it will no longer be able to publish previews.',
-  },
-  migration: {
-    label: 'Migration (export/import)',
-    revokeEffect: 'The CLI using it will no longer be able to export or import content.',
-  },
-  tokens: {
-    label: 'Design tokens upload (CI)',
-    revokeEffect: 'The CI using it will no longer be able to publish design tokens.',
-  },
-};
+const SCOPES = {
+  previews: { label: 'uploadTokens.scope.previews', revokeEffect: 'uploadTokens.revokeEffect.previews' },
+  migration: { label: 'uploadTokens.scope.migration', revokeEffect: 'uploadTokens.revokeEffect.migration' },
+  tokens: { label: 'uploadTokens.scope.tokens', revokeEffect: 'uploadTokens.revokeEffect.tokens' },
+} as const satisfies Record<TokenScope, { label: AdminMessageKey; revokeEffect: AdminMessageKey }>;
 
 /**
  * Gestão de tokens de upload de CI (TASK-44). O token em claro só existe na
@@ -40,6 +34,7 @@ const SCOPES: Record<TokenScope, { label: string; revokeEffect: string }> = {
  */
 export function UploadTokens() {
   const trpc = useTRPC();
+  const t = useT();
   const tokens = useQuery(trpc.uploadTokens.list.queryOptions());
   const [revealed, setRevealed] = useState<{ label: string; token: string } | null>(null);
 
@@ -49,23 +44,26 @@ export function UploadTokens() {
     trpc.uploadTokens.revoke.mutationOptions({
       onSuccess: () => {
         invalidate();
-        toast.success('Token revoked.');
+        toast.success(t('uploadTokens.revoked'));
       },
+      onError: () => toast.error(t('uploadTokens.revokeFailed')),
     }),
   );
 
   return (
     <section className="grid gap-6">
       <div className="grid gap-1">
-        <h1 className="text-2xl font-semibold">Upload tokens</h1>
+        <h1 className="text-2xl font-semibold">{t('uploadTokens.title')}</h1>
         <p className="text-muted-foreground text-sm">
-          Each token does one thing. <strong>Preview upload</strong> tokens authenticate the team CI
-          when uploading preview artifacts (<code>POST /api/previews</code>).{' '}
-          <strong>Design tokens upload</strong> tokens let the CI publish the design tokens with{' '}
-          <code>systembook tokens</code> (<code>POST /api/tokens</code>).{' '}
-          <strong>Migration</strong> tokens let the <code>systembook</code> CLI export this instance
-          to files or import files into it — they read and write all content, so keep them out of
-          CI. Revoke any token that leaks.
+          {formatRich(t('uploadTokens.intro'), {
+            previews: <strong>{t('uploadTokens.intro.previews')}</strong>,
+            previewsEndpoint: <code>POST /api/previews</code>,
+            tokens: <strong>{t('uploadTokens.intro.tokens')}</strong>,
+            tokensCommand: <code>systembook tokens</code>,
+            tokensEndpoint: <code>POST /api/tokens</code>,
+            migration: <strong>{t('uploadTokens.intro.migration')}</strong>,
+            cli: <code>systembook</code>,
+          })}
         </p>
       </div>
 
@@ -81,7 +79,7 @@ export function UploadTokens() {
         onCreated={(created) => {
           setRevealed(created);
           void invalidate();
-          toast.success('Token generated — copy it now.');
+          toast.success(t('uploadTokens.generated'));
         }}
       />
 
@@ -90,11 +88,11 @@ export function UploadTokens() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Label</TableHead>
-                <TableHead>Scope</TableHead>
-                <TableHead>Created at</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead>{t('uploadTokens.label')}</TableHead>
+                <TableHead>{t('uploadTokens.scopeColumn')}</TableHead>
+                <TableHead>{t('uploadTokens.createdAt')}</TableHead>
+                <TableHead>{t('uploadTokens.status')}</TableHead>
+                <TableHead>{t('uploadTokens.actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -105,7 +103,10 @@ export function UploadTokens() {
                   onRevoke={() => {
                     if (
                       window.confirm(
-                        `Revoke the token "${token.label}"? ${SCOPES[token.escopo].revokeEffect}`,
+                        t('uploadTokens.revokeConfirm', {
+                          name: token.label,
+                          effect: t(SCOPES[token.escopo].revokeEffect),
+                        }),
                       )
                     ) {
                       revoke.mutate({ tokenId: token.id });
@@ -115,9 +116,9 @@ export function UploadTokens() {
               ))}
             </TableBody>
           </Table>
-          {tokens.isPending && <p className="text-muted-foreground mt-2">Loading tokens…</p>}
+          {tokens.isPending && <p className="text-muted-foreground mt-2">{t('uploadTokens.loading')}</p>}
           {tokens.data?.length === 0 && (
-            <p className="text-muted-foreground mt-2">No tokens generated yet.</p>
+            <p className="text-muted-foreground mt-2">{t('uploadTokens.empty')}</p>
           )}
         </CardContent>
       </Card>
@@ -128,24 +129,25 @@ export function UploadTokens() {
 function TokenTableRow({ token, onRevoke }: { token: TokenRow; onRevoke: () => void }) {
   const revogado = token.revogadoEm != null;
   const dates = useDateFormat();
+  const t = useT();
   return (
     <TableRow className={revogado ? 'opacity-60' : undefined}>
       <TableCell>{token.label}</TableCell>
-      <TableCell>{SCOPES[token.escopo].label}</TableCell>
+      <TableCell>{t(SCOPES[token.escopo].label)}</TableCell>
       <TableCell>{dates.absolute(token.criadoEm)}</TableCell>
       <TableCell>
         {revogado ? (
           <Badge variant="secondary">
-            Revoked on {dates.absolute(token.revogadoEm!)}
+            {t('uploadTokens.revokedOn', { date: dates.absolute(token.revogadoEm!) })}
           </Badge>
         ) : (
-          <Badge>Active</Badge>
+          <Badge>{t('uploadTokens.active')}</Badge>
         )}
       </TableCell>
       <TableCell>
         {!revogado && (
           <Button type="button" size="sm" variant="outline" onClick={onRevoke}>
-            Revoke
+            {t('uploadTokens.revoke')}
           </Button>
         )}
       </TableCell>
@@ -162,6 +164,7 @@ function TokenReveal({
   token: string;
   onDismiss: () => void;
 }) {
+  const t = useT();
   const [copied, setCopied] = useState(false);
   return (
     <div
@@ -169,9 +172,9 @@ function TokenReveal({
       data-token-reveal
       className="grid gap-2 rounded-md border border-amber-300 bg-amber-50 p-4"
     >
-      <strong>Token &quot;{label}&quot; generated — copy it now.</strong>
+      <strong>{t('uploadTokens.revealTitle', { name: label })}</strong>
       <span className="text-sm">
-        This value <strong>will not be shown again</strong>: only the hash is stored.
+        {formatRich(t('uploadTokens.revealBody'), { never: <strong>{t('uploadTokens.revealNever')}</strong> })}
       </span>
       <code
         data-token-value
@@ -187,10 +190,10 @@ function TokenReveal({
             void navigator.clipboard.writeText(token).then(() => setCopied(true));
           }}
         >
-          {copied ? 'Copied ✓' : 'Copy'}
+          {copied ? t('uploadTokens.copied') : t('uploadTokens.copy')}
         </Button>
         <Button type="button" size="sm" variant="ghost" onClick={onDismiss}>
-          Close
+          {t('common.close')}
         </Button>
       </div>
     </div>
@@ -199,6 +202,7 @@ function TokenReveal({
 
 function CreateTokenForm({ onCreated }: { onCreated: (r: { label: string; token: string }) => void }) {
   const trpc = useTRPC();
+  const t = useT();
   const [label, setLabel] = useState('');
   const [escopo, setEscopo] = useState<TokenScope>('previews');
   const create = useMutation(
@@ -207,6 +211,7 @@ function CreateTokenForm({ onCreated }: { onCreated: (r: { label: string; token:
         setLabel('');
         onCreated(created);
       },
+      onError: () => toast.error(t('uploadTokens.createFailed')),
     }),
   );
 
@@ -218,16 +223,16 @@ function CreateTokenForm({ onCreated }: { onCreated: (r: { label: string; token:
   return (
     <form onSubmit={submit} className="flex flex-wrap items-end gap-2">
       <div className="grid flex-1 gap-2" style={{ maxWidth: 360 }}>
-        <Label htmlFor="token-label">New token</Label>
+        <Label htmlFor="token-label">{t('uploadTokens.new')}</Label>
         <Input
           id="token-label"
           value={label}
           onChange={(event) => setLabel(event.target.value)}
-          placeholder="e.g. design system GitHub Actions"
+          placeholder={t('uploadTokens.placeholder')}
         />
       </div>
       <div className="grid gap-2">
-        <Label htmlFor="token-scope">Scope</Label>
+        <Label htmlFor="token-scope">{t('uploadTokens.scopeColumn')}</Label>
         <select
           id="token-scope"
           className={nativeSelectClass}
@@ -236,13 +241,13 @@ function CreateTokenForm({ onCreated }: { onCreated: (r: { label: string; token:
         >
           {(Object.keys(SCOPES) as TokenScope[]).map((scope) => (
             <option key={scope} value={scope}>
-              {SCOPES[scope].label}
+              {t(SCOPES[scope].label)}
             </option>
           ))}
         </select>
       </div>
       <Button type="submit" disabled={create.isPending || !label.trim()}>
-        Generate token
+        {t('uploadTokens.generate')}
       </Button>
     </form>
   );

@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { useTRPC } from '../lib/trpc.js';
 import { ContentEditor, type ContentEditorHandle } from '../features/editor/ContentEditor.js';
 import { Button } from '@/components/ui/button';
+import { useT } from '../i18n/AdminLocale.js';
 
 /**
  * Edição da página inicial da doc pública (TASK-56). Reusa o `ContentEditor`
@@ -14,18 +15,19 @@ import { Button } from '@/components/ui/button';
  */
 export function LandingPageSettingsPage() {
   const trpc = useTRPC();
+  const t = useT();
   const target = useQuery(trpc.landing.getEditorTarget.queryOptions());
 
   const editorRef = useRef<ContentEditorHandle>(null);
   const publish = useMutation(
     trpc.pages.publish.mutationOptions({
-      onSuccess: () => toast.success('Landing page published.'),
-      onError: () => toast.error('Failed to publish. Try again.'),
+      onSuccess: () => toast.success(t('landing.published')),
+      onError: () => toast.error(t('page.publishFailed')),
     }),
   );
 
-  if (target.isPending) return <p className="text-muted-foreground">Loading…</p>;
-  if (!target.data) return <p role="alert" className="text-destructive">Could not load the landing page.</p>;
+  if (target.isPending) return <p className="text-muted-foreground">{t('common.loading')}</p>;
+  if (!target.data) return <p role="alert" className="text-destructive">{t('landing.loadFailed')}</p>;
 
   const { pageId, tabId } = target.data;
 
@@ -37,14 +39,13 @@ export function LandingPageSettingsPage() {
   return (
     <section>
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Landing page</h1>
+        <h1 className="text-2xl font-semibold">{t('landing.title')}</h1>
         <Button type="button" onClick={handlePublish} disabled={publish.isPending}>
-          {publish.isPending ? 'Publishing…' : 'Publish'}
+          {publish.isPending ? t('page.publishing') : t('page.publish')}
         </Button>
       </div>
       <p className="text-muted-foreground mt-1 mb-4 text-sm">
-        This is the content shown at the root of the public documentation. Publish so visitors
-        see the new version.
+        {t('landing.description')}
       </p>
       <ContentEditor key={tabId} ref={editorRef} tabId={tabId} />
     </section>

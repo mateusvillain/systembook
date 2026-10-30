@@ -12,6 +12,8 @@ import { cn } from '@/lib/utils';
 // Conteúdo primeiro: `.sb-diff-block` (editor.css) precisa vencer na cascata.
 import '@systembook/docs-site/content.css';
 import '../editor/editor.css';
+import { useT } from '../../i18n/AdminLocale.js';
+import type { AdminMessageKey } from '../../i18n/messages/en.js';
 
 type Diff = RouterOutput['revisions']['diff'];
 type BlockDiff = Diff['tabs'][number]['blocks'][number];
@@ -57,14 +59,15 @@ export function RevisionDiffView({
   onClear: () => void;
 }) {
   const trpc = useTRPC();
+  const t = useT();
   const [showUnchanged, setShowUnchanged] = useState(false);
   const query = useQuery(trpc.revisions.diff.queryOptions({ fromRevisionId, toRevisionId }));
 
-  if (query.isPending) return <p className="text-muted-foreground">Comparing revisions…</p>;
+  if (query.isPending) return <p className="text-muted-foreground">{t('diff.loading')}</p>;
   if (query.isError)
     return (
       <p role="alert" className="text-destructive">
-        Failed to compare the revisions.
+        {t('diff.loadFailed')}
       </p>
     );
 
@@ -76,31 +79,30 @@ export function RevisionDiffView({
     <div className="grid gap-5">
       <header className="grid gap-3">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-          <h2 className={cn(adminTypography.body, 'font-semibold')}>Comparing revisions</h2>
+          <h2 className={cn(adminTypography.body, 'font-semibold')}>{t('diff.title')}</h2>
           {/* As duas ações da comparação ficam na mesma linha do título dela:
               trocar o sentido e sair são decisões sobre *este* painel. */}
           <Button type="button" variant="ghost" size="sm" onClick={onSwap}>
             <ArrowLeftRight className="size-4" aria-hidden />
-            Swap direction
+            {t('diff.swap')}
           </Button>
           <Button type="button" variant="ghost" size="sm" onClick={onClear}>
             <X className="size-4" aria-hidden />
-            Clear comparison
+            {t('diff.clear')}
           </Button>
         </div>
 
         {/* Quem é o "antes" e quem é o "depois" é a informação que decide a
             leitura do resto da tela — vem antes dos números, não numa legenda. */}
         <p className={cn(adminTypography.metadata, 'flex flex-wrap items-center gap-2')}>
-          <RevisionLabel label="From" revision={diff.from} />
+          <RevisionLabel label={t('diff.from')} revision={diff.from} />
           <span aria-hidden>→</span>
-          <RevisionLabel label="To" revision={diff.to} />
+          <RevisionLabel label={t('diff.to')} revision={diff.to} />
         </p>
 
         {changedTotal === 0 ? (
           <p className="text-muted-foreground text-sm">
-            These two revisions have identical content ({counts.unchanged}{' '}
-            {counts.unchanged === 1 ? 'block' : 'blocks'}).
+            {t('diff.identical', { count: counts.unchanged })}
           </p>
         ) : (
           <div className="flex flex-wrap items-center gap-2">
@@ -115,7 +117,7 @@ export function RevisionDiffView({
                 aria-pressed={showUnchanged}
                 onClick={() => setShowUnchanged((v) => !v)}
               >
-                {showUnchanged ? 'Hide' : 'Show'} {counts.unchanged} unchanged
+                {t(showUnchanged ? 'diff.hideUnchanged' : 'diff.showUnchanged', { count: counts.unchanged })}
               </Button>
             )}
           </div>
@@ -131,9 +133,9 @@ export function RevisionDiffView({
         return (
           <section key={tab.tabId} className="grid gap-3">
             <h3 className="flex items-center gap-2 text-sm font-semibold">
-              {tab.isPrimary ? `Page body (${bodyViewLabel(tab.titulo)})` : tab.titulo}
-              {tab.status === 'added' && <StatusPill status="added" label="Tab added" />}
-              {tab.status === 'removed' && <StatusPill status="removed" label="Tab removed" />}
+              {tab.isPrimary ? t('diff.pageBody', { name: bodyViewLabel(tab.titulo, t('page.overview')) }) : tab.titulo}
+              {tab.status === 'added' && <StatusPill status="added" label={t('diff.tabAdded')} />}
+              {tab.status === 'removed' && <StatusPill status="removed" label={t('diff.tabRemoved')} />}
             </h3>
 
             <ol className="grid list-none gap-3 p-0">
@@ -158,13 +160,14 @@ function RevisionLabel({
   revision: Diff['from'] | Diff['to'];
 }) {
   const dates = useDateFormat();
+  const t = useT();
   return (
     <span className="inline-flex items-center gap-1.5">
       <span className="text-muted-foreground/70 uppercase tracking-[0.12em] text-[0.7rem]">{label}</span>
       <time dateTime={new Date(revision.criadoEm).toISOString()} className="text-foreground">
         {dates.absolute(revision.criadoEm)}
       </time>
-      <span>· {revision.autorEmail ?? 'Removed author'}</span>
+      <span>· {revision.autorEmail ?? t('revisions.removedAuthor')}</span>
     </span>
   );
 }
@@ -176,22 +179,25 @@ function RevisionLabel({
  */
 const STATUS_STYLE: Record<
   Exclude<Status, 'unchanged'>,
-  { label: string; icon: typeof Plus; chip: string; rail: string }
+  { label: AdminMessageKey; count: AdminMessageKey; icon: typeof Plus; chip: string; rail: string }
 > = {
   added: {
-    label: 'Added',
+    label: 'diff.added',
+    count: 'diff.countAdded',
     icon: Plus,
     chip: 'border-emerald-600/30 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300',
     rail: 'border-l-emerald-600/70',
   },
   removed: {
-    label: 'Removed',
+    label: 'diff.removed',
+    count: 'diff.countRemoved',
     icon: Minus,
     chip: 'border-rose-600/30 bg-rose-50 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300',
     rail: 'border-l-rose-600/70',
   },
   changed: {
-    label: 'Changed',
+    label: 'diff.changed',
+    count: 'diff.countChanged',
     icon: PenLine,
     chip: 'border-amber-600/30 bg-amber-50 text-amber-900 dark:bg-amber-950/40 dark:text-amber-300',
     rail: 'border-l-amber-500/80',
@@ -199,6 +205,7 @@ const STATUS_STYLE: Record<
 };
 
 function StatusPill({ status, label }: { status: Exclude<Status, 'unchanged'>; label?: string }) {
+  const t = useT();
   const style = STATUS_STYLE[status];
   const Icon = style.icon;
   return (
@@ -209,7 +216,7 @@ function StatusPill({ status, label }: { status: Exclude<Status, 'unchanged'>; l
       )}
     >
       <Icon className="size-3" aria-hidden />
-      {label ?? style.label}
+      {label ?? t(style.label)}
     </span>
   );
 }
@@ -218,6 +225,7 @@ function CountChip({ status, count }: { status: Exclude<Status, 'unchanged'>; co
   // Zero também aparece, em cinza: "nenhuma remoção" é informação, e um resumo
   // que muda de tamanho conforme o resultado é mais difícil de comparar entre
   // duas comparações seguidas.
+  const t = useT();
   const style = STATUS_STYLE[status];
   const Icon = style.icon;
   return (
@@ -228,12 +236,13 @@ function CountChip({ status, count }: { status: Exclude<Status, 'unchanged'>; co
       )}
     >
       <Icon className="size-3.5" aria-hidden />
-      {count} {style.label.toLowerCase()}
+      {t(style.count, { count })}
     </span>
   );
 }
 
 function BlockDiffCard({ diff }: { diff: BlockDiff }) {
+  const t = useT();
   if (diff.status === 'unchanged') {
     return (
       <div className="border-border rounded-md border border-l-4 px-4 py-3">
@@ -252,8 +261,8 @@ function BlockDiffCard({ diff }: { diff: BlockDiff }) {
 
       {diff.status === 'changed' ? (
         <div className="grid gap-3">
-          <BeforeAfter label="Before" block={diff.before} muted />
-          <BeforeAfter label="After" block={diff.after} />
+          <BeforeAfter label={t('diff.before')} block={diff.before} muted />
+          <BeforeAfter label={t('diff.after')} block={diff.after} />
         </div>
       ) : (
         <BlockContent block={diff.status === 'removed' ? diff.before : diff.after} muted={diff.status === 'removed'} />
@@ -289,6 +298,7 @@ function BeforeAfter({
  * opacidade só sugere.
  */
 function BlockContent({ block, muted }: { block: DiffBlock | null; muted?: boolean }) {
+  const t = useT();
   const editor = useEditor(
     {
       extensions: contentExtensions,
@@ -298,7 +308,7 @@ function BlockContent({ block, muted }: { block: DiffBlock | null; muted?: boole
     [block],
   );
 
-  if (!block) return <p className="text-muted-foreground text-sm">(empty)</p>;
+  if (!block) return <p className="text-muted-foreground text-sm">{t('diff.empty')}</p>;
 
   return (
     <div className={cn('sb-editor sb-diff-block', muted && 'opacity-60')}>

@@ -1,5 +1,6 @@
 import { ActivityFeed } from '../features/revisions/ActivityFeed.js';
 import { adminTypography } from '@/lib/typography';
+import { useT } from '../i18n/AdminLocale.js';
 
 /**
  * Tela de atividade do painel (SYS-70): a visão de "o que mudou recentemente
@@ -10,12 +11,13 @@ import { adminTypography } from '@/lib/typography';
  * superfícies de revisão em `features/revisions/`.
  */
 export function GlobalHistoryPage() {
+  const t = useT();
   return (
     <section className="grid gap-6">
       <div className="grid gap-1">
-        <h1 className={adminTypography.title}>Activity</h1>
+        <h1 className={adminTypography.title}>{t('activity.title')}</h1>
         <p className={adminTypography.description}>
-          Recent publishes and restores across every page.
+          {t('activity.description')}
         </p>
       </div>
       <ActivityFeed />
