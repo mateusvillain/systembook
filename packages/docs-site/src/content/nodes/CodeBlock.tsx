@@ -136,10 +136,16 @@ type CopyState = 'idle' | 'copied' | 'manual' | 'select';
  * `title` é curto de propósito: o tooltip repete o rótulo, enquanto o
  * `ariaLabel` carrega a instrução inteira para quem depende dele.
  */
-const COPY_LABELS: Record<
-  CopyState,
-  { short: DocsMessageKey; icon: LucideIcon; title: DocsMessageKey; ariaLabel: DocsMessageKey; announce: DocsMessageKey | null }
-> = {
+interface CopyLabels {
+  short: DocsMessageKey;
+  icon: LucideIcon;
+  title: DocsMessageKey;
+  ariaLabel: DocsMessageKey;
+  /** O que a região viva anuncia; `null` em repouso. */
+  announce: DocsMessageKey | null;
+}
+
+const COPY_LABELS: Record<CopyState, CopyLabels> = {
   idle: { short: 'code.copy', icon: Copy, title: 'code.copyTitle', ariaLabel: 'code.copyTitle', announce: null },
   copied: {
     short: 'code.copied',

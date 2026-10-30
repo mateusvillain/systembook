@@ -82,6 +82,7 @@ const blocks: PageSnapshot = {
         { id: 'tv', tabId: 'blocos', type: 'token-table', ordem: 1, content: { group: 'nada' } },
         { id: 'e1', tabId: 'blocos', type: 'component-embed', ordem: 2, content: { componentName: '', variantId: null } },
         { id: 'e2', tabId: 'blocos', type: 'component-embed', ordem: 3, content: { componentName: 'Botao', variantId: 'primario' } },
+        { id: 'e3', tabId: 'blocos', type: 'component-embed', ordem: 5, content: { componentName: 'Cartao', variantId: 'padrao' } },
         {
           id: 'dd',
           tabId: 'blocos',
@@ -163,7 +164,18 @@ const dataSource: DocsDataSource = {
           },
         ]
       : [],
-  getComponentPreview: async () => null,
+  // Só o `Cartao` tem preview publicado (com controles); o resto fica no estado vazio.
+  getComponentPreview: async ({ componentName }) =>
+    componentName === 'Cartao'
+      ? {
+          url: 'about:blank',
+          config: {
+            component: 'Cartao',
+            variants: [{ id: 'padrao', props: {} }],
+            controls: [{ kind: 'text', propName: 'titulo', label: 'Título' }],
+          },
+        }
+      : null,
   getTokens: async () => TOKENS,
 };
 
@@ -383,13 +395,29 @@ describe('doc pública em pt-BR (SYS-167, SYS-168)', () => {
     await until(() => $('.sb-tokens'));
     const embeds = await until(() => {
       const all = [...container.querySelectorAll<HTMLElement>('.sb-component-embed')];
-      return all.length === 2 && all[1]!.dataset.previewState === 'empty' ? all : null;
+      return all.length === 3 && all[1]!.dataset.previewState === 'empty' ? all : null;
     });
     expect(embeds[0]!.textContent).toContain('Nenhum componente selecionado');
     expect(embeds[1]!.textContent).toBe('Nenhuma prévia publicada para Botao / primario ainda.');
     expect(container.querySelector('[data-group=nada]')?.textContent).toBe('Nenhum token no grupo nada.');
     const cover = await until(() => container.querySelector<HTMLElement>('.sb-dos-donts-cover-embed[data-preview-state=empty]'));
     expect(cover.textContent).toBe('Nenhuma prévia publicada para Botao / primario ainda.');
+    expect($('.sb-dos-donts-icon')?.textContent).toBe('Faça');
+
+    // Exemplo ao vivo: título do iframe, painel de controles e modo dos tokens.
+    const live = await until(() => $('.sb-component-embed--live'));
+    expect(live.querySelector('iframe')?.getAttribute('title')).toBe('Prévia de Cartao (padrao)');
+    expect(live.querySelector('[data-testid=controls-toggle]')?.textContent?.trim()).toBe('Controles (1)');
+    expect(live.querySelector('[data-testid=preview-mode]')?.getAttribute('aria-label')).toBe('Modo dos tokens');
+    await act(async () => live.querySelector<HTMLElement>('[data-testid=controls-toggle]')!.click());
+    expect(live.querySelector('.sb-controls-fields')?.getAttribute('aria-label')).toBe('Controles da prévia');
+    expectNoEnglish();
+  });
+
+  it('bloco de tokens sem nenhum token publicado', async () => {
+    await renderAt('/docs/fundamentos/cor/blocos', { ...dataSource, getTokens: async () => null });
+    const none = await until(() => container.querySelector<HTMLElement>('[data-group=""] [role=note]'));
+    expect(none.textContent).toBe('Nenhum design token publicado ainda.');
     expectNoEnglish();
   });
 });

@@ -7,6 +7,7 @@ import { ControlsPanel } from '../ControlsPanel.js';
 import { PreviewModeToggle, usePreviewTokens } from '../previewTokens.js';
 import { useMessages } from '../../i18n/UiLocale.js';
 import { formatRich } from '../../i18n/rich.js';
+import { EmbedNotPublished } from './DosDontsCover.js';
 
 /**
  * Slot de preview de componente. O nó atômico (TASK-29) reserva
@@ -149,13 +150,7 @@ function ComponentEmbedView({ node, updateAttributes, editor, extension }: NodeV
       >
         <TriangleAlert aria-hidden size={19} />
         <span className="sb-component-embed-message">
-          {formatRich(t('embed.notPublished'), {
-            component: (
-              <strong>
-                {componentName} / {variantId}
-              </strong>
-            ),
-          })}
+          <EmbedNotPublished componentName={componentName} variantId={variantId} />
           {editor.isEditable && ` ${t('embed.publishHint')}`}
         </span>
         {control}

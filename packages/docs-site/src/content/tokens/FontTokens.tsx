@@ -3,12 +3,6 @@ import type { TokenType } from '@systembook/schema';
 import { TokenTable, type TokenTableProps } from './TokenTable.js';
 import { useMessages } from '../../i18n/UiLocale.js';
 
-/**
- * Texto da amostra: ascendentes, descendentes e as letras que mais mudam entre
- * fontes, longo o bastante para quebrar em duas linhas — e a altura de linha
- * aparecer. O specimen da tipografia composta usa o mesmo.
- */
-
 /** A propriedade que a amostra aplica, por tipo. */
 const SAMPLE_STYLE: Partial<Record<TokenType, (css: string) => CSSProperties>> = {
   fontFamily: (css) => ({ fontFamily: css }),

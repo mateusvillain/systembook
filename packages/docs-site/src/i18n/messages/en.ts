@@ -101,6 +101,10 @@ export const en = {
   'embed.controlsLabel': 'Preview controls',
   'embed.tokenMode': 'Token mode',
 
+  // Do's & don'ts: o tipo do bloco para leitor de tela (o ícone é decorativo)
+  'dosDonts.do': 'Do',
+  'dosDonts.dont': "Don't",
+
   // Bloco de tabela de tokens. `{group}` é o caminho do grupo em código.
   'tokenBlock.loading': 'Loading tokens…',
   'tokenBlock.all': 'All tokens',
@@ -117,6 +121,8 @@ export const en = {
   'tokens.tableLabel': '{label} ({kinds})',
   'tokens.colorScales': 'color scales',
   'tokens.play': 'Play {name}',
+  // Amostra de fonte: ascendentes, descendentes e as letras que mais mudam entre
+  // fontes, longa o bastante para quebrar em duas linhas (e a altura de linha aparecer).
   'tokens.typeSample': 'The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.',
   'tokens.fontFamily': 'Family',
   'tokens.fontSize': 'Size',
@@ -124,7 +130,9 @@ export const en = {
   'tokens.letterSpacing': 'Letter spacing',
   'tokens.lineHeight': 'Line height',
 
-  // Copiar o nome de um token. `{name}` é o formato ("CSS variable"), `{value}` o texto copiado.
+  // Copiar o nome de um token. `{name}` é o formato ("CSS variable"), `{value}` o
+  // texto copiado. O `{name}` só aparece dentro destas frases, e cada idioma o
+  // escreve como a frase pede (o pt-BR leva artigo: "a variável CSS").
   'tokens.copyCss': 'CSS',
   'tokens.copyCssName': 'CSS variable',
   'tokens.copyJs': 'JS',

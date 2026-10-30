@@ -18,6 +18,18 @@ import { formatRich } from '../../i18n/rich.js';
  * principal da página.
  */
 
+/** "Nenhuma prévia publicada para **Botão / primário** ainda." — exemplo e capa. */
+export function EmbedNotPublished({ componentName, variantId }: { componentName: string; variantId: string | null }) {
+  const t = useMessages();
+  return formatRich(t('embed.notPublished'), {
+    component: (
+      <strong>
+        {componentName} / {variantId}
+      </strong>
+    ),
+  });
+}
+
 export function EmbedCoverPreview({
   componentName,
   variantId,
@@ -48,13 +60,7 @@ export function EmbedCoverPreview({
   if (previewQuery.isError || !previewQuery.data) {
     return (
       <div className="sb-dos-donts-cover-embed" data-preview-state="empty">
-        {formatRich(t('embed.notPublished'), {
-          component: (
-            <strong>
-              {componentName} / {variantId}
-            </strong>
-          ),
-        })}
+        <EmbedNotPublished componentName={componentName} variantId={variantId} />
       </div>
     );
   }

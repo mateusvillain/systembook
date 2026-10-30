@@ -86,6 +86,9 @@ export const ptBR: DocsMessages = {
   'embed.controlsLabel': 'Controles da prévia',
   'embed.tokenMode': 'Modo dos tokens',
 
+  'dosDonts.do': 'Faça',
+  'dosDonts.dont': 'Não faça',
+
   'tokenBlock.loading': 'Carregando tokens…',
   'tokenBlock.all': 'Todos os tokens',
   'tokenBlock.loadFailed': 'Não foi possível carregar os design tokens.',
@@ -116,6 +119,6 @@ export const ptBR: DocsMessages = {
   'tokens.copyCopied': 'Copiado',
   'tokens.copyFailed': 'Falhou',
   'tokens.copyLabel': '{state}: copiar {name} {value}',
-  'tokens.copyAnnounce': 'Copiado: {name} {value}',
+  'tokens.copyAnnounce': 'Copiou {name} {value}',
   'tokens.copyFailedAnnounce': 'Não foi possível copiar {name} — selecione {value} e copie',
 };

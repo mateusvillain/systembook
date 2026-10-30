@@ -11,11 +11,14 @@ describe('formatRich (SYS-168)', () => {
     expect(dom.container().innerHTML).toBe('<p>Prévia de <strong>Botão</strong> (primário)</p>');
   });
 
-  it('mantém variável sem nó e texto sem variável', () => {
+  it('mantém variável sem nó', () => {
     dom.render(<p>{formatRich('Olá, {name}!', {})}</p>);
     expect(dom.container().textContent).toBe('Olá, {name}!');
-    dom.render(<p>{formatRich('Sem nada', { x: <b>x</b> })}</p>);
-    expect(dom.container().textContent).toBe('Sem nada');
+  });
+
+  it('nó sem variável na mensagem entra no fim, sem sumir', () => {
+    dom.render(<p>{formatRich('Comece aqui.', { page: <a href="/x">Paleta</a> })}</p>);
+    expect(dom.container().innerHTML).toBe('<p>Comece aqui. <a href="/x">Paleta</a></p>');
   });
 
   it('ignora propriedades herdadas', () => {
