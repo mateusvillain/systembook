@@ -86,13 +86,15 @@ export function AdminLocaleProvider({
  * Rota sem caminho que envolve login e painel: a preferência vem do `auth.me`
  * (mesma query do `AdminLayout`); enquanto ele carrega ou sem sessão, vale o
  * navegador. A doc pública (`/docs`) fica de fora — ela tem o próprio idioma.
+ * `children` renderiza ao lado das rotas, no mesmo idioma (o `Toaster`).
  */
-export function AdminLocaleRoute() {
+export function AdminLocaleRoute({ children }: { children?: ReactNode }) {
   const trpc = useTRPC();
   const me = useQuery(trpc.auth.me.queryOptions());
   return (
     <AdminLocaleProvider preference={me.data?.idiomaInterface}>
       <Outlet />
+      {children}
     </AdminLocaleProvider>
   );
 }

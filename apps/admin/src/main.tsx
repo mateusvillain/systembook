@@ -28,7 +28,11 @@ const router = createBrowserRouter([
   { path: '/p/:pageId', element: <PublicPageById /> },
   {
     // Idioma do admin (SYS-175): envolve login e painel, não a doc pública.
-    element: <AdminLocaleRoute />,
+    element: (
+      <AdminLocaleRoute>
+        <Toaster />
+      </AdminLocaleRoute>
+    ),
     children: [
       { path: '/login', element: <LoginPage /> },
       {
@@ -68,7 +72,6 @@ createRoot(document.getElementById('root')!).render(
         <DocsDataSourceProvider dataSource={trpcDataSource}>
           <RouterProvider router={router} />
         </DocsDataSourceProvider>
-        <Toaster />
       </TRPCProvider>
     </QueryClientProvider>
   </StrictMode>,

@@ -6,6 +6,7 @@ import { SidebarTree } from '../features/navigation/SidebarTree.js';
 import { AppHeader, useActiveMenu } from '../features/navigation/AppHeader.js';
 import { AdminSearch, SidebarSearchTrigger } from '../features/navigation/AdminSearch.js';
 import { cn } from '@/lib/utils';
+import { useT } from '../i18n/AdminLocale.js';
 
 /** Abaixo deste ponto (px) a sidebar é drawer; acima, coluna recolhível/fixa. */
 const MOBILE_BREAKPOINT = 768;
@@ -31,6 +32,7 @@ export function AdminLayout() {
   const navigate = useNavigate();
   const me = useQuery(trpc.auth.me.queryOptions());
   const { activeMenuId, setActiveMenuId } = useActiveMenu();
+  const t = useT();
 
   // Estado único da sidebar responsiva (TASK-92): no tablet significa "coluna
   // expandida" (recolhível, em fluxo); no mobile, "drawer aberto" (overlay). No
@@ -76,7 +78,7 @@ export function AdminLayout() {
   );
 
   if (me.isPending) {
-    return <p className="p-8 text-muted-foreground">Loading…</p>;
+    return <p className="p-8 text-muted-foreground">{t('common.loading')}</p>;
   }
   if (!me.data) {
     return <Navigate to="/login" replace />;
@@ -167,12 +169,13 @@ function MobileMenuSwitcher({
   onSelect: (menuId: string) => void;
 }) {
   const trpc = useTRPC();
+  const t = useT();
   const menus = useQuery(trpc.menus.list.queryOptions()).data ?? [];
   // Com um único menu não há o que alternar — nada a mostrar.
   if (menus.length <= 1) return null;
 
   return (
-    <div className="mb-4 flex flex-wrap gap-1 border-b pb-4 md:hidden" aria-label="Menus">
+    <div className="mb-4 flex flex-wrap gap-1 border-b pb-4 md:hidden" aria-label={t('header.menus')}>
       {menus.map((menu) => (
         <button
           key={menu.id}

@@ -2,6 +2,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { FolderInput, Link2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { queryClient, useTRPC } from '../../lib/trpc.js';
+import { useT } from '../../i18n/AdminLocale.js';
 import {
   DropdownMenuItem,
   DropdownMenuSub,
@@ -48,6 +49,7 @@ export function CopyLinkItem({
   disabledReason?: string;
 }) {
   const disabled = !sectionSlug || !pageSlug;
+  const t = useT();
   return (
     <DropdownMenuItem
       disabled={disabled}
@@ -56,12 +58,12 @@ export function CopyLinkItem({
         if (disabled) return;
         void navigator.clipboard
           .writeText(publicPageUrl(menuSlug, sectionSlug, pageSlug))
-          .then(() => toast.success('Link copied'))
-          .catch(() => toast.error('Could not copy the link'));
+          .then(() => toast.success(t('common.linkCopied')))
+          .catch(() => toast.error(t('common.linkCopyFailed')));
       }}
     >
       <Link2 />
-      Copy link
+      {t('common.copyLink')}
     </DropdownMenuItem>
   );
 }
@@ -81,14 +83,15 @@ export function MoveToMenuSub({
   onMoved: () => void;
 }) {
   const trpc = useTRPC();
+  const t = useT();
   const menusQuery = useQuery(trpc.menus.list.queryOptions());
   const move = useMutation(
     trpc.pages.move.mutationOptions({
       onSuccess: () => {
         onMoved();
-        toast.success('Page moved');
+        toast.success(t('tree.pageMoved'));
       },
-      onError: () => toast.error('Could not move the page'),
+      onError: () => toast.error(t('tree.pageMoveFailed')),
     }),
   );
 
@@ -99,7 +102,7 @@ export function MoveToMenuSub({
     <DropdownMenuSub>
       <DropdownMenuSubTrigger>
         <FolderInput />
-        Move to another menu
+        {t('tree.moveToMenu')}
       </DropdownMenuSubTrigger>
       <DropdownMenuSubContent>
         {menus.map((menu) => (
@@ -129,6 +132,7 @@ function MenuSectionsSub({
   onPick: (sectionId: string) => void;
 }) {
   const trpc = useTRPC();
+  const t = useT();
   const sectionsQuery = useQuery(trpc.sections.listByMenu.queryOptions({ menuId }));
   // Omite a seção onde a página já está — mover para ela é no-op.
   const sections = (sectionsQuery.data ?? []).filter((s) => s.id !== currentSectionId);
@@ -138,10 +142,10 @@ function MenuSectionsSub({
       <DropdownMenuSubTrigger>{menuTitulo}</DropdownMenuSubTrigger>
       <DropdownMenuSubContent>
         {sectionsQuery.isPending && (
-          <DropdownMenuItem disabled>Loading…</DropdownMenuItem>
+          <DropdownMenuItem disabled>{t('common.loading')}</DropdownMenuItem>
         )}
         {!sectionsQuery.isPending && sections.length === 0 && (
-          <DropdownMenuItem disabled>No other section</DropdownMenuItem>
+          <DropdownMenuItem disabled>{t('tree.noOtherSection')}</DropdownMenuItem>
         )}
         {sections.map((section) => (
           <DropdownMenuItem key={section.id} onSelect={() => onPick(section.id)}>

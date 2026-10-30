@@ -29,6 +29,7 @@ import { RowActionsMenu } from '@/components/RowActionsMenu';
 import { DragHandle, useDragReorder, type DragHandleProps, type DragRowProps } from './dragReorder.js';
 import { CopyLinkItem } from './RowActionItems.js';
 import { LanguageSubmenu } from './LanguageSubmenu.js';
+import { useT } from '../../i18n/AdminLocale.js';
 import { createLinkClass } from '@/lib/styles';
 import { cn } from '@/lib/utils';
 
@@ -65,6 +66,7 @@ export function AppHeader({
   onToggleSidebar: () => void;
   sidebarOpen: boolean;
 }) {
+  const t = useT();
   return (
     <header className="bg-background fixed inset-x-0 top-0 z-40 h-16 border-b">
       <div className="mx-auto flex h-full max-w-[1440px] items-center gap-3 px-4 md:gap-6 md:px-6">
@@ -73,7 +75,7 @@ export function AppHeader({
         <button
           type="button"
           onClick={onToggleSidebar}
-          aria-label="Toggle navigation"
+          aria-label={t('header.toggleNavigation')}
           aria-expanded={sidebarOpen}
           aria-controls="admin-sidebar"
           className="text-muted-foreground hover:text-foreground hover:bg-accent inline-flex size-11 shrink-0 items-center justify-center rounded-editorial-sm lg:hidden"
@@ -122,6 +124,7 @@ function MenuNav({
   const reorder = useMutation(trpc.menus.reorder.mutationOptions({ onSuccess: invalidate }));
 
   const menuList = menusQuery.data ?? [];
+  const t = useT();
 
   const dnd = useDragReorder({
     items: menuList,
@@ -130,7 +133,7 @@ function MenuNav({
   });
 
   return (
-    <nav aria-label="Menus" className={cn('min-w-0 flex-1 items-center gap-1', className)}>
+    <nav aria-label={t('header.menus')} className={cn('min-w-0 flex-1 items-center gap-1', className)}>
       {menuList.map((menu, i) => (
         <MenuNavItem
           key={menu.id}
@@ -141,11 +144,7 @@ function MenuNav({
           dragHandle={dnd.getHandleProps(menu.id, i)}
           onRename={(titulo) => rename.mutate({ id: menu.id, titulo })}
           onDelete={() => {
-            if (
-              window.confirm(
-                `Delete the menu "${menu.titulo}"? All sections, pages, and tabs inside it will also be removed.`,
-              )
-            ) {
+            if (window.confirm(t('header.deleteMenuConfirm', { name: menu.titulo }))) {
               remove.mutate({ id: menu.id });
             }
           }}
@@ -174,6 +173,7 @@ function MenuNavItem({
   dragHandle: DragHandleProps;
 }) {
   const trpc = useTRPC();
+  const t = useT();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(menu.titulo);
   // Path público do menu (1ª seção/1ª página) para o "Copiar link" (TASK-109).
@@ -193,15 +193,15 @@ function MenuNavItem({
           autoFocus
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          aria-label={`New title for menu ${menu.titulo}`}
+          aria-label={t('header.renameMenu', { name: menu.titulo })}
           className="border-input min-w-0 rounded-editorial-sm border bg-transparent px-2 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
         />
-        <button type="submit" aria-label="Save" className="text-muted-foreground hover:text-foreground p-1">
+        <button type="submit" aria-label={t('common.save')} className="text-muted-foreground hover:text-foreground p-1">
           <Check className="size-3.5" />
         </button>
         <button
           type="button"
-          aria-label="Cancel"
+          aria-label={t('common.cancel')}
           className="text-muted-foreground hover:text-foreground p-1"
           onClick={() => setEditing(false)}
         >
@@ -215,7 +215,7 @@ function MenuNavItem({
     <div {...dragRow} className="group flex shrink-0 items-center">
       <DragHandle
         {...dragHandle}
-        label={`Reorder menu ${menu.titulo}`}
+        label={t('header.reorderMenu', { name: menu.titulo })}
         className="-mr-1 size-5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
       />
       <button
@@ -230,7 +230,7 @@ function MenuNavItem({
         {menu.titulo}
       </button>
       <RowActionsMenu
-        triggerLabel={`More actions for menu ${menu.titulo}`}
+        triggerLabel={t('header.menuActions', { name: menu.titulo })}
         onRename={() => {
           setDraft(menu.titulo);
           setEditing(true);
@@ -241,7 +241,7 @@ function MenuNavItem({
             menuSlug={pathQuery.data?.menuSlug}
             sectionSlug={pathQuery.data?.sectionSlug}
             pageSlug={pathQuery.data?.pageSlug}
-            disabledReason="This menu has no pages yet"
+            disabledReason={t('header.menuNoPages')}
           />
         }
         triggerClassName="-ml-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
@@ -252,6 +252,7 @@ function MenuNavItem({
 
 /** "+ Add" da navegação central — cria um novo menu (`menus.create`, TASK-84). */
 function AddMenu({ onCreate }: { onCreate: (titulo: string) => Promise<unknown> }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [titulo, setTitulo] = useState('');
 
@@ -268,8 +269,8 @@ function AddMenu({ onCreate }: { onCreate: (titulo: string) => Promise<unknown> 
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label="Add menu"
-        title="Add menu"
+        aria-label={t('header.addMenu')}
+        title={t('header.addMenu')}
         className={cn(createLinkClass, 'shrink-0 p-1.5')}
       >
         <Plus className="size-4" />
@@ -281,18 +282,18 @@ function AddMenu({ onCreate }: { onCreate: (titulo: string) => Promise<unknown> 
     <form onSubmit={handleSubmit} className="flex shrink-0 items-center gap-1">
       <input
         autoFocus
-        placeholder="Menu name"
+        placeholder={t('header.menuName')}
         value={titulo}
         onChange={(e) => setTitulo(e.target.value)}
-        aria-label="New menu name"
+        aria-label={t('header.newMenuName')}
         className="border-input w-32 min-w-0 rounded-editorial-sm border bg-transparent px-2 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
       />
-      <button type="submit" aria-label="Create menu" className="text-muted-foreground hover:text-foreground p-1">
+      <button type="submit" aria-label={t('header.createMenu')} className="text-muted-foreground hover:text-foreground p-1">
         <Check className="size-3.5" />
       </button>
       <button
         type="button"
-        aria-label="Cancel"
+        aria-label={t('common.cancel')}
         className="text-muted-foreground hover:text-foreground p-1"
         onClick={() => setOpen(false)}
       >
@@ -319,6 +320,8 @@ function UserMenu({
   logoutPending: boolean;
 }) {
   const isAdmin = role === 'admin';
+  const t = useT();
+  const roleLabel = role === 'admin' ? t('roles.admin') : role === 'editor' ? t('roles.editor') : role;
 
   return (
     <DropdownMenu>
@@ -326,14 +329,14 @@ function UserMenu({
         <button
           type="button"
           className="hover:bg-accent flex min-h-11 items-center gap-2 rounded-editorial-sm py-1 pl-1 pr-2 sm:min-h-0"
-          aria-label="User menu"
+          aria-label={t('userMenu.trigger')}
         >
           <Avatar className="size-7">
             <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold uppercase">
               {role.slice(0, 2)}
             </AvatarFallback>
           </Avatar>
-          <span className="text-muted-foreground hidden text-sm sm:inline">{role}</span>
+          <span className="text-muted-foreground hidden text-sm sm:inline">{roleLabel}</span>
           <ChevronDown className="text-muted-foreground hidden size-3.5 sm:block" />
         </button>
       </DropdownMenuTrigger>
@@ -343,27 +346,27 @@ function UserMenu({
               a rota antiga (feed cru); a tela é o painel de atividade. */}
           <Link to="/admin/history">
             <Activity />
-            Activity
+            {t('userMenu.activity')}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link to="/admin/settings/landing-page">
             <PanelTop />
-            Landing page
+            {t('userMenu.landingPage')}
           </Link>
         </DropdownMenuItem>
         {/* Status tags: gerenciável por admin e editor (protectedProcedure). */}
         <DropdownMenuItem asChild>
           <Link to="/admin/settings/status-tags">
             <Tag />
-            Status tags
+            {t('userMenu.statusTags')}
           </Link>
         </DropdownMenuItem>
         {isAdmin && (
           <DropdownMenuItem asChild>
             <Link to="/admin/users">
               <Users />
-              Users
+              {t('userMenu.users')}
             </Link>
           </DropdownMenuItem>
         )}
@@ -372,7 +375,7 @@ function UserMenu({
             <Link to="/admin/settings/tokens">
               <KeyRound />
               {/* "Upload tokens", não "Tokens": design tokens são outra coisa (SYS-145). */}
-              Upload tokens
+              {t('userMenu.uploadTokens')}
             </Link>
           </DropdownMenuItem>
         )}
@@ -381,7 +384,7 @@ function UserMenu({
           <DropdownMenuItem asChild>
             <Link to="/admin/settings/identity">
               <Fingerprint />
-              Identity
+              {t('userMenu.identity')}
             </Link>
           </DropdownMenuItem>
         )}
@@ -389,7 +392,7 @@ function UserMenu({
         <LanguageSubmenu />
         <DropdownMenuItem disabled={logoutPending} onSelect={onLogout}>
           <LogOut />
-          Sign out
+          {t('userMenu.signOut')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
