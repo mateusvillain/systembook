@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { nativeSelectClass } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
+import { useT } from '../i18n/AdminLocale.js';
 
 interface OutletCtx {
   me: { userId: string; role: 'admin' | 'editor' };
@@ -21,12 +22,13 @@ type Role = 'admin' | 'editor';
 
 export function UsersPage() {
   const { me } = useOutletContext<OutletCtx>();
+  const t = useT();
 
   // Gestão de usuários é admin-only independente da decisão de CRUD de editores (TASK-13)
   if (me.role !== 'admin') {
     return (
       <p role="alert" className="text-destructive">
-        Acesso negado — esta área é exclusiva de administradores.
+        {t('common.accessDenied')}
       </p>
     );
   }
@@ -35,6 +37,7 @@ export function UsersPage() {
 
 function UsersAdmin({ meUserId }: { meUserId: string }) {
   const trpc = useTRPC();
+  const t = useT();
   const users = useQuery(trpc.users.list.queryOptions());
 
   const invalidate = () => queryClient.invalidateQueries(trpc.users.list.queryFilter());
@@ -44,32 +47,34 @@ function UsersAdmin({ meUserId }: { meUserId: string }) {
     trpc.users.update.mutationOptions({
       onSuccess: () => {
         invalidate();
-        toast.success('Role updated.');
+        toast.success(t('users.roleUpdated'));
       },
+      onError: () => toast.error(t('users.actionFailed')),
     }),
   );
   const deactivate = useMutation(
     trpc.users.deactivate.mutationOptions({
       onSuccess: () => {
         invalidate();
-        toast.success('User removed.');
+        toast.success(t('users.removed'));
       },
+      onError: () => toast.error(t('users.actionFailed')),
     }),
   );
 
   return (
     <section className="grid gap-6">
-      <h1 className="text-2xl font-semibold">Users</h1>
+      <h1 className="text-2xl font-semibold">{t('users.title')}</h1>
 
       <Card>
         <CardContent className="pt-6">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead>{t('users.name')}</TableHead>
+                <TableHead>{t('users.email')}</TableHead>
+                <TableHead>{t('users.role')}</TableHead>
+                <TableHead>{t('users.actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -84,7 +89,7 @@ function UsersAdmin({ meUserId }: { meUserId: string }) {
               ))}
             </TableBody>
           </Table>
-          {users.isPending && <p className="text-muted-foreground mt-2">Loading users…</p>}
+          {users.isPending && <p className="text-muted-foreground mt-2">{t('users.loading')}</p>}
         </CardContent>
       </Card>
 
@@ -102,6 +107,7 @@ interface UserRowProps {
 
 function UserRow({ user, isSelf, onChangeRole, onDeactivate }: UserRowProps) {
   const trpc = useTRPC();
+  const t = useT();
   const [resetting, setResetting] = useState(false);
   const [newPassword, setNewPassword] = useState('');
 
@@ -111,8 +117,9 @@ function UserRow({ user, isSelf, onChangeRole, onDeactivate }: UserRowProps) {
         // Nunca ecoar a senha de volta — só confirmação (TASK-15)
         setResetting(false);
         setNewPassword('');
-        toast.success('Password reset successfully.');
+        toast.success(t('users.passwordReset'));
       },
+      onError: () => toast.error(t('users.actionFailed')),
     }),
   );
 
@@ -126,10 +133,10 @@ function UserRow({ user, isSelf, onChangeRole, onDeactivate }: UserRowProps) {
           value={user.role}
           disabled={isSelf}
           onChange={(e) => onChangeRole(e.target.value as Role)}
-          aria-label={`Role for ${user.email}`}
+          aria-label={t('users.roleFor', { email: user.email })}
         >
-          <option value="admin">admin</option>
-          <option value="editor">editor</option>
+          <option value="admin">{t('roles.admin')}</option>
+          <option value="editor">{t('roles.editor')}</option>
         </select>
       </TableCell>
       <TableCell>
@@ -144,24 +151,24 @@ function UserRow({ user, isSelf, onChangeRole, onDeactivate }: UserRowProps) {
             <Input
               type="password"
               className="h-8 w-44"
-              placeholder="New password (min. 8)"
+              placeholder={t('users.newPassword')}
               minLength={8}
               required
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              aria-label={`New password for ${user.email}`}
+              aria-label={t('users.newPasswordFor', { email: user.email })}
             />
             <Button type="submit" size="sm" disabled={reset.isPending}>
-              Save
+              {t('common.save')}
             </Button>
             <Button type="button" size="sm" variant="ghost" onClick={() => setResetting(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
           </form>
         ) : (
           <div className="flex items-center gap-2">
             <Button size="sm" variant="outline" onClick={() => setResetting(true)}>
-              Reset password
+              {t('users.resetPassword')}
             </Button>
             <Button
               size="sm"
@@ -169,9 +176,9 @@ function UserRow({ user, isSelf, onChangeRole, onDeactivate }: UserRowProps) {
               className={cn(!isSelf && 'text-destructive hover:text-destructive')}
               onClick={onDeactivate}
               disabled={isSelf}
-              title={isSelf ? 'You cannot deactivate your own account' : undefined}
+              title={isSelf ? t('users.cannotRemoveSelf') : undefined}
             >
-              Remove
+              {t('users.remove')}
             </Button>
           </div>
         )}
@@ -182,11 +189,13 @@ function UserRow({ user, isSelf, onChangeRole, onDeactivate }: UserRowProps) {
 
 function CreateUserForm({ onCreated }: { onCreated: () => void }) {
   const trpc = useTRPC();
+  const t = useT();
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<Role>('editor');
-  const [emailError, setEmailError] = useState<string | null>(null);
+  // Chave, não texto: o erro na tela acompanha uma troca de idioma.
+  const [emailError, setEmailError] = useState<'users.emailTaken' | 'users.createFailed' | null>(null);
 
   const create = useMutation(
     trpc.users.create.mutationOptions({
@@ -196,14 +205,14 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
         setPassword('');
         setEmailError(null);
         onCreated();
-        toast.success('User created.');
+        toast.success(t('users.created'));
       },
       onError: (error) => {
         // Erro de campo (email duplicado) → inline; convenção TASK-76.
         if (error instanceof TRPCClientError && error.data?.code === 'CONFLICT') {
-          setEmailError(error.message);
+          setEmailError('users.emailTaken');
         } else {
-          setEmailError('Error creating user');
+          setEmailError('users.createFailed');
         }
       },
     }),
@@ -218,16 +227,16 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
   return (
     <Card className="max-w-md">
       <CardHeader>
-        <CardTitle>Create user</CardTitle>
+        <CardTitle>{t('users.create')}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="grid gap-4">
           <div className="grid gap-2">
-            <Label htmlFor="cu-nome">Name</Label>
+            <Label htmlFor="cu-nome">{t('users.name')}</Label>
             <Input id="cu-nome" required value={nome} onChange={(e) => setNome(e.target.value)} name="nome" />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="cu-email">Email</Label>
+            <Label htmlFor="cu-email">{t('users.email')}</Label>
             <Input
               id="cu-email"
               type="email"
@@ -239,12 +248,12 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
             />
             {emailError && (
               <span role="alert" className="text-destructive text-sm">
-                {emailError}
+                {t(emailError)}
               </span>
             )}
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="cu-password">Initial password</Label>
+            <Label htmlFor="cu-password">{t('users.initialPassword')}</Label>
             <Input
               id="cu-password"
               type="password"
@@ -257,7 +266,7 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="cu-role">Role</Label>
+            <Label htmlFor="cu-role">{t('users.role')}</Label>
             <select
               id="cu-role"
               className={nativeSelectClass}
@@ -265,12 +274,12 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
               onChange={(e) => setRole(e.target.value as Role)}
               name="role"
             >
-              <option value="editor">editor</option>
-              <option value="admin">admin</option>
+              <option value="editor">{t('roles.editor')}</option>
+              <option value="admin">{t('roles.admin')}</option>
             </select>
           </div>
           <Button type="submit" disabled={create.isPending}>
-            {create.isPending ? 'Creating…' : 'Create user'}
+            {create.isPending ? t('users.creating') : t('users.create')}
           </Button>
         </form>
       </CardContent>
