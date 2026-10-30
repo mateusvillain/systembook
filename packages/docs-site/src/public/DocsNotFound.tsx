@@ -1,4 +1,5 @@
 import { useMessages } from '../i18n/UiLocale.js';
+
 /**
  * 404 da doc pública. Extraído do `PublicPageView` (SYS-37) porque o
  * `LegacyDocsRedirect` chega ao mesmo estado por outro caminho — um path

@@ -4,6 +4,12 @@ import type { BlockAnchorKind, BlockAnchorTarget } from './useBlockAnchorIds.js'
 import type { DocsMessageKey } from '../i18n/messages/en.js';
 import { useMessages } from '../i18n/UiLocale.js';
 
+/** Nome acessível do botão em repouso e depois de copiar, por tipo de bloco. */
+const LABELS: Record<BlockAnchorKind, { label: DocsMessageKey; copied: DocsMessageKey }> = {
+  code: { label: 'anchor.code', copied: 'anchor.codeCopied' },
+  example: { label: 'anchor.example', copied: 'anchor.exampleCopied' },
+};
+
 /**
  * Injeta o botão "copiar link" na barra de chrome de cada bloco ancorável
  * (SYS-73), por `createPortal` — mesma técnica de `HeadingAnchors`, e pelo mesmo
@@ -17,11 +23,6 @@ import { useMessages } from '../i18n/UiLocale.js';
  * o bloco já tem no topo (de onde já sai o "Copy" do código), como segunda ação
  * do mesmo grupo.
  */
-const LABELS: Record<BlockAnchorKind, { label: DocsMessageKey; copied: DocsMessageKey }> = {
-  code: { label: 'anchor.code', copied: 'anchor.codeCopied' },
-  example: { label: 'anchor.example', copied: 'anchor.exampleCopied' },
-};
-
 export function BlockAnchors({ anchors }: { anchors: BlockAnchorTarget[] }) {
   const t = useMessages();
   return (

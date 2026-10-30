@@ -30,7 +30,7 @@ export const ptBR: DocsMessages = {
   'toc.label': 'Sumário',
   'toc.title': 'Nesta página',
 
-  'page.views': 'Visões da página',
+  'page.views': 'Abas da página',
   'page.overview': 'Visão geral',
   'page.noContent': 'A página não tem conteúdo.',
   'page.notPublished': 'Esta página ainda não foi publicada.',
@@ -42,7 +42,7 @@ export const ptBR: DocsMessages = {
   'home.title': 'Documentação',
   'home.startAt': 'Bem-vindo à documentação. Comece por {page}.',
   'home.empty': 'Nenhuma página foi publicada ainda. Publique uma página no painel para que ela apareça aqui.',
-  'home.customize': 'Administradores podem personalizar esta página inicial em Painel → Página inicial.',
+  'home.customize': 'Administradores podem personalizar esta página inicial no painel.',
 
   'anchor.copyLink': 'Copiar link',
   'anchor.linkCopied': 'Link copiado',

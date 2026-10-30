@@ -59,6 +59,13 @@ function groupEntries(entries: Entry[]): { label: string; items: { entry: Entry;
   return groups;
 }
 
+/** Rótulo da busca, com o nome do design system quando há (gatilho e campo). */
+export function useSearchLabel(): string {
+  const t = useMessages();
+  const name = usePublicSettings().data?.nomeDesignSystem;
+  return name ? t('search.placeholderNamed', { name }) : t('search.placeholder');
+}
+
 /**
  * Busca da doc pública como Command Palette (SYS-116): um modal sobre a página,
  * aberto pelo gatilho do header ou por ⌘K / Ctrl+K. Sem texto, só o campo;
@@ -131,11 +138,8 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
     return () => clearTimeout(id);
   }, [query]);
 
-  const settings = usePublicSettings();
   const searchQuery = usePublicSearch(debounced);
-
-  const name = settings.data?.nomeDesignSystem;
-  const placeholder = name ? t('search.placeholderNamed', { name }) : t('search.placeholder');
+  const placeholder = useSearchLabel();
 
   const searching = query.trim().length > 0;
   const entries = useMemo<Entry[]>(() => {

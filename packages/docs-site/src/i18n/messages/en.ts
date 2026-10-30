@@ -53,7 +53,7 @@ export const en = {
   'home.title': 'Documentation',
   'home.startAt': 'Welcome to the documentation. Start with {page}.',
   'home.empty': 'No pages have been published yet. Publish a page in the panel for it to show up here.',
-  'home.customize': 'Admins can customize this home page in Panel → Landing page.',
+  'home.customize': 'Admins can customize this home page in the admin panel.',
 
   // Copiar link (headings e blocos)
   'anchor.copyLink': 'Copy link',

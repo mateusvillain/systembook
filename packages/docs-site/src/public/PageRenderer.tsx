@@ -5,6 +5,7 @@ import { contentExtensions } from '../content/extensions.js';
 import { blocksToTiptapDoc } from '../content/blocksToTiptapDoc.js';
 import '../content/content.css';
 import { useMessages } from '../i18n/UiLocale.js';
+import { en } from '../i18n/messages/en.js';
 
 /**
  * Renderer read-only de um `PageSnapshot` (TASK-50). Monta o conjunto de
@@ -34,7 +35,7 @@ export interface RenderableSnapshot {
  * público. A página pode customizá-lo (`titulo` da tab primária, SYS-117);
  * 'Conteúdo' é o valor legado gravado antes disso, nunca exibido.
  */
-export const BODY_VIEW_LABEL = 'Overview';
+export const BODY_VIEW_LABEL = en['page.overview'];
 
 /** `fallback` é o rótulo padrão já traduzido (a doc pública passa o do dicionário). */
 export function bodyViewLabel(titulo: string | undefined, fallback: string = BODY_VIEW_LABEL): string {

@@ -22,7 +22,7 @@ export function PublicHome() {
   if (isLoading || landing.isPending) return <p>{t('state.loading')}</p>;
 
   const snapshot = landing.data;
-  const hasContent = snapshot && snapshot.tabs.some((t) => t.blocks.length > 0);
+  const hasContent = snapshot && snapshot.tabs.some((tab) => tab.blocks.length > 0);
 
   if (hasContent) {
     return (
@@ -38,7 +38,8 @@ export function PublicHome() {
   const firstMenu = tree[0];
   const firstSection = firstMenu?.sections[0];
   const firstPage = firstSection?.pages[0];
-  // O link da 1ª página entra no lugar de `{page}` (o tradutor devolve texto).
+  // O link da 1ª página entra no lugar de `{page}`: o tradutor devolve texto e
+  // mantém variáveis não passadas. Tradução sem `{page}` põe o link no fim.
   const [startBefore, startAfter = ''] = t('home.startAt').split('{page}');
 
   return (
