@@ -9,6 +9,7 @@ import { RevisionDiffView } from './RevisionDiffView.js';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
+import { useT } from '../../i18n/AdminLocale.js';
 
 interface Props {
   pageId: string;
@@ -36,6 +37,7 @@ export function RevisionHistoryList({ pageId, firstTabId }: Props) {
   const navigate = useNavigate();
   const list = useQuery(trpc.revisions.listByPage.queryOptions({ pageId }));
   const dates = useDateFormat();
+  const t = useT();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const preview = useQuery({
     ...trpc.revisions.getById.queryOptions({ id: selectedId ?? '' }),
@@ -86,26 +88,24 @@ export function RevisionHistoryList({ pageId, firstTabId }: Props) {
         // O restore encadeia uma revisão nova: o rascunho volta a coincidir com
         // o publicado e o ponto da árvore (SYS-68) sai.
         queryClient.invalidateQueries(trpc.pages.draftStatus.queryFilter());
-        toast.success('Revision restored.');
+        toast.success(t('history.restored'));
         if (firstTabId) navigate(`/pages/${pageId}/tabs/${firstTabId}`);
       },
-      onError: () => toast.error('Failed to restore the revision. Try again.'),
+      onError: () => toast.error(t('history.restoreFailed')),
     }),
   );
 
   function handleRestore(revisionId: string) {
     // Confirmação obrigatória (mesmo padrão de window.confirm do SidebarTree,
     // TASK-23): restaurar sobrescreve o conteúdo ao vivo de cada tab.
-    const ok = window.confirm(
-      'Restoring this revision replaces the current (draft) content of all page tabs with the chosen snapshot. Continue?',
-    );
+    const ok = window.confirm(t('history.restoreConfirm'));
     if (!ok) return;
     restore.mutate({ pageId, revisionId });
   }
 
-  if (list.isPending) return <p className="text-muted-foreground">Loading history…</p>;
-  if (list.isError) return <p role="alert" className="text-destructive">Failed to load the history.</p>;
-  if (list.data.length === 0) return <p className="text-muted-foreground">No revisions published yet.</p>;
+  if (list.isPending) return <p className="text-muted-foreground">{t('history.loading')}</p>;
+  if (list.isError) return <p role="alert" className="text-destructive">{t('history.loadFailed')}</p>;
+  if (list.data.length === 0) return <p className="text-muted-foreground">{t('history.empty')}</p>;
 
   return (
     <div className="grid gap-6 md:grid-cols-[minmax(260px,340px)_1fr]">
@@ -116,8 +116,8 @@ export function RevisionHistoryList({ pageId, firstTabId }: Props) {
         {list.data.length > 1 && compareIds.length < 2 && (
           <p className="text-muted-foreground text-xs">
             {compareIds.length === 0
-              ? 'Tick two revisions to compare them.'
-              : 'Tick one more revision to see what changed.'}
+              ? t('history.tickTwo')
+              : t('history.tickOne')}
           </p>
         )}
 
@@ -127,7 +127,7 @@ export function RevisionHistoryList({ pageId, firstTabId }: Props) {
         <ul className="grid list-none content-start gap-2 p-0">
           {list.data.map((rev) => {
             const comparing = compareIds.includes(rev.id);
-            const role = comparing ? (compareIds[0] === rev.id ? 'From' : 'To') : null;
+            const role = comparing ? t(compareIds[0] === rev.id ? 'diff.from' : 'diff.to') : null;
 
             return (
               <li
@@ -143,7 +143,7 @@ export function RevisionHistoryList({ pageId, firstTabId }: Props) {
                     checked={comparing}
                     onCheckedChange={() => toggleCompare(rev.id)}
                     className="mt-0.5"
-                    aria-label={`Compare the revision from ${dates.absolute(rev.criadoEm)}`}
+                    aria-label={t('history.compareFrom', { date: dates.absolute(rev.criadoEm) })}
                   />
                   {/* O papel de cada marcada é dito por texto, não pela ordem
                       visual: a lista é cronológica e a direção do diff não. */}
@@ -151,7 +151,7 @@ export function RevisionHistoryList({ pageId, firstTabId }: Props) {
                     htmlFor={`compare-${rev.id}`}
                     className="text-muted-foreground cursor-pointer text-xs select-none"
                   >
-                    {role ? `Comparing · ${role}` : 'Compare'}
+                    {role ? t('history.comparing', { role }) : t('history.compare')}
                   </label>
                 </div>
 
@@ -165,7 +165,7 @@ export function RevisionHistoryList({ pageId, firstTabId }: Props) {
                   )}
                 >
                   <strong>{dates.absolute(rev.criadoEm)}</strong>
-                  <div className="text-muted-foreground text-xs">{rev.autorEmail ?? 'Removed author'}</div>
+                  <div className="text-muted-foreground text-xs">{rev.autorEmail ?? t('revisions.removedAuthor')}</div>
                   {rev.mensagem && <div className="mt-1 text-sm">{rev.mensagem}</div>}
                 </button>
 
@@ -177,7 +177,7 @@ export function RevisionHistoryList({ pageId, firstTabId }: Props) {
                     onClick={() => handleRestore(rev.id)}
                     disabled={restore.isPending}
                   >
-                    {restore.isPending ? 'Restoring…' : 'Restore'}
+                    {restore.isPending ? t('history.restoring') : t('history.restore')}
                   </Button>
                 </div>
               </li>
@@ -200,10 +200,10 @@ export function RevisionHistoryList({ pageId, firstTabId }: Props) {
         ) : (
           <>
             {selectedId === null && (
-              <p className="text-muted-foreground">Select a revision on the left to view its content.</p>
+              <p className="text-muted-foreground">{t('history.selectRevision')}</p>
             )}
-            {selectedId !== null && preview.isPending && <p className="text-muted-foreground">Loading content…</p>}
-            {selectedId !== null && preview.isError && <p role="alert" className="text-destructive">Failed to load the snapshot.</p>}
+            {selectedId !== null && preview.isPending && <p className="text-muted-foreground">{t('editor.loading')}</p>}
+            {selectedId !== null && preview.isError && <p role="alert" className="text-destructive">{t('history.snapshotFailed')}</p>}
             {preview.data && <RevisionSnapshotPreview snapshot={preview.data.snapshot} />}
           </>
         )}
