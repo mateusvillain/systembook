@@ -53,7 +53,7 @@ export function ActivityFeed() {
       <div role="alert" className="grid justify-items-start gap-2">
         <p className="text-destructive">{t('activity.loadFailed')}</p>
         <Button variant="outline" size="sm" onClick={() => void feed.refetch()}>
-          {t('editor.embed.tryAgain')}
+          {t('common.tryAgain')}
         </Button>
       </div>
     );

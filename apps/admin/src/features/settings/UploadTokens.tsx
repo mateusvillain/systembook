@@ -89,7 +89,7 @@ export function UploadTokens() {
             <TableHeader>
               <TableRow>
                 <TableHead>{t('uploadTokens.label')}</TableHead>
-                <TableHead>{t('uploadTokens.scope')}</TableHead>
+                <TableHead>{t('uploadTokens.scopeColumn')}</TableHead>
                 <TableHead>{t('uploadTokens.createdAt')}</TableHead>
                 <TableHead>{t('uploadTokens.status')}</TableHead>
                 <TableHead>{t('uploadTokens.actions')}</TableHead>
@@ -232,7 +232,7 @@ function CreateTokenForm({ onCreated }: { onCreated: (r: { label: string; token:
         />
       </div>
       <div className="grid gap-2">
-        <Label htmlFor="token-scope">{t('uploadTokens.scope')}</Label>
+        <Label htmlFor="token-scope">{t('uploadTokens.scopeColumn')}</Label>
         <select
           id="token-scope"
           className={nativeSelectClass}

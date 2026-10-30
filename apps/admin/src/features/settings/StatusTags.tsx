@@ -35,13 +35,19 @@ export function StatusTags() {
       onError: () => toast.error(t('statusTags.saveFailed')),
     }),
   );
-  const reorder = useMutation(trpc.statusTags.reorder.mutationOptions({ onSuccess: invalidate }));
+  const reorder = useMutation(
+    trpc.statusTags.reorder.mutationOptions({
+      onSuccess: invalidate,
+      onError: () => toast.error(t('statusTags.saveFailed')),
+    }),
+  );
   const remove = useMutation(
     trpc.statusTags.delete.mutationOptions({
       onSuccess: () => {
         invalidate();
         toast.success(t('statusTags.deleted'));
       },
+      onError: () => toast.error(t('statusTags.deleteFailed')),
     }),
   );
 

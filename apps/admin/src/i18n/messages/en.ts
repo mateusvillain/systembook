@@ -29,6 +29,7 @@ export const en = {
   'common.linkCopyFailed': 'Could not copy the link',
   'common.copyLink': 'Copy link',
   'common.close': 'Close',
+  'common.tryAgain': 'Try again',
   'common.notifications': 'Notifications',
 
   // Login
@@ -322,7 +323,7 @@ export const en = {
   'users.passwordReset': 'Password reset successfully.',
   'users.resetPassword': 'Reset password',
   'users.remove': 'Remove',
-  'users.cannotRemoveSelf': 'You cannot deactivate your own account',
+  'users.cannotRemoveSelf': 'You cannot remove your own account',
   'users.create': 'Create user',
   'users.creating': 'Creating…',
   'users.created': 'User created.',
@@ -350,7 +351,7 @@ export const en = {
   'uploadTokens.generated': 'Token generated — copy it now.',
   'uploadTokens.createFailed': 'Could not generate the token.',
   'uploadTokens.label': 'Label',
-  'uploadTokens.scope': 'Scope',
+  'uploadTokens.scopeColumn': 'Scope',
   'uploadTokens.createdAt': 'Created at',
   'uploadTokens.status': 'Status',
   'uploadTokens.actions': 'Actions',
@@ -375,6 +376,7 @@ export const en = {
   'statusTags.created': 'Status tag created.',
   'statusTags.deleted': 'Status tag deleted.',
   'statusTags.saveFailed': 'Could not save the status tag.',
+  'statusTags.deleteFailed': 'Could not delete the status tag.',
   'statusTags.loading': 'Loading tags…',
   'statusTags.empty': 'No status tags yet.',
   'statusTags.deleteConfirm': 'Delete the tag "{name}"? Pages using it will have no status.',
@@ -407,7 +409,7 @@ export const en = {
   'brand.logoAlt': '{name} logo',
   'brand.noDark': 'No dark version — the light logo is used.',
   'brand.noLogo': 'No logo — “{name}” is shown as text.',
-  'brand.file': '{title} file',
+  'brand.file': 'File: {title}',
   'brand.remove': 'Remove',
   'brand.formats': 'PNG, JPG or SVG, up to {size} KB.',
 
@@ -432,8 +434,9 @@ export const en = {
   'diff.from': 'From',
   'diff.to': 'To',
   'diff.identical': { one: 'These two revisions have identical content ({count} block).', other: 'These two revisions have identical content ({count} blocks).' },
-  'diff.showUnchanged': { one: 'Show {count} unchanged', other: 'Show {count} unchanged' },
-  'diff.hideUnchanged': { one: 'Hide {count} unchanged', other: 'Hide {count} unchanged' },
+  'diff.showUnchanged': 'Show {count} unchanged',
+  'diff.hideUnchanged': 'Hide {count} unchanged',
+  'diff.empty': '(empty)',
   'diff.pageBody': 'Page body ({name})',
   'diff.tabAdded': 'Tab added',
   'diff.tabRemoved': 'Tab removed',
@@ -461,6 +464,7 @@ export const en = {
   'history.restore': 'Restore',
   'history.restoring': 'Restoring…',
   'history.selectRevision': 'Select a revision on the left to view its content.',
+  'history.loadingSnapshot': 'Loading content…',
   'history.snapshotFailed': 'Failed to load the snapshot.',
 } satisfies Record<string, MessageValue>;
 

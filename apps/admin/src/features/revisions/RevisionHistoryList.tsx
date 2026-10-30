@@ -202,7 +202,7 @@ export function RevisionHistoryList({ pageId, firstTabId }: Props) {
             {selectedId === null && (
               <p className="text-muted-foreground">{t('history.selectRevision')}</p>
             )}
-            {selectedId !== null && preview.isPending && <p className="text-muted-foreground">{t('editor.loading')}</p>}
+            {selectedId !== null && preview.isPending && <p className="text-muted-foreground">{t('history.loadingSnapshot')}</p>}
             {selectedId !== null && preview.isError && <p role="alert" className="text-destructive">{t('history.snapshotFailed')}</p>}
             {preview.data && <RevisionSnapshotPreview snapshot={preview.data.snapshot} />}
           </>

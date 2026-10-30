@@ -298,6 +298,7 @@ function BeforeAfter({
  * opacidade só sugere.
  */
 function BlockContent({ block, muted }: { block: DiffBlock | null; muted?: boolean }) {
+  const t = useT();
   const editor = useEditor(
     {
       extensions: contentExtensions,
@@ -307,7 +308,7 @@ function BlockContent({ block, muted }: { block: DiffBlock | null; muted?: boole
     [block],
   );
 
-  if (!block) return <p className="text-muted-foreground text-sm">(empty)</p>;
+  if (!block) return <p className="text-muted-foreground text-sm">{t('diff.empty')}</p>;
 
   return (
     <div className={cn('sb-editor sb-diff-block', muted && 'opacity-60')}>
