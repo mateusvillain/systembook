@@ -30,8 +30,6 @@ export { createStaticDataSource, type StaticDataSourceOptions } from './static/s
 // Idioma da interface (SYS-161). `createTranslator`/`resolveLocale` servem
 // também a quem traz um dicionário próprio (o admin).
 export {
-  DEFAULT_UI_LOCALE,
-  UI_LOCALES,
   UiLocaleProvider,
   resolveUiLocale,
   useMessages,

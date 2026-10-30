@@ -17,6 +17,16 @@ describe('createTranslator (SYS-161)', () => {
     expect(t('plain', { name: 'x' })).toBe('No variables');
   });
 
+  it('não interpola propriedades herdadas', () => {
+    const own = createTranslator({ m: '{constructor} {toString}' }, 'en');
+    expect(own('m', {})).toBe('{constructor} {toString}');
+  });
+
+  it('locale inválido usa o plural do inglês em vez de lançar', () => {
+    const bad = createTranslator(messages, 'not a locale!');
+    expect(bad('results', { count: 1 })).toBe('1 result');
+  });
+
   it('escolhe a forma de plural pelo count', () => {
     expect(t('results', { count: 1 })).toBe('1 result');
     expect(t('results', { count: 3 })).toBe('3 results');
@@ -47,6 +57,7 @@ describe('resolveLocale (SYS-161)', () => {
   it('casa o locale exato sem diferenciar caixa', () => {
     expect(resolveLocale('pt-br', available, 'en')).toBe('pt-BR');
     expect(resolveLocale('EN', available, 'en')).toBe('en');
+    expect(resolveLocale('pt_BR', available, 'en')).toBe('pt-BR');
   });
 
   it('casa pelo idioma base', () => {

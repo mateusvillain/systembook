@@ -17,19 +17,28 @@ const VARIABLE = /\{(\w+)\}/g;
 
 function interpolate(text: string, vars: MessageVars | undefined): string {
   if (!vars) return text;
-  return text.replace(VARIABLE, (match, name: string) => (name in vars ? String(vars[name]) : match));
+  return text.replace(VARIABLE, (match, name: string) => (Object.hasOwn(vars, name) ? String(vars[name]) : match));
+}
+
+function pluralRules(locale: string): Intl.PluralRules {
+  try {
+    return new Intl.PluralRules(locale);
+  } catch {
+    return new Intl.PluralRules('en');
+  }
 }
 
 /**
  * Tradutor de `messages` em `locale`. Chave ausente devolve a própria chave
  * (o tipo já impede, mas um dicionário montado em runtime pode escapar); uma
- * mensagem de plural sem `count` usa `other`.
+ * mensagem de plural sem `count` usa `other`. Locale inválido usa as regras
+ * de plural do inglês em vez de lançar `RangeError`.
  */
 export function createTranslator<K extends string>(
   messages: Record<K, MessageValue>,
   locale: string,
 ): Translator<K> {
-  const plural = new Intl.PluralRules(locale);
+  const plural = pluralRules(locale);
   return (key, vars) => {
     const message = messages[key] as MessageValue | undefined;
     if (message === undefined) return key;
@@ -40,10 +49,17 @@ export function createTranslator<K extends string>(
   };
 }
 
+/** `pt_BR` → `pt-br`: aceita o separador POSIX e ignora a caixa. */
+function normalize(locale: string): string {
+  return locale.replace(/_/g, '-').toLowerCase();
+}
+
+const baseOf = (normalized: string) => normalized.split('-')[0];
+
 /**
  * Melhor locale disponível para `requested`: o próprio (sem diferenciar
- * caixa), senão o primeiro disponível com o mesmo idioma base (`pt-PT` →
- * `pt-BR`), senão `fallback`.
+ * caixa nem `_`/`-`), senão o primeiro disponível com o mesmo idioma base
+ * (`pt-PT` → `pt-BR`), senão `fallback`.
  */
 export function resolveLocale<L extends string>(
   requested: string | null | undefined,
@@ -51,9 +67,9 @@ export function resolveLocale<L extends string>(
   fallback: L,
 ): L {
   if (!requested) return fallback;
-  const wanted = requested.toLowerCase();
-  const exact = available.find((locale) => locale.toLowerCase() === wanted);
+  const wanted = normalize(requested);
+  const exact = available.find((locale) => normalize(locale) === wanted);
   if (exact) return exact;
-  const base = wanted.split('-')[0];
-  return available.find((locale) => locale.toLowerCase().split('-')[0] === base) ?? fallback;
+  const base = baseOf(wanted);
+  return available.find((locale) => baseOf(normalize(locale)) === base) ?? fallback;
 }
