@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { TocItem } from './useHeadingIds.js';
+import { useMessages } from '../i18n/UiLocale.js';
 
 export type { TocItem } from './useHeadingIds.js';
 
@@ -11,6 +12,7 @@ export type { TocItem } from './useHeadingIds.js';
  */
 export function TableOfContents({ items, headings }: { items: TocItem[]; headings: HTMLHeadingElement[] }) {
   const [activeId, setActiveId] = useState('');
+  const t = useMessages();
 
   useEffect(() => {
     if (headings.length === 0) return;
@@ -78,8 +80,8 @@ export function TableOfContents({ items, headings }: { items: TocItem[]; heading
   if (items.length === 0) return null;
 
   return (
-    <nav className="sb-toc" aria-label="Table of contents">
-      <p className="sb-toc-title">On this page</p>
+    <nav className="sb-toc" aria-label={t('toc.label')}>
+      <p className="sb-toc-title">{t('toc.title')}</p>
       <ul className="sb-toc-list">
         {items.map((item) => (
           <li key={item.id} className={`sb-toc-item sb-toc-item-h${item.level}`}>

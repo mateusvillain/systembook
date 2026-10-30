@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowDown, ArrowUp, CornerDownLeft, Search, X } from 'lucide-react';
 import { usePublicSearch, usePublicSettings } from '../content/docsQueries.js';
 import { useDocsPaths } from './docsRoutes.js';
+import { useMessages } from '../i18n/UiLocale.js';
 
 // Delimitadores STX/ETX que o `snippet()` do FTS5 coloca ao redor dos termos
 // casados (ver SearchResult.snippet no server). Escritos como escapes \u para
@@ -70,6 +71,7 @@ function groupEntries(entries: Entry[]): { label: string; items: { entry: Entry;
  */
 export function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const t = useMessages();
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -91,7 +93,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
     <dialog
       ref={dialogRef}
       className="sb-palette"
-      aria-label="Search"
+      aria-label={t('search.dialog')}
       // Esc e `close()` disparam `close`; é o único caminho que devolve o estado
       // ao pai, então o `open` nunca diverge do que o navegador mostra. O evento é
       // despachado numa tarefa à parte: se o modal foi reaberto nesse intervalo
@@ -113,6 +115,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
 function PaletteBody({ onClose }: { onClose: () => void }) {
   const navigate = useNavigate();
   const paths = useDocsPaths();
+  const t = useMessages();
   const listboxId = useId();
   const optionId = (i: number) => `${listboxId}-opt-${i}`;
 
@@ -132,7 +135,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
   const searchQuery = usePublicSearch(debounced);
 
   const name = settings.data?.nomeDesignSystem;
-  const placeholder = name ? `Search ${name}` : 'Search the documentation';
+  const placeholder = name ? t('search.placeholderNamed', { name }) : t('search.placeholder');
 
   const searching = query.trim().length > 0;
   const entries = useMemo<Entry[]>(() => {
@@ -217,7 +220,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
           spellCheck={false}
           data-testid="public-search-input"
         />
-        <button type="button" className="sb-palette-close" aria-label="Close search" onClick={onClose} data-testid="search-close">
+        <button type="button" className="sb-palette-close" aria-label={t('search.closeDialog')} onClick={onClose} data-testid="search-close">
           <X aria-hidden size={20} />
         </button>
       </div>
@@ -226,13 +229,13 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
       {searching && (
         <div className="sb-palette-body">
           {waiting ? (
-            <p className="sb-palette-hint">Searching…</p>
+            <p className="sb-palette-hint">{t('search.searching')}</p>
           ) : empty ? (
             <p className="sb-palette-hint" data-testid="search-no-results">
-              No results found.
+              {t('search.noResults')}
             </p>
           ) : (
-            <div id={listboxId} role="listbox" aria-label="Results" data-testid="search-results">
+            <div id={listboxId} role="listbox" aria-label={t('search.results')} data-testid="search-results">
               {groups.map((group) => (
                 <div key={group.label} role="group" aria-label={group.label} className="sb-palette-group">
                   <p className="sb-palette-group-label" aria-hidden>
@@ -275,8 +278,8 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
         {!searching || waiting
           ? ''
           : empty
-            ? 'No results found.'
-            : `${entries.length} ${entries.length === 1 ? 'result' : 'results'}`}
+            ? t('search.noResults')
+            : t('search.resultCount', { count: entries.length })}
       </p>
 
       <div className="sb-palette-footer" aria-hidden>
@@ -285,17 +288,17 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
             <ArrowUp size={14} />
             <ArrowDown size={14} />
           </kbd>
-          Navigate
+          {t('search.navigate')}
         </span>
         <span className="sb-palette-hintkey">
           <kbd>
             <CornerDownLeft size={14} />
           </kbd>
-          Select
+          {t('search.select')}
         </span>
         <span className="sb-palette-hintkey">
           <kbd>Esc</kbd>
-          Close
+          {t('search.close')}
         </span>
       </div>
     </div>

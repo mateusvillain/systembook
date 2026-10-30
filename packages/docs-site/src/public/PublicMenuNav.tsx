@@ -3,6 +3,7 @@ import type { PublicNavTree } from '@systembook/schema';
 import { TOKENS_SEGMENT } from '@systembook/content/site';
 import { useTokens } from '../content/docsQueries.js';
 import { useDocsPaths, type DocsPaths } from './docsRoutes.js';
+import { useMessages } from '../i18n/UiLocale.js';
 
 type PublicMenu = PublicNavTree[number];
 
@@ -75,12 +76,13 @@ export function PublicMenuNav({
   // A mesma query da página e dos blocos (cacheada): o link só existe com tokens.
   const hasTokens = !!useTokens().data;
   const onTokens = useOnTokensPage();
+  const t = useMessages();
 
   // Com tokens, a barra aparece até sem menu nenhum: é o único caminho para a página.
   if (!hasTokens && tree.length < 2) return null;
 
   return (
-    <nav className={`sb-public-menunav ${className}`} aria-label="Documentation menus">
+    <nav className={`sb-public-menunav ${className}`} aria-label={t('nav.menus')}>
       {tree.map((menu) => {
         const active = menu.slug === activeMenu?.slug;
         return (
@@ -106,7 +108,7 @@ export function PublicMenuNav({
           aria-current={onTokens ? 'page' : undefined}
           data-active={onTokens || undefined}
         >
-          Tokens
+          {t('nav.tokens')}
         </NavLink>
       )}
     </nav>

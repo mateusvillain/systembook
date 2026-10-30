@@ -2,6 +2,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { DocsNotFound } from './DocsNotFound.js';
 import { useResolvedPath } from '../content/docsQueries.js';
 import { useDocsPaths } from './docsRoutes.js';
+import { useMessages } from '../i18n/UiLocale.js';
 
 /**
  * Compatibilidade das URLs da doc publicadas antes de o menu entrar no
@@ -20,9 +21,10 @@ export function LegacyDocsRedirect() {
   const segments = paths.segments(pathname);
 
   const query = useResolvedPath(segments);
+  const t = useMessages();
 
-  if (query.isLoading) return <p>Loading…</p>;
-  if (query.isError) return <p role="alert">Failed to load the page.</p>;
+  if (query.isLoading) return <p>{t('state.loading')}</p>;
+  if (query.isError) return <p role="alert">{t('state.pageLoadFailed')}</p>;
   if (!query.data) return <DocsNotFound />;
 
   const { menuSlug, sectionSlug, pageSlug, tabId } = query.data;

@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom';
 import { CopyLinkButton } from './CopyLinkButton.js';
+import { useMessages } from '../i18n/UiLocale.js';
 
 /**
  * Botão "#" de uma seção (SYS-34): copia o link direto do heading e atualiza o
@@ -10,6 +11,7 @@ import { CopyLinkButton } from './CopyLinkButton.js';
  * de bloco da SYS-73; aqui fica só o que é específico do heading.
  */
 function HeadingAnchor({ id }: { id: string }) {
+  const t = useMessages();
   return (
     <CopyLinkButton
       id={id}
@@ -17,9 +19,9 @@ function HeadingAnchor({ id }: { id: string }) {
       iconSize={14}
       // O nome acessível diz *qual* alvo: um leitor de tela tabulando a página
       // ouviria "copiar link" N vezes idênticas sem ele.
-      label="Copy link to this section"
-      copiedLabel="Section link copied"
-      title="Copy link to this section"
+      label={t('anchor.section')}
+      copiedLabel={t('anchor.sectionCopied')}
+      title={t('anchor.section')}
       // Lido pelo `headingText()` de `useHeadingIds` para se excluir do slug —
       // sem isso o rótulo do botão entraria no texto do heading.
       data-heading-anchor=""

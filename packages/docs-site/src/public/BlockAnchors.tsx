@@ -1,6 +1,8 @@
 import { createPortal } from 'react-dom';
 import { CopyLinkButton } from './CopyLinkButton.js';
-import type { BlockAnchorTarget } from './useBlockAnchorIds.js';
+import type { BlockAnchorKind, BlockAnchorTarget } from './useBlockAnchorIds.js';
+import type { DocsMessageKey } from '../i18n/messages/en.js';
+import { useMessages } from '../i18n/UiLocale.js';
 
 /**
  * Injeta o botão "copiar link" na barra de chrome de cada bloco ancorável
@@ -15,18 +17,24 @@ import type { BlockAnchorTarget } from './useBlockAnchorIds.js';
  * o bloco já tem no topo (de onde já sai o "Copy" do código), como segunda ação
  * do mesmo grupo.
  */
+const LABELS: Record<BlockAnchorKind, { label: DocsMessageKey; copied: DocsMessageKey }> = {
+  code: { label: 'anchor.code', copied: 'anchor.codeCopied' },
+  example: { label: 'anchor.example', copied: 'anchor.exampleCopied' },
+};
+
 export function BlockAnchors({ anchors }: { anchors: BlockAnchorTarget[] }) {
+  const t = useMessages();
   return (
     <>
-      {anchors.map(({ id, host, label }) =>
+      {anchors.map(({ id, host, kind }) =>
         createPortal(
           <CopyLinkButton
             id={id}
             className="sb-block-anchor"
             iconSize={13}
-            label={`Copy link to this ${label}`}
-            copiedLabel={`Link to this ${label} copied`}
-            title="Copy link"
+            label={t(LABELS[kind].label)}
+            copiedLabel={t(LABELS[kind].copied)}
+            title={t('anchor.copyLink')}
           />,
           host,
           id,

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Search } from 'lucide-react';
 import { usePublicSettings } from '../content/docsQueries.js';
 import { CommandPalette } from './CommandPalette.js';
+import { useMessages } from '../i18n/UiLocale.js';
 
 // Rótulo do atalho: `⌘K` em Mac, `Ctrl K` no resto. Lido uma vez no módulo —
 // a plataforma não muda em runtime, e assim não vira estado do componente.
@@ -19,7 +20,8 @@ export function SearchBox() {
   const [open, setOpen] = useState(false);
   const settings = usePublicSettings();
   const name = settings.data?.nomeDesignSystem;
-  const label = name ? `Search ${name}` : 'Search the documentation';
+  const t = useMessages();
+  const label = name ? t('search.placeholderNamed', { name }) : t('search.placeholder');
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {

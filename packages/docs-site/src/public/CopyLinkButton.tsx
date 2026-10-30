@@ -1,5 +1,6 @@
 import { Check, Link2 } from 'lucide-react';
 import { useCopyLink } from './useCopyLink.js';
+import { useMessages } from '../i18n/UiLocale.js';
 
 /**
  * Botão de "copiar link para aqui" da doc pública — o mesmo controle na âncora
@@ -23,7 +24,7 @@ export function CopyLinkButton({
   label,
   /** Nome acessível depois de copiar, ex.: "Section link copied". */
   copiedLabel,
-  /** Tooltip em repouso; o estado copiado usa sempre "Link copied". */
+  /** Tooltip em repouso; o estado copiado usa sempre `anchor.linkCopied`. */
   title,
   ...rest
 }: {
@@ -35,6 +36,7 @@ export function CopyLinkButton({
   title: string;
 } & Omit<React.ComponentProps<'button'>, 'id' | 'className' | 'title'>) {
   const { copied, copyLink } = useCopyLink(id);
+  const t = useMessages();
 
   return (
     <button
@@ -43,7 +45,7 @@ export function CopyLinkButton({
       onClick={() => void copyLink()}
       data-copied={copied || undefined}
       aria-label={copied ? copiedLabel : label}
-      title={copied ? 'Link copied' : title}
+      title={copied ? t('anchor.linkCopied') : title}
       {...rest}
     >
       {copied ? <Check aria-hidden size={iconSize} /> : <Link2 aria-hidden size={iconSize} />}
