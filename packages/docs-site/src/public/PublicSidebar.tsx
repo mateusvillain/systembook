@@ -3,6 +3,7 @@ import type { PublicNavTree } from '@systembook/schema';
 import { PublicMenuNav } from './PublicMenuNav.js';
 import { usePublicSettings } from '../content/docsQueries.js';
 import { useDocsPaths } from './docsRoutes.js';
+import { useMessages } from '../i18n/UiLocale.js';
 
 /**
  * Identidade da instância no topo da sidebar (SYS-39): logo enviado no CMS ou,
@@ -62,18 +63,19 @@ export function PublicSidebar({
 }) {
   const sections = menu?.sections ?? [];
   const paths = useDocsPaths();
+  const t = useMessages();
 
   if (sections.length === 0) {
     return (
       <nav
         className="sb-public-sidebar"
         data-open={open || undefined}
-        aria-label="Documentation navigation"
+        aria-label={t('nav.documentation')}
       >
         <PublicBrand onNavigate={onNavigate} />
         {/* Sem páginas ainda pode haver a página Tokens (SYS-140). */}
         <PublicMenuNav tree={tree} className="sb-public-menunav-drawer" onNavigate={onNavigate} />
-        <p className="sb-public-empty">No pages published yet.</p>
+        <p className="sb-public-empty">{t('nav.empty')}</p>
       </nav>
     );
   }
@@ -82,7 +84,7 @@ export function PublicSidebar({
     <nav
       className="sb-public-sidebar"
       data-open={open || undefined}
-      aria-label="Documentation navigation"
+      aria-label={t('nav.documentation')}
     >
       <PublicBrand onNavigate={onNavigate} />
       {/* Só aparece no mobile (o header some nessa largura): sem isto o drawer

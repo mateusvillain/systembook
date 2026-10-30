@@ -9,6 +9,7 @@ import { useInternalLinks } from './useInternalLinks.js';
 import { useTheme } from './useTheme.js';
 import { useNavTree } from '../content/docsQueries.js';
 import './public.css';
+import { useMessages } from '../i18n/UiLocale.js';
 
 /** Passado aos filhos via Outlet context (evita re-buscar a árvore). */
 export interface PublicOutletContext {
@@ -26,6 +27,7 @@ export function PublicLayout() {
   const navQuery = useNavTree();
   const tree = navQuery.data ?? [];
   const { theme, toggle } = useTheme();
+  const t = useMessages();
   const [navOpen, setNavOpen] = useState(false);
   // Na raiz da doc a URL não nomeia menu nenhum (nenhum pill fica ativo), mas a
   // sidebar ainda precisa listar alguma coisa — cai no primeiro menu, que é o
@@ -72,7 +74,7 @@ export function PublicLayout() {
         <button
           type="button"
           className="sb-nav-toggle"
-          aria-label="Open navigation"
+          aria-label={t('layout.openNavigation')}
           aria-expanded={navOpen}
           onClick={() => setNavOpen((o) => !o)}
           data-testid="nav-toggle"
@@ -88,8 +90,8 @@ export function PublicLayout() {
           type="button"
           className="sb-theme-toggle"
           onClick={toggle}
-          aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
-          title={theme === 'dark' ? 'Light theme' : 'Dark theme'}
+          aria-label={t(theme === 'dark' ? 'layout.switchToLight' : 'layout.switchToDark')}
+          title={t(theme === 'dark' ? 'layout.lightTheme' : 'layout.darkTheme')}
           data-testid="theme-toggle"
         >
           {theme === 'dark' ? <Sun aria-hidden size={16} /> : <Moon aria-hidden size={16} />}

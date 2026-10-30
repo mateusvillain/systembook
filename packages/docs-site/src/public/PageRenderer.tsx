@@ -4,6 +4,8 @@ import type { Block } from '@systembook/schema';
 import { contentExtensions } from '../content/extensions.js';
 import { blocksToTiptapDoc } from '../content/blocksToTiptapDoc.js';
 import '../content/content.css';
+import { useMessages } from '../i18n/UiLocale.js';
+import { en } from '../i18n/messages/en.js';
 
 /**
  * Renderer read-only de um `PageSnapshot` (TASK-50). Monta o conjunto de
@@ -33,11 +35,12 @@ export interface RenderableSnapshot {
  * público. A página pode customizá-lo (`titulo` da tab primária, SYS-117);
  * 'Conteúdo' é o valor legado gravado antes disso, nunca exibido.
  */
-export const BODY_VIEW_LABEL = 'Overview';
+export const BODY_VIEW_LABEL = en['page.overview'];
 
-export function bodyViewLabel(titulo: string | undefined): string {
-  const t = titulo?.trim();
-  return t && t !== 'Conteúdo' ? t : BODY_VIEW_LABEL;
+/** `fallback` é o rótulo padrão já traduzido (a doc pública passa o do dicionário). */
+export function bodyViewLabel(titulo: string | undefined, fallback: string = BODY_VIEW_LABEL): string {
+  const trimmed = titulo?.trim();
+  return trimmed && trimmed !== 'Conteúdo' ? trimmed : fallback;
 }
 
 function TabContent({ blocks }: { blocks: unknown[] }) {
@@ -74,13 +77,14 @@ export function PageRenderer({
   // Separa o corpo (tab primária) das tabs de usuário. Snapshots antigos
   // (pré-TASK-66) não têm `isPrimary` — nesse caso não há corpo distinto e
   // todas as entradas são tratadas como tabs (comportamento original).
-  const primary = snapshot.tabs.find((t) => t.isPrimary);
-  const userTabs = primary ? snapshot.tabs.filter((t) => !t.isPrimary) : snapshot.tabs;
+  const t = useMessages();
+  const primary = snapshot.tabs.find((tab) => tab.isPrimary);
+  const userTabs = primary ? snapshot.tabs.filter((tab) => !tab.isPrimary) : snapshot.tabs;
 
   // Visões do tab bar: Corpo primeiro, depois as tabs de usuário.
   const views = [
-    ...(primary ? [{ tabId: primary.tabId, titulo: bodyViewLabel(primary.titulo), blocks: primary.blocks }] : []),
-    ...userTabs.map((t) => ({ tabId: t.tabId, titulo: t.titulo, blocks: t.blocks })),
+    ...(primary ? [{ tabId: primary.tabId, titulo: bodyViewLabel(primary.titulo, t('page.overview')), blocks: primary.blocks }] : []),
+    ...userTabs.map((tab) => ({ tabId: tab.tabId, titulo: tab.titulo, blocks: tab.blocks })),
   ];
 
   const [internalTabId, setInternalTabId] = useState(views[0]?.tabId);
@@ -89,7 +93,7 @@ export function PageRenderer({
 
   const activeView = views.find((v) => v.tabId === wantedTabId) ?? views[0];
   const tablistRef = useRef<HTMLDivElement>(null);
-  if (!activeView) return <p>Page has no content.</p>;
+  if (!activeView) return <p>{t('page.noContent')}</p>;
 
   const selectTab = (tabId: string) => {
     if (controlled) onSelectTab(tabId);
@@ -121,7 +125,7 @@ export function PageRenderer({
       {/* Tab bar só quando há mais de uma visão (corpo + ≥1 tab de usuário, ou
           múltiplas tabs em snapshots antigos). Página só-corpo não mostra bar. */}
       {views.length > 1 && (
-        <div className="sb-tabbar" role="tablist" aria-label="Page views" ref={tablistRef}>
+        <div className="sb-tabbar" role="tablist" aria-label={t('page.views')} ref={tablistRef}>
           {views.map((view, index) => (
             <button
               key={view.tabId}

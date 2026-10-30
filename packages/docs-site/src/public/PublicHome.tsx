@@ -3,6 +3,7 @@ import type { PublicOutletContext } from './PublicLayout.js';
 import { PageRenderer } from './PageRenderer.js';
 import { useLanding } from '../content/docsQueries.js';
 import { useDocsPaths } from './docsRoutes.js';
+import { useMessages } from '../i18n/UiLocale.js';
 
 /**
  * Raiz da doc pública (`/docs` no modo CMS, TASK-56). Mostra a **página inicial
@@ -16,11 +17,12 @@ export function PublicHome() {
   const paths = useDocsPaths();
   const { tree, isLoading } = useOutletContext<PublicOutletContext>();
   const landing = useLanding();
+  const t = useMessages();
 
-  if (isLoading || landing.isPending) return <p>Loading…</p>;
+  if (isLoading || landing.isPending) return <p>{t('state.loading')}</p>;
 
   const snapshot = landing.data;
-  const hasContent = snapshot && snapshot.tabs.some((t) => t.blocks.length > 0);
+  const hasContent = snapshot && snapshot.tabs.some((tab) => tab.blocks.length > 0);
 
   if (hasContent) {
     return (
@@ -36,13 +38,16 @@ export function PublicHome() {
   const firstMenu = tree[0];
   const firstSection = firstMenu?.sections[0];
   const firstPage = firstSection?.pages[0];
+  // O link da 1ª página entra no lugar de `{page}`: o tradutor devolve texto e
+  // mantém variáveis não passadas. Tradução sem `{page}` põe o link no fim.
+  const [startBefore, startAfter = ''] = t('home.startAt').split('{page}');
 
   return (
     <div data-testid="landing-default">
-      <h1 className="sb-public-title">Documentation</h1>
+      <h1 className="sb-public-title">{t('home.title')}</h1>
       {firstMenu && firstSection && firstPage ? (
         <p>
-          Bem-vindo à documentação. Comece por{' '}
+          {startBefore}
           <Link
             to={paths.page({
               menuSlug: firstMenu.slug,
@@ -52,18 +57,12 @@ export function PublicHome() {
           >
             {firstPage.titulo}
           </Link>
-          .
+          {startAfter}
         </p>
       ) : (
-        <p className="sb-public-empty">
-          Nenhuma página foi publicada ainda. Publique uma página no painel para
-          que ela apareça aqui.
-        </p>
+        <p className="sb-public-empty">{t('home.empty')}</p>
       )}
-      <p className="sb-public-empty">
-        Administradores podem personalizar esta página inicial em Painel → Página
-        inicial.
-      </p>
+      <p className="sb-public-empty">{t('home.customize')}</p>
     </div>
   );
 }

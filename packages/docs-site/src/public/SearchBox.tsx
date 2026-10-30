@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Search } from 'lucide-react';
-import { usePublicSettings } from '../content/docsQueries.js';
-import { CommandPalette } from './CommandPalette.js';
+import { CommandPalette, useSearchLabel } from './CommandPalette.js';
 
 // Rótulo do atalho: `⌘K` em Mac, `Ctrl K` no resto. Lido uma vez no módulo —
 // a plataforma não muda em runtime, e assim não vira estado do componente.
@@ -17,9 +16,7 @@ const SHORTCUT_LABEL = IS_MAC ? '⌘K' : 'Ctrl K';
  */
 export function SearchBox() {
   const [open, setOpen] = useState(false);
-  const settings = usePublicSettings();
-  const name = settings.data?.nomeDesignSystem;
-  const label = name ? `Search ${name}` : 'Search the documentation';
+  const label = useSearchLabel();
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {

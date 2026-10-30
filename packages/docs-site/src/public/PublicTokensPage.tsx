@@ -6,6 +6,7 @@ import { DocsNotFound } from './DocsNotFound.js';
 import { TableOfContents } from './TableOfContents.js';
 import { useHashScroll } from './useHashScroll.js';
 import { useHeadingIds } from './useHeadingIds.js';
+import { useMessages } from '../i18n/UiLocale.js';
 
 /**
  * Página Tokens gerada (SYS-140): todos os design tokens, uma seção por grupo
@@ -15,12 +16,13 @@ import { useHeadingIds } from './useHeadingIds.js';
  */
 export function PublicTokensPage() {
   const query = useTokens();
+  const t = useMessages();
   const bodyRef = useRef<HTMLElement>(null);
   const { items, headings } = useHeadingIds(bodyRef, `tokens/${query.dataUpdatedAt}`);
   useHashScroll('tokens', headings.length);
 
-  if (query.isLoading) return <p>Loading…</p>;
-  if (query.isError) return <p role="alert">Failed to load the design tokens.</p>;
+  if (query.isLoading) return <p>{t('state.loading')}</p>;
+  if (query.isError) return <p role="alert">{t('state.tokensLoadFailed')}</p>;
   const set = query.data;
   if (!set) return <DocsNotFound />;
 
@@ -28,14 +30,19 @@ export function PublicTokensPage() {
     <div className="sb-page-grid">
       <article className="sb-page-body sb-tokens-page" ref={bodyRef}>
         <header className="sb-page-header">
-          <h1 className="sb-public-title">Tokens</h1>
+          <h1 className="sb-public-title">{t('tokens.title')}</h1>
           <p className="sb-page-subtitle">
-            {set.tokens.length} design tokens
-            {set.modes.length > 1 ? ` in ${set.modes.length} modes (${set.modes.join(', ')})` : ''}.
+            {set.modes.length > 1
+              ? t('tokens.countInModes', {
+                  count: set.tokens.length,
+                  modeCount: set.modes.length,
+                  modes: set.modes.join(', '),
+                })
+              : t('tokens.count', { count: set.tokens.length })}
           </p>
         </header>
         {tokenSections(set.tokens).map(({ group, tokens }) => {
-          const title = group || 'Ungrouped';
+          const title = group || t('tokens.ungrouped');
           return (
             <section key={group}>
               <h2>{title}</h2>

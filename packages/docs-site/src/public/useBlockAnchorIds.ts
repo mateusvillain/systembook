@@ -26,6 +26,9 @@ import { slugify } from './slug.js';
  * abre no topo.
  */
 
+/** Prefixo do id e tipo do bloco ancorável. */
+export type BlockAnchorKind = (typeof KINDS)[number]['prefix'];
+
 /** Nome com sufixo `Target` para não colidir com o componente que o consome. */
 export interface BlockAnchorTarget {
   /** O bloco em si — quem recebe o `id` e para onde a página rola. */
@@ -33,8 +36,8 @@ export interface BlockAnchorTarget {
   /** Onde o botão de âncora é montado (a barra de chrome do bloco). */
   host: HTMLElement;
   id: string;
-  /** Frase usada no nome acessível do botão ("Copy link to this code block"). */
-  label: string;
+  /** Tipo do bloco, que escolhe o nome acessível do botão (`anchor.code`, `anchor.example`). */
+  kind: BlockAnchorKind;
 }
 
 /**
@@ -83,7 +86,6 @@ const KINDS = [
   {
     selector: '.sb-code-block',
     prefix: 'code',
-    label: 'code block',
     /** A barra que já existe no topo do bloco, ao lado do botão "Copy". */
     host: (block: HTMLElement) => block.querySelector<HTMLElement>('.sb-code-head'),
     // Slug legível não existe para código (o "título" seria o próprio código),
@@ -93,7 +95,6 @@ const KINDS = [
   {
     selector: '.sb-component-embed',
     prefix: 'example',
-    label: 'example',
     /** Barra de metadados do embed vivo; ausente nos estados de placeholder. */
     host: (block: HTMLElement) => block.querySelector<HTMLElement>('.sb-component-embed-bar'),
     // Aqui existe nome humano e ele já é estável por natureza (é a referência ao
@@ -180,7 +181,7 @@ export function useBlockAnchorIds(
         seen.set(base, count + 1);
 
         block.id = id;
-        next.push({ block, host, id, label: kind.label });
+        next.push({ block, host, id, kind: kind.prefix });
       }
 
       const prev = current.current;
@@ -191,7 +192,7 @@ export function useBlockAnchorIds(
             a.id === next[i]!.id &&
             a.host === next[i]!.host &&
             a.block === next[i]!.block &&
-            a.label === next[i]!.label,
+            a.kind === next[i]!.kind,
         );
       if (same) return;
 

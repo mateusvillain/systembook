@@ -11,6 +11,7 @@ import { useHashScroll } from './useHashScroll.js';
 import { LegacyDocsRedirect } from './LegacyDocsRedirect.js';
 import { usePageBySlug } from '../content/docsQueries.js';
 import { useDocsPaths } from './docsRoutes.js';
+import { useMessages } from '../i18n/UiLocale.js';
 
 /**
  * Conteúdo de uma página na doc pública (TASK-52): resolve
@@ -30,6 +31,7 @@ export function PublicPageView() {
   const bodyRef = useRef<HTMLElement>(null);
 
   const query = usePageBySlug({ menuSlug, sectionSlug, pageSlug });
+  const t = useMessages();
 
   const paths = useDocsPaths();
 
@@ -54,8 +56,8 @@ export function PublicPageView() {
     headings.length + blockAnchors.length,
   );
 
-  if (query.isLoading) return <p>Loading…</p>;
-  if (query.isError) return <p role="alert">Failed to load the page.</p>;
+  if (query.isLoading) return <p>{t('state.loading')}</p>;
+  if (query.isError) return <p role="alert">{t('state.pageLoadFailed')}</p>;
 
   // Não resolveu como `menu/section/page`. Com 3 segmentos isso ainda pode ser
   // a forma legada `section/page/tab` (SYS-37), então o resolvedor do servidor
@@ -79,7 +81,7 @@ export function PublicPageView() {
           )}
         </header>
         <div data-testid="not-published" style={{ color: '#666' }}>
-          <p>This page has not been published yet.</p>
+          <p>{t('page.notPublished')}</p>
         </div>
       </article>
     );
