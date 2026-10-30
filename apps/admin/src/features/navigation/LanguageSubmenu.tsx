@@ -28,7 +28,9 @@ export function LanguageSubmenu() {
 
   const save = useMutation(
     trpc.auth.setInterfaceLanguage.mutationOptions({
-      onMutate: ({ idioma }) => {
+      onMutate: async ({ idioma }) => {
+        // Um refetch do `me` em voo (foco da janela) sobrescreveria o otimista.
+        await queryClient.cancelQueries({ queryKey: meKey });
         const previous = queryClient.getQueryData(meKey);
         queryClient.setQueryData(meKey, (old) => (old ? { ...old, idiomaInterface: idioma } : old));
         return { previous };
@@ -37,6 +39,7 @@ export function LanguageSubmenu() {
         queryClient.setQueryData(meKey, context?.previous);
         toast.error(t('language.saveFailed'));
       },
+      onSettled: () => queryClient.invalidateQueries({ queryKey: meKey }),
     }),
   );
 

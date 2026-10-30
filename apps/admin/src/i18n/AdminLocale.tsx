@@ -22,15 +22,23 @@ export const ADMIN_LOCALE_NAMES: Record<AdminLocale, string> = {
   'pt-BR': 'Português (Brasil)',
 };
 
-/** Idioma preferido do navegador (o primeiro de `navigator.languages`). */
-function browserLanguage(): string | undefined {
-  if (typeof navigator === 'undefined') return undefined;
-  return navigator.languages?.[0] ?? navigator.language;
+/** Idiomas do navegador em ordem de preferência. */
+function browserLanguages(): readonly string[] {
+  if (typeof navigator === 'undefined') return [];
+  return navigator.languages?.length ? navigator.languages : [navigator.language];
 }
 
-/** Dicionário para a preferência salva; sem preferência, o do navegador; senão `en`. */
+/**
+ * Dicionário para a preferência salva; sem preferência — ou com uma que não
+ * tem dicionário (o server aceita qualquer tag) —, o primeiro idioma do
+ * navegador que tenha; senão `en`.
+ */
 export function resolveAdminLocale(preference: string | null | undefined): AdminLocale {
-  return resolveLocale(preference ?? browserLanguage(), ADMIN_LOCALES, DEFAULT_ADMIN_LOCALE);
+  for (const candidate of [preference, ...browserLanguages()]) {
+    const resolved = resolveLocale(candidate, ADMIN_LOCALES, null);
+    if (resolved) return resolved;
+  }
+  return DEFAULT_ADMIN_LOCALE;
 }
 
 interface AdminLocaleValue {

@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { useAdminLocale, useT } from '../i18n/AdminLocale.js';
 
 /**
@@ -68,9 +67,18 @@ export function createDateFormat(locale: string, justNow: string): DateFormat {
   };
 }
 
+// Um jogo de formatadores por idioma, compartilhado por todas as linhas de uma lista.
+const cache = new Map<string, DateFormat>();
+
 /** Formatadores de data no idioma ativo do admin. */
 export function useDateFormat(): DateFormat {
   const locale = useAdminLocale();
-  const t = useT();
-  return useMemo(() => createDateFormat(locale, t('dates.justNow')), [locale, t]);
+  const justNow = useT()('dates.justNow');
+  const key = `${locale}\u0000${justNow}`;
+  let format = cache.get(key);
+  if (!format) {
+    format = createDateFormat(locale, justNow);
+    cache.set(key, format);
+  }
+  return format;
 }

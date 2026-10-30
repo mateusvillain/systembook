@@ -6,7 +6,6 @@ import { hashPassword, needsRehash, verifyPassword } from '../../auth/password.j
 import { sessions, users, memberships } from '../../db/schema.js';
 import { protectedProcedure, publicProcedure, router } from '../init.js';
 
-// Mesma mensagem para email desconhecido e senha errada — evita enumeração de usuários.
 /**
  * Tag BCP 47 de idioma (`en`, `pt-BR`, `zh-Hant-TW`). Só a forma é validada:
  * qual dicionário existe é assunto do admin, que resolve a tag para o mais
@@ -17,6 +16,7 @@ const languageTagSchema = z
   .max(35)
   .regex(/^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{1,8})*$/);
 
+// Mesma mensagem para email desconhecido e senha errada — evita enumeração de usuários.
 const invalidCredentials = () =>
   new TRPCError({ code: 'UNAUTHORIZED', message: 'Invalid credentials' });
 
