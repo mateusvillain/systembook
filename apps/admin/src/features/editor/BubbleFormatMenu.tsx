@@ -18,6 +18,7 @@ import {
   X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useT } from '@/i18n/AdminLocale';
 
 /**
  * Menu de formatação flutuante (TASK-102): substitui a toolbar fixa —
@@ -123,6 +124,7 @@ export function BubbleFormatMenu({
    */
   linkRequest?: number;
 }) {
+  const t = useT();
   const state = useEditorState({
     editor,
     selector: ({ editor: e }) =>
@@ -250,7 +252,7 @@ export function BubbleFormatMenu({
       editor={editor}
       options={{ placement: 'top', offset: 8 }}
       role="toolbar"
-      aria-label="Formatting"
+      aria-label={t('format.toolbar')}
       // Enquanto o campo de link está aberto a barra fica visível mesmo sem
       // seleção — Cmd/Ctrl+K com o cursor dentro de um link é um caso legítimo,
       // e a barra sumir no instante em que se clica no campo tornaria o editor
@@ -276,8 +278,8 @@ export function BubbleFormatMenu({
             // que o `normalizeUrl` existe para aceitar.
             type="text"
             inputMode="url"
-            placeholder="Paste or type a link"
-            aria-label="Link address"
+            placeholder={t('format.linkPlaceholder')}
+            aria-label={t('format.linkAddress')}
             value={linkDraft.url}
             onChange={(event) => setLinkDraft({ ...linkDraft, url: event.target.value })}
             onBlur={(event) => {
@@ -301,40 +303,40 @@ export function BubbleFormatMenu({
             }}
             className="border-input h-7 w-56 min-w-0 rounded-editorial-sm border bg-transparent px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
           />
-          <BubbleButton label={<Check />} title="Apply link" onClick={applyLink} />
-          {state.link && <BubbleButton label={<Unlink />} title="Remove link" onClick={removeLink} />}
-          <BubbleButton label={<X />} title="Cancel" onClick={closeLinkEditor} />
+          <BubbleButton label={<Check />} title={t('format.applyLink')} onClick={applyLink} />
+          {state.link && <BubbleButton label={<Unlink />} title={t('format.removeLink')} onClick={removeLink} />}
+          <BubbleButton label={<X />} title={t('common.cancel')} onClick={closeLinkEditor} />
         </form>
       ) : (
         <>
           <BubbleButton
             label={<Heading1 />}
-            title="Heading 1"
+            title={t('blocks.h1')}
             active={state.h1}
             onClick={() => chain().toggleHeading({ level: 1 }).run()}
           />
           <BubbleButton
             label={<Heading2 />}
-            title="Heading 2"
+            title={t('blocks.h2')}
             active={state.h2}
             onClick={() => chain().toggleHeading({ level: 2 }).run()}
           />
           <BubbleButton
             label={<Heading3 />}
-            title="Heading 3"
+            title={t('blocks.h3')}
             active={state.h3}
             onClick={() => chain().toggleHeading({ level: 3 }).run()}
           />
           <span className="mx-0.5 h-4 w-px bg-border" aria-hidden />
           <BubbleButton
             label={<Bold />}
-            title="Bold (Cmd/Ctrl+B)"
+            title={t('format.bold')}
             active={state.bold}
             onClick={() => chain().toggleBold().run()}
           />
           <BubbleButton
             label={<Italic />}
-            title="Italic (Cmd/Ctrl+I)"
+            title={t('format.italic')}
             active={state.italic}
             onClick={() => chain().toggleItalic().run()}
           />
@@ -343,32 +345,32 @@ export function BubbleFormatMenu({
               ele faz. O atalho `Mod-u` vem da própria extensão. */}
           <BubbleButton
             label={<UnderlineIcon />}
-            title="Underline (Cmd/Ctrl+U)"
+            title={t('format.underline')}
             active={state.underline}
             onClick={() => chain().toggleUnderline().run()}
           />
           <BubbleButton
             label={<LinkIcon />}
-            title={state.link ? 'Edit link (Cmd/Ctrl+K)' : 'Add link (Cmd/Ctrl+K)'}
+            title={state.link ? t('format.editLink') : t('format.addLink')}
             active={state.link}
             onClick={openLinkEditor}
           />
           <span className="mx-0.5 h-4 w-px bg-border" aria-hidden />
           <BubbleButton
             label={<List />}
-            title="Bulleted list"
+            title={t('blocks.bulletList')}
             active={state.bulletList}
             onClick={() => chain().toggleBulletList().run()}
           />
           <BubbleButton
             label={<ListOrdered />}
-            title="Numbered list"
+            title={t('blocks.orderedList')}
             active={state.orderedList}
             onClick={() => chain().toggleOrderedList().run()}
           />
           <BubbleButton
             label={<Code />}
-            title="Code block"
+            title={t('blocks.codeBlock')}
             active={state.codeBlock}
             onClick={() => chain().toggleCodeBlock().run()}
           />

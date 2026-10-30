@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import '@systembook/docs-site/public.css';
+import { useT } from '@/i18n/AdminLocale';
 
 /**
  * Preview do rascunho (SYS-58): mostra a página **como o leitor a veria** se
@@ -83,6 +84,7 @@ export function DraftPreviewDialog({
 
 function PreviewBody({ pageId }: { pageId: string }) {
   const trpc = useTRPC();
+  const t = useT();
   const { theme, toggle } = useTheme();
   const bodyRef = useRef<HTMLElement>(null);
 
@@ -117,11 +119,11 @@ function PreviewBody({ pageId }: { pageId: string }) {
       <header className="bg-background flex h-14 shrink-0 items-center justify-between gap-3 border-b px-4">
         <div className="flex min-w-0 items-center gap-2.5">
           <Eye className="text-muted-foreground size-4 shrink-0" aria-hidden />
-          <DialogTitle className="shrink-0">Draft preview</DialogTitle>
+          <DialogTitle className="shrink-0">{t('preview.title')}</DialogTitle>
           {/* Estado dito por texto, não por cor: o aviso de "isto não é o que
               está no ar" não pode depender de distinguir um tom de fundo. */}
           <span className="text-muted-foreground shrink-0 rounded-full border px-2 py-0.5 text-xs">
-            Not published
+            {t('preview.notPublished')}
           </span>
           {/* O título só existe aqui como orientação em telas largas: ele é a
               primeira coisa dentro do próprio preview, e no mobile disputava a
@@ -144,10 +146,10 @@ function PreviewBody({ pageId }: { pageId: string }) {
             className="min-h-11 sm:min-h-8"
             onClick={toggle}
             aria-pressed={dark}
-            aria-label={dark ? 'Switch preview to light theme' : 'Switch preview to dark theme'}
+            aria-label={dark ? t('preview.toLight') : t('preview.toDark')}
           >
             {dark ? <Sun className="size-4" aria-hidden /> : <Moon className="size-4" aria-hidden />}
-            <span className="hidden sm:inline">{dark ? 'Light' : 'Dark'}</span>
+            <span className="hidden sm:inline">{dark ? t('preview.light') : t('preview.dark')}</span>
           </Button>
           <DialogClose asChild>
             <Button
@@ -155,10 +157,10 @@ function PreviewBody({ pageId }: { pageId: string }) {
               variant="ghost"
               size="sm"
               className="min-h-11 sm:min-h-8"
-              aria-label="Close preview"
+              aria-label={t('preview.close')}
             >
               <X className="size-4" aria-hidden />
-              <span className="hidden sm:inline">Close</span>
+              <span className="hidden sm:inline">{t('common.close')}</span>
               <kbd className="text-muted-foreground/80 hidden rounded border px-1 text-[11px] sm:inline">
                 Esc
               </kbd>
@@ -168,18 +170,17 @@ function PreviewBody({ pageId }: { pageId: string }) {
       </header>
 
       <DialogDescription id="draft-preview-description" className="sr-only">
-        Read-only rendering of this page&apos;s current draft, including your latest edits. Nothing
-        here is published until you publish the page.
+        {t('preview.description')}
       </DialogDescription>
 
       {/* `sb-public--preview` desarma o shell de página inteira (grid de
           sidebar + 100dvh) e deixa o cartão preencher o que sobra do dialog. */}
       <div className="sb-public sb-public--preview" data-theme={theme}>
         {query.isPending || query.isFetching ? (
-          <PreviewMessage>Loading preview…</PreviewMessage>
+          <PreviewMessage>{t('preview.loading')}</PreviewMessage>
         ) : query.isError ? (
           <PreviewMessage role="alert">
-            Could not load the preview. Close and try again.
+            {t('preview.loadFailed')}
           </PreviewMessage>
         ) : (
           <main className="sb-public-content">

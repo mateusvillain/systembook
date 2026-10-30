@@ -14,6 +14,7 @@ import { ComponentEmbedPicker, type ComponentEmbedSelection } from './ComponentE
 import { insertComponentEmbed } from './blockInsert.js';
 import '@systembook/docs-site/content.css';
 import './editor.css';
+import { useT } from '@/i18n/AdminLocale';
 
 declare global {
   interface Window {
@@ -43,6 +44,7 @@ export const ContentEditor = forwardRef<ContentEditorHandle, { tabId: string }>(
   ref,
 ) {
   const trpc = useTRPC();
+  const t = useT();
   const query = useQuery({
     ...trpc.blocks.getByTab.queryOptions({ tabId }),
     // Sem cache entre montagens: o rascunho pode ter sido salvo pelo flush do
@@ -50,15 +52,30 @@ export const ContentEditor = forwardRef<ContentEditorHandle, { tabId: string }>(
     gcTime: 0,
   });
 
-  if (query.isPending) return <p>Loading content…</p>;
-  if (query.isError) return <p role="alert">Failed to load the tab content.</p>;
+  if (query.isPending) return <p>{t('editor.loading')}</p>;
+  if (query.isError) return <p role="alert">{t('editor.loadFailed')}</p>;
 
   return <EditorInner ref={ref} tabId={tabId} initialDoc={query.data.doc as JSONContent | null} />;
 });
 
+/**
+ * Atributos do `contenteditable`. O `role` repete o que o Tiptap põe na
+ * criação (`{ role: 'textbox', ...attributes }`), que um `setOptions` posterior
+ * apagaria. Objeto, não função: o Tiptap espalha `attributes` e uma função
+ * não teria nada para espalhar.
+ */
+function editorAttributes(label: string, tabId: string): Record<string, string> {
+  return { role: 'textbox', 'aria-label': label, 'data-tab-id': tabId };
+}
+
 const EditorInner = forwardRef<ContentEditorHandle, { tabId: string; initialDoc: JSONContent | null }>(
   function EditorInner({ tabId, initialDoc }, ref) {
     const trpc = useTRPC();
+    const t = useT();
+    // Lido pelas extensões e pelos atributos do ProseMirror, que vivem mais que
+    // um render — o idioma pode mudar com o editor aberto.
+    const tRef = useRef(t);
+    tRef.current = t;
     const [status, setStatus] = useState<SaveStatus>('idle');
     const saveDraft = useMutation(trpc.blocks.saveDraft.mutationOptions());
 
@@ -78,7 +95,7 @@ const EditorInner = forwardRef<ContentEditorHandle, { tabId: string; initialDoc:
     const extensions = useMemo(
       () => [
         ...sharedExtensions,
-        createSlashCommandExtension({ onRequestEmbed: setSlashEmbedAtPos }),
+        createSlashCommandExtension({ onRequestEmbed: setSlashEmbedAtPos, getTranslator: () => tRef.current }),
         createLinkShortcutExtension({ onRequestLink: () => setLinkRequest((n) => n + 1) }),
       ],
       [],
@@ -124,7 +141,7 @@ const EditorInner = forwardRef<ContentEditorHandle, { tabId: string; initialDoc:
         extensions,
         content: initialDoc ?? '',
         editorProps: {
-          attributes: { 'aria-label': 'Tab content', 'data-tab-id': tabId },
+          attributes: editorAttributes(tRef.current('editor.tabContent'), tabId),
         },
         onUpdate: ({ editor: e }) => {
           pendingDocRef.current = e.getJSON();
@@ -136,6 +153,17 @@ const EditorInner = forwardRef<ContentEditorHandle, { tabId: string; initialDoc:
       },
       [tabId],
     );
+
+    // Troca de idioma com o editor aberto: o `useEditor` só lê os atributos na
+    // criação. `setOptions` repassa o `editorProps` inteiro ao ProseMirror —
+    // por isso o objeto completo, `role` incluído.
+    const tabContentLabel = t('editor.tabContent');
+    useEffect(() => {
+      if (!editor || editor.isDestroyed) return;
+      editor.setOptions({
+        editorProps: { ...editor.options.editorProps, attributes: editorAttributes(tabContentLabel, tabId) },
+      });
+    }, [editor, tabContentLabel, tabId]);
 
     // Doc sem nenhum bloco → mostra o Empty State do editor (TASK-90) em vez de
     // um editor em branco. Checagem **estrutural** (não `editor.isEmpty`, que é
@@ -185,9 +213,9 @@ const EditorInner = forwardRef<ContentEditorHandle, { tabId: string; initialDoc:
               paddingBottom: '0.35rem',
             }}
           >
-            {status === 'saving' && 'Saving…'}
-            {status === 'saved' && 'Saved'}
-            {status === 'error' && 'Error saving'}
+            {status === 'saving' && t('editor.saving')}
+            {status === 'saved' && t('editor.saved')}
+            {status === 'error' && t('editor.saveFailed')}
           </span>
         </div>
         <div ref={canvasRef} className="sb-editor-canvas relative">

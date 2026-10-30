@@ -1,5 +1,6 @@
 import { adminTypography } from '@/lib/typography';
 import { cn } from '@/lib/utils';
+import { useT } from '@/i18n/AdminLocale';
 
 /**
  * Empty State do editor (TASK-90, simplificado na TASK-104): quando a
@@ -10,6 +11,7 @@ import { cn } from '@/lib/utils';
  * (`SlashCommand`, TASK-103) funcionam normalmente sobre o parágrafo vazio.
  */
 export function EditorEmptyState() {
+  const t = useT();
   return (
     // contentEditable={false}: o hint não faz parte do documento editável.
     // Mesmo padding do `.sb-editor .ProseMirror` (content.css) — a regra do
@@ -17,8 +19,7 @@ export function EditorEmptyState() {
     // exatamente sobre a primeira linha vazia.
     <div contentEditable={false} className="sb-editor-empty-hint pointer-events-none absolute inset-0">
       <p className={cn(adminTypography.body, 'text-muted-foreground/70')}>
-        Start typing, or type &quot;/&quot; to open the block menu. Markdown works
-        (**bold**, # heading, - list).
+        {t('editor.emptyHint')}
       </p>
     </div>
   );

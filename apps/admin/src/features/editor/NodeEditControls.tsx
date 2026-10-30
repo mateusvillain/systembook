@@ -10,6 +10,8 @@ import {
   type TokenTableEditControlsProps,
   type VariantSwitcherProps,
 } from '@systembook/docs-site';
+import { useT } from '@/i18n/AdminLocale';
+import type { AdminMessageKey } from '@/i18n/messages/en';
 
 /**
  * Controles de edição inline dos nós de conteúdo (SYS-89). Os NodeViews vivem
@@ -18,12 +20,24 @@ import {
  * o editor editável.
  */
 
+const CALLOUT_LABEL = {
+  info: 'editor.callout.info',
+  warning: 'editor.callout.warning',
+  tip: 'editor.callout.tip',
+} as const satisfies Record<CalloutVariant, AdminMessageKey>;
+
+const DOS_DONTS_LABEL = {
+  do: 'editor.dosDonts.do',
+  dont: 'editor.dosDonts.dont',
+} as const satisfies Record<DosDontsVariant, AdminMessageKey>;
+
 /** Switcher de variante do callout: overlay no canto superior direito (SYS-24). */
 export function CalloutVariantSwitcher({ variant, onChange }: VariantSwitcherProps<CalloutVariant>) {
+  const t = useT();
   return (
     <span
       role="group"
-      aria-label="Variante do callout"
+      aria-label={t('editor.callout.variants')}
       className="sb-callout-switcher"
       contentEditable={false}
     >
@@ -33,14 +47,14 @@ export function CalloutVariantSwitcher({ variant, onChange }: VariantSwitcherPro
           <button
             key={v}
             type="button"
-            title={`Change to ${CALLOUT_META[v].label.toLowerCase()}`}
+            title={t('editor.variant.changeTo', { name: t(CALLOUT_LABEL[v]) })}
             aria-pressed={v === variant}
             className="sb-callout-switch"
             data-active={v === variant || undefined}
             onClick={() => onChange(v)}
           >
             <SwitchIcon aria-hidden size={12} />
-            {CALLOUT_META[v].label}
+            {t(CALLOUT_LABEL[v])}
           </button>
         );
       })}
@@ -57,10 +71,11 @@ export function DosDontsVariantSwitcher({
   variant,
   onChange,
 }: VariantSwitcherProps<DosDontsVariant>) {
+  const t = useT();
   return (
     <span
       role="group"
-      aria-label="Variante do bloco Do/Don't"
+      aria-label={t('editor.dosDonts.variants')}
       className="sb-dos-donts-switcher"
       contentEditable={false}
     >
@@ -70,14 +85,14 @@ export function DosDontsVariantSwitcher({
           <button
             key={v}
             type="button"
-            title={`Change to ${DOS_DONTS_META[v].label}`}
+            title={t('editor.variant.changeTo', { name: t(DOS_DONTS_LABEL[v]) })}
             aria-pressed={v === variant}
             className="sb-dos-donts-switch"
             data-active={v === variant || undefined}
             onClick={() => onChange(v)}
           >
             <SwitchIcon aria-hidden size={12} />
-            {DOS_DONTS_META[v].label}
+            {t(DOS_DONTS_LABEL[v])}
           </button>
         );
       })}
@@ -86,13 +101,14 @@ export function DosDontsVariantSwitcher({
 }
 
 export function DosDontsTitleField({ titulo, onChange }: DosDontsTitleFieldProps) {
+  const t = useT();
   return (
     <input
       type="text"
       className="sb-dos-donts-title-input"
-      placeholder="Title"
+      placeholder={t('editor.dosDonts.title')}
       value={titulo}
-      aria-label="Do/Don't block title"
+      aria-label={t('editor.dosDonts.titleLabel')}
       onChange={(e) => onChange(e.target.value)}
     />
   );
@@ -102,14 +118,15 @@ export function DosDontsTitleField({ titulo, onChange }: DosDontsTitleFieldProps
 const PLAIN = 'plain';
 
 export function CodeLanguageSelect({ language, onChange }: CodeLanguageSelectProps) {
+  const t = useT();
   return (
     <select
       className="sb-code-lang-select"
-      aria-label="Code language"
+      aria-label={t('editor.code.language')}
       value={language ?? PLAIN}
       onChange={(e) => onChange(e.target.value === PLAIN ? null : e.target.value)}
     >
-      <option value={PLAIN}>Plain text</option>
+      <option value={PLAIN}>{t('editor.code.plain')}</option>
       {LANGUAGES.map((l) => (
         <option key={l.value} value={l.value}>
           {l.label}
@@ -130,17 +147,18 @@ export function TokenTableGroupSelect({ group, groups, status, onSelect }: Token
   // O grupo salvo precisa ser uma opção para o select mostrá-lo: marcado
   // quando os tokens chegaram e ele não está entre os grupos; sem tokens, só o nome.
   const stale = !!group && !groups.includes(group);
+  const t = useT();
   return (
     <label className="sb-token-group-label">
-      <span>Group</span>
+      <span>{t('editor.tokens.group')}</span>
       <select
         className="sb-token-group-select"
         value={group}
         disabled={status !== 'available'}
         onChange={(e) => onSelect(e.target.value)}
       >
-        <option value="">All tokens</option>
-        {stale && <option value={group}>{status === 'available' ? `${group} (not found)` : group}</option>}
+        <option value="">{t('editor.tokens.all')}</option>
+        {stale && <option value={group}>{status === 'available' ? t('editor.tokens.notFound', { name: group }) : group}</option>}
         {groups.map((g) => (
           <option key={g} value={g}>
             {g}
