@@ -4,6 +4,7 @@ import type { Token, TokenValue } from '@systembook/schema';
 import { toCssValue } from '@systembook/content/tokens';
 import { TokenTable, type TokenTableProps } from './TokenTable.js';
 import { modesForToken, modesToShow } from './tokenModes.js';
+import { useMessages } from '../../i18n/UiLocale.js';
 
 /**
  * Tokens de movimento (SYS-151): `cubicBezier`, `duration` e `transition`
@@ -99,6 +100,7 @@ function Curve({ bezier: [x1, y1, x2, y2] }: { bezier: Bezier }) {
 /** O trilho: cada clique em "play" remonta o ponto, que reinicia a animação. */
 function Run({ motion, label }: { motion: Motion; label: string }) {
   const [run, setRun] = useState(0);
+  const t = useMessages();
   const style = {
     '--sb-motion-easing': motion.easing,
     '--sb-motion-duration': `${motion.durationMs ?? CURVE_PREVIEW_MS}ms`,
@@ -109,7 +111,7 @@ function Run({ motion, label }: { motion: Motion; label: string }) {
       <button
         type="button"
         className="sb-token-motion-play"
-        aria-label={`Play ${label}`}
+        aria-label={t('tokens.play', { name: label })}
         // Não tira o foco do editor quando a tabela está no ProseMirror.
         onMouseDown={(e) => e.preventDefault()}
         onClick={() => setRun((n) => n + 1)}

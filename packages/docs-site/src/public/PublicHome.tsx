@@ -4,6 +4,7 @@ import { PageRenderer } from './PageRenderer.js';
 import { useLanding } from '../content/docsQueries.js';
 import { useDocsPaths } from './docsRoutes.js';
 import { useMessages } from '../i18n/UiLocale.js';
+import { formatRich } from '../i18n/rich.js';
 
 /**
  * Raiz da doc pública (`/docs` no modo CMS, TASK-56). Mostra a **página inicial
@@ -38,26 +39,25 @@ export function PublicHome() {
   const firstMenu = tree[0];
   const firstSection = firstMenu?.sections[0];
   const firstPage = firstSection?.pages[0];
-  // O link da 1ª página entra no lugar de `{page}`: o tradutor devolve texto e
-  // mantém variáveis não passadas. Tradução sem `{page}` põe o link no fim.
-  const [startBefore, startAfter = ''] = t('home.startAt').split('{page}');
 
   return (
     <div data-testid="landing-default">
       <h1 className="sb-public-title">{t('home.title')}</h1>
       {firstMenu && firstSection && firstPage ? (
         <p>
-          {startBefore}
-          <Link
-            to={paths.page({
-              menuSlug: firstMenu.slug,
-              sectionSlug: firstSection.slug,
-              pageSlug: firstPage.slug,
-            })}
-          >
-            {firstPage.titulo}
-          </Link>
-          {startAfter}
+          {formatRich(t('home.startAt'), {
+            page: (
+              <Link
+                to={paths.page({
+                  menuSlug: firstMenu.slug,
+                  sectionSlug: firstSection.slug,
+                  pageSlug: firstPage.slug,
+                })}
+              >
+                {firstPage.titulo}
+              </Link>
+            ),
+          })}
         </p>
       ) : (
         <p className="sb-public-empty">{t('home.empty')}</p>

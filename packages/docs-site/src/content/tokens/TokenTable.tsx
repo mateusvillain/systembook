@@ -4,6 +4,7 @@ import { toCssLines, toCssValue } from '@systembook/content/tokens';
 import { TokenCopy, useCopyAnnouncer } from './TokenCopy.js';
 import { modesForToken, modesToShow } from './tokenModes.js';
 import '../content.css';
+import { useMessages } from '../../i18n/UiLocale.js';
 
 /** O valor de um token num modo como CSS; `null` quando não há conversão. */
 function cssValue(token: Token, mode: string): string | null {
@@ -53,6 +54,7 @@ function TokenValueLines({ lines }: { lines: string[] }) {
  * inclusive os que não têm amostra própria.
  */
 export function TokenTable({ tokens, modes, label, preview }: TokenTableProps) {
+  const t = useMessages();
   const shown = modesToShow(tokens, modes);
   const single = shown.length === 1;
   const { announce, region } = useCopyAnnouncer();
@@ -62,9 +64,9 @@ export function TokenTable({ tokens, modes, label, preview }: TokenTableProps) {
       <table className="sb-tokens" aria-label={label}>
         <thead>
           <tr>
-            <th scope="col">Token</th>
+            <th scope="col">{t('tokens.colToken')}</th>
             {single ? (
-              <th scope="col">Value</th>
+              <th scope="col">{t('tokens.colValue')}</th>
             ) : (
               shown.map((mode) => (
                 <th key={mode} scope="col">
@@ -72,7 +74,7 @@ export function TokenTable({ tokens, modes, label, preview }: TokenTableProps) {
                 </th>
               ))
             )}
-            <th scope="col">Details</th>
+            <th scope="col">{t('tokens.colDetails')}</th>
           </tr>
         </thead>
         <tbody>
@@ -80,7 +82,7 @@ export function TokenTable({ tokens, modes, label, preview }: TokenTableProps) {
             <tr key={token.path} data-deprecated={token.deprecated ? '' : undefined}>
               <th scope="row" className="sb-token-head">
                 <code className="sb-token-name">{token.path}</code>
-                {token.deprecated ? <span className="sb-token-deprecated">Deprecated</span> : null}
+                {token.deprecated ? <span className="sb-token-deprecated">{t('tokens.deprecated')}</span> : null}
               </th>
               {modesForToken(token, shown).map((mode, _i, cells) => {
                 const css = cssValue(token, mode);
@@ -88,7 +90,7 @@ export function TokenTable({ tokens, modes, label, preview }: TokenTableProps) {
                 const spans = cells.length < shown.length;
                 return (
                   <td key={mode} className="sb-token-cell" colSpan={spans ? shown.length : undefined}>
-                    {spans ? <span className="sb-token-all-modes">Same in all modes</span> : null}
+                    {spans ? <span className="sb-token-all-modes">{t('tokens.sameInAllModes')}</span> : null}
                     {preview?.(token, mode, css)}
                     <TokenValueLines lines={toCssLines(token.type, resolvedValue) ?? [css ?? JSON.stringify(resolvedValue)]} />
                     {aliasOf ? <span className="sb-token-alias">→ {aliasOf}</span> : null}

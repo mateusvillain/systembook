@@ -10,6 +10,7 @@ import { Check, X, type LucideIcon } from 'lucide-react';
 import type { DosDontsCover, DosDontsVariant } from '@systembook/schema';
 import { DosDontsCoverView, type DosDontsCoverFieldProps } from './DosDontsCover.js';
 import type { VariantSwitcherProps } from './Callout.js';
+import { useMessages } from '../../i18n/UiLocale.js';
 
 /**
  * Bloco de convenção de uso (Fase 8, TASK-72/73) — mesmo padrão NodeView React
@@ -63,6 +64,7 @@ function DosDontsView({ node, updateAttributes, editor, extension }: NodeViewPro
   const cover = node.attrs.cover as DosDontsCover | null;
   const meta = DOS_DONTS_META[variant];
   const Icon = meta.icon;
+  const t = useMessages();
 
   return (
     <NodeViewWrapper className="sb-dos-donts" data-variant={variant}>
@@ -78,6 +80,8 @@ function DosDontsView({ node, updateAttributes, editor, extension }: NodeViewPro
             padding calculado à mão para acompanhar a largura do ícone. */}
         <span className="sb-dos-donts-icon" contentEditable={false}>
           <Icon aria-hidden size={17} />
+          {/* O ícone é a única pista visual do tipo; o leitor de tela ouve o nome. */}
+          <span className="sr-only">{t(variant === 'do' ? 'dosDonts.do' : 'dosDonts.dont')}</span>
         </span>
         <div className="sb-dos-donts-text">
           {editor.isEditable && TitleField ? (

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type RefObject } from 'react
 import type { PreviewSetTokensMessage } from '@systembook/schema';
 import { tokensToCss } from '@systembook/content/tokens';
 import { useTokens } from './docsQueries.js';
+import { useMessages } from '../i18n/UiLocale.js';
 
 /**
  * Design tokens no preview (SYS-148): o iframe recebe as variáveis CSS de
@@ -49,9 +50,10 @@ export function usePreviewTokens(iframeRef: RefObject<HTMLIFrameElement | null>)
 
 /** Alterna o modo dos tokens no preview; some sem tokens ou com um modo só. */
 export function PreviewModeToggle({ modes, mode, setMode }: Pick<PreviewTokens, 'modes' | 'mode' | 'setMode'>) {
+  const t = useMessages();
   if (modes.length < 2) return null;
   return (
-    <div className="sb-preview-mode" role="group" aria-label="Token mode" data-testid="preview-mode">
+    <div className="sb-preview-mode" role="group" aria-label={t('embed.tokenMode')} data-testid="preview-mode">
       {modes.map((m) => (
         <button
           key={m}
