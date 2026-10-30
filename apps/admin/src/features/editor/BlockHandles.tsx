@@ -19,6 +19,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useT } from '@/i18n/AdminLocale';
 
 /**
  * Controle inline por bloco (TASK-88, plano `# Inline Toolbar`; drag-and-drop
@@ -38,6 +39,7 @@ import {
  */
 export function BlockHandles({ editor }: { editor: Editor }) {
   const [current, setCurrent] = useState<{ node: PMNode | null; pos: number }>({ node: null, pos: -1 });
+  const t = useT();
   const [addOpen, setAddOpen] = useState(false);
   const [actionsOpen, setActionsOpen] = useState(false);
   const [embedAtPos, setEmbedAtPos] = useState<number | null>(null);
@@ -87,8 +89,8 @@ export function BlockHandles({ editor }: { editor: Editor }) {
             <button
               type="button"
               draggable={false}
-              aria-label="Add block below"
-              title="Add block"
+              aria-label={t('blocks.addBelow')}
+              title={t('blocks.add')}
               onMouseDown={(e) => e.preventDefault()}
               className="text-muted-foreground hover:text-foreground hover:bg-accent inline-flex size-6 items-center justify-center rounded-editorial-sm transition-colors"
             >
@@ -100,7 +102,7 @@ export function BlockHandles({ editor }: { editor: Editor }) {
               <div key={group.label}>
                 {gi > 0 && <DropdownMenuSeparator className="my-1" />}
                 <DropdownMenuLabel className="px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">
-                  {group.label}
+                  {t(group.label)}
                 </DropdownMenuLabel>
                 {group.items.map((item) => (
                   <DropdownMenuItem
@@ -109,7 +111,7 @@ export function BlockHandles({ editor }: { editor: Editor }) {
                     className="group flex items-center gap-2.5 rounded-editorial-sm px-2.5 py-1.5 text-sm font-medium text-foreground/90 hover:bg-accent hover:text-foreground cursor-pointer transition-colors"
                   >
                     <item.icon className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground group-focus:text-foreground" />
-                    <span>{item.label}</span>
+                    <span>{t(item.label)}</span>
                   </DropdownMenuItem>
                 ))}
               </div>
@@ -125,8 +127,8 @@ export function BlockHandles({ editor }: { editor: Editor }) {
               // que o `<DragHandle>` aplica no container pai) — sem isto o
               // arrastar a partir deste botão especificamente não iniciava.
               draggable
-              aria-label="Drag to reorder; click for more actions"
-              title="Drag to reorder · click for more actions"
+              aria-label={t('blocks.handle')}
+              title={t('blocks.handleTitle')}
               className="text-muted-foreground hover:text-foreground hover:bg-accent inline-flex size-6 cursor-grab items-center justify-center rounded-editorial-sm active:cursor-grabbing"
             >
               <GripVertical className="size-4" />
@@ -139,7 +141,7 @@ export function BlockHandles({ editor }: { editor: Editor }) {
               }}
             >
               <Copy className="size-4" />
-              Duplicate block
+              {t('blocks.duplicate')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -149,7 +151,7 @@ export function BlockHandles({ editor }: { editor: Editor }) {
               }}
             >
               <Trash2 className="size-4" />
-              Delete block
+              {t('blocks.delete')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

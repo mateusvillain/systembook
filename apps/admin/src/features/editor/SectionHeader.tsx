@@ -3,6 +3,8 @@ import { Clock } from 'lucide-react';
 import { adminTypography } from '../../lib/typography.js';
 import { useDateFormat } from '../../lib/dates.js';
 import { cn } from '@/lib/utils';
+import { useT } from '@/i18n/AdminLocale';
+import { formatRich } from '@systembook/docs-site';
 
 /**
  * Section Header do editor (TASK-87, plano `# Área principal` / `# Hierarquia
@@ -97,6 +99,7 @@ function DescriptionField({
   onChange: (value: string) => void;
   placeholder?: string;
 }) {
+  const t = useT();
   const ref = useRef<HTMLTextAreaElement>(null);
   useLayoutEffect(() => {
     const el = ref.current;
@@ -111,7 +114,7 @@ function DescriptionField({
       rows={1}
       value={value}
       placeholder={placeholder}
-      aria-label="Page introduction (optional)"
+      aria-label={t('header.introduction')}
       onChange={(e) => onChange(e.target.value)}
       className={cn(
         adminTypography.description,
@@ -123,19 +126,23 @@ function DescriptionField({
 
 function MetaRow({ published, meta }: { published: boolean; meta: SectionHeaderMeta }) {
   const dates = useDateFormat();
+  const t = useT();
   return (
     <p className={cn(adminTypography.metadata, 'flex items-center gap-1.5')}>
       <Clock className="size-3.5 shrink-0 opacity-70" aria-hidden />
       {published && meta.updatedAt != null ? (
         <span>
-          Updated{' '}
-          <time dateTime={new Date(meta.updatedAt).toISOString()} title={dates.absolute(meta.updatedAt)}>
-            {dates.relative(meta.updatedAt)}
-          </time>{' '}
-          by {meta.author ?? 'removed user'}
+          {formatRich(t('header.updated'), {
+            time: (
+              <time dateTime={new Date(meta.updatedAt).toISOString()} title={dates.absolute(meta.updatedAt)}>
+                {dates.relative(meta.updatedAt)}
+              </time>
+            ),
+            author: meta.author ?? t('header.removedUser'),
+          })}
         </span>
       ) : (
-        <span>Never published</span>
+        <span>{t('header.neverPublished')}</span>
       )}
     </p>
   );

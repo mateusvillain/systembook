@@ -13,6 +13,9 @@ import { Button } from '@/components/ui/button';
 import { RowActionsMenu } from '@/components/RowActionsMenu';
 import { createLinkClass } from '@/lib/styles';
 import { cn } from '@/lib/utils';
+import { useT } from '../i18n/AdminLocale.js';
+import type { AdminMessageKey } from '../i18n/messages/en.js';
+import type { Translator } from '@systembook/docs-site';
 
 /**
  * Superfície de edição de uma página (TASK-67). Edita o **corpo** da página (a
@@ -28,6 +31,7 @@ import { cn } from '@/lib/utils';
 export function PageContentPage() {
   const { pageId, tabId } = useParams<{ pageId: string; tabId?: string }>();
   const trpc = useTRPC();
+  const t = useT();
   const navigate = useNavigate();
   const primary = useQuery(trpc.tabs.getPrimary.queryOptions({ pageId: pageId! }));
   const userTabs = useQuery(trpc.tabs.listByPage.queryOptions({ pageId: pageId! }));
@@ -70,14 +74,14 @@ export function PageContentPage() {
   const publish = useMutation(
     trpc.pages.publish.mutationOptions({
       onSuccess: () => {
-        toast.success('Page published.');
+        toast.success(t('page.published'));
         // Atualiza status/metadados do Section Header (nova revisão publicada).
         queryClient.invalidateQueries(trpc.revisions.listByPage.queryFilter({ pageId: pageId! }));
         // E o indicador de rascunho pendente na árvore (SYS-68), que acabou de
         // deixar de valer para esta página.
         queryClient.invalidateQueries(trpc.pages.draftStatus.queryFilter());
       },
-      onError: () => toast.error('Failed to publish. Try again.'),
+      onError: () => toast.error(t('page.publishFailed')),
     }),
   );
   const [checking, setChecking] = useState(false);
@@ -122,21 +126,21 @@ export function PageContentPage() {
       setChecking(false);
     }
 
-    if (broken.length > 0 && !window.confirm(brokenEmbedsWarning(broken))) return;
+    if (broken.length > 0 && !window.confirm(brokenEmbedsWarning(broken, t))) return;
 
     publish.mutate({ pageId: pageId! });
   }
 
   if (primary.isPending || userTabs.isPending || header.isPending || revisions.isPending)
-    return <p className="text-muted-foreground">Loading…</p>;
+    return <p className="text-muted-foreground">{t('common.loading')}</p>;
   if (primary.isError || !primary.data || header.isError || !header.data)
-    return <p role="alert">Page not found.</p>;
+    return <p role="alert">{t('page.notFound')}</p>;
 
   const tabs = userTabs.data ?? [];
   // Sem tabId na URL = editando o corpo (tab primária).
   const activeTabId = tabId ?? primary.data.id;
-  const activeUserTab = tabId ? tabs.find((t) => t.id === tabId) : undefined;
-  if (tabId && !activeUserTab) return <p role="alert">Tab not found.</p>;
+  const activeUserTab = tabId ? tabs.find((tab) => tab.id === tabId) : undefined;
+  if (tabId && !activeUserTab) return <p role="alert">{t('page.tabNotFound')}</p>;
 
   const { section, page } = header.data;
   // Metadados de publicação: a última revisão (listByPage vem em ordem desc).
@@ -157,7 +161,7 @@ export function PageContentPage() {
   }
 
   function handleDeleteTab(tab: { id: string; titulo: string }) {
-    if (!window.confirm(`Delete the tab "${tab.titulo}" and its content?`)) return;
+    if (!window.confirm(t('page.deleteTabConfirm', { name: tab.titulo }))) return;
     deleteTab.mutate(
       { id: tab.id },
       {
@@ -176,7 +180,7 @@ export function PageContentPage() {
         title={page.titulo}
         description={subtitle}
         onDescriptionChange={handleSubtitleChange}
-        descriptionPlaceholder="Add an introduction (optional)"
+        descriptionPlaceholder={t('page.introPlaceholder')}
         published={published}
         meta={{ updatedAt: latest?.criadoEm ?? null, author: latest?.autorEmail ?? null }}
         statusSlot={<StatusTagSelector pageId={page.id} statusTagId={page.statusTagId} />}
@@ -186,13 +190,13 @@ export function PageContentPage() {
                 consultar o passado (History), e a ação irreversível (Publish)
                 fica por último, sozinha como primária. */}
             <Button type="button" variant="ghost" ref={previewButtonRef} onClick={handlePreview}>
-              Preview
+              {t('page.preview')}
             </Button>
             <Button asChild variant="ghost">
-              <Link to={`/pages/${pageId}/history`}>History</Link>
+              <Link to={`/pages/${pageId}/history`}>{t('page.history')}</Link>
             </Button>
             <Button type="button" onClick={handlePublish} disabled={publish.isPending || checking}>
-              {publish.isPending ? 'Publishing…' : 'Publish'}
+              {publish.isPending ? t('page.publishing') : t('page.publish')}
             </Button>
           </>
         }
@@ -200,11 +204,11 @@ export function PageContentPage() {
 
       {/* Tab bar: Corpo + tabs de usuário. Com 0 tabs, só o gatilho "+ Aba". */}
       {tabs.length > 0 ? (
-        <nav aria-label="Page views" className="-mt-2 flex flex-wrap items-center gap-1 border-b">
+        <nav aria-label={t('page.views')} className="-mt-2 flex flex-wrap items-center gap-1 border-b">
           <TabItem
             to={`/pages/${pageId}`}
             end
-            tab={{ id: primary.data.id, titulo: bodyViewLabel(primary.data.titulo) }}
+            tab={{ id: primary.data.id, titulo: bodyViewLabel(primary.data.titulo, t('page.overview')) }}
             onRename={(titulo) => renameTab.mutate({ id: primary.data.id, titulo })}
           />
           {tabs.map((tab, i) => (
@@ -252,35 +256,36 @@ type BrokenEmbed = RouterOutput['pages']['validateEmbeds'][number];
  * outra confirmação desta mesma tela (exclusão de tab) — o admin ainda não
  * tem primitiva de dialog.
  */
-function brokenEmbedsWarning(broken: BrokenEmbed[]): string {
+function brokenEmbedsWarning(broken: BrokenEmbed[], t: Translator<AdminMessageKey>): string {
   // O servidor reporta por bloco (a UI precisa saber quais corrigir), mas a
   // mesma variante embutida N vezes na mesma tab renderia N linhas idênticas —
   // parece bug e não ajuda a distinguir. Agrupa e sufixa a contagem.
   const grupos = new Map<string, { linha: string; blocos: number }>();
   for (const e of broken) {
     const alvo = e.variantId ? `"${e.componentName}" (${e.variantId})` : `"${e.componentName}"`;
-    const motivo = {
-      'variant-unset': 'no variant selected yet',
-      'no-publication': 'never built by the CI',
-      'artifact-missing': 'the built files are gone from the server',
-    }[e.reason];
+    const motivo = t(
+      (
+        {
+          'variant-unset': 'page.brokenEmbedVariantUnset',
+          'no-publication': 'page.brokenEmbedNoPublication',
+          'artifact-missing': 'page.brokenEmbedArtifactMissing',
+        } as const
+      )[e.reason],
+    );
 
-    const linha = `• ${alvo} in "${e.tabTitulo}" — ${motivo}`;
+    const linha = t('page.brokenEmbedLine', { target: alvo, tab: e.tabTitulo, reason: motivo });
     const grupo = grupos.get(linha);
     if (grupo) grupo.blocos += 1;
     else grupos.set(linha, { linha, blocos: 1 });
   }
 
   const lines = [...grupos.values()].map(({ linha, blocos }) =>
-    blocos > 1 ? `${linha} (${blocos} blocks)` : linha,
+    blocos > 1 ? t('page.brokenEmbedBlocks', { line: linha, count: blocos }) : linha,
   );
 
-  const count =
-    broken.length === 1
-      ? '1 component preview on this page will not render:'
-      : `${broken.length} component previews on this page will not render:`;
+  const count = t('page.brokenEmbeds', { count: broken.length });
 
-  return `${count}\n\n${lines.join('\n')}\n\nPublishing anyway shows a placeholder where the component should be.`;
+  return `${count}\n\n${lines.join('\n')}\n\n${t('page.brokenEmbedsFooter')}`;
 }
 
 function PageViewLink({ to, end, children }: { to: string; end?: boolean; children: React.ReactNode }) {
@@ -321,6 +326,7 @@ function TabItem({
   onMoveLeft?: () => void;
   onMoveRight?: () => void;
 }) {
+  const t = useT();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(tab.titulo);
 
@@ -338,16 +344,16 @@ function TabItem({
           autoFocus
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          aria-label={`New title for tab ${tab.titulo}`}
+          aria-label={t('page.renameTab', { name: tab.titulo })}
           className="border-input min-w-0 rounded-editorial-sm border bg-transparent px-2 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
         />
-        <button type="submit" className="text-muted-foreground hover:text-foreground p-1" aria-label="Save">
+        <button type="submit" className="text-muted-foreground hover:text-foreground p-1" aria-label={t('common.save')}>
           <Check className="size-3.5" />
         </button>
         <button
           type="button"
           className="text-muted-foreground hover:text-foreground p-1"
-          aria-label="Cancel"
+          aria-label={t('common.cancel')}
           onClick={() => setEditing(false)}
         >
           <X className="size-3.5" />
@@ -362,7 +368,7 @@ function TabItem({
         {tab.titulo}
       </PageViewLink>
       <RowActionsMenu
-        triggerLabel={`More actions for tab ${tab.titulo}`}
+        triggerLabel={t('page.tabActions', { name: tab.titulo })}
         onRename={() => {
           setDraft(tab.titulo);
           setEditing(true);
@@ -370,8 +376,8 @@ function TabItem({
         onDelete={onDelete}
         onMovePrev={onMoveLeft}
         onMoveNext={onMoveRight}
-        movePrevLabel="Move left"
-        moveNextLabel="Move right"
+        movePrevLabel={t('page.moveLeft')}
+        moveNextLabel={t('page.moveRight')}
         movePrevIcon={ArrowLeft}
         moveNextIcon={ArrowRight}
         triggerClassName="-ml-2 mb-1 opacity-0 transition-opacity group-hover/tab:opacity-100 group-focus-within/tab:opacity-100"
@@ -388,6 +394,7 @@ function AddTab({
   onCreate: (titulo: string) => Promise<unknown>;
   standalone?: boolean;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [titulo, setTitulo] = useState('');
 
@@ -406,7 +413,7 @@ function AddTab({
         onClick={() => setOpen(true)}
         className={cn(createLinkClass, 'px-2 py-1', !standalone && '-mb-px')}
       >
-        <Plus className="size-3.5" /> Tab
+        <Plus className="size-3.5" /> {t('page.addTab')}
       </button>
     );
   }
@@ -415,19 +422,19 @@ function AddTab({
     <form onSubmit={handleSubmit} className={cn('flex items-center gap-1 px-2 py-1', !standalone && '-mb-px')}>
       <input
         autoFocus
-        placeholder="Tab name"
+        placeholder={t('page.tabName')}
         value={titulo}
         onChange={(e) => setTitulo(e.target.value)}
-        aria-label="New tab name"
+        aria-label={t('page.newTabName')}
         className="border-input w-32 min-w-0 rounded-editorial-sm border bg-transparent px-2 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
       />
-      <button type="submit" className="text-muted-foreground hover:text-foreground p-1" aria-label="Create tab">
+      <button type="submit" className="text-muted-foreground hover:text-foreground p-1" aria-label={t('page.createTab')}>
         <Check className="size-3.5" />
       </button>
       <button
         type="button"
         className="text-muted-foreground hover:text-foreground p-1"
-        aria-label="Cancel"
+        aria-label={t('common.cancel')}
         onClick={() => setOpen(false)}
       >
         <X className="size-3.5" />

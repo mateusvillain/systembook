@@ -18,6 +18,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import type { CalloutVariant, DosDontsVariant } from '@systembook/schema';
+import type { AdminMessageKey } from '@/i18n/messages/en';
 
 /**
  * Registro único de blocos inseríveis (TASK-88). É a **fonte única** da inserção
@@ -34,7 +35,8 @@ import type { CalloutVariant, DosDontsVariant } from '@systembook/schema';
 
 export interface BlockItem {
   id: string;
-  label: string;
+  /** Chave do dicionário do admin — o rótulo sai no idioma ativo (SYS-182). */
+  label: AdminMessageKey;
   icon: LucideIcon;
   /** Insere o bloco. `atPos` = posição (fim do bloco atual) para inserir logo abaixo. */
   insert?: (editor: Editor, atPos: number) => void;
@@ -43,7 +45,7 @@ export interface BlockItem {
 }
 
 export interface BlockGroup {
-  label: string;
+  label: AdminMessageKey;
   items: BlockItem[];
 }
 
@@ -114,15 +116,15 @@ function tableContent(rows: number, cols: number) {
   };
 }
 
-const CALLOUT_VARIANT_META: Record<CalloutVariant, { label: string; icon: LucideIcon }> = {
-  info: { label: 'Info callout', icon: Info },
-  warning: { label: 'Warning callout', icon: TriangleAlert },
-  tip: { label: 'Tip callout', icon: Lightbulb },
+const CALLOUT_VARIANT_META: Record<CalloutVariant, { label: AdminMessageKey; icon: LucideIcon }> = {
+  info: { label: 'blocks.calloutInfo', icon: Info },
+  warning: { label: 'blocks.calloutWarning', icon: TriangleAlert },
+  tip: { label: 'blocks.calloutTip', icon: Lightbulb },
 };
 
-const DOS_DONTS_VARIANT_META: Record<DosDontsVariant, { label: string; icon: LucideIcon }> = {
-  do: { label: 'Do block', icon: ThumbsUp },
-  dont: { label: "Don't block", icon: ThumbsDown },
+const DOS_DONTS_VARIANT_META: Record<DosDontsVariant, { label: AdminMessageKey; icon: LucideIcon }> = {
+  do: { label: 'blocks.do', icon: ThumbsUp },
+  dont: { label: 'blocks.dont', icon: ThumbsDown },
 };
 
 /**
@@ -174,51 +176,51 @@ export function filterBlockGroupsForContext(
 
 export const BLOCK_GROUPS: BlockGroup[] = [
   {
-    label: 'Text',
+    label: 'blocks.group.text',
     items: [
       {
         id: 'paragraph',
-        label: 'Paragraph',
+        label: 'blocks.paragraph',
         icon: Pilcrow,
         insert: (editor, atPos) => insertSimple(editor, atPos, { type: 'paragraph' }),
       },
       {
         id: 'codeBlock',
-        label: 'Code block',
+        label: 'blocks.codeBlock',
         icon: Code,
         insert: (editor, atPos) => insertSimple(editor, atPos, { type: 'codeBlock' }),
       },
     ],
   },
   {
-    label: 'Headings',
+    label: 'blocks.group.headings',
     items: [
       {
         id: 'h1',
-        label: 'Heading 1',
+        label: 'blocks.h1',
         icon: Heading1,
         insert: (editor, atPos) => insertSimple(editor, atPos, { type: 'heading', attrs: { level: 1 } }),
       },
       {
         id: 'h2',
-        label: 'Heading 2',
+        label: 'blocks.h2',
         icon: Heading2,
         insert: (editor, atPos) => insertSimple(editor, atPos, { type: 'heading', attrs: { level: 2 } }),
       },
       {
         id: 'h3',
-        label: 'Heading 3',
+        label: 'blocks.h3',
         icon: Heading3,
         insert: (editor, atPos) => insertSimple(editor, atPos, { type: 'heading', attrs: { level: 3 } }),
       },
     ],
   },
   {
-    label: 'Lists',
+    label: 'blocks.group.lists',
     items: [
       {
         id: 'bulletList',
-        label: 'Bulleted list',
+        label: 'blocks.bulletList',
         icon: List,
         insert: (editor, atPos) =>
           insertSimple(editor, atPos, {
@@ -228,7 +230,7 @@ export const BLOCK_GROUPS: BlockGroup[] = [
       },
       {
         id: 'orderedList',
-        label: 'Numbered list',
+        label: 'blocks.orderedList',
         icon: ListOrdered,
         insert: (editor, atPos) =>
           insertSimple(editor, atPos, {
@@ -239,11 +241,11 @@ export const BLOCK_GROUPS: BlockGroup[] = [
     ],
   },
   {
-    label: 'Blocks',
+    label: 'blocks.group.blocks',
     items: [
       {
         id: 'table',
-        label: 'Table',
+        label: 'blocks.table',
         icon: TableIcon,
         insert: (editor, atPos) => insertSimple(editor, atPos, tableContent(3, 3)),
       },
@@ -273,14 +275,14 @@ export const BLOCK_GROUPS: BlockGroup[] = [
       ),
       {
         id: 'componentEmbed',
-        label: 'Component embed',
+        label: 'blocks.componentEmbed',
         icon: Puzzle,
         kind: 'embed',
       },
       {
         // Entra com "All tokens"; o grupo se escolhe no seletor do próprio bloco.
         id: 'tokenTable',
-        label: 'Token table',
+        label: 'blocks.tokenTable',
         icon: SwatchBook,
         insert: (editor, atPos) => insertSimple(editor, atPos, { type: 'tokenTable', attrs: { group: '' } }),
       },

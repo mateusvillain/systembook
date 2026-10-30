@@ -2,11 +2,13 @@ import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import type { SuggestionKeyDownProps, SuggestionProps } from '@tiptap/suggestion';
 import { cn } from '@/lib/utils';
 import type { BlockItem } from './blockInsert.js';
+import { useT } from '@/i18n/AdminLocale';
+import type { AdminMessageKey } from '@/i18n/messages/en';
 
 /** Um item do registro com o rótulo do grupo a que pertence — achatado pra
  * indexação simples de teclado, mas ainda exibido com cabeçalhos de seção. */
 export interface SlashMenuEntry {
-  groupLabel: string;
+  groupLabel: AdminMessageKey;
   item: BlockItem;
 }
 
@@ -23,6 +25,7 @@ export interface SlashMenuHandle {
 export const SlashMenu = forwardRef<SlashMenuHandle, SuggestionProps<SlashMenuEntry, SlashMenuEntry>>(
   function SlashMenu({ items, command }, ref) {
     const [selected, setSelected] = useState(0);
+    const t = useT();
 
     useEffect(() => {
       setSelected(0);
@@ -51,7 +54,7 @@ export const SlashMenu = forwardRef<SlashMenuHandle, SuggestionProps<SlashMenuEn
     if (items.length === 0) {
       return (
         <div className="sb-slash-menu w-64 rounded-editorial-md border border-border/80 bg-background p-3 text-sm text-muted-foreground shadow-editorial-md">
-          No matching blocks
+          {t('blocks.noMatch')}
         </div>
       );
     }
@@ -62,7 +65,7 @@ export const SlashMenu = forwardRef<SlashMenuHandle, SuggestionProps<SlashMenuEn
     return (
       <div
         role="listbox"
-        aria-label="Insert block"
+        aria-label={t('blocks.insert')}
         className="sb-slash-menu w-64 rounded-editorial-md border border-border/80 bg-background p-1.5 shadow-editorial-md"
       >
         {items.map((entry) => {
@@ -76,7 +79,7 @@ export const SlashMenu = forwardRef<SlashMenuHandle, SuggestionProps<SlashMenuEn
             <div key={entry.item.id}>
               {showGroupLabel && (
                 <div className="px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">
-                  {entry.groupLabel}
+                  {t(entry.groupLabel)}
                 </div>
               )}
               <button
@@ -92,7 +95,7 @@ export const SlashMenu = forwardRef<SlashMenuHandle, SuggestionProps<SlashMenuEn
                 )}
               >
                 <entry.item.icon className="size-4 shrink-0 text-muted-foreground" />
-                <span>{entry.item.label}</span>
+                <span>{t(entry.item.label)}</span>
               </button>
             </div>
           );

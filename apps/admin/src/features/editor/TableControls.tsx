@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { useT } from '@/i18n/AdminLocale';
 
 /**
  * Controles de tabela por hover (TASK-100, redesenhados): ao passar o mouse sobre
@@ -138,6 +139,7 @@ export function TableControls({
   editor: Editor;
   canvasRef: RefObject<HTMLDivElement | null>;
 }) {
+  const t = useT();
   const [hoveredPos, setHoveredPos] = useState<number | null>(null);
   const [geometry, setGeometry] = useState<TableGeometry | null>(null);
   const controlRef = useRef<HTMLDivElement>(null);
@@ -345,8 +347,8 @@ export function TableControls({
         type="button"
         className={cn(addClass, '-translate-x-1/2 -translate-y-1/2')}
         style={{ left: rect.left - railOffset, top: rect.top - railOffset }}
-        title="Toggle header row"
-        aria-label="Toggle header row"
+        title={t('table.toggleHeader')}
+        aria-label={t('table.toggleHeader')}
         onClick={toggleHeaderRow}
       >
         <Rows2 className="size-3.5" />
@@ -355,7 +357,7 @@ export function TableControls({
       {/* Colunas: uma alça por coluna, acima, com o menu de ações. */}
       {Array.from({ length: numCols }, (_, i) => i).map((i) => {
         const cx = (colBounds[i]! + colBounds[i + 1]!) / 2;
-        const label = `Column ${i + 1}`;
+        const label = t('table.columnActions', { n: i + 1 });
         return (
           <DropdownMenu key={`col-${i}`} modal={false} onOpenChange={onMenuOpenChange('col', i)}>
             <DropdownMenuTrigger asChild>
@@ -363,8 +365,8 @@ export function TableControls({
                 type="button"
                 className={cn(handleClass, 'h-4 w-8 -translate-x-1/2 -translate-y-1/2')}
                 style={{ left: cx, top: rect.top - railOffset }}
-                title={`${label} actions`}
-                aria-label={`${label} actions`}
+                title={label}
+                aria-label={label}
                 onMouseEnter={() => setHot({ axis: 'col', index: i })}
                 onMouseLeave={() => !menuOpenRef.current && setHot(null)}
               >
@@ -377,11 +379,11 @@ export function TableControls({
             >
               <DropdownMenuItem onSelect={act(() => insertColumnAt(i))}>
                 <ArrowLeftToLine />
-                Insert column left
+                {t('table.insertColumnLeft')}
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={act(() => insertColumnAt(i + 1))}>
                 <ArrowRightToLine />
-                Insert column right
+                {t('table.insertColumnRight')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -390,7 +392,7 @@ export function TableControls({
                 onSelect={act(() => removeColumn(i))}
               >
                 <Trash2 />
-                Delete column
+                {t('table.deleteColumn')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -400,7 +402,7 @@ export function TableControls({
       {/* Linhas: uma alça por linha, à esquerda, com o menu de ações. */}
       {Array.from({ length: numRows }, (_, i) => i).map((i) => {
         const cy = (rowBounds[i]! + rowBounds[i + 1]!) / 2;
-        const label = `Row ${i + 1}`;
+        const label = t('table.rowActions', { n: i + 1 });
         return (
           <DropdownMenu key={`row-${i}`} modal={false} onOpenChange={onMenuOpenChange('row', i)}>
             <DropdownMenuTrigger asChild>
@@ -408,8 +410,8 @@ export function TableControls({
                 type="button"
                 className={cn(handleClass, 'h-8 w-4 -translate-x-1/2 -translate-y-1/2')}
                 style={{ left: rect.left - railOffset, top: cy }}
-                title={`${label} actions`}
-                aria-label={`${label} actions`}
+                title={label}
+                aria-label={label}
                 onMouseEnter={() => setHot({ axis: 'row', index: i })}
                 onMouseLeave={() => !menuOpenRef.current && setHot(null)}
               >
@@ -423,11 +425,11 @@ export function TableControls({
             >
               <DropdownMenuItem onSelect={act(() => insertRowAt(i))}>
                 <ArrowUpToLine />
-                Insert row above
+                {t('table.insertRowAbove')}
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={act(() => insertRowAt(i + 1))}>
                 <ArrowDownToLine />
-                Insert row below
+                {t('table.insertRowBelow')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -436,7 +438,7 @@ export function TableControls({
                 onSelect={act(() => removeRow(i))}
               >
                 <Trash2 />
-                Delete row
+                {t('table.deleteRow')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -448,8 +450,8 @@ export function TableControls({
         type="button"
         className={cn(addClass, '-translate-y-1/2')}
         style={{ left: tableRight + 8, top: rect.top + (rowBounds[1]! - rect.top) / 2 }}
-        title="Add column"
-        aria-label="Add column at the end"
+        title={t('table.addColumn')}
+        aria-label={t('table.addColumnEnd')}
         onClick={() => insertColumnAt(numCols)}
       >
         <Plus className="size-3.5" />
@@ -458,8 +460,8 @@ export function TableControls({
         type="button"
         className={cn(addClass, '-translate-x-1/2')}
         style={{ left: rect.left + (colBounds[1]! - rect.left) / 2, top: tableBottom + 8 }}
-        title="Add row"
-        aria-label="Add row at the end"
+        title={t('table.addRow')}
+        aria-label={t('table.addRowEnd')}
         onClick={() => insertRowAt(numRows)}
       >
         <Plus className="size-3.5" />

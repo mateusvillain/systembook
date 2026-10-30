@@ -7,10 +7,22 @@ import {
   getBlockInsertContext,
 } from './blockInsert.js';
 import { SlashMenu, type SlashMenuEntry, type SlashMenuHandle } from './SlashMenu.js';
+import type { Translator } from '@systembook/docs-site';
+import type { AdminMessageKey } from '@/i18n/messages/en';
 
 export interface SlashCommandOptions {
   /** Chamado quando o item "Component embed" é escolhido — abre o picker próprio (TASK-88). */
   onRequestEmbed: (atPos: number) => void;
+  /**
+   * Tradutor no idioma ativo, lido a cada digitação (SYS-182): a extensão vive
+   * enquanto o editor vive, e o idioma pode mudar nesse meio-tempo.
+   */
+  getTranslator: () => Translator<AdminMessageKey>;
+}
+
+/** Minúsculas e sem acento: "titulo" acha "Título". */
+function normalize(text: string): string {
+  return text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
 }
 
 /**
@@ -26,7 +38,7 @@ export interface SlashCommandOptions {
  * callback do componente React (`onRequestEmbed`) pra abrir o
  * `ComponentEmbedPicker` — esse item não insere direto como os outros.
  */
-export function createSlashCommandExtension({ onRequestEmbed }: SlashCommandOptions) {
+export function createSlashCommandExtension({ onRequestEmbed, getTranslator }: SlashCommandOptions) {
   return Extension.create({
     name: 'slashCommand',
 
@@ -45,9 +57,11 @@ export function createSlashCommandExtension({ onRequestEmbed }: SlashCommandOpti
             const flat: SlashMenuEntry[] = groups.flatMap((group) =>
               group.items.map((item) => ({ groupLabel: group.label, item })),
             );
-            const q = query.trim().toLowerCase();
+            const q = normalize(query.trim());
             if (!q) return flat;
-            return flat.filter((entry) => entry.item.label.toLowerCase().includes(q));
+            // Casa o rótulo no idioma ativo — o que a pessoa está vendo no menu.
+            const t = getTranslator();
+            return flat.filter((entry) => normalize(t(entry.item.label)).includes(q));
           },
 
           command: ({ editor: ed, range, props: entry }) => {

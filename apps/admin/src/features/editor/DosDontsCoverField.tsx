@@ -4,6 +4,7 @@ import { EmbedCoverPreview, type DosDontsCoverFieldProps } from '@systembook/doc
 import { ComponentEmbedPicker } from './ComponentEmbedPicker.js';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useT } from '@/i18n/AdminLocale';
 
 /**
  * Campo de cover **editável** do bloco dos-donts (TASK-73): adicionar, trocar e
@@ -12,13 +13,14 @@ import { Input } from '@/components/ui/input';
  * conteúdo (`EmbedCoverPreview`).
  */
 export function DosDontsCoverField({ cover, editable, onChange }: DosDontsCoverFieldProps) {
+  const t = useT();
   const [pickerOpen, setPickerOpen] = useState(false);
 
   if (!cover) {
     if (!editable) return null;
     return (
       <div className="sb-dos-donts-cover sb-dos-donts-cover--empty" contentEditable={false}>
-        <div role="group" aria-label="Add cover" className="flex gap-1.5">
+        <div role="group" aria-label={t('editor.cover.add')} className="flex gap-1.5">
           <Button
             type="button"
             variant="outline"
@@ -26,7 +28,7 @@ export function DosDontsCoverField({ cover, editable, onChange }: DosDontsCoverF
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => onChange({ kind: 'image', src: '', alt: '' })}
           >
-            <ImageIcon /> Add image cover
+            <ImageIcon /> {t('editor.cover.addImage')}
           </Button>
           <Button
             type="button"
@@ -35,7 +37,7 @@ export function DosDontsCoverField({ cover, editable, onChange }: DosDontsCoverF
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => setPickerOpen(true)}
           >
-            <Puzzle /> Add component cover
+            <Puzzle /> {t('editor.cover.addComponent')}
           </Button>
         </div>
         {pickerOpen && (
@@ -63,15 +65,15 @@ export function DosDontsCoverField({ cover, editable, onChange }: DosDontsCoverF
             <div className="sb-dos-donts-cover-image-form">
               <Input
                 type="text"
-                placeholder="Image URL"
-                aria-label="Cover image URL"
+                placeholder={t('editor.cover.imageUrl')}
+                aria-label={t('editor.cover.imageUrlLabel')}
                 value={cover.src}
                 onChange={(e) => onChange({ ...cover, src: e.target.value })}
               />
               <Input
                 type="text"
-                placeholder="Alt text"
-                aria-label="Cover alt text"
+                placeholder={t('editor.cover.alt')}
+                aria-label={t('editor.cover.altLabel')}
                 value={cover.alt}
                 onChange={(e) => onChange({ ...cover, alt: e.target.value })}
               />
@@ -89,7 +91,7 @@ export function DosDontsCoverField({ cover, editable, onChange }: DosDontsCoverF
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => setPickerOpen(true)}
             >
-              {cover.componentName ? 'Replace component' : 'Select component'}
+              {cover.componentName ? t('editor.embed.replace') : t('editor.embed.select')}
             </Button>
           )}
           {pickerOpen && (
@@ -118,7 +120,7 @@ export function DosDontsCoverField({ cover, editable, onChange }: DosDontsCoverF
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => onChange(null)}
         >
-          <X /> Remover cover
+          <X /> {t('editor.cover.remove')}
         </Button>
       )}
     </div>

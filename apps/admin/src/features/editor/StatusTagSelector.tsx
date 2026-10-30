@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { useT } from '@/i18n/AdminLocale';
 
 /**
  * Seletor de tag de status por página (TASK-106) — ao lado do título no
@@ -26,6 +27,7 @@ export function StatusTagSelector({
   statusTagId: string | null;
 }) {
   const trpc = useTRPC();
+  const t = useT();
   const tags = useQuery(trpc.statusTags.list.queryOptions());
   const setStatusTag = useMutation(
     trpc.pages.setStatusTag.mutationOptions({
@@ -34,14 +36,14 @@ export function StatusTagSelector({
   );
 
   const list = tags.data ?? [];
-  const current = statusTagId ? list.find((t) => t.id === statusTagId) : undefined;
+  const current = statusTagId ? list.find((tag) => tag.id === statusTagId) : undefined;
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          aria-label={current ? `Status: ${current.titulo}. Change` : 'Set status'}
+          aria-label={current ? t('status.current', { name: current.titulo }) : t('status.set')}
           className="inline-flex shrink-0 items-center rounded-full transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-ring/50 focus-visible:ring-[3px]"
         >
           {current ? (
@@ -49,7 +51,7 @@ export function StatusTagSelector({
           ) : (
             <span className="text-primary inline-flex items-center gap-1 rounded-full text-xs font-medium">
               <Plus className="size-3.5" />
-              Status tag
+              {t('status.add')}
             </span>
           )}
         </button>
@@ -77,7 +79,7 @@ export function StatusTagSelector({
           className={cn('flex items-center gap-2 text-muted-foreground')}
         >
           <X className="size-3.5" />
-          No status
+          {t('status.none')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

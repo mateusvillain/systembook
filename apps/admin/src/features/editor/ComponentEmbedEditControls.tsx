@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { ComponentEmbedEditControlsProps } from '@systembook/docs-site';
 import { ComponentEmbedPicker } from './ComponentEmbedPicker.js';
+import { useT } from '@/i18n/AdminLocale';
 
 /**
  * Controles de edição do `component-embed` (SYS-89), injetados no NodeView de
@@ -16,6 +17,7 @@ export function ComponentEmbedEditControls({
   retrying,
   onSelect,
 }: ComponentEmbedEditControlsProps) {
+  const t = useT();
   const [pickerOpen, setPickerOpen] = useState(false);
   const hasSelection = state !== 'unset';
 
@@ -30,7 +32,7 @@ export function ComponentEmbedEditControls({
           onClick={onRetry}
           className="sb-embed-action-btn"
         >
-          {retrying ? 'Checking…' : 'Try again'}
+          {retrying ? t('editor.embed.checking') : t('editor.embed.tryAgain')}
         </button>
       )}
       <button
@@ -40,7 +42,7 @@ export function ComponentEmbedEditControls({
         onClick={() => setPickerOpen(true)}
         className="sb-embed-action-btn"
       >
-        {hasSelection ? 'Replace component' : 'Select component'}
+        {hasSelection ? t('editor.embed.replace') : t('editor.embed.select')}
       </button>
       {pickerOpen && (
         <ComponentEmbedPicker
