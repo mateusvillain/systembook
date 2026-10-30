@@ -12,7 +12,7 @@ const MOBILE_BREAKPOINT = 768;
 
 /** Contexto passado aos filhos via Outlet (auth + menu ativo/seletor). */
 export interface AdminOutletContext {
-  me: { userId: string; role: 'admin' | 'editor' };
+  me: { userId: string; role: 'admin' | 'editor'; idiomaInterface: string | null };
   activeMenuId: string | null;
   setActiveMenuId: (menuId: string) => void;
 }

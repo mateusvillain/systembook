@@ -28,6 +28,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { RowActionsMenu } from '@/components/RowActionsMenu';
 import { DragHandle, useDragReorder, type DragHandleProps, type DragRowProps } from './dragReorder.js';
 import { CopyLinkItem } from './RowActionItems.js';
+import { LanguageSubmenu } from './LanguageSubmenu.js';
 import { createLinkClass } from '@/lib/styles';
 import { cn } from '@/lib/utils';
 
@@ -385,6 +386,7 @@ function UserMenu({
           </DropdownMenuItem>
         )}
         <DropdownMenuSeparator />
+        <LanguageSubmenu />
         <DropdownMenuItem disabled={logoutPending} onSelect={onLogout}>
           <LogOut />
           Sign out

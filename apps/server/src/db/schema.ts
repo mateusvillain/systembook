@@ -15,6 +15,9 @@ export const users = sqliteTable('users', {
   nome: text('nome').notNull(),
   email: text('email').notNull().unique(),
   senhaHash: text('senha_hash').notNull(),
+  // Idioma da interface do admin (SYS-175), tag BCP 47. NULL = segue o
+  // navegador; o admin resolve para o dicionário mais próximo (fallback `en`).
+  idiomaInterface: text('idioma_interface'),
   criadoEm: integer('criado_em', { mode: 'timestamp' })
     .notNull()
     .default(sql`(unixepoch())`),

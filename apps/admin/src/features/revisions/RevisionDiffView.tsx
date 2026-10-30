@@ -4,6 +4,7 @@ import { EditorContent, useEditor } from '@tiptap/react';
 import type { Block } from '@systembook/schema';
 import { ArrowLeftRight, Minus, PenLine, Plus, X } from 'lucide-react';
 import { useTRPC, type RouterOutput } from '../../lib/trpc.js';
+import { useDateFormat } from '../../lib/dates.js';
 import { blocksToTiptapDoc, bodyViewLabel, contentExtensions } from '@systembook/docs-site';
 import { Button } from '@/components/ui/button';
 import { adminTypography } from '../../lib/typography.js';
@@ -156,11 +157,12 @@ function RevisionLabel({
   label: string;
   revision: Diff['from'] | Diff['to'];
 }) {
+  const dates = useDateFormat();
   return (
     <span className="inline-flex items-center gap-1.5">
       <span className="text-muted-foreground/70 uppercase tracking-[0.12em] text-[0.7rem]">{label}</span>
       <time dateTime={new Date(revision.criadoEm).toISOString()} className="text-foreground">
-        {new Date(revision.criadoEm).toLocaleString('en-US')}
+        {dates.absolute(revision.criadoEm)}
       </time>
       <span>· {revision.autorEmail ?? 'Removed author'}</span>
     </span>

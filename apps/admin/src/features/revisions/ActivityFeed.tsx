@@ -2,7 +2,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { History } from 'lucide-react';
 import { useTRPC, type RouterOutput } from '../../lib/trpc.js';
-import { formatAbsolute, formatRelative } from '../../lib/dates.js';
+import { useDateFormat, type DateFormat } from '../../lib/dates.js';
 import { EmptyState } from '../../components/EmptyState.js';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -30,6 +30,7 @@ const PAGE_SIZE = 25;
  */
 export function ActivityFeed() {
   const trpc = useTRPC();
+  const dates = useDateFormat();
   const feed = useInfiniteQuery(
     trpc.revisions.listRecent.infiniteQueryOptions(
       { limit: PAGE_SIZE },
@@ -70,7 +71,7 @@ export function ActivityFeed() {
 
   return (
     <div className="grid gap-6">
-      {groupByDay(entries).map((group) => (
+      {groupByDay(entries, dates).map((group) => (
         <section key={group.key} className="grid gap-2">
           <h2 className={cn(adminTypography.category, 'sticky top-16 bg-background py-1')}>
             {group.label}
@@ -109,14 +110,14 @@ interface DayGroup {
  * consecutivos, preservando a ordem. A chave é a data **local** — o corte de dia
  * que importa é o de quem está lendo, não o UTC do banco.
  */
-function groupByDay(entries: Entry[]): DayGroup[] {
+function groupByDay(entries: Entry[], dates: DateFormat): DayGroup[] {
   const groups: DayGroup[] = [];
   for (const entry of entries) {
     const date = new Date(entry.criadoEm);
     const key = dayKey(date);
     const current = groups.at(-1);
     if (current?.key === key) current.entries.push(entry);
-    else groups.push({ key, label: dayLabel(date), entries: [entry] });
+    else groups.push({ key, label: dayLabel(date, dates), entries: [entry] });
   }
   return groups;
 }
@@ -126,18 +127,13 @@ function dayKey(date: Date): string {
 }
 
 /** "Today"/"Yesterday" para os dois dias que se lê sem pensar; data por extenso no resto. */
-function dayLabel(date: Date): string {
+function dayLabel(date: Date, dates: DateFormat): string {
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setDate(today.getDate() - 1);
   if (dayKey(date) === dayKey(today)) return 'Today';
   if (dayKey(date) === dayKey(yesterday)) return 'Yesterday';
-  return date.toLocaleDateString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    year: date.getFullYear() === today.getFullYear() ? undefined : 'numeric',
-  });
+  return dates.day(date);
 }
 
 function ActivityRow({ rev }: { rev: Entry }) {
@@ -147,6 +143,7 @@ function ActivityRow({ rev }: { rev: Entry }) {
   // Mensagem do publish é livre; a de restore é gerada — só exibimos a de publish.
   const publishNote = restored ? null : rev.mensagem;
   const at = new Date(rev.criadoEm);
+  const dates = useDateFormat();
 
   return (
     <li className="border-b py-3 last:border-b-0">
@@ -166,17 +163,17 @@ function ActivityRow({ rev }: { rev: Entry }) {
         <span className="flex-1" />
         <time
           dateTime={at.toISOString()}
-          title={formatAbsolute(at)}
+          title={dates.absolute(at)}
           className={adminTypography.metadata}
         >
-          {at.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+          {dates.time(at)}
         </time>
       </div>
       <div className={cn(adminTypography.metadata, 'mt-1 flex flex-wrap items-baseline gap-x-2')}>
         {/* `autorEmail` é null quando o usuário foi removido (ON DELETE SET NULL). */}
         <span>{rev.autorEmail ?? 'Removed author'}</span>
         <span aria-hidden>·</span>
-        <span>{formatRelative(at)}</span>
+        <span>{dates.relative(at)}</span>
         <span aria-hidden>·</span>
         <Link to={`/pages/${rev.pageId}/history`} className="hover:underline">
           Page history
