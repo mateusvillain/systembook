@@ -1,6 +1,13 @@
-import type { Block, PageSnapshot, StaticSiteData } from '@systembook/schema';
+import type { Block, LocaleCode, PageSnapshot, StaticSiteDataByLocale } from '@systembook/schema';
 import { stripInlineMarkdown } from '@systembook/content/inline';
-import { parsePageKey, sitePath, TOKENS_SEGMENT } from '@systembook/content/site';
+import {
+  localeHeadLinks,
+  localePrefix,
+  localizedSitePath,
+  parsePageKey,
+  TOKENS_SEGMENT,
+  type LocaleHeadLink,
+} from '@systembook/content/site';
 
 /** Uma rota do site e o que vai no `<head>` dela. */
 export interface RouteMeta {
@@ -8,6 +15,13 @@ export interface RouteMeta {
   path: string;
   title: string;
   description: string;
+  /**
+   * Idioma da rota (SYS-187) — o `<html lang>`. Só num site com mais de um
+   * idioma: com um, as rotas são as de antes, byte a byte.
+   */
+  locale?: LocaleCode;
+  /** `hreflang`/`canonical` da rota (`localeHeadLinks`), com caminhos sem a base; só com idiomas. */
+  links?: LocaleHeadLink[];
 }
 
 const DESCRIPTION_MAX = 160;
@@ -45,36 +59,62 @@ function firstParagraph(blocks: Block[] | undefined): string | null {
 const primaryBlocks = (snapshot: PageSnapshot | null) => snapshot?.tabs.find((t) => t.isPrimary)?.blocks;
 
 /**
- * As rotas do site em ordem estável — landing, cada página seguida das suas
- * tabs e, com design tokens, a página Tokens gerada (SYS-140) — com título e
- * descrição: o subtítulo da página, ou o primeiro parágrafo, ou o nome do
- * design system.
+ * As rotas do site em ordem estável — por idioma, o padrão primeiro: landing,
+ * cada página seguida das suas tabs e, com design tokens, a página Tokens
+ * gerada (SYS-140) — com título e descrição: o subtítulo da página, ou o
+ * primeiro parágrafo, ou o nome do design system. Num idioma de tradução, os
+ * caminhos levam o prefixo dele e os slugs traduzidos (SYS-187), e cada página
+ * leva as tags de idioma do `<head>`.
  */
-export function routeMetas(data: StaticSiteData, landingTitle: string | null): RouteMeta[] {
-  const name = data.settings.nomeDesignSystem;
-  const routes: RouteMeta[] = [
-    {
-      path: '',
-      title: landingTitle && landingTitle !== name ? `${landingTitle} · ${name}` : name,
-      description: firstParagraph(data.landing?.tabs[0]?.blocks) ?? name,
-    },
-  ];
-  for (const key of Object.keys(data.pages).sort()) {
-    const page = data.pages[key]!;
-    const ref = parsePageKey(key);
-    const description = subtitleText(page.subtitulo) ?? firstParagraph(primaryBlocks(page.snapshot)) ?? name;
-    routes.push({ path: sitePath(ref), title: `${page.titulo} · ${name}`, description });
-    for (const tab of page.snapshot?.tabs ?? []) {
-      if (tab.isPrimary) continue;
-      routes.push({
-        path: sitePath(ref, tab.tabId),
-        title: `${tab.titulo} · ${page.titulo} · ${name}`,
-        description: subtitleText(page.subtitulo) ?? firstParagraph(tab.blocks) ?? description,
-      });
+export function routeMetas(
+  locales: StaticSiteDataByLocale,
+  landingTitles: Readonly<Record<LocaleCode, string | null>>,
+): RouteMeta[] {
+  const first = Object.values(locales)[0];
+  if (!first) return [];
+  const { defaultLocale } = first.settings;
+  const { settings } = locales[defaultLocale]!;
+  const multilingual = settings.locales.length > 1;
+  const name = settings.nomeDesignSystem;
+  const routes: RouteMeta[] = [];
+
+  for (const { code } of settings.locales) {
+    const data = locales[code]!;
+    const prefix = localePrefix(code, defaultLocale);
+    const route = (meta: RouteMeta, links?: LocaleHeadLink[]): RouteMeta =>
+      multilingual ? { ...meta, locale: code, ...(links?.length && { links }) } : meta;
+    const landingTitle = landingTitles[code] ?? null;
+    routes.push(
+      route({
+        path: prefix,
+        title: landingTitle && landingTitle !== name ? `${landingTitle} · ${name}` : name,
+        description: firstParagraph(data.landing?.tabs[0]?.blocks) ?? name,
+      }),
+    );
+    for (const key of Object.keys(data.pages).sort()) {
+      const page = data.pages[key]!;
+      const ref = parsePageKey(key);
+      const head = (tabSlug?: string) =>
+        localeHeadLinks({ alternates: page.alternates, servedLocale: page.locale, routeLocale: code, defaultLocale, tabSlug });
+      const description = subtitleText(page.subtitulo) ?? firstParagraph(primaryBlocks(page.snapshot)) ?? name;
+      routes.push(route({ path: localizedSitePath(code, ref, defaultLocale), title: `${page.titulo} · ${name}`, description }, head()));
+      for (const tab of page.snapshot?.tabs ?? []) {
+        if (tab.isPrimary) continue;
+        routes.push(
+          route(
+            {
+              path: localizedSitePath(code, ref, defaultLocale, tab.tabId),
+              title: `${tab.titulo} · ${page.titulo} · ${name}`,
+              description: subtitleText(page.subtitulo) ?? firstParagraph(tab.blocks) ?? description,
+            },
+            head(tab.tabId),
+          ),
+        );
+      }
     }
-  }
-  if (data.tokens) {
-    routes.push({ path: `/${TOKENS_SEGMENT}`, title: `Tokens · ${name}`, description: `Design tokens of ${name}.` });
+    if (data.tokens) {
+      routes.push(route({ path: `${prefix}/${TOKENS_SEGMENT}`, title: `Tokens · ${name}`, description: `Design tokens of ${name}.` }));
+    }
   }
   return routes;
 }
@@ -87,10 +127,38 @@ export function notFoundHead(name: string): Pick<RouteMeta, 'title' | 'descripti
 const escapeHtml = (text: string) =>
   text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-/** O `index.html` do bundle com o `<head>` de uma rota. */
-export function renderHtml(template: string, head: Pick<RouteMeta, 'title' | 'description'>): string {
+/** O que o HTML de toda rota compartilha: a base dos links e o `lang` de quem não tem idioma. */
+export interface HtmlOptions {
+  base: string;
+  /** O idioma padrão. */
+  lang: LocaleCode;
+}
+
+export const htmlOptions = (config: { base: string; locales: { default: { code: LocaleCode } } }): HtmlOptions => ({
+  base: config.base,
+  lang: config.locales.default.code,
+});
+
+/**
+ * O `index.html` do bundle com o `<head>` de uma rota: título, descrição,
+ * `<html lang>` (sem idioma na rota, `lang`) e as tags de idioma, com a base.
+ */
+export function renderHtml(
+  template: string,
+  head: Pick<RouteMeta, 'title' | 'description' | 'locale' | 'links'>,
+  { base, lang }: HtmlOptions,
+): string {
+  const root = base.replace(/\/+$/, '');
+  const links = (head.links ?? [])
+    .map(({ rel, hreflang, path }) => {
+      const attrs = hreflang ? ` hreflang="${escapeHtml(hreflang)}"` : '';
+      return `    <link rel="${rel}"${attrs} href="${escapeHtml(`${root}${path}`)}" />\n`;
+    })
+    .join('');
   // Função de substituição: com string, `$&`/`$'` no texto seriam padrões do `replace`.
   return template
+    .replace('%SYSTEMBOOK_LANG%', () => escapeHtml(head.locale ?? lang))
     .replace('%SYSTEMBOOK_TITLE%', () => escapeHtml(head.title))
-    .replace('%SYSTEMBOOK_DESCRIPTION%', () => escapeHtml(head.description));
+    .replace('%SYSTEMBOOK_DESCRIPTION%', () => escapeHtml(head.description))
+    .replace('</head>', () => `${links}</head>`);
 }

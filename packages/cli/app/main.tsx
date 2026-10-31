@@ -2,7 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import { createDocsRoute, createStaticDataSource, DocsDataSourceProvider } from '@systembook/docs-site';
+import { createDocsRoute, createStaticDataSourceFactory, DocsDataSourceProvider } from '@systembook/docs-site';
 import { STATIC_DATA_DIR } from '@systembook/content/site';
 import './styles.css';
 
@@ -16,6 +16,9 @@ const base = import.meta.env.BASE_URL;
 const root = base.replace(/\/$/, '');
 
 const router = createBrowserRouter([createDocsRoute('')], { basename: root || undefined });
+
+/** Uma fonte por idioma (SYS-187), criada uma vez: o provider pede fábrica estável. */
+const dataSource = createStaticDataSourceFactory({ dataUrl: `${base}${STATIC_DATA_DIR}` });
 
 const queryClient = new QueryClient({
   // Os dados são estáticos: não há o que revalidar ao focar a janela.
@@ -46,7 +49,7 @@ router.subscribe(async ({ location }) => {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <DocsDataSourceProvider dataSource={createStaticDataSource({ dataUrl: `${base}${STATIC_DATA_DIR}` })}>
+      <DocsDataSourceProvider dataSource={dataSource}>
         <RouterProvider router={router} />
       </DocsDataSourceProvider>
     </QueryClientProvider>

@@ -5,10 +5,10 @@ import type { AddressInfo } from 'node:net';
 import path from 'node:path';
 import { createLogger, createServer, type Plugin, type ViteDevServer } from 'vite';
 import { discoverPreviews, type DiscoveryResult } from '@systembook/connector';
-import { siteDataFiles, STATIC_DATA_DIR } from '@systembook/content';
+import { siteDataFilesByLocale, STATIC_DATA_DIR } from '@systembook/content';
 import { appViteConfig, buildPreviews } from '../app.js';
 import { CONFIG_FILES, ConfigError, loadConfig } from '../config.js';
-import { META_FILE, notFoundHead, renderHtml, routeMetas, type RouteMeta } from '../build/html.js';
+import { htmlOptions, META_FILE, notFoundHead, renderHtml, routeMetas, type RouteMeta } from '../build/html.js';
 import { MEDIA_DIR, prepareSite, PREVIEWS_DIR, previewsBase } from '../build/prepare.js';
 import { notFound, sendFile, sendJson } from './static.js';
 
@@ -110,8 +110,8 @@ export async function startDevServer(root: string, options: DevOptions = {}): Pr
       }
     }
 
-    const data = siteDataFiles(prepared.site.data);
-    const routes = routeMetas(prepared.site.data, prepared.tree.landing?.titulo ?? null);
+    const data = siteDataFilesByLocale(prepared.site.locales);
+    const routes = routeMetas(prepared.site.locales, prepared.landingTitles);
     data.set(META_FILE, `${JSON.stringify(routes)}\n`);
     const next: Site = {
       data,
@@ -158,7 +158,7 @@ export async function startDevServer(root: string, options: DevOptions = {}): Pr
       handler(html, ctx) {
         const pathname = sitePathname(ctx.originalUrl ?? ctx.path);
         const route = pathname === null ? undefined : site.routes.find((r) => r.path === pathname);
-        return renderHtml(html, route ?? notFoundHead(config.name));
+        return renderHtml(html, route ?? notFoundHead(config.name), htmlOptions(config));
       },
     },
   };
