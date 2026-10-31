@@ -146,6 +146,41 @@ describe('systembook check', { timeout: 60_000 }, () => {
     expect((await runCheck(root)).out).toEqual(['✓ Sem erros — 3 página(s), 2 imagem(ns), 2 variante(s) de preview, 0 token(s).']);
   });
 
+  it('idiomas (SYS-171): órfãos e slugs repetidos por idioma, com arquivo:linha; resumo das traduções', async () => {
+    const root = project();
+    const config = path.join(root, 'systembook.config.ts');
+    writeFileSync(
+      config,
+      readFileSync(config, 'utf8').replace(
+        "base: '/acme-ds/',",
+        "base: '/acme-ds/',\n  locales: { default: { code: 'en', label: 'English' }, translations: [{ code: 'pt-BR', label: 'Português' }] },",
+      ),
+    );
+    const write = (file: string, text: string) => {
+      mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
+      writeFileSync(path.join(root, file), text);
+    };
+    write('docs-pt-br/foundation/color/palette.mdx', '---\ntitle: Paleta\nslug: tokens\n---\n\nOi.\n');
+    write('docs-pt-br/foundation/orfa.mdx', '---\ntitle: Órfã\n---\n');
+
+    const result = await checkSite(await loadConfig(root));
+    expect(!result.ok && result.problems.map((p) => p.split('  ')[0])).toEqual([
+      'docs-pt-br/foundation/color/palette.mdx:3:1',
+      'docs-pt-br/foundation/orfa.mdx:1:1',
+    ]);
+    const { exitCode, errors } = await runCheck(root);
+    expect(exitCode).toBe(1);
+    expect(errors.join('\n')).toContain('slug "tokens" repetido');
+
+    // corrigido: ok, com o resumo por idioma
+    write('docs-pt-br/foundation/color/palette.mdx', '---\ntitle: Paleta\nslug: paleta\n---\n\nOi.\n');
+    rmSync(path.join(root, 'docs-pt-br/foundation/orfa.mdx'));
+    expect(await checkSite(await loadConfig(root))).toMatchObject({ ok: true, pages: 3, translations: [{ code: 'pt-BR', translated: 1 }] });
+    const { exitCode: ok, out } = await runCheck(root);
+    expect(ok).toBeUndefined();
+    expect(out.at(-1)).toContain(', traduções: pt-BR 1/3.');
+  });
+
   it('outDir perigoso é erro do check, junto dos de conteúdo', async () => {
     const root = project();
     writeFileSync(path.join(root, 'systembook.config.ts'), "export default { name: 'X', outDir: 'docs' };\n");

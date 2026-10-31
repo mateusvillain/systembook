@@ -13,10 +13,11 @@ afterAll(async () => {
 });
 
 /** Sobe o `dev` numa cópia do fixture; `next()` espera a próxima atualização. */
-async function devFixture() {
+async function devFixture(setup?: (root: string) => void) {
   const root = mkdtempSync(path.join(TMP, 'dev-'));
   cleanup.push(() => rmSync(root, { recursive: true, force: true }));
   cpSync(FIXTURE, root, { recursive: true, filter: (src) => !src.includes('systembook-dist') });
+  setup?.(root);
 
   let waiting: ((problems: string[]) => void) | null = null;
   let first!: string[];
@@ -113,4 +114,47 @@ describe('systembook dev', { timeout: 60_000 }, () => {
     expect(await updated).toEqual([]);
     expect(await (await get('')).text()).toContain('<title>Bem-vindo · Acme Vivo</title>');
   });
+
+  it('idiomas (SYS-171): editar, criar e remover arquivos na pasta do idioma atualiza o site', async () => {
+    const write = (root: string, file: string, text: string) => {
+      mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
+      writeFileSync(path.join(root, file), text);
+    };
+    const { root, first, edit, next, get } = await devFixture((root) => {
+      const config = path.join(root, 'systembook.config.ts');
+      writeFileSync(
+        config,
+        readFileSync(config, 'utf8').replace(
+          "base: '/acme-ds/',",
+          "base: '/acme-ds/',\n  locales: { default: { code: 'en', label: 'English' }, translations: [{ code: 'pt-BR', label: 'Português' }] },",
+        ),
+      );
+      write(root, 'docs-pt-br/foundation/color/palette.mdx', '---\ntitle: Paleta\nslug: paleta\n---\n\n## Cores\n');
+    });
+    expect(first).toEqual([]);
+    expect(await (await get('pt-br/foundation/color/paleta')).text()).toContain('<title>Paleta · Acme DS</title>');
+    const page = (file: string) => get(`_systembook/data/locales/pt-br/pages/${file}.json`).then((r) => r.json() as Promise<{ titulo: string; locale: string }>);
+
+    // editar
+    let update = next();
+    edit('docs-pt-br/foundation/color/palette.mdx', (text) => text.replace('title: Paleta', 'title: Paleta ao vivo'));
+    expect(await update).toEqual([]);
+    expect((await page('foundation/color/paleta')).titulo).toBe('Paleta ao vivo');
+
+    // criar: a página passa a ser traduzida
+    expect((await page('components/actions/button')).locale).toBe('en');
+    update = next();
+    write(root, 'docs-pt-br/components/actions/button.mdx', '---\ntitle: Botão\n---\n\nOi.\n');
+    expect(await update).toEqual([]);
+    expect(await page('components/actions/button')).toMatchObject({ titulo: 'Botão', locale: 'pt-BR' });
+
+    // arquivo órfão vira problema com o caminho da pasta do idioma; remover resolve
+    update = next();
+    write(root, 'docs-pt-br/components/actions/orfa.mdx', '---\ntitle: Órfã\n---\n');
+    expect((await update).map((p) => p.split('  ')[0])).toEqual(['docs-pt-br/components/actions/orfa.mdx:1:1']);
+    update = next();
+    rmSync(path.join(root, 'docs-pt-br/components/actions/orfa.mdx'));
+    expect(await update).toEqual([]);
+  });
 });
+

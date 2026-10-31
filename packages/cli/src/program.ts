@@ -112,8 +112,11 @@ export function createProgram(): Command {
       const modes = t && t.modes.length > 1 ? ` em ${t.modes.length} modos (${t.modes.join(', ')})` : '';
       const tokens = t ? `, ${t.count} token(s)${modes}` : '';
       const warnings = result.warnings.length ? ` (${result.warnings.length} aviso(s))` : '';
+      const translated = result.translations
+        ? `, traduções: ${result.translations.map(({ code, translated: n }) => `${code} ${n}/${result.pages}`).join(', ')}`
+        : '';
       console.log(
-        `✓ Sem erros${warnings} — ${result.pages} página(s), ${result.images} imagem(ns), ${result.variants} variante(s) de preview${tokens}.`,
+        `✓ Sem erros${warnings} — ${result.pages} página(s), ${result.images} imagem(ns), ${result.variants} variante(s) de preview${tokens}${translated}.`,
       );
     });
 
