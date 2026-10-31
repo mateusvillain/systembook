@@ -1,6 +1,7 @@
 import { didYouMean, DiagnosticBag, type Diagnostic } from '../diagnostics.js';
 import { folderMetaSchema, readYamlFields, SLUG_PATTERN, type DocumentKind, type FolderMeta } from '../frontmatter.js';
 import { parseDocument } from '../parse/index.js';
+import { CONTENT_FILE, isIgnored, lastSegment, META_FILES, normalizePath, splitName, uppercaseExtension } from './paths.js';
 import type {
   BuildTreeOptions,
   ContentDocument,
@@ -23,19 +24,7 @@ import type {
  * ler páginas e pastas, e montar a árvore ordenada checando slugs repetidos.
  */
 
-const CONTENT_FILE = /\.(md|mdx)$/;
-const META_FILES = ['_menu.yml', '_section.yml'] as const;
-
 // ---- utilitários puros ----
-
-/** `a\b`, `./a/b/`, `/a//b` → `a/b`. */
-function normalizePath(path: string): string {
-  return path
-    .replace(/\\/g, '/')
-    .split('/')
-    .filter((segment) => segment !== '' && segment !== '.')
-    .join('/');
-}
 
 /** "get-started" → "Get started". */
 function humanize(slug: string): string {
@@ -51,25 +40,6 @@ function byOrder<T extends { order: number | undefined; slug: string }>(a: T, b:
     return a.order - b.order;
   }
   return a.slug.localeCompare(b.slug);
-}
-
-/** Nome sem extensão e o formato do arquivo. */
-function splitName(name: string): { base: string; format: 'md' | 'mdx' } {
-  const format = name.endsWith('.mdx') ? 'mdx' : 'md';
-  return { base: name.slice(0, -(format.length + 1)), format };
-}
-
-function lastSegment(path: string): string {
-  return path.slice(path.lastIndexOf('/') + 1);
-}
-
-/** Ignorados: qualquer segmento que comece com `_` ou `.`, exceto os yml de meta no fim. */
-function isIgnored(segments: string[]): boolean {
-  return segments.some(
-    (segment, i) =>
-      (segment.startsWith('_') || segment.startsWith('.')) &&
-      !(i === segments.length - 1 && (META_FILES as readonly string[]).includes(segment)),
-  );
 }
 
 /** Item com o caminho de onde veio, para as mensagens de slug repetido. */
@@ -140,9 +110,8 @@ function classify(files: readonly ContentFile[], report: (file: string, message:
     }
 
     if (!CONTENT_FILE.test(name)) {
-      if (/\.(md|mdx)$/i.test(name)) {
-        report(file.path, `extensão em maiúsculas — renomeie para .${name.split('.').pop()!.toLowerCase()}.`);
-      }
+      const uppercase = uppercaseExtension(name);
+      if (uppercase) report(file.path, uppercase);
       continue; // imagens e outros arquivos ficam no disco
     }
 
@@ -339,6 +308,7 @@ export function buildContentTree(files: readonly ContentFile[], options: BuildTr
       if (!sectionSlug || !pages.length) continue;
       sections.push({
         node: {
+          path: section.path,
           slug: sectionSlug,
           titulo: sectionMeta?.title ?? humanize(sectionSlug),
           order: sectionMeta?.order,
@@ -351,6 +321,7 @@ export function buildContentTree(files: readonly ContentFile[], options: BuildTr
     if (!menuSlug || !sections.length) continue;
     menus.push({
       node: {
+        path: menu.path,
         slug: menuSlug,
         titulo: menuMeta?.title ?? humanize(menuSlug),
         order: menuMeta?.order,

@@ -62,6 +62,13 @@ describe('estrutura válida', () => {
     ]);
   });
 
+  it('menus e seções guardam o caminho da pasta (para casar as traduções)', () => {
+    expect(tree.menus.map((m) => [m.path, m.sections.map((s) => s.path)])).toEqual([
+      ['foundation', ['foundation/color', 'foundation/get-started']],
+      ['components', ['components/actions']],
+    ]);
+  });
+
   it('a seção com order vem antes da sem order', () => {
     // color tem order 2 e get-started nenhum → color primeiro, apesar do alfabeto.
     expect(tree.menus[0]!.sections.map((s) => s.slug)).toEqual(['color', 'get-started']);

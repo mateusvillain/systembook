@@ -38,6 +38,8 @@ export interface PageNode {
 }
 
 export interface SectionNode {
+  /** Caminho da pasta, relativo ao diretório de conteúdo (`menu/seção`). */
+  path: string;
   slug: string;
   titulo: string;
   order: number | undefined;
@@ -45,6 +47,8 @@ export interface SectionNode {
 }
 
 export interface MenuNode {
+  /** Caminho da pasta, relativo ao diretório de conteúdo. */
+  path: string;
   slug: string;
   titulo: string;
   order: number | undefined;
@@ -67,4 +71,55 @@ export interface ContentTree {
 export interface BuildTreeOptions {
   /** Títulos das tags de status aceitas no frontmatter (`statusTags` da config). */
   statusTags?: readonly string[];
+}
+
+// ---- árvore de um idioma de tradução (SYS-164) ----
+
+/**
+ * Cada nó espelha um nó da árvore base (`base`), na mesma ordem: a estrutura
+ * vem sempre do idioma padrão. `slug` e os textos já vêm com fallback para o
+ * original; o documento `null` = não traduzido (a doc pública usa o original).
+ */
+export interface LocaleTabNode {
+  base: TabNode;
+  slug: string;
+  titulo: string;
+  document: ContentDocument | null;
+}
+
+export interface LocalePageNode {
+  base: PageNode;
+  slug: string;
+  titulo: string;
+  subtitulo: string | null;
+  overviewTitulo: string | null;
+  /** Corpo traduzido; `null` = a página não tem tradução neste idioma. */
+  body: ContentDocument | null;
+  tabs: LocaleTabNode[];
+}
+
+export interface LocaleSectionNode {
+  base: SectionNode;
+  slug: string;
+  titulo: string;
+  /** Há um `_section.yml` traduzido e válido. */
+  translated: boolean;
+  pages: LocalePageNode[];
+}
+
+export interface LocaleMenuNode {
+  base: MenuNode;
+  slug: string;
+  titulo: string;
+  /** Há um `_menu.yml` traduzido e válido. */
+  translated: boolean;
+  sections: LocaleSectionNode[];
+}
+
+export interface LocaleTree {
+  /** Landing traduzida; `null` = não traduzida (ou o original não tem). */
+  landing: LandingNode | null;
+  menus: LocaleMenuNode[];
+  /** Caminhos relativos à pasta do idioma; vazio = tradução válida. */
+  diagnostics: Diagnostic[];
 }
