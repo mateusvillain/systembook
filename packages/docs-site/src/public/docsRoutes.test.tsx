@@ -4,7 +4,16 @@ import { createRoot, type Root } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, useLocation, useRoutes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Block, DocsDataSource, PageSnapshot, PublicNavTree, Token, TokenSet } from '@systembook/schema';
+import type {
+  Block,
+  DocsDataSource,
+  PageSnapshot,
+  PublicNavTree,
+  PublicPageRef,
+  PublishedPage,
+  Token,
+  TokenSet,
+} from '@systembook/schema';
 import { DocsDataSourceProvider } from '../content/dataSource.js';
 import { createDocsRoute } from './createDocsRoute.js';
 import { DocsRoutesProvider, useDocsPaths, type DocsPaths } from './docsRoutes.js';
@@ -444,7 +453,7 @@ describe('doc pública em vários idiomas (SYS-176)', () => {
     const pt: DocsDataSource = {
       ...dataSource,
       getNavTree: async () => ptTree,
-      getPageBySlug: vi.fn(async (ref) => {
+      getPageBySlug: vi.fn(async (ref: PublicPageRef): Promise<PublishedPage | null> => {
         if (ref.pageSlug === 'paleta') {
           return { pageId: 'p1', titulo: 'Paleta', subtitulo: null, snapshot, locale: 'pt-BR', alternates: { 'pt-BR': ref } };
         }
