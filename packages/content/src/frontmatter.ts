@@ -41,19 +41,34 @@ export const folderMetaSchema = z.strictObject({
   slug: slug.optional(),
 });
 
+/**
+ * Arquivos de uma pasta de idioma (SYS-164): a estrutura (ordem, status) vem
+ * do idioma padrão, então a tradução só leva textos e slug.
+ */
+export const pageTranslationFrontmatterSchema = pageFrontmatterSchema.omit({ order: true, status: true });
+export const tabTranslationFrontmatterSchema = tabFrontmatterSchema.omit({ order: true });
+export const folderTranslationSchema = folderMetaSchema.omit({ order: true });
+
 export type PageFrontmatter = z.infer<typeof pageFrontmatterSchema>;
 export type TabFrontmatter = z.infer<typeof tabFrontmatterSchema>;
 export type LandingFrontmatter = z.infer<typeof landingFrontmatterSchema>;
 export type FolderMeta = z.infer<typeof folderMetaSchema>;
+export type PageTranslationFrontmatter = z.infer<typeof pageTranslationFrontmatterSchema>;
+export type TabTranslationFrontmatter = z.infer<typeof tabTranslationFrontmatterSchema>;
+export type FolderTranslation = z.infer<typeof folderTranslationSchema>;
 
 /** Qual frontmatter o arquivo usa, pelo papel dele na árvore. */
-export type DocumentKind = 'page' | 'tab' | 'landing';
+export type DocumentKind = 'page' | 'tab' | 'landing' | 'pageTranslation' | 'tabTranslation';
 
 export type FrontmatterFor<K extends DocumentKind> = K extends 'page'
   ? PageFrontmatter
   : K extends 'tab'
     ? TabFrontmatter
-    : LandingFrontmatter;
+    : K extends 'pageTranslation'
+      ? PageTranslationFrontmatter
+      : K extends 'tabTranslation'
+        ? TabTranslationFrontmatter
+        : LandingFrontmatter;
 
 /** Nome em português do tipo esperado, para as mensagens de erro. */
 const EXPECTED: Record<string, string> = { string: 'texto', number: 'um número', object: 'um mapa' };
@@ -138,13 +153,20 @@ const SCHEMAS = {
   page: pageFrontmatterSchema,
   tab: tabFrontmatterSchema,
   landing: landingFrontmatterSchema,
+  pageTranslation: pageTranslationFrontmatterSchema,
+  tabTranslation: tabTranslationFrontmatterSchema,
 } as const;
 
 const UNKNOWN_WHERE: Record<DocumentKind, string> = {
   page: '',
   tab: ' em tab',
   landing: ' na landing (só `title`)',
+  pageTranslation: ' numa tradução (ordem e status vêm do idioma padrão)',
+  tabTranslation: ' em tab traduzida (a ordem vem do idioma padrão)',
 };
+
+/** Complemento de campo desconhecido num `_menu.yml`/`_section.yml` traduzido. */
+export const FOLDER_TRANSLATION_UNKNOWN = ' numa tradução (a ordem vem do idioma padrão)';
 
 /**
  * Lê e valida o frontmatter. `raw` é `undefined` quando o arquivo não tem
