@@ -102,7 +102,7 @@ export interface LocaleSectionNode {
   base: SectionNode;
   slug: string;
   titulo: string;
-  /** Há um `_section.yml` traduzido. */
+  /** Há um `_section.yml` traduzido e válido. */
   translated: boolean;
   pages: LocalePageNode[];
 }
@@ -111,7 +111,7 @@ export interface LocaleMenuNode {
   base: MenuNode;
   slug: string;
   titulo: string;
-  /** Há um `_menu.yml` traduzido. */
+  /** Há um `_menu.yml` traduzido e válido. */
   translated: boolean;
   sections: LocaleSectionNode[];
 }

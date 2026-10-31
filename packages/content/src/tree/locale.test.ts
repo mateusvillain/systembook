@@ -142,6 +142,11 @@ describe('erros', () => {
     expect(messages(tree)).toEqual(['patterns/:1: pasta "patterns" sem par no conteúdo original — a tradução espelha os caminhos do idioma padrão.']);
   });
 
+  it('yml inválido: menu marcado como não traduzido', () => {
+    const tree = buildLocaleTree(base, files({ 'foundation/_menu.yml': 'title: F\norder: 2\n' }));
+    expect(tree.menus[0]).toMatchObject({ translated: false, titulo: 'Foundation' });
+  });
+
   it('frontmatter inválido: o documento fica sem tradução', () => {
     const tree = buildLocaleTree(base, files({ 'foundation/color/palette.mdx': page('P', 'order: 1\n') }));
     expect(tree.menus[0]!.sections[0]!.pages[1]!.body).toBeNull();
@@ -166,6 +171,19 @@ describe('slug repetido no mesmo nível e idioma', () => {
     );
     expect(messages(tree)).toEqual([
       'components/actions/link.mdx:3: página com slug "acao" repetido neste idioma (já usado por components/actions/button.mdx).',
+    ]);
+  });
+
+  it('repetir o próprio slug original não é culpa: o erro vai para quem mudou', () => {
+    const tree = buildLocaleTree(
+      base,
+      files({
+        'components/actions/button.mdx': page('Botão', 'slug: link\n'),
+        'components/actions/link.mdx': page('Link', 'slug: link\n'),
+      }),
+    );
+    expect(messages(tree)).toEqual([
+      'components/actions/button.mdx:3: página com slug "link" repetido neste idioma (já usado pelo original components/actions/link.mdx).',
     ]);
   });
 

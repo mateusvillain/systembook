@@ -45,7 +45,8 @@ type Target =
   | { kind: 'page'; node: PageNode }
   | { kind: 'tab'; node: TabNode };
 
-const KIND = { landing: 'landing', page: 'pageTranslation', tab: 'tabTranslation' } as const;
+/** Papel do original → frontmatter aceito na tradução. */
+const TRANSLATION_KIND = { landing: 'landing', page: 'pageTranslation', tab: 'tabTranslation' } as const;
 
 /** Linha do campo `slug:` no frontmatter (`.md`/`.mdx`) ou no `.yml`, para o `arquivo:linha`. */
 function slugLine(source: string, yml: boolean): number {
@@ -61,16 +62,16 @@ function slugLine(source: string, yml: boolean): number {
   return 1;
 }
 
-interface Translated<K extends keyof typeof KIND> {
+interface Translated<K extends keyof typeof TRANSLATION_KIND> {
   file: ContentFile;
   document: ContentDocument;
-  frontmatter: FrontmatterFor<(typeof KIND)[K]> | null;
+  frontmatter: FrontmatterFor<(typeof TRANSLATION_KIND)[K]> | null;
 }
 
 /** Item de um nível da árvore, para a checagem de slug repetido. */
 interface SlugEntry {
   slug: string;
-  /** Arquivo traduzido que definiu o slug (`null` = slug do original). */
+  /** Arquivo traduzido que mudou o slug (`null` = slug do original, mesmo se repetido no frontmatter). */
   file: ContentFile | null;
   yml: boolean;
   /** Onde está o original, para a mensagem. */
@@ -158,15 +159,15 @@ export function buildLocaleTree(base: ContentTree, files: readonly ContentFile[]
   }
 
   // ---- ler ----
-  function read<K extends keyof typeof KIND>(original: string, kind: K): Translated<K> | null {
+  function read<K extends keyof typeof TRANSLATION_KIND>(original: string, kind: K): Translated<K> | null {
     const file = documents.get(stem(original));
     if (!file) return null;
-    const parsed = parseDocument(file.source, { file: file.path, format: splitName(file.path).format, kind: KIND[kind] });
+    const parsed = parseDocument(file.source, { file: file.path, format: splitName(file.path).format, kind: TRANSLATION_KIND[kind] });
     diagnostics.push(...parsed.diagnostics);
     return {
       file,
       document: { file: file.path, doc: parsed.doc, references: parsed.references },
-      frontmatter: parsed.frontmatter as FrontmatterFor<(typeof KIND)[K]> | null,
+      frontmatter: parsed.frontmatter as FrontmatterFor<(typeof TRANSLATION_KIND)[K]> | null,
     };
   }
 
@@ -195,7 +196,7 @@ export function buildLocaleTree(base: ContentTree, files: readonly ContentFile[]
         seen.set(entry.slug, entry);
         continue;
       }
-      // Ao menos um dos dois veio da tradução (no original os slugs são únicos).
+      // No original os slugs do nível são únicos, então ao menos um dos dois mudou o slug.
       const [culprit, other] = entry.file ? [entry, first] : [first, entry];
       const where = other.file ? `por ${other.file.path}` : `pelo original ${other.origin}`;
       report(
@@ -219,7 +220,7 @@ export function buildLocaleTree(base: ContentTree, files: readonly ContentFile[]
       slug,
       titulo: fm?.title ?? tab.titulo,
       document: fm ? translated.document : null,
-      entry: { slug, file: fm?.slug !== undefined && slug !== tab.slug ? translated!.file : null, yml: false, origin: tab.file },
+      entry: { slug, file: slug !== tab.slug ? translated!.file : null, yml: false, origin: tab.file },
     };
   }
 
@@ -237,7 +238,7 @@ export function buildLocaleTree(base: ContentTree, files: readonly ContentFile[]
       overviewTitulo: fm?.overviewTitle ?? page.overviewTitulo,
       body: fm ? translated.document : null,
       tabs: tabs.map(({ entry: _entry, ...tab }) => tab),
-      entry: { slug, file: fm?.slug !== undefined ? translated!.file : null, yml: false, origin: page.body.file },
+      entry: { slug, file: slug !== page.slug ? translated!.file : null, yml: false, origin: page.body.file },
     };
   }
 
@@ -251,9 +252,9 @@ export function buildLocaleTree(base: ContentTree, files: readonly ContentFile[]
         base: section,
         slug,
         titulo: meta?.meta?.title ?? section.titulo,
-        translated: meta !== null,
+        translated: meta?.meta != null,
         pages: pages.map(({ entry: _entry, ...page }) => page),
-        entry: { slug, file: meta?.meta?.slug !== undefined ? meta.file : null, yml: true, origin: `${section.path}/` },
+        entry: { slug, file: slug !== section.slug ? meta!.file : null, yml: true, origin: `${section.path}/` },
       };
     });
     checkUnique(sections.map((s) => s.entry), 'seção');
@@ -263,9 +264,9 @@ export function buildLocaleTree(base: ContentTree, files: readonly ContentFile[]
       base: menu,
       slug,
       titulo: meta?.meta?.title ?? menu.titulo,
-      translated: meta !== null,
+      translated: meta?.meta != null,
       sections: sections.map(({ entry: _entry, ...section }) => section),
-      entry: { slug, file: meta?.meta?.slug !== undefined ? meta.file : null, yml: true, origin: `${menu.path}/` },
+      entry: { slug, file: slug !== menu.slug ? meta!.file : null, yml: true, origin: `${menu.path}/` },
     };
   });
   checkUnique(menus.map((m) => m.entry), 'menu');

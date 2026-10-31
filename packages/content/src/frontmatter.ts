@@ -60,15 +60,7 @@ export type FolderTranslation = z.infer<typeof folderTranslationSchema>;
 /** Qual frontmatter o arquivo usa, pelo papel dele na árvore. */
 export type DocumentKind = 'page' | 'tab' | 'landing' | 'pageTranslation' | 'tabTranslation';
 
-export type FrontmatterFor<K extends DocumentKind> = K extends 'page'
-  ? PageFrontmatter
-  : K extends 'tab'
-    ? TabFrontmatter
-    : K extends 'pageTranslation'
-      ? PageTranslationFrontmatter
-      : K extends 'tabTranslation'
-        ? TabTranslationFrontmatter
-        : LandingFrontmatter;
+export type FrontmatterFor<K extends DocumentKind> = z.infer<(typeof SCHEMAS)[K]>;
 
 /** Nome em português do tipo esperado, para as mensagens de erro. */
 const EXPECTED: Record<string, string> = { string: 'texto', number: 'um número', object: 'um mapa' };
@@ -155,7 +147,7 @@ const SCHEMAS = {
   landing: landingFrontmatterSchema,
   pageTranslation: pageTranslationFrontmatterSchema,
   tabTranslation: tabTranslationFrontmatterSchema,
-} as const;
+} as const satisfies Record<DocumentKind, z.ZodObject>;
 
 const UNKNOWN_WHERE: Record<DocumentKind, string> = {
   page: '',
