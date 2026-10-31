@@ -21,6 +21,8 @@ export const en = {
   'nav.menus': 'Documentation menus',
   'nav.tokens': 'Tokens',
   'nav.empty': 'No pages published yet.',
+  'locale.nav': 'Language',
+  'locale.current': 'Language: {name}',
 
   // Busca e command palette
   'search.placeholder': 'Search the documentation',

@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { PageRenderer } from './PageRenderer.js';
 import { InlineMarkdown } from './InlineMarkdown.js';
 import { TableOfContents } from './TableOfContents.js';
@@ -85,6 +85,13 @@ export function PublicPageView() {
         </div>
       </article>
     );
+  }
+
+  // Tab que a página não tem (o seletor de idioma leva a tab adiante, e no
+  // estático o slug dela pode ser traduzido): a URL vira a do corpo, em vez de
+  // ficar com um endereço que não existe (SYS-184).
+  if (tabId && !snapshot.tabs.some((tab) => tab.tabId === tabId)) {
+    return <Navigate to={paths.page({ menuSlug: menuSlug!, sectionSlug: sectionSlug!, pageSlug: pageSlug! })} replace />;
   }
 
   const activeTabId = tabId ?? primaryTabId ?? snapshot.tabs[0]?.tabId ?? '';

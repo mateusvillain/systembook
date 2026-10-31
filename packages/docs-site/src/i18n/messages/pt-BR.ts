@@ -14,6 +14,8 @@ export const ptBR: DocsMessages = {
   'nav.menus': 'Menus da documentação',
   'nav.tokens': 'Tokens',
   'nav.empty': 'Nenhuma página publicada ainda.',
+  'locale.nav': 'Idioma',
+  'locale.current': 'Idioma: {name}',
 
   'search.placeholder': 'Buscar na documentação',
   'search.placeholderNamed': 'Buscar em {name}',
