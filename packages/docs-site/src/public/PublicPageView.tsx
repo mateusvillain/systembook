@@ -37,7 +37,7 @@ export function PublicPageView() {
 
   const query = usePageBySlug({ menuSlug, sectionSlug, pageSlug });
   // `hreflang` e, no fallback, `canonical` (SYS-186).
-  usePageLocaleHead(query.data);
+  usePageLocaleHead(query.data, tabId);
   const t = useMessages();
 
   const paths = useDocsPaths();

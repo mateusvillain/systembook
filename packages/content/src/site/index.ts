@@ -10,9 +10,12 @@ export {
   localeSegment,
   localePrefix,
   localizedHomePath,
+  localeHeadLinks,
   localizedSitePath,
   splitLocalePrefix,
   type HreflangLink,
+  type LocaleHeadInput,
+  type LocaleHeadLink,
   type LocalePathMatch,
 } from './locale.js';
 export { loadSearchIndex, querySearchIndex, type SearchIndex, type SearchIndexJson } from './search.js';

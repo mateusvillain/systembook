@@ -728,6 +728,39 @@ describe('doc pública em vários idiomas (SYS-176)', () => {
       expect(document.documentElement.lang).toBe('pt-BR');
     });
 
+    it('numa tab: nenhum hreflang; no fallback, o canonical leva a tab', async () => {
+      const { factory } = sources();
+      await renderLocales('/docs/foundation/color/palette/t2', factory);
+      expect(container.querySelector('h1')?.textContent).toBe('Palette');
+      expect(head()).toEqual([]);
+
+      await renderLocales('/docs/pt-br/components/actions/button/t2', factory);
+      expect(head()).toEqual([{ rel: 'canonical', hreflang: null, href: url('/docs/components/actions/button/t2') }]);
+    });
+
+    it('URLs absolutas com a base do router', async () => {
+      const { factory } = sources();
+      const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      await act(async () => {
+        root.render(
+          <QueryClientProvider client={queryClient}>
+            <DocsDataSourceProvider dataSource={factory}>
+              <MemoryRouter basename="/meu-repo" initialEntries={['/meu-repo/foundation/color/palette']}>
+                <DocsRoutes prefix="" />
+              </MemoryRouter>
+            </DocsDataSourceProvider>
+          </QueryClientProvider>,
+        );
+      });
+      await settle();
+      await settle();
+      expect(head().map((l) => l.href)).toEqual([
+        url('/meu-repo/foundation/color/palette'),
+        url('/meu-repo/pt-br/fundamentos/cor/paleta'),
+        url('/meu-repo/foundation/color/palette'),
+      ]);
+    });
+
     it('fora de uma página, as tags somem — e tags que vieram no HTML são trocadas', async () => {
       const stale = document.createElement('link');
       stale.rel = 'canonical';

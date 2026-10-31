@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   hreflangLinks,
+  localeHeadLinks,
   isLocaleCode,
   localeSegment,
   localizedHomePath,
@@ -97,5 +98,33 @@ describe('hreflangLinks', () => {
       { hreflang: 'pt-BR', path: '/pt-br/fundamentos/cor/paleta' },
       { hreflang: 'es', path: '/es/foundation/color/palette' },
     ]);
+  });
+});
+
+describe('localeHeadLinks', () => {
+  const traduzida = { menuSlug: 'fundamentos', sectionSlug: 'cor', pageSlug: 'paleta' };
+  const base = { alternates: { en: ref, 'pt-BR': traduzida }, defaultLocale: 'en' };
+
+  it('página traduzida: os hreflang, sem canonical', () => {
+    expect(localeHeadLinks({ ...base, servedLocale: 'pt-BR', routeLocale: 'pt-BR' })).toEqual([
+      { rel: 'alternate', hreflang: 'en', path: '/foundation/color/palette' },
+      { rel: 'alternate', hreflang: 'pt-BR', path: '/pt-br/fundamentos/cor/paleta' },
+      { rel: 'alternate', hreflang: 'x-default', path: '/foundation/color/palette' },
+    ]);
+  });
+
+  it('numa tab, nada: o slug dela nos outros idiomas não é conhecido', () => {
+    expect(localeHeadLinks({ ...base, servedLocale: 'en', routeLocale: 'en', tabSlug: 'usage' })).toEqual([]);
+  });
+
+  it('fallback: só o canonical para a original, com a tab, mesmo com outros idiomas publicados', () => {
+    const alternates = { en: ref, es: { menuSlug: 'fundamentos', sectionSlug: 'color', pageSlug: 'paleta' } };
+    expect(
+      localeHeadLinks({ alternates, defaultLocale: 'en', servedLocale: 'en', routeLocale: 'pt-BR', tabSlug: 'usage' }),
+    ).toEqual([{ rel: 'canonical', path: '/foundation/color/palette/usage' }]);
+  });
+
+  it('um idioma só: nada', () => {
+    expect(localeHeadLinks({ alternates: { en: ref }, defaultLocale: 'en', servedLocale: 'en', routeLocale: 'en' })).toEqual([]);
   });
 });
