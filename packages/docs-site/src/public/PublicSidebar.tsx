@@ -1,6 +1,7 @@
 import { Link, NavLink } from 'react-router-dom';
 import type { PublicNavTree } from '@systembook/schema';
 import { PublicMenuNav } from './PublicMenuNav.js';
+import { LocaleSwitcher } from './LocaleSwitcher.js';
 import { usePublicSettings } from '../content/docsQueries.js';
 import { useDocsPaths } from './docsRoutes.js';
 import { useMessages } from '../i18n/UiLocale.js';
@@ -75,6 +76,7 @@ export function PublicSidebar({
         <PublicBrand onNavigate={onNavigate} />
         {/* Sem páginas ainda pode haver a página Tokens (SYS-140). */}
         <PublicMenuNav tree={tree} className="sb-public-menunav-drawer" onNavigate={onNavigate} />
+        <LocaleSwitcher variant="drawer" onNavigate={onNavigate} />
         <p className="sb-public-empty">{t('nav.empty')}</p>
       </nav>
     );
@@ -94,6 +96,7 @@ export function PublicSidebar({
         className="sb-public-menunav-drawer"
         onNavigate={onNavigate}
       />
+      <LocaleSwitcher variant="drawer" onNavigate={onNavigate} />
       {sections.map((section) => (
         <div key={section.id} className="sb-public-section">
           <h2 className="sb-public-section-title">{section.titulo}</h2>

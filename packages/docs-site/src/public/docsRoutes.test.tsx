@@ -435,7 +435,11 @@ describe('doc pública em vários idiomas (SYS-176)', () => {
     const en: DocsDataSource = {
       ...dataSource,
       getSettings: async () => ({ ...(await dataSource.getSettings()), locales, defaultLocale: 'en' }),
-      getPageBySlug: vi.fn(dataSource.getPageBySlug),
+      // Traduzida: o alternate leva aos slugs em pt-BR.
+      getPageBySlug: vi.fn(async (ref) => {
+        const page = await dataSource.getPageBySlug(ref);
+        return page && { ...page, alternates: { en: ref, 'pt-BR': { menuSlug: 'fundamentos', sectionSlug: 'cor', pageSlug: 'paleta' } } };
+      }),
     };
     const pt: DocsDataSource = {
       ...dataSource,
@@ -531,6 +535,83 @@ describe('doc pública em vários idiomas (SYS-176)', () => {
 
     expect(container.querySelector('h1')?.textContent).toBe('Palette');
     expect(hrefs('.sb-public-pagelink')).toContain('/docs/foundation/color/palette');
+  });
+
+  describe('seletor de idioma (SYS-184)', () => {
+    const items = (variant: 'header' | 'drawer') =>
+      [...container.querySelectorAll(`.sb-locale-${variant} .sb-locale-item`)].map((a) => ({
+        label: a.textContent,
+        href: a.getAttribute('href'),
+        lang: a.getAttribute('lang'),
+        current: a.getAttribute('aria-current'),
+      }));
+
+    it('com um idioma só, não aparece', async () => {
+      await renderLocales('/docs/foundation/color/palette', () => dataSource);
+      expect(container.querySelector('h1')?.textContent).toBe('Palette');
+      expect(container.querySelector('.sb-locale')).toBeNull();
+    });
+
+    it('leva à página equivalente, com a tab, e marca o atual — no header e no drawer', async () => {
+      const { factory } = sources();
+      await renderLocales('/docs/foundation/color/palette/t2', factory);
+
+      const expected = [
+        { label: 'English', href: '/docs/foundation/color/palette/t2', lang: 'en', current: 'true' },
+        { label: 'Português', href: '/docs/pt-br/fundamentos/cor/paleta/t2', lang: 'pt-BR', current: null },
+      ];
+      expect(items('header')).toEqual(expected);
+      expect(items('drawer')).toEqual(expected);
+    });
+
+    it('sem equivalente, leva à home do idioma', async () => {
+      const { factory } = sources();
+      // A página em pt-BR não tem alternate em inglês.
+      await renderLocales('/docs/pt-br/fundamentos/cor/paleta', factory);
+      expect(items('header').map((i) => i.href)).toEqual(['/docs', '/docs/pt-br/fundamentos/cor/paleta']);
+
+      await renderLocales('/docs/pt-br', factory);
+      expect(items('header').map((i) => i.href)).toEqual(['/docs', '/docs/pt-br']);
+
+      await renderLocales('/docs', factory);
+      expect(items('header').map((i) => i.href)).toEqual(['/docs', '/docs/pt-br']);
+    });
+
+    it('botão com o idioma atual abre e fecha a lista pelo teclado', async () => {
+      const { factory } = sources();
+      await renderLocales('/docs/pt-br/fundamentos/cor/paleta', factory);
+
+      const trigger = container.querySelector<HTMLButtonElement>('.sb-locale-trigger')!;
+      const popover = container.querySelector<HTMLElement>('.sb-locale-popover')!;
+      expect(trigger.getAttribute('aria-label')).toBe('Idioma: Português');
+      expect(trigger.getAttribute('aria-controls')).toBe(popover.id);
+      expect(popover.getAttribute('aria-label')).toBe('Idioma');
+      expect(trigger.getAttribute('aria-expanded')).toBe('false');
+      expect(popover.hidden).toBe(true);
+
+      act(() => trigger.click());
+      expect(trigger.getAttribute('aria-expanded')).toBe('true');
+      expect(popover.hidden).toBe(false);
+
+      act(() => {
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      });
+      expect(trigger.getAttribute('aria-expanded')).toBe('false');
+      expect(document.activeElement).toBe(trigger);
+    });
+
+    it('escolher um idioma navega e fecha a lista', async () => {
+      const { factory } = sources();
+      await renderLocales('/docs/foundation/color/palette', factory);
+
+      act(() => container.querySelector<HTMLButtonElement>('.sb-locale-trigger')!.click());
+      act(() => container.querySelectorAll<HTMLAnchorElement>('.sb-locale-header .sb-locale-item')[1]!.click());
+      await settle();
+
+      expect(currentPath).toBe('/docs/pt-br/fundamentos/cor/paleta');
+      expect(container.querySelector('h1')?.textContent).toBe('Paleta');
+      expect(container.querySelector('.sb-locale-trigger')!.getAttribute('aria-expanded')).toBe('false');
+    });
   });
 
   it('o redirect legado mantém o prefixo do idioma', async () => {

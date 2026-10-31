@@ -4,6 +4,7 @@ import { Menu, Moon, Sun } from 'lucide-react';
 import type { PublicNavTree } from '@systembook/schema';
 import { PublicSidebar } from './PublicSidebar.js';
 import { PublicMenuNav, useActiveMenu } from './PublicMenuNav.js';
+import { LocaleSwitcher } from './LocaleSwitcher.js';
 import { SearchBox } from './SearchBox.js';
 import { useInternalLinks } from './useInternalLinks.js';
 import { useTheme } from './useTheme.js';
@@ -86,6 +87,7 @@ export function PublicLayout() {
             se empurra para a direita sozinha (`margin-left: auto`). */}
         <PublicMenuNav tree={tree} className="sb-public-menunav-header" />
         <SearchBox />
+        <LocaleSwitcher variant="header" />
         <button
           type="button"
           className="sb-theme-toggle"
