@@ -101,10 +101,13 @@ async function render(ui: React.ReactNode) {
       </QueryClientProvider>,
     );
   });
-  // Deixa as queries resolverem e o React reagir.
-  await act(async () => {
-    await new Promise((r) => setTimeout(r, 0));
-  });
+  // Deixa as queries resolverem e o React reagir: as settings (que montam as
+  // rotas por idioma) e, depois, as leituras da rota.
+  for (let i = 0; i < 2; i++) {
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 0));
+    });
+  }
 }
 
 function DocsRoutes({ prefix }: { prefix: string }) {
@@ -410,6 +413,119 @@ describe('doc pública sob /docs (modo CMS)', () => {
       '/docs/foundation/color/palette',
       '/docs/components/actions/button',
     ]);
+  });
+});
+
+describe('doc pública em vários idiomas (SYS-176)', () => {
+  const locales = [
+    { code: 'en', label: 'English' },
+    { code: 'pt-BR', label: 'Português' },
+  ];
+  const ptTree: PublicNavTree = [
+    {
+      id: 'm1',
+      titulo: 'Fundamentos',
+      slug: 'fundamentos',
+      ordem: 0,
+      sections: [{ id: 's1', titulo: 'Cor', slug: 'cor', pages: [{ id: 'p1', titulo: 'Paleta', slug: 'paleta' }] }],
+    },
+  ];
+
+  function sources() {
+    const en: DocsDataSource = {
+      ...dataSource,
+      getSettings: async () => ({ ...(await dataSource.getSettings()), locales, defaultLocale: 'en' }),
+      getPageBySlug: vi.fn(dataSource.getPageBySlug),
+    };
+    const pt: DocsDataSource = {
+      ...dataSource,
+      getNavTree: async () => ptTree,
+      getPageBySlug: vi.fn(async (ref) =>
+        ref.pageSlug === 'paleta'
+          ? { pageId: 'p1', titulo: 'Paleta', subtitulo: null, snapshot, locale: 'pt-BR', alternates: { 'pt-BR': ref } }
+          : null,
+      ),
+      resolvePath: async ([section, page]) =>
+        section === 'cor' && page === 'paleta'
+          ? { menuSlug: 'fundamentos', sectionSlug: 'cor', pageSlug: 'paleta', tabId: null }
+          : null,
+    };
+    const factory = vi.fn((locale: string | null) => (locale === 'pt-BR' ? pt : en));
+    return { en, pt, factory };
+  }
+
+  async function renderLocales(
+    at: string,
+    factory: (locale: string | null) => DocsDataSource,
+    queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+  ) {
+    await act(async () => {
+      root.render(
+        <QueryClientProvider client={queryClient}>
+          <DocsDataSourceProvider dataSource={factory}>
+            <MemoryRouter key={at} initialEntries={[at]}>
+              <LocationProbe />
+              <DocsRoutes prefix="/docs" />
+            </MemoryRouter>
+          </DocsDataSourceProvider>
+        </QueryClientProvider>,
+      );
+    });
+    await settle();
+    await settle();
+  }
+
+  const navToggleLabel = () => container.querySelector('.sb-nav-toggle')!.getAttribute('aria-label');
+
+  it('o padrão fica sem prefixo e lê da fonte padrão', async () => {
+    const { en, factory } = sources();
+    await renderLocales('/docs/foundation/color/palette', factory);
+
+    expect(container.querySelector('h1')?.textContent).toBe('Palette');
+    expect(en.getPageBySlug).toHaveBeenCalledWith({ menuSlug: 'foundation', sectionSlug: 'color', pageSlug: 'palette' });
+    expect(hrefs('.sb-public-brand-link')).toEqual(['/docs']);
+    expect(navToggleLabel()).toBe('Open navigation');
+    // O padrão reaproveita a fonte `null`: a fábrica nunca é chamada com `en`.
+    expect(factory.mock.calls.map(([locale]) => locale)).toEqual([null]);
+  });
+
+  it('/<seg>/… serve o idioma: fonte, links e interface', async () => {
+    const { pt, factory } = sources();
+    await renderLocales('/docs/pt-br/fundamentos/cor/paleta', factory);
+
+    expect(container.querySelector('h1')?.textContent).toBe('Paleta');
+    expect(pt.getPageBySlug).toHaveBeenCalledWith({ menuSlug: 'fundamentos', sectionSlug: 'cor', pageSlug: 'paleta' });
+    expect(hrefs('.sb-public-brand-link')).toEqual(['/docs/pt-br']);
+    expect(hrefs('.sb-public-pagelink')).toEqual(['/docs/pt-br/fundamentos/cor/paleta']);
+    expect(container.querySelector('.sb-public-pagelink')!.classList.contains('active')).toBe(true);
+    expect(navToggleLabel()).toBe('Abrir navegação');
+  });
+
+  it('cada idioma tem o próprio cache: trocar de idioma não reaproveita a nav do outro', async () => {
+    const { factory } = sources();
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    await renderLocales('/docs/pt-br', factory, queryClient);
+    expect(container.querySelector('.sb-public-section-title')?.textContent).toBe('Cor');
+
+    await renderLocales('/docs', factory, queryClient);
+    expect(container.querySelector('.sb-public-section-title')?.textContent).toBe('Color');
+  });
+
+  it('prefixo que não é idioma configurado segue o roteamento do padrão', async () => {
+    const { en, pt, factory } = sources();
+    await renderLocales('/docs/es/color/palette', factory);
+
+    expect(en.getPageBySlug).toHaveBeenCalledWith({ menuSlug: 'es', sectionSlug: 'color', pageSlug: 'palette' });
+    expect(pt.getPageBySlug).not.toHaveBeenCalled();
+  });
+
+  it('o redirect legado mantém o prefixo do idioma', async () => {
+    const { factory } = sources();
+    await renderLocales('/docs/pt-br/cor/paleta', factory);
+    await settle();
+
+    expect(currentPath).toBe('/docs/pt-br/fundamentos/cor/paleta');
+    expect(container.querySelector('h1')?.textContent).toBe('Paleta');
   });
 });
 

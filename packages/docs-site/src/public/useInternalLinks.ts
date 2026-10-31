@@ -27,9 +27,9 @@ export function useInternalLinks(): (event: React.MouseEvent<HTMLElement>) => vo
   // A base do router sem a barra final (`/meu-repo` ou `''`). O `useHref('/')`
   // a devolve com ou sem a barra, conforme a versão do React Router.
   const base = useHref('/').replace(/\/+$/, '');
-  // Raiz das rotas da doc dentro da base: `/docs` no modo CMS, `''` no estático.
-  const home = useDocsPaths().home;
-  const docsRoot = `${base}${home === '/' ? '' : home}`;
+  // Raiz das rotas da doc dentro da base: `/docs` no modo CMS, `''` no
+  // estático — de qualquer idioma, para um link entre idiomas também navegar.
+  const docsRoot = `${base}${useDocsPaths().root}`;
 
   return useCallback(
     (event: React.MouseEvent<HTMLElement>) => {

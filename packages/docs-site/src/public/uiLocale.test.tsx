@@ -6,7 +6,6 @@ import { MemoryRouter, useRoutes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Block, DocsDataSource, PageSnapshot, PublicNavTree, Token, TokenSet, TokenValue } from '@systembook/schema';
 import { DocsDataSourceProvider } from '../content/dataSource.js';
-import { UiLocaleProvider } from '../i18n/UiLocale.js';
 import { en } from '../i18n/messages/en.js';
 import { ptBR } from '../i18n/messages/pt-BR.js';
 import type { MessageValue } from '../i18n/format.js';
@@ -144,8 +143,9 @@ const dataSource: DocsDataSource = {
     nomeDesignSystem: 'Acme',
     logoUrl: null,
     logoDarkUrl: null,
-    locales: [{ code: 'en', label: 'English' }],
-    defaultLocale: 'en',
+    // A interface segue o idioma do conteúdo (SYS-176).
+    locales: [{ code: 'pt-BR', label: 'Português' }],
+    defaultLocale: 'pt-BR',
   }),
   getLanding: async () => null,
   getPageBySlug: async (ref) => {
@@ -268,15 +268,14 @@ async function renderAt(path: string, source: DocsDataSource = dataSource) {
     root.render(
       <QueryClientProvider client={queryClient}>
         <DocsDataSourceProvider dataSource={source}>
-          <UiLocaleProvider locale="pt-BR">
-            <MemoryRouter initialEntries={[path]}>
-              <DocsRoutes />
-            </MemoryRouter>
-          </UiLocaleProvider>
+          <MemoryRouter initialEntries={[path]}>
+            <DocsRoutes />
+          </MemoryRouter>
         </DocsDataSourceProvider>
       </QueryClientProvider>,
     );
   });
+  await settle();
   await settle();
 }
 
