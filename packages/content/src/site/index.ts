@@ -7,6 +7,7 @@ export { pageKey, parsePageKey, previewKey, sitePath, STATIC_DATA_DIR, staticDat
 export {
   hreflangLinks,
   isLocaleCode,
+  localeDataDir,
   localeSegment,
   localePrefix,
   localizedHomePath,

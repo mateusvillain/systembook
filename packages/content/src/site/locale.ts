@@ -31,6 +31,16 @@ export function localePrefix(locale: LocaleCode, defaultLocale: LocaleCode): str
   return locale === defaultLocale ? '' : `/${localeSegment(locale)}`;
 }
 
+/**
+ * Pasta dos dados de um idioma no site estático (SYS-177), relativa à pasta de
+ * dados: `''` no padrão — os caminhos de antes dos idiomas — e
+ * `locales/pt-br/` nos demais. Nela ficam navegação, landing, busca e
+ * páginas; settings, previews e tokens, iguais em todo idioma, só na raiz.
+ */
+export function localeDataDir(locale: LocaleCode, defaultLocale: LocaleCode): string {
+  return locale === defaultLocale ? '' : `locales/${localeSegment(locale)}/`;
+}
+
 /** Home da doc no idioma: `/` no padrão, `/pt-br` nos demais. */
 export function localizedHomePath(locale: LocaleCode, defaultLocale: LocaleCode): string {
   return localePrefix(locale, defaultLocale) || '/';

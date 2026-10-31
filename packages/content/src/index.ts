@@ -31,7 +31,7 @@ export {
   type SerializeOptions,
 } from './serialize/index.js';
 export * from './tree/index.js';
-export { buildSiteData, siteDataFiles, BODY_TAB_ID, type BuildSiteOptions, type SiteBuild, type SiteImage } from './site/build.js';
+export { buildSiteData, siteDataFiles, siteDataFilesByLocale, BODY_TAB_ID, type BuildSiteOptions, type SiteBuild, type SiteImage } from './site/build.js';
 export { pageKey, parsePageKey, previewKey, sitePath, STATIC_DATA_DIR, staticDataPaths } from './site/paths.js';
 export {
   blockPlainText,
