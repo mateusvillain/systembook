@@ -150,6 +150,11 @@ async function settle(ms = 0) {
   });
 }
 
+/** `settle` até `done` valer — para cadeias de queries cuja profundidade varia com o agendamento. */
+async function settleUntil(done: () => boolean, tries = 20) {
+  for (let i = 0; i < tries && !done(); i++) await settle();
+}
+
 const hrefs = (selector: string) =>
   [...container.querySelectorAll(selector)].map((a) => a.getAttribute('href'));
 
@@ -680,7 +685,7 @@ describe('doc pública em vários idiomas (SYS-176)', () => {
 
       act(() => container.querySelector<HTMLButtonElement>('.sb-locale-trigger')!.click());
       act(() => container.querySelectorAll<HTMLAnchorElement>('.sb-locale-header .sb-locale-item')[1]!.click());
-      await settle();
+      await settleUntil(() => container.querySelector('h1')?.textContent === 'Paleta');
 
       expect(currentPath).toBe('/docs/pt-br/fundamentos/cor/paleta');
       expect(container.querySelector('h1')?.textContent).toBe('Paleta');
