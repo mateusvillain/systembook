@@ -52,7 +52,7 @@ async function renderEmbed(tokens: TokenSet | null) {
   await act(async () => {
     await vi.waitFor(() => {
       if (!dom.container().querySelector('iframe')) throw new Error('carregando');
-      if (client.getQueryState(docsQueryKeys.tokens())?.status !== 'success') throw new Error('tokens');
+      if (client.getQueryState(docsQueryKeys.tokens(null))?.status !== 'success') throw new Error('tokens');
     });
   });
   const iframe = dom.container().querySelector('iframe')!;

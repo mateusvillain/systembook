@@ -10,7 +10,15 @@
  */
 
 // Fonte de dados e leituras
-export { DocsDataSourceProvider, useDocsDataSource } from './content/dataSource.js';
+export {
+  DocsDataSourceProvider,
+  DocsLocaleProvider,
+  useDefaultDocsDataSource,
+  useDocsDataSource,
+  useDocsLocale,
+  useDocsSourceLocale,
+  type DocsLocale,
+} from './content/dataSource.js';
 export {
   docsQueryKeys,
   hasPreviewSelection,
