@@ -159,6 +159,9 @@ describe('loadConfig — locales (SYS-163)', () => {
     const f = 'systembook.config.json';
     expect(await problems(json({ default: { code: 'en', label: 'E' }, extra: 1 }))).toEqual([`${f}: "locales": Unrecognized key: "extra"`]);
     expect(await problems(json({ default: { code: 'en', label: ' ' } }))).toEqual([`${f}: "locales.default.label": é obrigatório`]);
+    expect(await problems(json({ default: { code: 'en', label: 'E' }, translations: [{ code: 'pt-BR', label: 'P', pasta: 'x' }] }))).toEqual([
+      `${f}: "locales.translations.0": Unrecognized key: "pasta"`,
+    ]);
   });
 
   it('recusa pasta sobreposta ao conteúdo, ao outDir ou à de outro idioma', async () => {
@@ -178,6 +181,21 @@ describe('loadConfig — locales (SYS-163)', () => {
     ]);
     expect(await problems(json(translations('t', 't/es')))).toEqual([
       `${f}.1.dir": a pasta de "es" (t/es) se sobrepõe à de "pt-BR" (t) — cada idioma tem a sua.`,
+    ]);
+    expect(await problems(json(translations('../fora')))).toEqual([
+      `${f}.0.dir": a pasta de "pt-BR" (../fora) fica fora do projeto — informe uma pasta dentro dele em "dir".`,
+    ]);
+    // conteúdo na raiz: a pasta padrão (irmã do conteúdo) sairia do projeto
+    const atRoot = json(translations(undefined), { contentDir: '.' });
+    expect(await problems(atRoot)).toEqual([
+      `${f}.0.dir": a pasta de "pt-BR" (../${path.basename(atRoot)}-pt-br) fica fora do projeto — informe uma pasta dentro dele em "dir".`,
+    ]);
+    // e com dir dentro da raiz, sobrepõe o conteúdo
+    expect(await problems(json(translations('pt'), { contentDir: '.' }))).toEqual([
+      `${f}.0.dir": a pasta de "pt-BR" (pt) se sobrepõe ao "contentDir" (.) — use uma pasta própria.`,
+    ]);
+    expect(await problems(json(translations('out/pt'), { outDir: 'out' }))).toEqual([
+      `${f}.0.dir": a pasta de "pt-BR" (out/pt) se sobrepõe ao "outDir" (out), que é apagado a cada build.`,
     ]);
     expect(await problems(json(translations(undefined, 'docs-pt-br')))).toEqual([
       `${f}.1.dir": a pasta de "es" (docs-pt-br) se sobrepõe à de "pt-BR" (docs-pt-br) — cada idioma tem a sua.`,

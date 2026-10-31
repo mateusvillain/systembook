@@ -79,13 +79,12 @@ const localesSchema = z
   .superRefine((locales, ctx) => {
     const all = [locales.default, ...locales.translations];
     all.forEach(({ code }, i) => {
-      const path = i === 0 ? ['default', 'code'] : ['translations', i - 1, 'code'];
-      const first = all.findIndex((other) => other.code === code || localeSegment(other.code) === localeSegment(code));
+      const first = all.findIndex((other) => localeSegment(other.code) === localeSegment(code));
       if (first === i) return;
       const other = all[first]!.code;
       ctx.addIssue({
         code: 'custom',
-        path,
+        path: i === 0 ? ['default', 'code'] : ['translations', i - 1, 'code'],
         message:
           other === code
             ? `código "${code}" repetido`
@@ -125,7 +124,7 @@ export interface ResolvedLocales {
 }
 
 /** Idioma único de quem não configura `locales`. */
-export const DEFAULT_LOCALE: LocaleInfo = { code: 'en', label: 'English' };
+const DEFAULT_LOCALE: LocaleInfo = { code: 'en', label: 'English' };
 
 /** Config validada, com os padrões aplicados e os caminhos absolutos. */
 export interface ResolvedConfig extends Omit<z.output<typeof configSchema>, 'contentDir' | 'outDir' | 'locales'> {
@@ -183,7 +182,7 @@ export async function loadConfig(root: string): Promise<ResolvedConfig> {
     // Padrão: irmã do conteúdo, com o segmento do idioma (`docs` → `docs-pt-br`).
     dir: dir ? path.resolve(root, dir) : `${resolved.contentDir}-${localeSegment(code)}`,
   }));
-  const problems = translationDirProblems(file, resolved, translations);
+  const problems = translationDirProblems(resolved, translations);
   if (problems.length) throw new ConfigError(problems);
   return { ...resolved, locales: { default: locales?.default ?? DEFAULT_LOCALE, translations } };
 }
@@ -195,21 +194,22 @@ function inside(child: string, parent: string): boolean {
 }
 
 /**
- * A pasta de cada idioma é só dele: não se sobrepõe ao conteúdo (o idioma
- * padrão leria a tradução como menu, e vice-versa), ao `outDir` (apagado a cada
- * build) nem à pasta de outro idioma.
+ * A pasta de cada idioma é só dele, dentro do projeto: não se sobrepõe ao
+ * conteúdo (o idioma padrão leria a tradução como menu, e vice-versa), ao
+ * `outDir` (apagado a cada build) nem à pasta de outro idioma.
  */
 function translationDirProblems(
-  file: string,
-  { root, contentDir, outDir }: { root: string; contentDir: string; outDir: string },
+  { root, file, contentDir, outDir }: Pick<ResolvedConfig, 'root' | 'file' | 'contentDir' | 'outDir'>,
   translations: TranslationLocale[],
 ): string[] {
-  const shown = (dir: string) => path.relative(root, dir) || '.';
+  const shown = (dir: string) => path.relative(root, dir).split(path.sep).join('/') || '.';
   const overlap = (a: string, b: string) => inside(a, b) || inside(b, a);
   const problems: string[] = [];
   translations.forEach(({ code, dir }, i) => {
     const field = `${file}: "locales.translations.${i}.dir"`;
-    if (overlap(dir, contentDir)) problems.push(`${field}: a pasta de "${code}" (${shown(dir)}) se sobrepõe ao "contentDir" (${shown(contentDir)}) — use uma pasta própria.`);
+    // `inside(root, dir)`: a raiz contém o conteúdo, então cai na sobreposição abaixo.
+    if (!inside(dir, root)) problems.push(`${field}: a pasta de "${code}" (${shown(dir)}) fica fora do projeto — informe uma pasta dentro dele em "dir".`);
+    else if (overlap(dir, contentDir)) problems.push(`${field}: a pasta de "${code}" (${shown(dir)}) se sobrepõe ao "contentDir" (${shown(contentDir)}) — use uma pasta própria.`);
     else if (overlap(dir, outDir)) problems.push(`${field}: a pasta de "${code}" (${shown(dir)}) se sobrepõe ao "outDir" (${shown(outDir)}), que é apagado a cada build.`);
     const other = translations.slice(0, i).find((t) => overlap(t.dir, dir));
     if (other) problems.push(`${field}: a pasta de "${code}" (${shown(dir)}) se sobrepõe à de "${other.code}" (${shown(other.dir)}) — cada idioma tem a sua.`);
