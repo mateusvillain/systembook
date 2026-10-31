@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync, statSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
-import type { PublicComponentPreview, TokenSet } from '@systembook/schema';
+import type { LocaleCode, PublicComponentPreview, TokenSet } from '@systembook/schema';
 import {
   discoverPreviews,
   previewEntryName,
@@ -43,10 +43,13 @@ export interface MediaFile {
 
 export interface PreparedSite {
   tree: ContentTree;
-  /** Árvore de cada idioma de tradução (SYS-187), por código; sem a pasta, o idioma não entra. */
-  translations: Record<string, LocaleTree>;
+  /**
+   * Árvore de cada idioma de tradução (SYS-187), por código; sem a pasta, o
+   * idioma não entra. Para o `check`/`dev` contarem e observarem as traduções (SYS-171).
+   */
+  translations: Record<LocaleCode, LocaleTree>;
   /** `title` da landing por idioma (o `<title>` do HTML), com o do padrão onde falta tradução. */
-  landingTitles: Record<string, string | null>;
+  landingTitles: Record<LocaleCode, string | null>;
   site: SiteBuild;
   /** Previews descobertos; vazio com previews desabilitados ou sem `*.preview.tsx`. */
   previews: DiscoveredPreview[];
@@ -100,22 +103,28 @@ export async function prepareSite(config: ResolvedConfig, options: PrepareOption
   contentDiagnostics.push(...tree.diagnostics);
   /** Problemas de arquivos das pastas de tradução, já com o caminho a partir da raiz. */
   const translationDiagnostics: Diagnostic[] = [];
+  const translationDirs = new Map(config.locales.translations.map((locale) => [locale.code, locale.dir]));
+  /** Problemas com caminho relativo à pasta do idioma → com o caminho a partir da raiz. */
+  const addTranslationDiagnostics = (code: LocaleCode, diagnostics: Diagnostic[]) => {
+    const dir = relative(config, translationDirs.get(code)!);
+    translationDiagnostics.push(...diagnostics.map((d) => ({ ...d, file: `${dir}/${d.file}` })));
+  };
   const warnings: string[] = [];
 
   // ---- idiomas de tradução (SYS-187) ----
-  const translations: Record<string, LocaleTree> = {};
+  const translations: Record<LocaleCode, LocaleTree> = {};
   for (const locale of config.locales.translations) {
-    const dir = relative(config, locale.dir);
     if (!isDirectory(locale.dir)) {
       // Sem a pasta (o git não guarda pasta vazia), o idioma sai todo no padrão.
-      warnings.push(`${dir}: pasta de "${locale.code}" não encontrada — o idioma sai inteiro no idioma padrão.`);
+      warnings.push(`${relative(config, locale.dir)}: pasta de "${locale.code}" não encontrada — o idioma sai inteiro no idioma padrão.`);
       continue;
     }
     const translation = buildLocaleTree(tree, await readContentDir(locale.dir));
     translations[locale.code] = translation;
-    translationDiagnostics.push(...translation.diagnostics.map((d) => ({ ...d, file: `${dir}/${d.file}` })));
+    addTranslationDiagnostics(locale.code, translation.diagnostics);
   }
-  // O primeiro segmento da URL que é o de um idioma não chega ao menu de mesmo slug.
+  // O primeiro segmento da URL que é o de um idioma não chega ao menu de mesmo
+  // slug — com ou sem a pasta do idioma, as rotas dele existem.
   for (const locale of config.locales.translations) {
     const menu = tree.menus.find((m) => m.slug === localeSegment(locale.code));
     if (menu) {
@@ -159,13 +168,8 @@ export async function prepareSite(config: ResolvedConfig, options: PrepareOption
   const checkPreviews = config.previews === true || previews.length > 0;
   if (checkPreviews) {
     contentDiagnostics.push(...missingPreviews(documents(tree), previews));
-    for (const locale of config.locales.translations) {
-      const translation = translations[locale.code];
-      if (!translation) continue;
-      const dir = relative(config, locale.dir);
-      translationDiagnostics.push(
-        ...missingPreviews(translatedDocuments(translation), previews).map((d) => ({ ...d, file: `${dir}/${d.file}` })),
-      );
+    for (const [code, translation] of Object.entries(translations)) {
+      addTranslationDiagnostics(code, missingPreviews(translatedDocuments(translation), previews));
     }
   }
 
@@ -222,13 +226,12 @@ export async function prepareSite(config: ResolvedConfig, options: PrepareOption
   problems.push(...tokens.problems);
 
   // ---- dados, com as imagens copiadas com hash ----
-  const translationDirs = new Map(config.locales.translations.map((locale) => [locale.code, locale.dir]));
   /**
    * Arquivo de uma imagem. Numa tradução, a da pasta do idioma — uma captura
    * de tela traduzida — ou, sem ela, a do conteúdo padrão no mesmo caminho:
    * a tradução não precisa copiar as imagens que não mudam. `null` = não existe.
    */
-  const imageSource = (relativePath: string, locale: string | null): string | null => {
+  const imageSource = (relativePath: string, locale: LocaleCode | null): string | null => {
     const localeDir = locale === null ? undefined : translationDirs.get(locale);
     const candidates = [...(localeDir ? [path.join(localeDir, relativePath)] : []), path.join(config.contentDir, relativePath)];
     return candidates.find(isFile) ?? null;
@@ -246,15 +249,12 @@ export async function prepareSite(config: ResolvedConfig, options: PrepareOption
     },
   });
   contentDiagnostics.push(...site.diagnostics);
-  for (const [code, diagnostics] of Object.entries(site.translationDiagnostics)) {
-    const dir = relative(config, translationDirs.get(code)!);
-    translationDiagnostics.push(...diagnostics.map((d) => ({ ...d, file: `${dir}/${d.file}` })));
-  }
+  for (const [code, diagnostics] of Object.entries(site.translationDiagnostics)) addTranslationDiagnostics(code, diagnostics);
   for (const image of site.images) {
     if (image.path === null || imageSource(image.path, image.locale)) continue;
     const diagnostic = { file: image.file, line: image.line, column: image.column, message: `imagem "${image.src}" não encontrada.` };
     if (image.locale === null) contentDiagnostics.push(diagnostic);
-    else translationDiagnostics.push({ ...diagnostic, file: `${relative(config, translationDirs.get(image.locale)!)}/${image.file}` });
+    else addTranslationDiagnostics(image.locale, [diagnostic]);
   }
 
   const contentDir = relative(config, config.contentDir);
@@ -266,7 +266,7 @@ export async function prepareSite(config: ResolvedConfig, options: PrepareOption
     .sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line || a.column - b.column)
     .map(formatDiagnostic);
 
-  const landingTitles: Record<string, string | null> = { [settings.defaultLocale]: tree.landing?.titulo ?? null };
+  const landingTitles: Record<LocaleCode, string | null> = { [settings.defaultLocale]: tree.landing?.titulo ?? null };
   for (const { code } of config.locales.translations) {
     landingTitles[code] = translations[code]?.landing?.titulo ?? tree.landing?.titulo ?? null;
   }

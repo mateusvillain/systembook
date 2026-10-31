@@ -72,8 +72,8 @@ export function routeMetas(
 ): RouteMeta[] {
   const first = Object.values(locales)[0];
   if (!first) return [];
-  const { settings } = first;
-  const { defaultLocale } = settings;
+  const { defaultLocale } = first.settings;
+  const { settings } = locales[defaultLocale]!;
   const multilingual = settings.locales.length > 1;
   const name = settings.nomeDesignSystem;
   const routes: RouteMeta[] = [];
@@ -127,6 +127,18 @@ export function notFoundHead(name: string): Pick<RouteMeta, 'title' | 'descripti
 const escapeHtml = (text: string) =>
   text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+/** O que o HTML de toda rota compartilha: a base dos links e o `lang` de quem não tem idioma. */
+export interface HtmlOptions {
+  base: string;
+  /** O idioma padrão. */
+  lang: LocaleCode;
+}
+
+export const htmlOptions = (config: { base: string; locales: { default: { code: LocaleCode } } }): HtmlOptions => ({
+  base: config.base,
+  lang: config.locales.default.code,
+});
+
 /**
  * O `index.html` do bundle com o `<head>` de uma rota: título, descrição,
  * `<html lang>` (sem idioma na rota, `lang`) e as tags de idioma, com a base.
@@ -134,7 +146,7 @@ const escapeHtml = (text: string) =>
 export function renderHtml(
   template: string,
   head: Pick<RouteMeta, 'title' | 'description' | 'locale' | 'links'>,
-  { base = '/', lang = 'en' }: { base?: string; lang?: LocaleCode } = {},
+  { base, lang }: HtmlOptions,
 ): string {
   const root = base.replace(/\/+$/, '');
   const links = (head.links ?? [])

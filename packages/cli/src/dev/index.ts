@@ -8,7 +8,7 @@ import { discoverPreviews, type DiscoveryResult } from '@systembook/connector';
 import { siteDataFilesByLocale, STATIC_DATA_DIR } from '@systembook/content';
 import { appViteConfig, buildPreviews } from '../app.js';
 import { CONFIG_FILES, ConfigError, loadConfig } from '../config.js';
-import { META_FILE, notFoundHead, renderHtml, routeMetas, type RouteMeta } from '../build/html.js';
+import { htmlOptions, META_FILE, notFoundHead, renderHtml, routeMetas, type RouteMeta } from '../build/html.js';
 import { MEDIA_DIR, prepareSite, PREVIEWS_DIR, previewsBase } from '../build/prepare.js';
 import { notFound, sendFile, sendJson } from './static.js';
 
@@ -158,7 +158,7 @@ export async function startDevServer(root: string, options: DevOptions = {}): Pr
       handler(html, ctx) {
         const pathname = sitePathname(ctx.originalUrl ?? ctx.path);
         const route = pathname === null ? undefined : site.routes.find((r) => r.path === pathname);
-        return renderHtml(html, route ?? notFoundHead(config.name), { base: config.base, lang: config.locales.default.code });
+        return renderHtml(html, route ?? notFoundHead(config.name), htmlOptions(config));
       },
     },
   };

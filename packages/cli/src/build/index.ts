@@ -4,7 +4,7 @@ import { build as viteBuild } from 'vite';
 import { siteDataFilesByLocale, STATIC_DATA_DIR } from '@systembook/content';
 import { appViteConfig, buildPreviews, withProductionEnv } from '../app.js';
 import { unsafeOutDir, type ResolvedConfig } from '../config.js';
-import { META_FILE, notFoundHead, renderHtml, routeMetas } from './html.js';
+import { htmlOptions, META_FILE, notFoundHead, renderHtml, routeMetas } from './html.js';
 import { prepareSite, PREVIEWS_DIR, previewsBase } from './prepare.js';
 
 /** Onde o Vite põe JS/CSS: sob o `_`, fora do espaço de slugs, como os dados. */
@@ -61,7 +61,7 @@ export async function buildStaticSite(config: ResolvedConfig): Promise<BuildResu
 
   const template = await readFile(path.join(config.outDir, 'index.html'), 'utf8');
   const routes = routeMetas(site.locales, landingTitles);
-  const html = { base: config.base, lang: config.locales.default.code };
+  const html = htmlOptions(config);
   for (const route of routes) await write(path.join(route.path, 'index.html'), renderHtml(template, route, html));
   // O mesmo `<head>` para o app atualizar ao navegar sem recarregar a página.
   await write(path.join(STATIC_DATA_DIR, META_FILE), `${JSON.stringify(routes)}\n`);
