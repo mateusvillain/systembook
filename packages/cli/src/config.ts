@@ -3,6 +3,8 @@ import { readFile, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
+import type { LocaleInfo } from '@systembook/schema';
+import { isLocaleCode, localeSegment } from '@systembook/content/site';
 import { z } from 'zod';
 
 /**
@@ -58,6 +60,40 @@ const tokensSchema = z
     }
   });
 
+const localeSchema = z.strictObject({
+  code: z.string().refine(isLocaleCode, 'código de idioma inválido — use uma tag BCP 47 (ex.: "en", "pt-BR")'),
+  label: z.string().trim().min(1, 'é obrigatório'),
+});
+
+/**
+ * Idiomas do site (SYS-163): o padrão — servido sem prefixo, com o conteúdo
+ * de `contentDir` — e os de tradução, cada um com a pasta que espelha o
+ * conteúdo. Os códigos (e os segmentos de URL, o código em minúsculas) não se
+ * repetem.
+ */
+const localesSchema = z
+  .strictObject({
+    default: localeSchema,
+    translations: z.array(localeSchema.extend({ dir: z.string().min(1).optional() })).default([]),
+  })
+  .superRefine((locales, ctx) => {
+    const all = [locales.default, ...locales.translations];
+    all.forEach(({ code }, i) => {
+      const path = i === 0 ? ['default', 'code'] : ['translations', i - 1, 'code'];
+      const first = all.findIndex((other) => other.code === code || localeSegment(other.code) === localeSegment(code));
+      if (first === i) return;
+      const other = all[first]!.code;
+      ctx.addIssue({
+        code: 'custom',
+        path,
+        message:
+          other === code
+            ? `código "${code}" repetido`
+            : `"${code}" e "${other}" dão o mesmo segmento de URL ("${localeSegment(code)}") — use um só`,
+      });
+    });
+  });
+
 const configSchema = z.strictObject({
   name: z.string().trim().min(1, 'é obrigatório'),
   logo: z.string().min(1).optional(),
@@ -70,19 +106,36 @@ const configSchema = z.strictObject({
     .default([]),
   previews: z.boolean().optional(),
   tokens: tokensSchema.optional(),
+  locales: localesSchema.optional(),
 });
 
 /** O que o usuário escreve na config (`satisfies SystemBookConfig`). */
 export type SystemBookConfig = z.input<typeof configSchema>;
 
+/** Idioma de tradução, com a pasta do conteúdo traduzido. */
+export interface TranslationLocale extends LocaleInfo {
+  /** Caminho absoluto da pasta que espelha o `contentDir`. */
+  dir: string;
+}
+
+/** Idiomas resolvidos; sem `locales` na config, só o padrão `en`. */
+export interface ResolvedLocales {
+  default: LocaleInfo;
+  translations: TranslationLocale[];
+}
+
+/** Idioma único de quem não configura `locales`. */
+export const DEFAULT_LOCALE: LocaleInfo = { code: 'en', label: 'English' };
+
 /** Config validada, com os padrões aplicados e os caminhos absolutos. */
-export interface ResolvedConfig extends Omit<z.output<typeof configSchema>, 'contentDir' | 'outDir'> {
+export interface ResolvedConfig extends Omit<z.output<typeof configSchema>, 'contentDir' | 'outDir' | 'locales'> {
   /** Raiz do projeto (onde a config está). */
   root: string;
   /** Arquivo da config, relativo à raiz. */
   file: string;
   contentDir: string;
   outDir: string;
+  locales: ResolvedLocales;
 }
 
 export class ConfigError extends Error {
@@ -116,14 +169,52 @@ export async function loadConfig(root: string): Promise<ResolvedConfig> {
       }),
     );
   }
-  const { contentDir, outDir, ...config } = parsed.data;
-  return {
+  const { contentDir, outDir, locales, ...config } = parsed.data;
+  const resolved = {
     ...config,
     root,
     file,
     contentDir: path.resolve(root, contentDir),
     outDir: path.resolve(root, outDir),
   };
+  const translations = (locales?.translations ?? []).map(({ code, label, dir }) => ({
+    code,
+    label,
+    // Padrão: irmã do conteúdo, com o segmento do idioma (`docs` → `docs-pt-br`).
+    dir: dir ? path.resolve(root, dir) : `${resolved.contentDir}-${localeSegment(code)}`,
+  }));
+  const problems = translationDirProblems(file, resolved, translations);
+  if (problems.length) throw new ConfigError(problems);
+  return { ...resolved, locales: { default: locales?.default ?? DEFAULT_LOCALE, translations } };
+}
+
+/** `child` é `parent` ou fica dentro dele. */
+function inside(child: string, parent: string): boolean {
+  const rel = path.relative(parent, child);
+  return rel === '' || (rel !== '..' && !rel.startsWith(`..${path.sep}`) && !path.isAbsolute(rel));
+}
+
+/**
+ * A pasta de cada idioma é só dele: não se sobrepõe ao conteúdo (o idioma
+ * padrão leria a tradução como menu, e vice-versa), ao `outDir` (apagado a cada
+ * build) nem à pasta de outro idioma.
+ */
+function translationDirProblems(
+  file: string,
+  { root, contentDir, outDir }: { root: string; contentDir: string; outDir: string },
+  translations: TranslationLocale[],
+): string[] {
+  const shown = (dir: string) => path.relative(root, dir) || '.';
+  const overlap = (a: string, b: string) => inside(a, b) || inside(b, a);
+  const problems: string[] = [];
+  translations.forEach(({ code, dir }, i) => {
+    const field = `${file}: "locales.translations.${i}.dir"`;
+    if (overlap(dir, contentDir)) problems.push(`${field}: a pasta de "${code}" (${shown(dir)}) se sobrepõe ao "contentDir" (${shown(contentDir)}) — use uma pasta própria.`);
+    else if (overlap(dir, outDir)) problems.push(`${field}: a pasta de "${code}" (${shown(dir)}) se sobrepõe ao "outDir" (${shown(outDir)}), que é apagado a cada build.`);
+    const other = translations.slice(0, i).find((t) => overlap(t.dir, dir));
+    if (other) problems.push(`${field}: a pasta de "${code}" (${shown(dir)}) se sobrepõe à de "${other.code}" (${shown(other.dir)}) — cada idioma tem a sua.`);
+  });
+  return problems;
 }
 
 /**
@@ -177,10 +268,6 @@ async function readRaw(file: string): Promise<unknown> {
  * dela, ou contendo-a), nem `.git`/`node_modules`.
  */
 export function unsafeOutDir({ root, outDir, contentDir, file }: ResolvedConfig): string | null {
-  const inside = (child: string, parent: string) => {
-    const rel = path.relative(parent, child);
-    return rel === '' || (rel !== '..' && !rel.startsWith(`..${path.sep}`) && !path.isAbsolute(rel));
-  };
   const [first] = path.relative(root, outDir).split(path.sep);
   const unsafe =
     outDir === root ||

@@ -170,9 +170,9 @@ export async function prepareSite(config: ResolvedConfig, options: PrepareOption
     nomeDesignSystem: config.name,
     logoUrl: logo('logo'),
     logoDarkUrl: logo('logoDark'),
-    // Idioma único até o `locales` da config (SYS-163).
-    locales: [{ code: 'en', label: 'English' }],
-    defaultLocale: 'en',
+    // Só o padrão até o build gerar os idiomas de tradução (SYS-187).
+    locales: [config.locales.default],
+    defaultLocale: config.locales.default.code,
   };
 
   // ---- tokens ----
