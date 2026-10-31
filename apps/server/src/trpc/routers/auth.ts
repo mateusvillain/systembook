@@ -1,6 +1,7 @@
 import { TRPCError } from '@trpc/server';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { isLocaleCode } from '@systembook/content/site';
 import { clearSessionCookie, sessionCookie, SESSION_MAX_AGE_SECONDS } from '../../auth/cookies.js';
 import { hashPassword, needsRehash, verifyPassword } from '../../auth/password.js';
 import { sessions, users, memberships } from '../../db/schema.js';
@@ -9,12 +10,10 @@ import { protectedProcedure, publicProcedure, router } from '../init.js';
 /**
  * Tag BCP 47 de idioma (`en`, `pt-BR`, `zh-Hant-TW`). Só a forma é validada:
  * qual dicionário existe é assunto do admin, que resolve a tag para o mais
- * próximo — assim um idioma novo no painel não exige mudança no server.
+ * próximo — assim um idioma novo no painel não exige mudança no server. A
+ * regra de forma é a mesma da doc pública (`isLocaleCode`).
  */
-const languageTagSchema = z
-  .string()
-  .max(35)
-  .regex(/^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{1,8})*$/);
+const languageTagSchema = z.string().refine(isLocaleCode);
 
 // Mesma mensagem para email desconhecido e senha errada — evita enumeração de usuários.
 const invalidCredentials = () =>
