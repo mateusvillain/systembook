@@ -1,5 +1,5 @@
 import type { PageSnapshot } from './block.js';
-import type { PublicComponentPreview, PublicNavTree, PublicSettings, PublishedPage } from './public-docs.js';
+import type { LocaleCode, PublicComponentPreview, PublicNavTree, PublicSettings, PublishedPage } from './public-docs.js';
 import type { TokenSet } from './tokens.js';
 
 /**
@@ -30,4 +30,4 @@ export interface StaticSiteData {
  * O site inteiro: um `StaticSiteData` por código de `PublicSettings.locales`
  * (SYS-162). Com um único idioma, só a entrada do padrão.
  */
-export type StaticSiteDataByLocale = Record<string, StaticSiteData>;
+export type StaticSiteDataByLocale = Record<LocaleCode, StaticSiteData>;

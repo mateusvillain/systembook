@@ -24,10 +24,12 @@ import type { TokenSet } from './tokens.js';
  * prefixo, sem seletor, sem aviso, sem `hreflang`.
  */
 
+/** Código BCP 47 de um idioma (`en`, `pt-BR`), único na instância. */
+export type LocaleCode = string;
+
 /** Idioma publicado. */
 export interface LocaleInfo {
-  /** Código BCP 47 (`en`, `pt-BR`), único na instância. */
-  code: string;
+  code: LocaleCode;
   /** Nome exibido no seletor, no próprio idioma (`English`, `Português`). */
   label: string;
 }
@@ -74,8 +76,11 @@ export interface PublicSettings {
    * idioma da fonte.
    */
   locales: LocaleInfo[];
-  /** Código do idioma padrão — o servido sem prefixo e o destino do fallback. */
-  defaultLocale: string;
+  /**
+   * Código do idioma padrão — o servido sem prefixo e o destino do fallback.
+   * Sempre `locales[0].code`; existe para ninguém depender da ordem.
+   */
+  defaultLocale: LocaleCode;
 }
 
 /** Endereço canônico de uma página: `/docs/:menuSlug/:sectionSlug/:pageSlug`. */
@@ -98,7 +103,7 @@ export interface PublishedPage {
    * devolve o conteúdo do padrão (com `locale` = padrão) em vez de `null`. A
    * doc mostra um aviso e aponta o `canonical` para a URL do padrão.
    */
-  locale: string;
+  locale: LocaleCode;
   /**
    * Endereço da mesma página em cada idioma em que ela está publicada, por
    * código — com os slugs traduzidos, inclusive o idioma servido. Idioma sem a
@@ -106,7 +111,7 @@ export interface PublishedPage {
    * traduzidos) aparece. Com um único idioma, só o padrão. Alimenta o seletor
    * de idioma e o `hreflang`.
    */
-  alternates: Record<string, PublicPageRef>;
+  alternates: Record<LocaleCode, PublicPageRef>;
 }
 
 /** Forma canônica de um path público legado (ver `DocsDataSource.resolvePath`). */
@@ -186,7 +191,12 @@ export interface DocsDataSource {
  * Fonte de dados por idioma (SYS-162). `locale` é um código de
  * `PublicSettings.locales`; `null` pede o padrão, para quem ainda não sabe
  * qual é — a doc lê os idiomas pelo `getSettings` da fonte `null` antes de
- * resolver o prefixo da URL. Pode devolver a mesma instância a cada chamada
- * com o mesmo argumento, mas não precisa.
+ * resolver o prefixo da URL. `null` e `defaultLocale` são a mesma fonte: depois
+ * de ler as settings, quem chama normaliza para o código (rota, cache, a
+ * comparação com `PublishedPage.locale`).
+ *
+ * A fábrica não precisa devolver a mesma instância para o mesmo argumento;
+ * quem chama guarda uma fonte por código, para não perder o cache de leitura
+ * dela a cada render.
  */
-export type DocsDataSourceFactory = (locale: string | null) => DocsDataSource;
+export type DocsDataSourceFactory = (locale: LocaleCode | null) => DocsDataSource;
