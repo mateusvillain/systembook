@@ -19,7 +19,8 @@ interface LocaleLink {
 /**
  * Destino de cada idioma a partir da rota atual (SYS-184): a mesma página pelos
  * `alternates` (com os slugs traduzidos e a tab da URL — se ela não existir no
- * outro idioma, a página abre no corpo), a página Tokens do idioma, ou a home
+ * outro idioma, o `PublicPageView` troca a URL pela do corpo), a página Tokens
+ * do idioma, ou a home
  * dele quando não há equivalente. O idioma atual aponta para onde o leitor já
  * está.
  */
@@ -76,7 +77,7 @@ export function LocaleSwitcher({
           to={to}
           lang={info.code}
           hrefLang={info.code}
-          aria-current={current ? 'true' : undefined}
+          aria-current={current ? 'page' : undefined}
           data-active={current || undefined}
           className="sb-locale-item"
           onClick={() => {
@@ -97,11 +98,16 @@ export function LocaleSwitcher({
       </nav>
     );
   }
-  const current = links.find((link) => link.current)!.info;
+  // Sem o idioma da rota na lista (fonte inconsistente), não há o que marcar.
+  const current = links.find((link) => link.current)?.info;
+  if (!current) return null;
   return <LocaleMenu current={current} items={items} label={t('locale.current', { name: current.label })} />;
 }
 
-/** Botão + lista que abre embaixo dele; fecha com Esc, clique fora ou escolha. */
+/**
+ * Botão + lista que abre embaixo dele; fecha com Esc, clique fora, foco saindo
+ * (Tab) ou escolha.
+ */
 function LocaleMenu({
   current,
   items,
@@ -122,7 +128,8 @@ function LocaleMenu({
     function onKeyDown(e: KeyboardEvent) {
       if (e.key !== 'Escape') return;
       setOpen(false);
-      buttonRef.current?.focus();
+      // Só puxa o foco se ele estava aqui: o Esc pode ser de outro overlay.
+      if (rootRef.current?.contains(document.activeElement)) buttonRef.current?.focus();
     }
     function onPointerDown(e: PointerEvent) {
       if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
@@ -136,7 +143,13 @@ function LocaleMenu({
   }, [open]);
 
   return (
-    <div className="sb-locale sb-locale-header" ref={rootRef}>
+    <div
+      className="sb-locale sb-locale-header"
+      ref={rootRef}
+      onBlur={(e) => {
+        if (!rootRef.current?.contains(e.relatedTarget as Node | null)) setOpen(false);
+      }}
+    >
       <button
         ref={buttonRef}
         type="button"

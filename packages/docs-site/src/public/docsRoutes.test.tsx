@@ -444,11 +444,16 @@ describe('doc pública em vários idiomas (SYS-176)', () => {
     const pt: DocsDataSource = {
       ...dataSource,
       getNavTree: async () => ptTree,
-      getPageBySlug: vi.fn(async (ref) =>
-        ref.pageSlug === 'paleta'
-          ? { pageId: 'p1', titulo: 'Paleta', subtitulo: null, snapshot, locale: 'pt-BR', alternates: { 'pt-BR': ref } }
-          : null,
-      ),
+      getPageBySlug: vi.fn(async (ref) => {
+        if (ref.pageSlug === 'paleta') {
+          return { pageId: 'p1', titulo: 'Paleta', subtitulo: null, snapshot, locale: 'pt-BR', alternates: { 'pt-BR': ref } };
+        }
+        // Sem tradução: o conteúdo do padrão (fallback), com os slugs dele.
+        if (ref.pageSlug === 'button') {
+          return { pageId: 'p2', titulo: 'Button', subtitulo: null, snapshot, locale: 'en', alternates: { en: ref } };
+        }
+        return null;
+      }),
       resolvePath: async ([section, page]) =>
         section === 'cor' && page === 'paleta'
           ? { menuSlug: 'fundamentos', sectionSlug: 'cor', pageSlug: 'paleta', tabId: null }
@@ -557,7 +562,7 @@ describe('doc pública em vários idiomas (SYS-176)', () => {
       await renderLocales('/docs/foundation/color/palette/t2', factory);
 
       const expected = [
-        { label: 'English', href: '/docs/foundation/color/palette/t2', lang: 'en', current: 'true' },
+        { label: 'English', href: '/docs/foundation/color/palette/t2', lang: 'en', current: 'page' },
         { label: 'Português', href: '/docs/pt-br/fundamentos/cor/paleta/t2', lang: 'pt-BR', current: null },
       ];
       expect(items('header')).toEqual(expected);
@@ -577,6 +582,29 @@ describe('doc pública em vários idiomas (SYS-176)', () => {
       expect(items('header').map((i) => i.href)).toEqual(['/docs', '/docs/pt-br']);
     });
 
+    it('página de fallback: o padrão vem dos alternates', async () => {
+      const { factory } = sources();
+      await renderLocales('/docs/pt-br/components/actions/button', factory);
+      expect(items('header').map((i) => i.href)).toEqual([
+        '/docs/components/actions/button',
+        '/docs/pt-br/components/actions/button',
+      ]);
+    });
+
+    it('na página Tokens, leva à página Tokens do idioma', async () => {
+      const { factory } = sources();
+      await renderLocales('/docs/pt-br/tokens', factory);
+      expect(items('header').map((i) => i.href)).toEqual(['/docs/tokens', '/docs/pt-br/tokens']);
+    });
+
+    it('tab que a página não tem vira a URL do corpo', async () => {
+      const { factory } = sources();
+      await renderLocales('/docs/pt-br/fundamentos/cor/paleta/usage', factory);
+      await settle();
+      expect(currentPath).toBe('/docs/pt-br/fundamentos/cor/paleta');
+      expect(container.querySelector('h1')?.textContent).toBe('Paleta');
+    });
+
     it('botão com o idioma atual abre e fecha a lista pelo teclado', async () => {
       const { factory } = sources();
       await renderLocales('/docs/pt-br/fundamentos/cor/paleta', factory);
@@ -593,11 +621,19 @@ describe('doc pública em vários idiomas (SYS-176)', () => {
       expect(trigger.getAttribute('aria-expanded')).toBe('true');
       expect(popover.hidden).toBe(false);
 
+      trigger.focus();
       act(() => {
         document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
       });
       expect(trigger.getAttribute('aria-expanded')).toBe('false');
       expect(document.activeElement).toBe(trigger);
+
+      // Tab para fora fecha.
+      act(() => trigger.click());
+      act(() => {
+        trigger.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: document.body }));
+      });
+      expect(trigger.getAttribute('aria-expanded')).toBe('false');
     });
 
     it('escolher um idioma navega e fecha a lista', async () => {

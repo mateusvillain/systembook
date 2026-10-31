@@ -443,13 +443,8 @@ html:has(.sb-public[data-theme='dark']:not(.sb-public--preview)) {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .sb-public-menupill,
   .sb-locale-trigger {
-    transition: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .sb-public-menupill {
     transition: none;
   }
 }

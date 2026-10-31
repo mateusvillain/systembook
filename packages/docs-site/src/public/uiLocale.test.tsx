@@ -144,7 +144,11 @@ const dataSource: DocsDataSource = {
     logoUrl: null,
     logoDarkUrl: null,
     // A interface segue o idioma do conteúdo (SYS-176).
-    locales: [{ code: 'pt-BR', label: 'Português' }],
+    // Dois idiomas: o seletor (SYS-184) também passa pela varredura.
+    locales: [
+      { code: 'pt-BR', label: 'Português' },
+      { code: 'es', label: 'Español' },
+    ],
     defaultLocale: 'pt-BR',
   }),
   getLanding: async () => null,
