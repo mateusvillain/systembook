@@ -1,7 +1,7 @@
 import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { build as viteBuild } from 'vite';
-import { siteDataFiles, STATIC_DATA_DIR } from '@systembook/content';
+import { siteDataFilesByLocale, STATIC_DATA_DIR } from '@systembook/content';
 import { appViteConfig, buildPreviews, withProductionEnv } from '../app.js';
 import { unsafeOutDir, type ResolvedConfig } from '../config.js';
 import { META_FILE, notFoundHead, renderHtml, routeMetas } from './html.js';
@@ -28,7 +28,7 @@ export async function buildStaticSite(config: ResolvedConfig): Promise<BuildResu
   const unsafe = unsafeOutDir(config);
   if (unsafe) return { ok: false, problems: [unsafe], warnings: [] };
 
-  const { tree, site, previews, media, problems, warnings } = await prepareSite(config);
+  const { site, landingTitles, previews, media, problems, warnings } = await prepareSite(config);
   if (problems.length) return { ok: false, problems, warnings };
 
   await rm(config.outDir, { recursive: true, force: true });
@@ -53,18 +53,19 @@ export async function buildStaticSite(config: ResolvedConfig): Promise<BuildResu
     await writeFile(file, content);
   };
 
-  for (const [file, json] of siteDataFiles(site.data)) await write(path.join(STATIC_DATA_DIR, file), json);
+  for (const [file, json] of siteDataFilesByLocale(site.locales)) await write(path.join(STATIC_DATA_DIR, file), json);
   for (const file of media) {
     await mkdir(path.dirname(path.join(config.outDir, file.target)), { recursive: true });
     await copyFile(file.source, path.join(config.outDir, file.target));
   }
 
   const template = await readFile(path.join(config.outDir, 'index.html'), 'utf8');
-  const routes = routeMetas(site.data, tree.landing?.titulo ?? null);
-  for (const route of routes) await write(path.join(route.path, 'index.html'), renderHtml(template, route));
+  const routes = routeMetas(site.locales, landingTitles);
+  const html = { base: config.base, lang: config.locales.default.code };
+  for (const route of routes) await write(path.join(route.path, 'index.html'), renderHtml(template, route, html));
   // O mesmo `<head>` para o app atualizar ao navegar sem recarregar a página.
   await write(path.join(STATIC_DATA_DIR, META_FILE), `${JSON.stringify(routes)}\n`);
-  await write('404.html', renderHtml(template, notFoundHead(config.name)));
+  await write('404.html', renderHtml(template, notFoundHead(config.name), html));
   // O GitHub Pages (Jekyll) ignora pastas com `_` sem isto.
   await write('.nojekyll', '');
   if (previews.length) {

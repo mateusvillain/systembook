@@ -261,3 +261,131 @@ describe('systembook build', { timeout: 60_000 }, () => {
     }
   });
 });
+
+describe('systembook build — idiomas (SYS-187)', { timeout: 60_000 }, () => {
+  /** A fixture com uma tradução pt-BR parcial em `docs-pt-br/`. */
+  async function multilingual(files: Record<string, string | Buffer> = PT_FILES): Promise<ResolvedConfig> {
+    const config = await fixtureConfig('/acme-ds/');
+    const dir = path.join(config.root, 'docs-pt-br');
+    for (const [file, content] of Object.entries(files)) {
+      mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
+      writeFileSync(path.join(dir, file), content);
+    }
+    return {
+      ...config,
+      locales: {
+        default: { code: 'en', label: 'English' },
+        translations: [{ code: 'pt-BR', label: 'Português', dir }],
+      },
+    };
+  }
+  const PT_FILES: Record<string, string | Buffer> = {
+    'index.mdx': '---\ntitle: Boas-vindas\n---\n\nA documentação em português.\n',
+    'foundation/_menu.yml': 'title: Fundamentos\nslug: fundamentos\n',
+    'foundation/color/_section.yml': 'title: Cor\nslug: cor\n',
+    'foundation/color/palette.mdx':
+      '---\ntitle: Paleta\nslug: paleta\nsubtitle: As cores, em português.\n---\n\n![Paleta](./img/palette.png)\n\n![Traduzida](./img/paleta.png)\n\nVeja os [tokens](./tokens/index.mdx).\n',
+    'foundation/color/img/paleta.png': Buffer.from([0x89, 0x50, 0x4e, 0x47]),
+  };
+  const lang = (html: string) => /<html lang="([^"]*)">/.exec(html)?.[1];
+  const links = (html: string) => [...html.matchAll(/<link rel="(alternate|canonical)"(?: hreflang="([^"]*)")? href="([^"]*)" \/>/g)].map((m) => [m[1], m[2] ?? null, m[3]]);
+
+  it('um HTML por rota de cada idioma, com lang, hreflang e canonical', async () => {
+    const config = await multilingual();
+    const result = await buildStaticSite(config);
+    expect(result).toEqual({ ok: true, outDir: config.outDir, routes: 10, warnings: [] });
+    const files = tree(config.outDir);
+
+    expect([...files.keys()].filter((f) => f.startsWith('pt-br/')).sort()).toEqual([
+      'pt-br/components/actions/button/index.html',
+      'pt-br/fundamentos/cor/paleta/index.html',
+      'pt-br/fundamentos/cor/tokens/index.html',
+      'pt-br/fundamentos/cor/tokens/usage/index.html',
+      'pt-br/index.html',
+    ]);
+    expect(lang(files.get('index.html')!)).toBe('en');
+    expect(lang(files.get('pt-br/index.html')!)).toBe('pt-BR');
+    expect(lang(files.get('404.html')!)).toBe('en');
+    expect(head(files.get('pt-br/index.html')!)).toEqual({ title: 'Boas-vindas · Acme DS', description: 'A documentação em português.' });
+
+    // página traduzida: um alternate por idioma e x-default, nos dois idiomas
+    const alternates = [
+      ['alternate', 'en', '/acme-ds/foundation/color/palette'],
+      ['alternate', 'pt-BR', '/acme-ds/pt-br/fundamentos/cor/paleta'],
+      ['alternate', 'x-default', '/acme-ds/foundation/color/palette'],
+    ];
+    expect(links(files.get('foundation/color/palette/index.html')!)).toEqual(alternates);
+    expect(links(files.get('pt-br/fundamentos/cor/paleta/index.html')!)).toEqual(alternates);
+    expect(head(files.get('pt-br/fundamentos/cor/paleta/index.html')!).title).toBe('Paleta · Acme DS');
+    // fallback: só o canonical para a original, com a mesma tab
+    expect(links(files.get('pt-br/fundamentos/cor/tokens/index.html')!)).toEqual([['canonical', null, '/acme-ds/foundation/color/tokens']]);
+    expect(links(files.get('pt-br/fundamentos/cor/tokens/usage/index.html')!)).toEqual([
+      ['canonical', null, '/acme-ds/foundation/color/tokens/usage'],
+    ]);
+    // página só no padrão, home e 404: nada
+    expect(links(files.get('foundation/color/tokens/index.html')!)).toEqual([]);
+    expect(links(files.get('pt-br/index.html')!)).toEqual([]);
+    expect(links(files.get('404.html')!)).toEqual([]);
+  });
+
+  it('dados e routes.json por idioma; imagens da tradução com fallback para as do padrão', async () => {
+    const config = await multilingual();
+    await buildStaticSite(config);
+    const files = tree(config.outDir);
+    const json = (file: string) => JSON.parse(files.get(`_systembook/data/${file}`)!);
+
+    expect(json('settings.json').locales).toEqual([
+      { code: 'en', label: 'English' },
+      { code: 'pt-BR', label: 'Português' },
+    ]);
+    expect(json('locales/pt-br/nav.json').map((m: { slug: string }) => m.slug)).toEqual(['components', 'fundamentos']);
+    const routes = json('routes.json') as { path: string; locale: string }[];
+    expect(routes.filter((r) => r.locale === 'pt-BR').map((r) => r.path)).toContain('/pt-br/fundamentos/cor/paleta');
+    expect(routes.find((r) => r.path === '')!.locale).toBe('en');
+
+    const enPalette = JSON.stringify(json('pages/foundation/color/palette.json'));
+    const ptPalette = JSON.stringify(json('locales/pt-br/pages/fundamentos/cor/paleta.json'));
+    const media = (text: string) => [...text.matchAll(/\/acme-ds\/_systembook\/media\/[\w.-]+/g)].map((m) => m[0]);
+    const [shared, translated] = media(ptPalette);
+    expect(media(enPalette)).toContain(shared); // a mesma imagem do padrão
+    expect(translated).toMatch(/\/paleta-[0-9a-f]{8}\.png$/);
+    expect(files.has(translated!.replace('/acme-ds/', ''))).toBe(true);
+    expect(ptPalette).toContain('"href":"/acme-ds/pt-br/fundamentos/cor/tokens"');
+  });
+
+  it('erros da tradução com o caminho da pasta do idioma; menu com o slug do prefixo', async () => {
+    const config = await multilingual({
+      'foundation/color/palette.mdx': '---\ntitle: Paleta\n---\n\n![x](./img/nao-existe.png)\n',
+      'foundation/orfa.mdx': '---\ntitle: Órfã\n---\n',
+    });
+    mkdirSync(path.join(config.root, 'docs/pt-br/s'), { recursive: true });
+    writeFileSync(path.join(config.root, 'docs/pt-br/s/p.mdx'), '---\ntitle: P\n---\n\nX\n');
+    const result = await buildStaticSite(config);
+    expect(result.ok).toBe(false);
+    const problems = !result.ok ? result.problems : [];
+    expect(problems.some((p) => p.startsWith('docs/pt-br/: o menu "pt-br" tem o mesmo endereço que o prefixo do idioma "pt-BR"'))).toBe(true);
+    expect(problems.map((p) => p.split('  ')[0]!).filter((p) => p.startsWith('docs-pt-br/'))).toEqual([
+      'docs-pt-br/foundation/color/palette.mdx:5:1',
+      'docs-pt-br/foundation/orfa.mdx:1:1',
+    ]);
+  });
+
+  it('sem a pasta do idioma: aviso, e o idioma sai inteiro no padrão', async () => {
+    const config = await multilingual({});
+    rmSync(path.join(config.root, 'docs-pt-br'), { recursive: true, force: true });
+    const result = await buildStaticSite(config);
+    expect(result.ok && result.warnings).toEqual(['docs-pt-br: pasta de "pt-BR" não encontrada — o idioma sai inteiro no idioma padrão.']);
+    const files = tree(config.outDir);
+    expect(links(files.get('pt-br/foundation/color/palette/index.html')!)).toEqual([['canonical', null, '/acme-ds/foundation/color/palette']]);
+  });
+
+  it('com um idioma, nada de idioma no HTML nem no routes.json', async () => {
+    const config = await fixtureConfig('/acme-ds/');
+    await buildStaticSite(config);
+    const files = tree(config.outDir);
+    expect(lang(files.get('foundation/color/palette/index.html')!)).toBe('en');
+    expect(links(files.get('foundation/color/palette/index.html')!)).toEqual([]);
+    expect(files.get('_systembook/data/routes.json')).not.toContain('"locale"');
+    expect([...files.keys()].some((f) => f.includes('locales/'))).toBe(false);
+  });
+});
