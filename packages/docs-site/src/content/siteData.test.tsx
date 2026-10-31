@@ -61,7 +61,7 @@ const TOKENS: TokenSet = {
 
 const tree = buildContentTree(Object.entries(FILES).map(([path, source]) => ({ path, source })));
 const { data, diagnostics } = buildSiteData(tree, {
-  settings: { nomeDesignSystem: 'Acme DS', logoUrl: null, logoDarkUrl: null },
+  settings: { nomeDesignSystem: 'Acme DS', logoUrl: null, logoDarkUrl: null, locales: [{ code: 'en', label: 'English' }], defaultLocale: 'en' },
   base: '/',
   tokens: TOKENS,
 });

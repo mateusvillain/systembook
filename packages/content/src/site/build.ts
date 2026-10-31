@@ -232,7 +232,14 @@ export function buildSiteData(tree: ContentTree, options: BuildSiteOptions): Sit
               })),
             ],
           };
-          pages[key] = { pageId: key, titulo: page.titulo, subtitulo: page.subtitulo, snapshot };
+          pages[key] = {
+            pageId: key,
+            titulo: page.titulo,
+            subtitulo: page.subtitulo,
+            snapshot,
+            locale: options.settings.defaultLocale,
+            alternates: { [options.settings.defaultLocale]: ref },
+          };
           return { id: key, titulo: page.titulo, slug: page.slug };
         }),
       })),

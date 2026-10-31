@@ -140,12 +140,19 @@ const TOKENS: TokenSet = {
 
 const dataSource: DocsDataSource = {
   getNavTree: async () => tree,
-  getSettings: async () => ({ nomeDesignSystem: 'Acme', logoUrl: null, logoDarkUrl: null }),
+  getSettings: async () => ({
+    nomeDesignSystem: 'Acme',
+    logoUrl: null,
+    logoDarkUrl: null,
+    locales: [{ code: 'en', label: 'English' }],
+    defaultLocale: 'en',
+  }),
   getLanding: async () => null,
-  getPageBySlug: async ({ pageSlug }) => {
-    if (pageSlug === 'paleta') return { pageId: 'p1', titulo: 'Paleta', subtitulo: null, snapshot };
-    if (pageSlug === 'rascunho') return { pageId: 'p3', titulo: 'Rascunho', subtitulo: null, snapshot: null };
-    if (pageSlug === 'blocos') return { pageId: 'p4', titulo: 'Blocos', subtitulo: null, snapshot: blocks };
+  getPageBySlug: async (ref) => {
+    const page = { locale: 'en', alternates: { en: ref }, subtitulo: null };
+    if (ref.pageSlug === 'paleta') return { ...page, pageId: 'p1', titulo: 'Paleta', snapshot };
+    if (ref.pageSlug === 'rascunho') return { ...page, pageId: 'p3', titulo: 'Rascunho', snapshot: null };
+    if (ref.pageSlug === 'blocos') return { ...page, pageId: 'p4', titulo: 'Blocos', snapshot: blocks };
     return null;
   },
   getPageById: async () => null,

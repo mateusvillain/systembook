@@ -166,7 +166,14 @@ export async function prepareSite(config: ResolvedConfig, options: PrepareOption
     }
     return mediaUrl(source);
   };
-  const settings = { nomeDesignSystem: config.name, logoUrl: logo('logo'), logoDarkUrl: logo('logoDark') };
+  const settings = {
+    nomeDesignSystem: config.name,
+    logoUrl: logo('logo'),
+    logoDarkUrl: logo('logoDark'),
+    // Idioma único até o `locales` da config (SYS-163).
+    locales: [{ code: 'en', label: 'English' }],
+    defaultLocale: 'en',
+  };
 
   // ---- tokens ----
   const tokens = await loadProjectTokens(config);

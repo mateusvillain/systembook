@@ -12,6 +12,26 @@ import type { TokenSet } from './tokens.js';
  * o typecheck quebra se o servidor e o contrato divergirem.
  */
 
+/**
+ * Idiomas (SYS-162). Uma instância publica a doc em um ou mais idiomas, sempre
+ * com um padrão. A fonte de dados é **vinculada a um idioma** — a doc pede uma
+ * por idioma a uma `DocsDataSourceFactory` —, então as leituras não recebem o
+ * locale como parâmetro: tudo que uma fonte devolve (nav, landing, páginas,
+ * busca) já está no idioma dela. Na URL, o padrão fica sem prefixo e os demais
+ * ficam sob `/<código-em-minúsculas>/` (helpers em `@systembook/content/site`).
+ *
+ * Com um único idioma, `locales` tem só o padrão e nada muda na doc: sem
+ * prefixo, sem seletor, sem aviso, sem `hreflang`.
+ */
+
+/** Idioma publicado. */
+export interface LocaleInfo {
+  /** Código BCP 47 (`en`, `pt-BR`), único na instância. */
+  code: string;
+  /** Nome exibido no seletor, no próprio idioma (`English`, `Português`). */
+  label: string;
+}
+
 /** Página publicada na árvore de navegação. */
 export interface PublicNavPage {
   id: string;
@@ -49,6 +69,13 @@ export interface PublicSettings {
   logoUrl: string | null;
   /** URL do logo escuro, ou `null` (a doc cai no claro). */
   logoDarkUrl: string | null;
+  /**
+   * Idiomas publicados, o padrão primeiro; nunca vazio. Iguais em qualquer
+   * idioma da fonte.
+   */
+  locales: LocaleInfo[];
+  /** Código do idioma padrão — o servido sem prefixo e o destino do fallback. */
+  defaultLocale: string;
 }
 
 /** Endereço canônico de uma página: `/docs/:menuSlug/:sectionSlug/:pageSlug`. */
@@ -65,6 +92,21 @@ export interface PublishedPage {
   subtitulo: string | null;
   /** Última revisão publicada, ou `null` se a página nunca foi publicada. */
   snapshot: PageSnapshot | null;
+  /**
+   * Idioma realmente servido. Difere do idioma da fonte no **fallback**: a
+   * página existe mas não tem tradução publicada no idioma pedido, e a fonte
+   * devolve o conteúdo do padrão (com `locale` = padrão) em vez de `null`. A
+   * doc mostra um aviso e aponta o `canonical` para a URL do padrão.
+   */
+  locale: string;
+  /**
+   * Endereço da mesma página em cada idioma em que ela está publicada, por
+   * código — com os slugs traduzidos, inclusive o idioma servido. Idioma sem a
+   * página publicada fica de fora; no fallback, só o padrão (e outros idiomas
+   * traduzidos) aparece. Com um único idioma, só o padrão. Alimenta o seletor
+   * de idioma e o `hreflang`.
+   */
+  alternates: Record<string, PublicPageRef>;
 }
 
 /** Forma canônica de um path público legado (ver `DocsDataSource.resolvePath`). */
@@ -72,7 +114,10 @@ export interface ResolvedPublicPath extends PublicPageRef {
   tabId: string | null;
 }
 
-/** Resultado da busca da doc pública. */
+/**
+ * Resultado da busca da doc pública. Não carrega idioma: a busca roda no
+ * índice do idioma da fonte, e os títulos e slugs vêm nele.
+ */
 export interface PublicSearchResult {
   pageId: string;
   pageTitulo: string;
@@ -103,7 +148,10 @@ export interface PublicComponentPreview {
   config: PreviewConfig | null;
 }
 
-/** Fonte de dados da doc pública. Toda leitura é assíncrona. */
+/**
+ * Fonte de dados da doc pública, vinculada a um idioma (ver `LocaleInfo`).
+ * Toda leitura é assíncrona.
+ */
 export interface DocsDataSource {
   /** Árvore de navegação pública. */
   getNavTree(): Promise<PublicNavTree>;
@@ -133,3 +181,12 @@ export interface DocsDataSource {
    */
   getTokens(): Promise<TokenSet | null>;
 }
+
+/**
+ * Fonte de dados por idioma (SYS-162). `locale` é um código de
+ * `PublicSettings.locales`; `null` pede o padrão, para quem ainda não sabe
+ * qual é — a doc lê os idiomas pelo `getSettings` da fonte `null` antes de
+ * resolver o prefixo da URL. Pode devolver a mesma instância a cada chamada
+ * com o mesmo argumento, mas não precisa.
+ */
+export type DocsDataSourceFactory = (locale: string | null) => DocsDataSource;

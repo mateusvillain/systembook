@@ -15,7 +15,7 @@ const tree = buildContentTree(
     'components/actions/button.mdx': page('Button', '<DosDonts variant="do" title="Verbo no rótulo">Use verbos de ação.</DosDonts>'),
   }).map(([path, source]) => ({ path, source })),
 );
-const { data } = buildSiteData(tree, { settings: { nomeDesignSystem: 'X', logoUrl: null, logoDarkUrl: null } });
+const { data } = buildSiteData(tree, { settings: { nomeDesignSystem: 'X', logoUrl: null, logoDarkUrl: null, locales: [{ code: 'en', label: 'English' }], defaultLocale: 'en' } });
 // Ida e volta pelo JSON, como no site.
 const index = loadSearchIndex(JSON.parse(JSON.stringify(createSearchIndex(data))));
 const search = (q: string) => querySearchIndex(index, q);

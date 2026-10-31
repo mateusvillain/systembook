@@ -50,10 +50,18 @@ const snapshot: PageSnapshot = {
 
 const dataSource: DocsDataSource = {
   getNavTree: async () => tree,
-  getSettings: async () => ({ nomeDesignSystem: 'Acme DS', logoUrl: null, logoDarkUrl: null }),
+  getSettings: async () => ({
+    nomeDesignSystem: 'Acme DS',
+    logoUrl: null,
+    logoDarkUrl: null,
+    locales: [{ code: 'en', label: 'English' }],
+    defaultLocale: 'en',
+  }),
   getLanding: async () => null,
-  getPageBySlug: async ({ pageSlug }) =>
-    pageSlug === 'palette' ? { pageId: 'p1', titulo: 'Palette', subtitulo: null, snapshot } : null,
+  getPageBySlug: async (ref) =>
+    ref.pageSlug === 'palette'
+      ? { pageId: 'p1', titulo: 'Palette', subtitulo: null, snapshot, locale: 'en', alternates: { en: ref } }
+      : null,
   getPageById: async () => null,
   // Forma legada `section/page` → canônica com o menu.
   resolvePath: async ([section, page]) =>
