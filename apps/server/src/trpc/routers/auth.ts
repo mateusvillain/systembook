@@ -13,7 +13,7 @@ import { protectedProcedure, publicProcedure, router } from '../init.js';
  * próximo — assim um idioma novo no painel não exige mudança no server. A
  * regra de forma é a mesma da doc pública (`isLocaleCode`).
  */
-const languageTagSchema = z.string().refine(isLocaleCode);
+const languageTagSchema = z.string().refine(isLocaleCode, { message: 'Invalid language tag' });
 
 // Mesma mensagem para email desconhecido e senha errada — evita enumeração de usuários.
 const invalidCredentials = () =>

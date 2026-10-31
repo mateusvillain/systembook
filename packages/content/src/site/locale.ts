@@ -14,8 +14,8 @@ const LOCALE_CODE = /^[a-z]{2,3}(-[a-z0-9]{1,8})*$/i;
 
 /**
  * `code` tem a forma de uma tag BCP 47. Só a forma: qual idioma existe é
- * decisão de quem configura. A mesma regra vale na config do estático e no
- * server.
+ * decisão de quem configura. É a regra do server (idioma da interface) e a
+ * que a config `locales` do estático vai usar (SYS-163).
  */
 export function isLocaleCode(code: string): boolean {
   return code.length <= 35 && LOCALE_CODE.test(code);
@@ -54,7 +54,8 @@ export interface LocalePathMatch {
 }
 
 /**
- * Separa o prefixo de idioma de um caminho sem a base (`/pt-br/menu/…`). O
+ * Separa o prefixo de idioma de um caminho sem a base (`/pt-br/menu/…`) — só o
+ * `pathname`, sem query nem hash, como o `useLocation` entrega. O
  * primeiro segmento só é idioma se for, exatamente, o segmento de um dos
  * `locales` que não o padrão — qualquer outro (inclusive o do padrão, que não
  * tem prefixo, e a forma com maiúsculas) segue como caminho: pode ser o slug
@@ -84,6 +85,8 @@ export interface HreflangLink {
  * por idioma publicado e `x-default` apontando para o padrão (quando a página
  * está publicada nele). Vazio com menos de dois idiomas — um idioma só não
  * tem alternativa a anunciar. Ordem: o padrão primeiro, os demais como vêm.
+ * Os caminhos saem sem a base; quem emite a tag prefixa origem e base, porque
+ * o `hreflang` pede URL absoluta.
  */
 export function hreflangLinks(
   alternates: Readonly<Record<LocaleCode, PublicPageRef>>,
