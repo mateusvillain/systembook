@@ -10,8 +10,11 @@ import { useBlockAnchorIds } from './useBlockAnchorIds.js';
 import { useHashScroll } from './useHashScroll.js';
 import { LegacyDocsRedirect } from './LegacyDocsRedirect.js';
 import { usePageBySlug } from '../content/docsQueries.js';
+import { useDocsLocale } from '../content/dataSource.js';
+import { formatRich } from '../i18n/rich.js';
 import { useDocsPaths } from './docsRoutes.js';
-import { useMessages } from '../i18n/UiLocale.js';
+import { useMessages, useUiLocale } from '../i18n/UiLocale.js';
+import { Languages } from 'lucide-react';
 
 /**
  * Conteúdo de uma página na doc pública (TASK-52): resolve
@@ -34,6 +37,7 @@ export function PublicPageView() {
   const t = useMessages();
 
   const paths = useDocsPaths();
+  const { locale: routeLocale } = useDocsLocale();
 
   // Antes dos early returns (regras de hooks). O gatilho de reescaneio é a rota
   // **mais** `dataUpdatedAt`: só a rota não bastaria, porque na primeira
@@ -65,13 +69,21 @@ export function PublicPageView() {
   if (!query.data) return <LegacyDocsRedirect />;
 
   const { titulo, subtitulo, snapshot } = query.data;
+  // Fallback (SYS-185): sem tradução publicada no idioma da rota, a fonte serve
+  // o padrão. O aviso nomeia os dois idiomas, e o conteúdo leva o `lang` do
+  // servido para o leitor de tela pronunciá-lo certo.
+  const servedLocale = query.data.locale;
+  const fallback = !!routeLocale && servedLocale !== routeLocale;
+  const contentLang = fallback ? servedLocale : undefined;
+  const notice = fallback && <FallbackNotice requested={routeLocale} served={servedLocale} />;
   // O corpo (tab primária) vive na URL sem `tabId`; as tabs de usuário em
   // `/:tabId`. Sem `tabId` na URL, a visão ativa é o corpo (TASK-68).
   const primaryTabId = snapshot?.tabs.find((t) => t.isPrimary)?.tabId;
 
   if (!snapshot) {
     return (
-      <article>
+      <article lang={contentLang}>
+        {notice}
         <header className="sb-page-header">
           <h1 className="sb-public-title">{titulo}</h1>
           {subtitulo && (
@@ -101,7 +113,8 @@ export function PublicPageView() {
     // reservada para o TOC "Nesta página" (2.2). Colapsa para 1 coluna em
     // telas estreitas via media query em `public.css`.
     <div className="sb-page-grid">
-      <article className="sb-page-body" ref={bodyRef}>
+      <article className="sb-page-body" ref={bodyRef} lang={contentLang}>
+        {notice}
         <header className="sb-page-header">
           <h1 className="sb-public-title">{titulo}</h1>
           {subtitulo && (
@@ -138,5 +151,26 @@ export function PublicPageView() {
         <TableOfContents items={items} headings={headings} />
       </aside>
     </div>
+  );
+}
+
+/**
+ * Aviso de que a página está no idioma padrão por falta de tradução. Fica no
+ * idioma da interface; o nome de cada idioma é o rótulo dele (no próprio
+ * idioma, como no seletor), marcado com `lang`.
+ */
+function FallbackNotice({ requested, served }: { requested: string; served: string }) {
+  const { locales } = useDocsLocale();
+  const t = useMessages();
+  const uiLocale = useUiLocale();
+  const name = (code: string) => (
+    <span lang={code}>{locales.find((info) => info.code === code)?.label ?? code}</span>
+  );
+  return (
+    // O `lang` do artigo é o do conteúdo; o aviso é da interface.
+    <p className="sb-fallback-notice" role="note" lang={uiLocale}>
+      <Languages aria-hidden size={16} className="sb-fallback-notice-icon" />
+      <span>{formatRich(t('page.fallback'), { requested: name(requested), served: name(served) })}</span>
+    </p>
   );
 }

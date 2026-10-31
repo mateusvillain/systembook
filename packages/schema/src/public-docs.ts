@@ -60,7 +60,8 @@ export interface PublicNavMenu {
 
 /**
  * Árvore de navegação pública: menus → seções → páginas, já ordenada e sem
- * nós vazios. A landing não faz parte dela.
+ * nós vazios. A landing não faz parte dela. No idioma da fonte: um item sem
+ * título traduzido vem com o título do padrão (a página dele é fallback).
  */
 export type PublicNavTree = PublicNavMenu[];
 

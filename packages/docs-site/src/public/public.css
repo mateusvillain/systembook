@@ -683,6 +683,33 @@ html:has(.sb-public[data-theme='dark']:not(.sb-public--preview)) {
   display: none;
 }
 
+/* ---- Aviso de fallback de idioma (SYS-185) ----
+   Informativo, não alerta: a página está ali, só que no idioma padrão. */
+.sb-fallback-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 1.5rem;
+  padding: 10px 14px;
+  border: 1px solid var(--sb-border);
+  border-radius: 10px;
+  background: var(--sb-surface);
+  color: var(--sb-fg-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.sb-fallback-notice-icon {
+  flex: none;
+  margin-top: 0.15em;
+  color: var(--sb-accent);
+}
+
+.sb-fallback-notice [lang] {
+  color: var(--sb-fg);
+  font-weight: 500;
+}
+
 /* ---- Título/subtítulo de página (2.3) ---- */
 .sb-page-header {
   margin: 0 0 2rem;

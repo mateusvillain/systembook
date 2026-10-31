@@ -600,6 +600,29 @@ describe('doc pública em vários idiomas (SYS-176)', () => {
       ]);
     });
 
+    it('aviso de fallback (SYS-185): nomeia os idiomas e marca o conteúdo com o idioma servido', async () => {
+      const { factory } = sources();
+      await renderLocales('/docs/pt-br/components/actions/button', factory);
+
+      const notice = container.querySelector('.sb-fallback-notice')!;
+      expect(notice.getAttribute('role')).toBe('note');
+      expect(notice.getAttribute('lang')).toBe('pt-BR');
+      expect(notice.textContent).toBe('Esta página ainda não está disponível em Português. Exibindo a versão em English.');
+      expect([...notice.querySelectorAll('span[lang]')].map((s) => s.getAttribute('lang'))).toEqual(['pt-BR', 'en']);
+      expect(container.querySelector('article.sb-page-body')!.getAttribute('lang')).toBe('en');
+    });
+
+    it('sem fallback, nem aviso nem lang no conteúdo', async () => {
+      const { factory } = sources();
+      await renderLocales('/docs/pt-br/fundamentos/cor/paleta', factory);
+      expect(container.querySelector('h1')?.textContent).toBe('Paleta');
+      expect(container.querySelector('.sb-fallback-notice')).toBeNull();
+      expect(container.querySelector('article.sb-page-body')!.hasAttribute('lang')).toBe(false);
+
+      await renderLocales('/docs/foundation/color/palette', factory);
+      expect(container.querySelector('.sb-fallback-notice')).toBeNull();
+    });
+
     it('na página Tokens, leva à página Tokens do idioma', async () => {
       const { factory } = sources();
       await renderLocales('/docs/pt-br/tokens', factory);
