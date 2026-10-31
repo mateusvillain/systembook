@@ -48,8 +48,9 @@ export interface StaticDataSourceOptions {
  * busca da própria pasta (`localeDataDir` — o padrão na raiz, como antes dos
  * idiomas); settings, previews e tokens, iguais em todos, saem da raiz e são
  * lidos uma vez para todos os idiomas. `null` é o padrão sem precisar das
- * settings para achar a pasta. A fábrica devolve a mesma fonte para o mesmo
- * idioma, como o `DocsDataSourceProvider` espera.
+ * settings para achar a pasta. Cada chamada cria uma fonte (quem chama guarda
+ * uma por código, como diz o contrato), mas o cache de leituras e dos índices
+ * de busca é da fábrica, por caminho: fontes do mesmo idioma não leem nada duas vezes.
  */
 export function createStaticDataSourceFactory({
   dataUrl,
@@ -92,6 +93,22 @@ export function createStaticDataSourceFactory({
 
   const getSettings = () => once<PublicSettings>(staticDataPaths.settings);
 
+  // Fora do `once`: guardar o JSON cru além do índice carregado seria o dado
+  // duas vezes na memória. Por caminho, como o `once`: `null` e o código do
+  // padrão leem o mesmo índice uma vez só.
+  const indexes = new Map<string, Promise<SearchIndex>>();
+  function searchIndex(path: string): Promise<SearchIndex> {
+    let pending = indexes.get(path);
+    if (!pending) {
+      pending = readJson<SearchIndexJson>(path).then(loadSearchIndex, (error: unknown) => {
+        indexes.delete(path);
+        throw error;
+      });
+      indexes.set(path, pending);
+    }
+    return pending;
+  }
+
   /** Pasta do idioma; um código fora de `settings.locales` é erro de quem chama. */
   async function localeDir(locale: LocaleCode | null): Promise<string> {
     if (locale === null) return '';
@@ -103,23 +120,16 @@ export function createStaticDataSourceFactory({
   }
 
   function createSource(locale: LocaleCode | null): DocsDataSource {
-    // No padrão (`null`), sem passar pelas settings: as mesmas leituras, na mesma ordem, de antes dos idiomas.
-    const read = <T,>(path: string): Promise<T> =>
-      locale === null ? once<T>(path) : localeDir(locale).then((prefix) => once<T>(`${prefix}${path}`));
+    /**
+     * `load` no caminho do idioma. No padrão (`null`), sem passar pelas
+     * settings: as mesmas leituras, na mesma ordem, de antes dos idiomas.
+     */
+    const inLocale = <T>(load: (path: string) => Promise<T>, path: string): Promise<T> =>
+      locale === null ? load(path) : localeDir(locale).then((prefix) => load(`${prefix}${path}`));
+    const read = <T>(path: string) => inLocale((p) => once<T>(p), path);
     const getNavTree = () => read<PublicNavTree>(staticDataPaths.nav);
 
-    // Fora do `once`: guardar o JSON cru além do índice carregado seria o
-    // dado duas vezes na memória.
-    let index: Promise<SearchIndex> | null = null;
-    const getSearchIndex = () => {
-      index ??= localeDir(locale)
-        .then((prefix) => readJson<SearchIndexJson>(`${prefix}${staticDataPaths.search}`))
-        .then(loadSearchIndex, (error: unknown) => {
-          index = null;
-          throw error;
-        });
-      return index;
-    };
+    const getSearchIndex = () => inLocale(searchIndex, staticDataPaths.search);
 
     async function getPage(ref: PublicPageRef): Promise<PublishedPage | null> {
       const nav = await getNavTree();
@@ -151,12 +161,7 @@ export function createStaticDataSourceFactory({
     };
   }
 
-  const sources = new Map<LocaleCode | null, DocsDataSource>();
-  return (locale) => {
-    let source = sources.get(locale);
-    if (!source) sources.set(locale, (source = createSource(locale)));
-    return source;
-  };
+  return createSource;
 }
 
 /** A fonte do idioma padrão — a de um site de idioma único. */

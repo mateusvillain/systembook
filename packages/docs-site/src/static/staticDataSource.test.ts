@@ -210,11 +210,17 @@ describe('staticDataSourceFactory — idiomas (SYS-170)', () => {
     expect(requests.filter((u) => u.endsWith('search.json'))).toEqual([`${DATA_URL}locales/pt-br/search.json`, `${DATA_URL}search.json`]);
   });
 
-  it('null e o código do padrão leem a raiz; a mesma fonte para o mesmo idioma', async () => {
+  it('null e o código do padrão leem a raiz', async () => {
     const { factory: f } = factory();
-    expect(f('pt-BR')).toBe(f('pt-BR'));
     expect(await f(null).getNavTree()).toEqual(locales.en!.nav);
     expect(await f('en').getNavTree()).toEqual(locales.en!.nav);
+  });
+
+  it('null e o código do padrão compartilham o índice de busca', async () => {
+    const { factory: f, requests } = factory();
+    await f(null).search('cores');
+    await f('en').search('cores');
+    expect(requests.filter((u) => u.endsWith('search.json'))).toEqual([`${DATA_URL}search.json`]);
   });
 
   it('idioma não publicado é erro', async () => {
