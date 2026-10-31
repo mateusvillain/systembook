@@ -153,8 +153,10 @@ const dataSource: DocsDataSource = {
   }),
   getLanding: async () => null,
   getPageBySlug: async (ref) => {
-    const page = { locale: 'en', alternates: { en: ref }, subtitulo: null };
+    const page = { locale: 'pt-BR', alternates: { 'pt-BR': ref }, subtitulo: null };
     if (ref.pageSlug === 'paleta') return { ...page, pageId: 'p1', titulo: 'Paleta', snapshot };
+    // Servida em outro idioma: o aviso de fallback (SYS-185).
+    if (ref.pageSlug === 'traducao') return { ...page, locale: 'es', pageId: 'p5', titulo: 'Tradução', snapshot };
     if (ref.pageSlug === 'rascunho') return { ...page, pageId: 'p3', titulo: 'Rascunho', snapshot: null };
     if (ref.pageSlug === 'blocos') return { ...page, pageId: 'p4', titulo: 'Blocos', snapshot: blocks };
     return null;
@@ -352,6 +354,13 @@ describe('doc pública em pt-BR (SYS-167, SYS-168)', () => {
     const codeAnchor = await until(() => $('.sb-block-anchor'));
     expect(codeAnchor.getAttribute('aria-label')).toBe('Copiar link para este bloco de código');
     expect($('.sb-code-copy')?.textContent).toBe('Copiar');
+    expectNoEnglish();
+  });
+
+  it('aviso de fallback de idioma', async () => {
+    await renderAt('/docs/fundamentos/cor/traducao');
+    const notice = await until(() => $('.sb-fallback-notice'));
+    expect(notice.textContent).toBe('Esta página ainda não está disponível em Português. Exibindo a versão em Español.');
     expectNoEnglish();
   });
 

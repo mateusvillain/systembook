@@ -68,8 +68,15 @@ export function PageRenderer({
   snapshot,
   activeTabId: controlledTabId,
   onSelectTab,
+  lang,
 }: {
   snapshot: RenderableSnapshot;
+  /**
+   * Idioma do conteúdo, quando difere do da interface (fallback, SYS-185): vai
+   * no painel e nos títulos das tabs, não no chrome (a lista de tabs e o
+   * "Visão geral" são da interface).
+   */
+  lang?: string;
   /** Se fornecido, a tab ativa é controlada por quem chama (reflete a URL). */
   activeTabId?: string;
   onSelectTab?: (tabId: string) => void;
@@ -82,9 +89,13 @@ export function PageRenderer({
   const userTabs = primary ? snapshot.tabs.filter((tab) => !tab.isPrimary) : snapshot.tabs;
 
   // Visões do tab bar: Corpo primeiro, depois as tabs de usuário.
+  // `fromContent`: o título vem do conteúdo, e não do dicionário.
+  const bodyLabel = primary && bodyViewLabel(primary.titulo, t('page.overview'));
   const views = [
-    ...(primary ? [{ tabId: primary.tabId, titulo: bodyViewLabel(primary.titulo, t('page.overview')), blocks: primary.blocks }] : []),
-    ...userTabs.map((tab) => ({ tabId: tab.tabId, titulo: tab.titulo, blocks: tab.blocks })),
+    ...(primary
+      ? [{ tabId: primary.tabId, titulo: bodyLabel!, blocks: primary.blocks, fromContent: bodyLabel !== t('page.overview') }]
+      : []),
+    ...userTabs.map((tab) => ({ tabId: tab.tabId, titulo: tab.titulo, blocks: tab.blocks, fromContent: true })),
   ];
 
   const [internalTabId, setInternalTabId] = useState(views[0]?.tabId);
@@ -137,13 +148,14 @@ export function PageRenderer({
               className={`sb-tab${view.tabId === activeView.tabId ? ' active' : ''}`}
               onClick={() => selectTab(view.tabId)}
               onKeyDown={(e) => onTabKeyDown(e, index)}
+              lang={view.fromContent ? lang : undefined}
             >
               {view.titulo}
             </button>
           ))}
         </div>
       )}
-      <div role="tabpanel" aria-labelledby={`sb-tab-${activeView.tabId}`}>
+      <div role="tabpanel" aria-labelledby={`sb-tab-${activeView.tabId}`} lang={lang}>
         <TabContent key={activeView.tabId} blocks={activeView.blocks} />
       </div>
     </div>

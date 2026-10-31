@@ -48,6 +48,7 @@ export const en = {
   'page.notPublished': 'This page has not been published yet.',
   'page.notPublishedTitle': 'This page has not been published yet',
   'page.notPublishedHint': 'Once it is published in the panel, the content will appear here.',
+  'page.fallback': 'This page is not available in {requested} yet. Showing the {served} version.',
   'page.notFoundTitle': 'Page not found',
   'page.notFound': 'This page does not exist or the address has changed.',
 

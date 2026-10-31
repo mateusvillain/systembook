@@ -38,6 +38,7 @@ export const ptBR: DocsMessages = {
   'page.notPublished': 'Esta página ainda não foi publicada.',
   'page.notPublishedTitle': 'Esta página ainda não foi publicada',
   'page.notPublishedHint': 'Quando ela for publicada no painel, o conteúdo aparecerá aqui.',
+  'page.fallback': 'Esta página ainda não está disponível em {requested}. Exibindo a versão em {served}.',
   'page.notFoundTitle': 'Página não encontrada',
   'page.notFound': 'Esta página não existe ou o endereço mudou.',
 
