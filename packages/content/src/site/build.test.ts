@@ -17,7 +17,7 @@ const FILES = {
   'components/actions/button.mdx': page('Button', '<DosDonts variant="do" coverImage="../../img/do.png" coverAlt="Certo">Ok.</DosDonts>'),
 };
 
-const settings = { nomeDesignSystem: 'Acme DS', logoUrl: null, logoDarkUrl: null };
+const settings = { nomeDesignSystem: 'Acme DS', logoUrl: null, logoDarkUrl: null, locales: [{ code: 'en', label: 'English' }], defaultLocale: 'en' };
 
 function build(base = '/meu-repo/', files: Record<string, string> = FILES, imageUrl?: (path: string) => string) {
   const tree = buildContentTree(Object.entries(files).map(([path, source]) => ({ path, source })));
@@ -203,7 +203,7 @@ describe('siteDataFiles', () => {
 
 describe('tokens (SYS-130)', () => {
   const tree = buildContentTree([]);
-  const settings = { nomeDesignSystem: 'X', logoUrl: null, logoDarkUrl: null };
+  const settings = { nomeDesignSystem: 'X', logoUrl: null, logoDarkUrl: null, locales: [{ code: 'en', label: 'English' }], defaultLocale: 'en' };
   const set = {
     modes: ['light', 'dark'],
     tokens: [{ path: 'bg', type: 'color' as const, byMode: { light: { value: '#fff', resolvedValue: '#fff' }, dark: { value: '#000', resolvedValue: '#000' } } }],

@@ -487,7 +487,9 @@ export const pagesRouter = router({
         pageSlug: z.string(),
       }),
     )
-    .query(({ ctx, input }): PublishedPage | null => {
+    // Sem `locale`/`alternates` até o CMS ganhar idiomas: o `trpcDataSource`
+    // completa com o idioma único (SYS-162).
+    .query(({ ctx, input }): Omit<PublishedPage, 'locale' | 'alternates'> | null => {
       const page = ctx.db
         .select({ id: pages.id, titulo: pages.titulo, subtitulo: pages.subtitulo })
         .from(pages)

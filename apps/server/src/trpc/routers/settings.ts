@@ -32,7 +32,9 @@ function logoUrl(variant: LogoVariant, hash: string | null): string | null {
 export const settingsRouter = router({
   // Leitura pública: só o que a doc precisa, nunca os bytes do logo (que vêm
   // pela URL própria, cacheável, em vez de inflar todo payload de navegação).
-  getPublic: publicProcedure.query(({ ctx }): PublicSettings => {
+  // Os idiomas ainda não são do server (SYS-162): o `trpcDataSource` completa
+  // com um idioma único até o CMS ganhar idiomas.
+  getPublic: publicProcedure.query(({ ctx }): Omit<PublicSettings, 'locales' | 'defaultLocale'> => {
     const row = getSettings(ctx.db);
     return {
       nomeDesignSystem: row.nomeDesignSystem,

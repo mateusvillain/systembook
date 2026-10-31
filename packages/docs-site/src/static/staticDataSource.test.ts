@@ -12,7 +12,7 @@ const tree = buildContentTree([
 ]);
 const preview = { url: '/meu-repo/previews/button--primary/index.html', config: null };
 const { data } = buildSiteData(tree, {
-  settings: { nomeDesignSystem: 'Acme', logoUrl: null, logoDarkUrl: null },
+  settings: { nomeDesignSystem: 'Acme', logoUrl: null, logoDarkUrl: null, locales: [{ code: 'en', label: 'English' }], defaultLocale: 'en' },
   base: '/meu-repo/',
   previews: { 'Button/primary': preview },
   tokens: {

@@ -117,7 +117,13 @@ describe('systembook build', { timeout: 60_000 }, () => {
       '_systembook/media/palette-#.png',
     ]);
     const settings = JSON.parse(files.get('_systembook/data/settings.json')!);
-    expect(settings).toEqual({ nomeDesignSystem: 'Acme DS', logoUrl: `/acme-ds/${media[1]}`, logoDarkUrl: null });
+    expect(settings).toEqual({
+      nomeDesignSystem: 'Acme DS',
+      logoUrl: `/acme-ds/${media[1]}`,
+      logoDarkUrl: null,
+      locales: [{ code: 'en', label: 'English' }],
+      defaultLocale: 'en',
+    });
     expect(files.get('_systembook/data/pages/foundation/color/palette.json')).toContain(`"src":"/acme-ds/${media[2]}"`);
     expect(files.get('_systembook/data/pages/components/actions/button.json')).toContain(`"src":"/acme-ds/${media[0]}"`);
   });
