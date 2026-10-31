@@ -110,3 +110,95 @@ describe('loadConfig', () => {
     expect((await problems(project({ 'systembook.config.json': '{ name: ' })))[0]).toContain('JSON inválido');
   });
 });
+
+describe('loadConfig — locales (SYS-163)', () => {
+  const json = (locales: unknown, extra: Record<string, unknown> = {}) =>
+    project({ 'systembook.config.json': JSON.stringify({ name: 'T', ...extra, locales }) });
+
+  it('sem locales: só o padrão en', async () => {
+    expect((await loadConfig(json(undefined))).locales).toEqual({ default: { code: 'en', label: 'English' }, translations: [] });
+  });
+
+  it('caminhos absolutos; a pasta padrão é irmã do conteúdo com o segmento do idioma', async () => {
+    const root = json(
+      {
+        default: { code: 'en', label: 'English' },
+        translations: [
+          { code: 'pt-BR', label: 'Português' },
+          { code: 'es', label: 'Español', dir: 'traducoes/es' },
+        ],
+      },
+      { contentDir: 'content' },
+    );
+    expect((await loadConfig(root)).locales).toEqual({
+      default: { code: 'en', label: 'English' },
+      translations: [
+        { code: 'pt-BR', label: 'Português', dir: path.join(root, 'content-pt-br') },
+        { code: 'es', label: 'Español', dir: path.join(root, 'traducoes/es') },
+      ],
+    });
+    // sem contentDir, docs → docs-pt-br
+    const plain = json({ default: { code: 'pt-BR', label: 'Português' }, translations: [{ code: 'en', label: 'English' }] });
+    expect((await loadConfig(plain)).locales.translations[0]!.dir).toBe(path.join(plain, 'docs-en'));
+  });
+
+  it('recusa código inválido, repetido ou com o mesmo segmento de URL', async () => {
+    const f = 'systembook.config.json';
+    expect(await problems(json({ default: { code: 'english', label: 'E' } }))).toEqual([
+      `${f}: "locales.default.code": código de idioma inválido — use uma tag BCP 47 (ex.: "en", "pt-BR")`,
+    ]);
+    expect(
+      await problems(json({ default: { code: 'en', label: 'E' }, translations: [{ code: 'pt-BR', label: 'P' }, { code: 'en', label: 'E2' }] })),
+    ).toEqual([`${f}: "locales.translations.1.code": código "en" repetido`]);
+    expect(
+      await problems(json({ default: { code: 'en', label: 'E' }, translations: [{ code: 'pt-BR', label: 'P' }, { code: 'pt-br', label: 'P2', dir: 'x' }] })),
+    ).toEqual([`${f}: "locales.translations.1.code": "pt-br" e "pt-BR" dão o mesmo segmento de URL ("pt-br") — use um só`]);
+  });
+
+  it('recusa campo desconhecido e rótulo vazio', async () => {
+    const f = 'systembook.config.json';
+    expect(await problems(json({ default: { code: 'en', label: 'E' }, extra: 1 }))).toEqual([`${f}: "locales": Unrecognized key: "extra"`]);
+    expect(await problems(json({ default: { code: 'en', label: ' ' } }))).toEqual([`${f}: "locales.default.label": é obrigatório`]);
+    expect(await problems(json({ default: { code: 'en', label: 'E' }, translations: [{ code: 'pt-BR', label: 'P', pasta: 'x' }] }))).toEqual([
+      `${f}: "locales.translations.0": Unrecognized key: "pasta"`,
+    ]);
+  });
+
+  it('recusa pasta sobreposta ao conteúdo, ao outDir ou à de outro idioma', async () => {
+    const f = 'systembook.config.json: "locales.translations';
+    const translations = (...dirs: (string | undefined)[]) => ({
+      default: { code: 'en', label: 'E' },
+      translations: dirs.map((dir, i) => ({ code: ['pt-BR', 'es', 'fr'][i], label: 'X', ...(dir && { dir }) })),
+    });
+    expect(await problems(json(translations('docs')))).toEqual([
+      `${f}.0.dir": a pasta de "pt-BR" (docs) se sobrepõe ao "contentDir" (docs) — use uma pasta própria.`,
+    ]);
+    expect(await problems(json(translations('docs/pt')))).toEqual([
+      `${f}.0.dir": a pasta de "pt-BR" (docs/pt) se sobrepõe ao "contentDir" (docs) — use uma pasta própria.`,
+    ]);
+    expect(await problems(json(translations('systembook-dist')))).toEqual([
+      `${f}.0.dir": a pasta de "pt-BR" (systembook-dist) se sobrepõe ao "outDir" (systembook-dist), que é apagado a cada build.`,
+    ]);
+    expect(await problems(json(translations('t', 't/es')))).toEqual([
+      `${f}.1.dir": a pasta de "es" (t/es) se sobrepõe à de "pt-BR" (t) — cada idioma tem a sua.`,
+    ]);
+    expect(await problems(json(translations('../fora')))).toEqual([
+      `${f}.0.dir": a pasta de "pt-BR" (../fora) fica fora do projeto — informe uma pasta dentro dele em "dir".`,
+    ]);
+    // conteúdo na raiz: a pasta padrão (irmã do conteúdo) sairia do projeto
+    const atRoot = json(translations(undefined), { contentDir: '.' });
+    expect(await problems(atRoot)).toEqual([
+      `${f}.0.dir": a pasta de "pt-BR" (../${path.basename(atRoot)}-pt-br) fica fora do projeto — informe uma pasta dentro dele em "dir".`,
+    ]);
+    // e com dir dentro da raiz, sobrepõe o conteúdo
+    expect(await problems(json(translations('pt'), { contentDir: '.' }))).toEqual([
+      `${f}.0.dir": a pasta de "pt-BR" (pt) se sobrepõe ao "contentDir" (.) — use uma pasta própria.`,
+    ]);
+    expect(await problems(json(translations('out/pt'), { outDir: 'out' }))).toEqual([
+      `${f}.0.dir": a pasta de "pt-BR" (out/pt) se sobrepõe ao "outDir" (out), que é apagado a cada build.`,
+    ]);
+    expect(await problems(json(translations(undefined, 'docs-pt-br')))).toEqual([
+      `${f}.1.dir": a pasta de "es" (docs-pt-br) se sobrepõe à de "pt-BR" (docs-pt-br) — cada idioma tem a sua.`,
+    ]);
+  });
+});
