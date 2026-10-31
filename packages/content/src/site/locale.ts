@@ -103,3 +103,49 @@ export function hreflangLinks(
   if (fallback) links.push({ hreflang: 'x-default', path: localizedSitePath(defaultLocale, fallback, defaultLocale) });
   return links;
 }
+
+/** Uma tag de idioma do `<head>`, com o caminho sem a base. */
+export interface LocaleHeadLink {
+  rel: 'alternate' | 'canonical';
+  /** Só nos `alternate`. */
+  hreflang?: string;
+  path: string;
+}
+
+export interface LocaleHeadInput {
+  /** `PublishedPage.alternates`. */
+  alternates: Readonly<Record<LocaleCode, PublicPageRef>>;
+  /** `PublishedPage.locale`: o idioma servido. */
+  servedLocale: LocaleCode;
+  /** Idioma da rota (o pedido). */
+  routeLocale: LocaleCode;
+  defaultLocale: LocaleCode;
+  /** Tab da URL, se houver. */
+  tabSlug?: string | null;
+}
+
+/**
+ * Tags de idioma de uma rota de página (SYS-186), para a doc pública (SPA) e o
+ * HTML do build estático. Numa página de **fallback** (servida ≠ rota), só o
+ * `canonical` para a URL original — com a mesma tab, que é do conteúdo
+ * servido —, sem `hreflang`: anunciar alternativas numa página não canônica
+ * contradiz o canonical. Nas demais, os `hreflangLinks` — exceto numa tab, cujo
+ * slug nos outros idiomas o contrato não conhece (anunciar as raízes das
+ * páginas como alternativas da tab estaria errado).
+ */
+export function localeHeadLinks({
+  alternates,
+  servedLocale,
+  routeLocale,
+  defaultLocale,
+  tabSlug,
+}: LocaleHeadInput): LocaleHeadLink[] {
+  if (servedLocale !== routeLocale) {
+    const original = alternates[servedLocale];
+    return original
+      ? [{ rel: 'canonical', path: localizedSitePath(servedLocale, original, defaultLocale, tabSlug ?? undefined) }]
+      : [];
+  }
+  if (tabSlug) return [];
+  return hreflangLinks(alternates, defaultLocale).map(({ hreflang, path }) => ({ rel: 'alternate', hreflang, path }));
+}
