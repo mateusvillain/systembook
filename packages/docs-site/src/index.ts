@@ -33,7 +33,7 @@ export {
   useTokens,
 } from './content/docsQueries.js';
 
-export { createStaticDataSource, type StaticDataSourceOptions } from './static/staticDataSource.js';
+export { createStaticDataSource, createStaticDataSourceFactory, type StaticDataSourceOptions } from './static/staticDataSource.js';
 
 // Idioma da interface (SYS-161). `createTranslator`/`resolveLocale` servem
 // também a quem traz um dicionário próprio (o admin).

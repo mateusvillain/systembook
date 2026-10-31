@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, it } from 'vitest';
-import { buildContentTree, buildSiteData, siteDataFiles, STATIC_DATA_DIR } from '@systembook/content';
+import { buildContentTree, buildLocaleTree, buildSiteData, siteDataFiles, siteDataFilesByLocale, STATIC_DATA_DIR } from '@systembook/content';
 import { fsFetch, writeSiteDataDir } from '../../test/fsFetch.js';
-import { createStaticDataSource } from './staticDataSource.js';
+import { createStaticDataSource, createStaticDataSourceFactory } from './staticDataSource.js';
 
 const page = (title: string, body: string) => `---\ntitle: ${title}\n---\n\n${body}\n`;
 const tree = buildContentTree([
@@ -139,5 +139,94 @@ describe('staticDataSource', () => {
     await expect(ds.getNavTree()).rejects.toThrow(`${DATA_URL}nav.json (HTTP 500)`);
     fail = false;
     expect(await ds.getNavTree()).toEqual(data.nav);
+  });
+});
+
+describe('staticDataSourceFactory — idiomas (SYS-170)', () => {
+  const translation = buildLocaleTree(tree, [
+    { path: 'index.md', source: '# Início traduzido' },
+    { path: 'foundation/_menu.yml', source: 'title: Fundamentos\nslug: fundamentos\n' },
+    { path: 'foundation/color/_section.yml', source: 'title: Cor\nslug: cor\n' },
+    { path: 'foundation/color/palette.mdx', source: '---\ntitle: Paleta\nslug: paleta\n---\n\nMatizes.\n' },
+  ]);
+  const settings = {
+    nomeDesignSystem: 'Acme',
+    logoUrl: null,
+    logoDarkUrl: null,
+    locales: [
+      { code: 'en', label: 'English' },
+      { code: 'pt-BR', label: 'Português' },
+    ],
+    defaultLocale: 'en',
+  };
+  const { locales } = buildSiteData(tree, {
+    settings,
+    base: '/meu-repo/',
+    previews: { 'Button/primary': preview },
+    translations: { 'pt-BR': translation },
+  });
+  const multi = writeSiteDataDir(siteDataFilesByLocale(locales));
+  afterAll(multi.cleanup);
+
+  function factory() {
+    const fetch = fsFetch(multi.dir, DATA_URL);
+    return { factory: createStaticDataSourceFactory({ dataUrl: DATA_URL, fetch }), requests: fetch.requests };
+  }
+  const pt = locales['pt-BR']!;
+  const paleta = { menuSlug: 'fundamentos', sectionSlug: 'cor', pageSlug: 'paleta' };
+
+  it('cada idioma lê a própria pasta; settings, previews e tokens da raiz', async () => {
+    const { factory: f, requests } = factory();
+    const ds = f('pt-BR');
+    expect(await ds.getNavTree()).toEqual(pt.nav);
+    expect(await ds.getLanding()).toEqual(pt.landing);
+    expect(await ds.getSettings()).toEqual(settings);
+    expect(await ds.getComponentPreview({ componentName: 'Button', variantId: 'primary' })).toEqual(preview);
+    expect(requests).toEqual([
+      `${DATA_URL}settings.json`,
+      `${DATA_URL}locales/pt-br/nav.json`,
+      `${DATA_URL}locales/pt-br/landing.json`,
+      `${DATA_URL}previews.json`,
+    ]);
+  });
+
+  it('getPageBySlug devolve locale e alternates; fallback com o locale do padrão', async () => {
+    const ds = factory().factory('pt-BR');
+    const page = await ds.getPageBySlug(paleta);
+    expect(page).toEqual(pt.pages['fundamentos/cor/paleta']);
+    expect(page).toMatchObject({
+      locale: 'pt-BR',
+      alternates: { en: { menuSlug: 'foundation', sectionSlug: 'color', pageSlug: 'palette' }, 'pt-BR': paleta },
+    });
+    expect(await ds.getPageBySlug({ menuSlug: 'fundamentos', sectionSlug: 'cor', pageSlug: 'tokens' })).toMatchObject({ locale: 'en' });
+    // slug do padrão não existe na navegação traduzida
+    expect(await ds.getPageBySlug({ menuSlug: 'foundation', sectionSlug: 'color', pageSlug: 'palette' })).toBeNull();
+  });
+
+  it('a busca usa o índice do idioma', async () => {
+    const { factory: f, requests } = factory();
+    expect((await f('pt-BR').search('matizes')).map((r) => [r.menuSlug, r.sectionSlug, r.pageSlug])).toEqual([['fundamentos', 'cor', 'paleta']]);
+    expect(await f(null).search('matizes')).toEqual([]);
+    expect(requests.filter((u) => u.endsWith('search.json'))).toEqual([`${DATA_URL}locales/pt-br/search.json`, `${DATA_URL}search.json`]);
+  });
+
+  it('null e o código do padrão leem a raiz; a mesma fonte para o mesmo idioma', async () => {
+    const { factory: f } = factory();
+    expect(f('pt-BR')).toBe(f('pt-BR'));
+    expect(await f(null).getNavTree()).toEqual(locales.en!.nav);
+    expect(await f('en').getNavTree()).toEqual(locales.en!.nav);
+  });
+
+  it('idioma não publicado é erro', async () => {
+    await expect(factory().factory('fr').getNavTree()).rejects.toThrow('"fr" não está publicado');
+  });
+
+  it('com idioma único, os mesmos arquivos e leituras de antes', async () => {
+    const fetch = fsFetch(dir, DATA_URL);
+    const ds = createStaticDataSourceFactory({ dataUrl: DATA_URL, fetch })(null);
+    await ds.getNavTree();
+    await ds.getPageBySlug({ menuSlug: 'foundation', sectionSlug: 'color', pageSlug: 'palette' });
+    await ds.search('cores');
+    expect(fetch.requests).toEqual([`${DATA_URL}nav.json`, `${DATA_URL}pages/foundation/color/palette.json`, `${DATA_URL}search.json`]);
   });
 });
