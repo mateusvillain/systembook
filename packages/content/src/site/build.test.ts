@@ -241,7 +241,7 @@ describe('idiomas (SYS-177)', () => {
       'foundation/color/_section.yml': 'title: Cor\nslug: cor\n',
       'foundation/color/palette.mdx': page(
         'Paleta',
-        'Cores primárias.\n\n![Paleta](./img/paleta.png)\n\nVeja o [uso](./tokens/usage.mdx), o [início](../../index.mdx) e o [quebrado](./nao-existe.mdx).',
+        'Cores primárias.\n\n![Paleta](./img/paleta.png)\n\nVeja o [uso](./tokens/usage.mdx), o [início](../../index.mdx) e o [quebrado](./nao-existe.mdx). [Tokens](./tokens/index.md) com a extensão da tradução.',
         'slug: paleta\nsubtitle: As cores, em português.\n',
       ),
       // a página tokens não tem o corpo traduzido: a tab traduzida fica de fora do fallback
@@ -319,6 +319,7 @@ describe('idiomas (SYS-177)', () => {
       '/meu-repo/pt-br/fundamentos/cor/tokens/usage',
       '/meu-repo/pt-br',
       './nao-existe.mdx', // quebrado: fica como está, com o diagnóstico
+      '/meu-repo/pt-br/fundamentos/cor/tokens',
     ]);
     expect(hrefs(ptData.landing)).toEqual(['/meu-repo/pt-br/fundamentos/cor/paleta']);
     expect(hrefs(ptData.pages['fundamentos/cor/tokens'])).toEqual(['/meu-repo/pt-br/fundamentos/cor/paleta']);
@@ -337,6 +338,7 @@ describe('idiomas (SYS-177)', () => {
   it('problemas dos documentos traduzidos por idioma, sem repetir os do padrão', () => {
     expect(result.diagnostics).toEqual([]);
     expect(result.translationDiagnostics['pt-BR']!.map((d) => `${d.file}:${d.line}: ${d.message}`)).toEqual([
+      'foundation/color/tokens/usage.mdx:1: tab traduzida sem a tradução do corpo da página (foundation/color/tokens/index) — sem ela, a página sai inteira no idioma padrão; traduza também o corpo.',
       expect.stringMatching(/^foundation\/color\/palette\.mdx:\d+: link para "\.\/nao-existe\.mdx" não leva/),
     ]);
   });

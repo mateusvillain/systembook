@@ -15,6 +15,7 @@ import { tiptapDocToBlocks, type TiptapDoc, type TiptapNode } from '../blocks.js
 import type { Diagnostic } from '../diagnostics.js';
 import type { ContentDocument, ContentTree, LocaleTree, PageNode, TabNode } from '../tree/types.js';
 import { buildLocaleTree } from '../tree/locale.js';
+import { CONTENT_FILE } from '../tree/paths.js';
 import { localeDataDir, localizedHomePath, localizedSitePath } from './locale.js';
 import { pageKey, parsePageKey, staticDataPaths } from './paths.js';
 import { nonEmptyTokenSet } from '../tokens/types.js';
@@ -88,11 +89,15 @@ export interface SiteBuild {
   /** Problemas do conteúdo do idioma padrão. */
   diagnostics: Diagnostic[];
   /**
-   * Problemas dos documentos traduzidos, por idioma, com caminhos relativos à
-   * pasta do idioma (quem lê o disco prefixa, como em `buildLocaleTree`).
+   * Problemas dos documentos traduzidos (links, imagens, tab sem o corpo), por
+   * idioma, com caminhos relativos à pasta do idioma — quem lê o disco
+   * prefixa. Os da leitura da pasta (órfãos, slugs) ficam na `LocaleTree`.
    */
   translationDiagnostics: Record<LocaleCode, Diagnostic[]>;
 }
+
+/** Caminho sem a extensão do arquivo de conteúdo. */
+const stem = (path: string) => path.replace(CONTENT_FILE, '');
 
 /** URL absoluta, `mailto:`, `//host` etc. — mantida como está. */
 const EXTERNAL = /^([a-z][a-z0-9+.-]*:|\/\/)/i;
@@ -303,18 +308,40 @@ export function buildSiteData(tree: ContentTree, options: BuildSiteOptions): Sit
   const locales: StaticSiteDataByLocale = {};
   for (const view of views) {
     const isDefault = view.code === defaultLocale;
-    const report = isDefault ? diagnostics : (translationDiagnostics[view.code] = []);
+    const report: Diagnostic[] = isDefault ? diagnostics : [];
+    if (!isDefault) translationDiagnostics[view.code] = report;
+
+    // Tab traduzida numa página sem o corpo traduzido: a página sai inteira do
+    // padrão (o fallback é por página), então a tradução da tab não aparece.
+    for (const menu of translations[view.code]?.menus ?? []) {
+      for (const section of menu.sections) {
+        for (const page of section.pages) {
+          if (page.body) continue;
+          for (const tab of page.tabs) {
+            if (!tab.document) continue;
+            report.push({
+              file: tab.document.file,
+              line: 1,
+              column: 1,
+              message: `tab traduzida sem a tradução do corpo da página (${stem(page.base.body.file)}) — sem ela, a página sai inteira no idioma padrão; traduza também o corpo.`,
+            });
+          }
+        }
+      }
+    }
 
     // ---- URL, neste idioma, de cada arquivo do padrão (destino de links relativos) ----
-    // A tradução espelha os caminhos do padrão, então os links dela resolvem no mesmo mapa.
+    // Pelo caminho sem a extensão, como a tradução casa com o original: a
+    // tradução espelha os caminhos do padrão, então os links dela resolvem no
+    // mesmo mapa, inclusive escritos com a extensão dela (`p.md` → `p.mdx`).
     const urlOf = new Map<string, string>();
-    if (tree.landing) urlOf.set(tree.landing.file, `${base}${localizedHomePath(view.code, defaultLocale)}`);
+    if (tree.landing) urlOf.set(stem(tree.landing.file), `${base}${localizedHomePath(view.code, defaultLocale)}`);
     for (const menu of view.menus) {
       for (const section of menu.sections) {
         for (const page of section.pages) {
           const ref = { menuSlug: menu.slug, sectionSlug: section.slug, pageSlug: page.slug };
-          urlOf.set(page.base.body.file, `${base}${localizedSitePath(view.code, ref, defaultLocale)}`);
-          for (const tab of page.tabs) urlOf.set(tab.base.file, `${base}${localizedSitePath(view.code, ref, defaultLocale, tab.slug)}`);
+          urlOf.set(stem(page.base.body.file), `${base}${localizedSitePath(view.code, ref, defaultLocale)}`);
+          for (const tab of page.tabs) urlOf.set(stem(tab.base.file), `${base}${localizedSitePath(view.code, ref, defaultLocale, tab.slug)}`);
         }
       }
     }
@@ -360,7 +387,7 @@ export function buildSiteData(tree: ContentTree, options: BuildSiteOptions): Sit
         }
         const [target = '', anchor] = href.split('#', 2) as [string, string | undefined];
         const filePath = joinPath(dirOf(document.file), target.split('?')[0]!);
-        const url = filePath === null ? undefined : urlOf.get(filePath);
+        const url = filePath === null ? undefined : urlOf.get(stem(filePath));
         if (!url) {
           if (own) {
             report.push({
@@ -430,33 +457,33 @@ export function buildSiteData(tree: ContentTree, options: BuildSiteOptions): Sit
   return { data: locales[defaultLocale]!, locales, images, diagnostics, translationDiagnostics };
 }
 
-/** Os arquivos de um idioma, relativos à pasta dele. */
-function localeFiles(data: StaticSiteData): [string, string][] {
-  return [
-    [staticDataPaths.nav, json(data.nav)],
-    [staticDataPaths.landing, json(data.landing)],
-    [staticDataPaths.search, json(createSearchIndex(data))],
-    ...Object.keys(data.pages)
+const json = (value: unknown) => `${JSON.stringify(value)}\n`;
+
+/** Os arquivos de um idioma (os que mudam com ele), relativos à pasta dele. */
+function localeFiles(data: StaticSiteData) {
+  return {
+    nav: json(data.nav),
+    landing: json(data.landing),
+    search: json(createSearchIndex(data)),
+    pages: Object.keys(data.pages)
       .sort()
       .map((key): [string, string] => [staticDataPaths.page(parsePageKey(key)), json(data.pages[key])]),
-  ];
+  };
 }
-
-const json = (value: unknown) => `${JSON.stringify(value)}\n`;
 
 /**
  * Os arquivos JSON do site (caminho relativo → conteúdo), nos caminhos de
  * `staticDataPaths`. Saída estável: mesmos dados, mesmos bytes.
  */
 export function siteDataFiles(data: StaticSiteData): Map<string, string> {
-  const [nav, landing, search, ...pages] = localeFiles(data);
+  const { nav, landing, search, pages } = localeFiles(data);
   return new Map([
     [staticDataPaths.settings, json(data.settings)],
-    nav!,
-    landing!,
+    [staticDataPaths.nav, nav],
+    [staticDataPaths.landing, landing],
     [staticDataPaths.previews, json(sortedRecord(data.previews))],
     [staticDataPaths.tokens, json(data.tokens)],
-    search!,
+    [staticDataPaths.search, search],
     ...pages,
   ]);
 }
@@ -472,11 +499,20 @@ export function siteDataFilesByLocale(locales: StaticSiteDataByLocale): Map<stri
   const first = Object.values(locales)[0];
   if (!first) throw new Error('siteDataFilesByLocale: nenhum idioma.');
   const { defaultLocale } = first.settings;
-  const files = siteDataFiles(locales[defaultLocale]!);
+  const dataOf = (code: LocaleCode) => {
+    const data = locales[code];
+    if (!data) throw new Error(`siteDataFilesByLocale: faltam os dados de "${code}".`);
+    return data;
+  };
+  const files = siteDataFiles(dataOf(defaultLocale));
   for (const { code } of first.settings.locales) {
     if (code === defaultLocale) continue;
     const dir = localeDataDir(code, defaultLocale);
-    for (const [file, content] of localeFiles(locales[code]!)) files.set(`${dir}${file}`, content);
+    const { nav, landing, search, pages } = localeFiles(dataOf(code));
+    files.set(`${dir}${staticDataPaths.nav}`, nav);
+    files.set(`${dir}${staticDataPaths.landing}`, landing);
+    files.set(`${dir}${staticDataPaths.search}`, search);
+    for (const [file, content] of pages) files.set(`${dir}${file}`, content);
   }
   return files;
 }
