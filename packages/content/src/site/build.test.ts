@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { StaticSiteData } from '@systembook/schema';
 import { buildContentTree } from '../tree/build.js';
-import { buildSiteData, siteDataFiles } from './build.js';
+import { buildLocaleTree } from '../tree/locale.js';
+import { buildSiteData, siteDataFiles, siteDataFilesByLocale } from './build.js';
+import { loadSearchIndex, querySearchIndex } from './search.js';
 
 const page = (title: string, body: string, extra = '') => `---\ntitle: ${title}\n${extra}---\n\n${body}\n`;
 
@@ -226,5 +228,156 @@ describe('overviewTitle (SYS-117)', () => {
       'Visão geral',
     );
     expect(labelOf({ 'm/s/button/index.mdx': doc(''), 'm/s/button/usage.mdx': doc('') })).toBe('Overview');
+  });
+});
+
+describe('idiomas (SYS-177)', () => {
+  const tree = buildContentTree(Object.entries(FILES).map(([path, source]) => ({ path, source })));
+  const pt = buildLocaleTree(
+    tree,
+    Object.entries({
+      'index.md': '---\ntitle: Acme\n---\n\nVeja a [paleta](foundation/color/palette.mdx).\n',
+      'foundation/_menu.yml': 'title: Fundamentos\nslug: fundamentos\n',
+      'foundation/color/_section.yml': 'title: Cor\nslug: cor\n',
+      'foundation/color/palette.mdx': page(
+        'Paleta',
+        'Cores primárias.\n\n![Paleta](./img/paleta.png)\n\nVeja o [uso](./tokens/usage.mdx), o [início](../../index.mdx) e o [quebrado](./nao-existe.mdx).',
+        'slug: paleta\nsubtitle: As cores, em português.\n',
+      ),
+      // a página tokens não tem o corpo traduzido: a tab traduzida fica de fora do fallback
+      'foundation/color/tokens/usage.mdx': page('Uso traduzido', 'Texto traduzido.', 'slug: uso\n'),
+    }).map(([path, source]) => ({ path, source })),
+  );
+  const locales = [
+    { code: 'en', label: 'English' },
+    { code: 'pt-BR', label: 'Português' },
+  ];
+  const multi = { ...settings, locales };
+  const result = buildSiteData(tree, {
+    settings: multi,
+    base: '/meu-repo/',
+    translations: { 'pt-BR': pt },
+    imageUrl: (path, locale) => `/assets/${locale ?? 'default'}/${path}`,
+  });
+  const en = result.locales.en!;
+  const ptData = result.locales['pt-BR']!;
+
+  it('um StaticSiteData por idioma; data é o padrão', () => {
+    expect(pt.diagnostics).toEqual([]);
+    expect(Object.keys(result.locales)).toEqual(['en', 'pt-BR']);
+    expect(result.data).toBe(en);
+    expect(ptData.settings).toEqual(multi);
+  });
+
+  it('navegação com títulos e slugs traduzidos, com o original quando falta tradução', () => {
+    expect(ptData.nav.map((m) => [m.slug, m.titulo])).toEqual([
+      ['components', 'Components'],
+      ['fundamentos', 'Fundamentos'],
+    ]);
+    expect(ptData.nav[1]!.sections).toEqual([
+      {
+        id: 'fundamentos/cor',
+        titulo: 'Cor',
+        slug: 'cor',
+        pages: [
+          { id: 'fundamentos/cor/paleta', titulo: 'Paleta', slug: 'paleta' },
+          { id: 'fundamentos/cor/tokens', titulo: 'Tokens', slug: 'tokens' },
+        ],
+      },
+    ]);
+    expect(Object.keys(ptData.pages).sort()).toEqual(['components/actions/button', 'fundamentos/cor/paleta', 'fundamentos/cor/tokens']);
+  });
+
+  it('página traduzida: locale do idioma e alternates com os slugs de cada um', () => {
+    const page = ptData.pages['fundamentos/cor/paleta']!;
+    expect(page).toMatchObject({ pageId: 'fundamentos/cor/paleta', titulo: 'Paleta', subtitulo: 'As cores, em português.', locale: 'pt-BR' });
+    const alternates = {
+      en: { menuSlug: 'foundation', sectionSlug: 'color', pageSlug: 'palette' },
+      'pt-BR': { menuSlug: 'fundamentos', sectionSlug: 'cor', pageSlug: 'paleta' },
+    };
+    expect(page.alternates).toEqual(alternates);
+    expect(en.pages['foundation/color/palette']!.alternates).toEqual(alternates);
+    expect(page.snapshot!.tabs[0]!.blocks[0]!.content).toMatchObject({ body: [{ type: 'text', text: 'Cores primárias.' }] });
+  });
+
+  it('página sem tradução: conteúdo, textos e tabs do padrão, com locale = padrão', () => {
+    const page = ptData.pages['fundamentos/cor/tokens']!;
+    const original = en.pages['foundation/color/tokens']!;
+    expect(page).toMatchObject({ pageId: 'fundamentos/cor/tokens', titulo: 'Tokens', locale: 'en' });
+    expect(page.alternates).toEqual({ en: { menuSlug: 'foundation', sectionSlug: 'color', pageSlug: 'tokens' } });
+    expect(page.snapshot!.tabs.map((t) => [t.tabId, t.titulo])).toEqual([
+      ['index', 'Overview'],
+      ['usage', 'Uso'],
+    ]);
+    expect(srcs(page)).toEqual(srcs(original));
+    expect(JSON.stringify(page.snapshot)).not.toContain('traduzido');
+    expect(en.pages['components/actions/button']!.alternates).toEqual({ en: { menuSlug: 'components', sectionSlug: 'actions', pageSlug: 'button' } });
+  });
+
+  it('links relativos levam à página no mesmo idioma, também no fallback', () => {
+    expect(hrefs(ptData.pages['fundamentos/cor/paleta'])).toEqual([
+      '/meu-repo/pt-br/fundamentos/cor/tokens/usage',
+      '/meu-repo/pt-br',
+      './nao-existe.mdx', // quebrado: fica como está, com o diagnóstico
+    ]);
+    expect(hrefs(ptData.landing)).toEqual(['/meu-repo/pt-br/fundamentos/cor/paleta']);
+    expect(hrefs(ptData.pages['fundamentos/cor/tokens'])).toEqual(['/meu-repo/pt-br/fundamentos/cor/paleta']);
+    // o padrão não muda
+    expect(hrefs(en.landing)).toEqual(['/meu-repo/foundation/color/palette']);
+  });
+
+  it('imagens da tradução com o idioma; as do padrão não se repetem no fallback', () => {
+    expect(result.images.filter((i) => i.locale === 'pt-BR').map(({ file, path, url }) => [file, path, url])).toEqual([
+      ['foundation/color/palette.mdx', 'foundation/color/img/paleta.png', '/assets/pt-BR/foundation/color/img/paleta.png'],
+    ]);
+    expect(result.images.filter((i) => i.locale === null)).toHaveLength(5);
+    expect(srcs(ptData.pages['components/actions/button'])).toEqual(['/assets/default/img/do.png']);
+  });
+
+  it('problemas dos documentos traduzidos por idioma, sem repetir os do padrão', () => {
+    expect(result.diagnostics).toEqual([]);
+    expect(result.translationDiagnostics['pt-BR']!.map((d) => `${d.file}:${d.line}: ${d.message}`)).toEqual([
+      expect.stringMatching(/^foundation\/color\/palette\.mdx:\d+: link para "\.\/nao-existe\.mdx" não leva/),
+    ]);
+  });
+
+  it('idioma sem árvore de tradução: a estrutura do padrão, toda em fallback', () => {
+    const { locales: byLocale } = buildSiteData(tree, { settings: { ...settings, locales: [...locales, { code: 'es', label: 'Español' }] } });
+    const es = byLocale.es!;
+    expect(es.nav).toEqual(byLocale.en!.nav);
+    expect(Object.values(es.pages).every((p) => p.locale === 'en')).toBe(true);
+    expect(hrefs(es.landing)).toEqual(['/es/foundation/color/palette']);
+  });
+
+  it('tradução de idioma fora de settings.locales é erro de programação', () => {
+    expect(() => buildSiteData(tree, { settings, translations: { 'pt-BR': pt } })).toThrow(/pt-BR/);
+    expect(() => buildSiteData(tree, { settings: multi, translations: { en: pt } })).toThrow(/"en"/);
+  });
+
+  it('idioma único: a mesma saída de antes', () => {
+    const single = buildSiteData(tree, { settings, base: '/meu-repo/' });
+    expect(single.locales).toEqual({ en: single.data });
+    expect(single.data).toEqual(build().data);
+    expect(single.translationDiagnostics).toEqual({});
+    expect([...siteDataFilesByLocale(single.locales)]).toEqual([...siteDataFiles(build().data)]);
+  });
+
+  it('arquivos: o padrão na raiz e cada idioma na própria pasta, com o próprio índice de busca', () => {
+    const files = siteDataFilesByLocale(result.locales);
+    expect([...files.keys()].filter((k) => k.startsWith('locales/'))).toEqual([
+      'locales/pt-br/nav.json',
+      'locales/pt-br/landing.json',
+      'locales/pt-br/search.json',
+      'locales/pt-br/pages/components/actions/button.json',
+      'locales/pt-br/pages/fundamentos/cor/paleta.json',
+      'locales/pt-br/pages/fundamentos/cor/tokens.json',
+    ]);
+    for (const [key, value] of siteDataFiles(en)) expect(files.get(key)).toBe(value);
+
+    const search = (file: string, q: string) => querySearchIndex(loadSearchIndex(JSON.parse(files.get(file)!)), q);
+    expect(search('locales/pt-br/search.json', 'primárias').map((r) => [r.menuSlug, r.sectionSlug, r.pageSlug, r.sectionTitulo])).toEqual([
+      ['fundamentos', 'cor', 'paleta', 'Cor'],
+    ]);
+    expect(search('search.json', 'primárias')).toEqual([]);
   });
 });
