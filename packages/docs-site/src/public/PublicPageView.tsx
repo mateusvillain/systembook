@@ -10,6 +10,7 @@ import { useHeadingIds } from './useHeadingIds.js';
 import { BlockAnchors } from './BlockAnchors.js';
 import { useBlockAnchorIds } from './useBlockAnchorIds.js';
 import { useHashScroll } from './useHashScroll.js';
+import { usePageLocaleHead } from './useDocumentLocaleHead.js';
 import { LegacyDocsRedirect } from './LegacyDocsRedirect.js';
 import { usePageBySlug } from '../content/docsQueries.js';
 import { useDocsLocale } from '../content/dataSource.js';
@@ -35,6 +36,8 @@ export function PublicPageView() {
   const bodyRef = useRef<HTMLElement>(null);
 
   const query = usePageBySlug({ menuSlug, sectionSlug, pageSlug });
+  // `hreflang` e, no fallback, `canonical` (SYS-186).
+  usePageLocaleHead(query.data);
   const t = useMessages();
 
   const paths = useDocsPaths();

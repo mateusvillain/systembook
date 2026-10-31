@@ -615,7 +615,7 @@ describe('doc pública em vários idiomas (SYS-176)', () => {
       // Os dois títulos de tab vêm do conteúdo (o do corpo é "Overview" na fixture).
       expect([...container.querySelectorAll('[role=tab]')].map((tab) => tab.getAttribute('lang'))).toEqual(['en', 'en']);
       expect(container.querySelector('article.sb-page-body')!.hasAttribute('lang')).toBe(false);
-      expect(container.querySelector('[role=tablist]')!.closest('[lang]')).toBeNull();
+      expect(container.querySelector('[role=tablist]')!.closest('[lang]')).toBe(document.documentElement);
     });
 
     it('sem fallback, nem aviso nem lang no conteúdo', async () => {
@@ -685,6 +685,69 @@ describe('doc pública em vários idiomas (SYS-176)', () => {
       expect(currentPath).toBe('/docs/pt-br/fundamentos/cor/paleta');
       expect(container.querySelector('h1')?.textContent).toBe('Paleta');
       expect(container.querySelector('.sb-locale-trigger')!.getAttribute('aria-expanded')).toBe('false');
+    });
+  });
+
+  describe('head de idioma (SYS-186)', () => {
+    const head = () =>
+      [...document.head.querySelectorAll('link[rel=canonical], link[rel=alternate][hreflang]')].map((l) => ({
+        rel: l.getAttribute('rel'),
+        hreflang: l.getAttribute('hreflang'),
+        href: l.getAttribute('href'),
+      }));
+    const url = (path: string) => `${window.location.origin}${path}`;
+
+    afterEach(() => {
+      document.documentElement.removeAttribute('lang');
+    });
+
+    it('<html lang> segue o idioma da rota', async () => {
+      const { factory } = sources();
+      await renderLocales('/docs/pt-br', factory);
+      expect(document.documentElement.lang).toBe('pt-BR');
+
+      await renderLocales('/docs', factory);
+      expect(document.documentElement.lang).toBe('en');
+    });
+
+    it('página traduzida: um alternate por idioma mais x-default, sem canonical', async () => {
+      const { factory } = sources();
+      await renderLocales('/docs/foundation/color/palette', factory);
+      expect(head()).toEqual([
+        { rel: 'alternate', hreflang: 'en', href: url('/docs/foundation/color/palette') },
+        { rel: 'alternate', hreflang: 'pt-BR', href: url('/docs/pt-br/fundamentos/cor/paleta') },
+        { rel: 'alternate', hreflang: 'x-default', href: url('/docs/foundation/color/palette') },
+      ]);
+    });
+
+    it('página de fallback: canonical para a original, sem hreflang', async () => {
+      const { factory } = sources();
+      await renderLocales('/docs/pt-br/components/actions/button', factory);
+      expect(head()).toEqual([{ rel: 'canonical', hreflang: null, href: url('/docs/components/actions/button') }]);
+      // O conteúdo de fallback tem o próprio `lang`; a página segue no da rota.
+      expect(document.documentElement.lang).toBe('pt-BR');
+    });
+
+    it('fora de uma página, as tags somem — e tags que vieram no HTML são trocadas', async () => {
+      const stale = document.createElement('link');
+      stale.rel = 'canonical';
+      stale.href = 'https://exemplo.dev/velho';
+      document.head.appendChild(stale);
+
+      const { factory } = sources();
+      await renderLocales('/docs/foundation/color/palette', factory);
+      expect(stale.isConnected).toBe(false);
+      expect(head()).toHaveLength(3);
+
+      await renderLocales('/docs', factory);
+      expect(head()).toEqual([]);
+    });
+
+    it('com um idioma só, nenhuma tag', async () => {
+      await renderLocales('/docs/foundation/color/palette', () => dataSource);
+      expect(container.querySelector('h1')?.textContent).toBe('Palette');
+      expect(head()).toEqual([]);
+      expect(document.documentElement.lang).toBe('en');
     });
   });
 

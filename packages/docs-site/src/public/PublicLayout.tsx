@@ -7,6 +7,7 @@ import { PublicMenuNav, useActiveMenu } from './PublicMenuNav.js';
 import { LocaleSwitcher } from './LocaleSwitcher.js';
 import { SearchBox } from './SearchBox.js';
 import { useInternalLinks } from './useInternalLinks.js';
+import { useDocumentLang } from './useDocumentLocaleHead.js';
 import { useTheme } from './useTheme.js';
 import { useNavTree } from '../content/docsQueries.js';
 import './public.css';
@@ -30,6 +31,7 @@ export function PublicLayout() {
   const { theme, toggle } = useTheme();
   const t = useMessages();
   const [navOpen, setNavOpen] = useState(false);
+  useDocumentLang();
   // Na raiz da doc a URL não nomeia menu nenhum (nenhum pill fica ativo), mas a
   // sidebar ainda precisa listar alguma coisa — cai no primeiro menu, que é o
   // mesmo destino que o leitor alcançaria clicando no primeiro pill.
