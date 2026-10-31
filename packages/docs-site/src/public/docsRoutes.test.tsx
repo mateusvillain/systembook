@@ -609,7 +609,13 @@ describe('doc pública em vários idiomas (SYS-176)', () => {
       expect(notice.getAttribute('lang')).toBe('pt-BR');
       expect(notice.textContent).toBe('Esta página ainda não está disponível em Português. Exibindo a versão em English.');
       expect([...notice.querySelectorAll('span[lang]')].map((s) => s.getAttribute('lang'))).toEqual(['pt-BR', 'en']);
-      expect(container.querySelector('article.sb-page-body')!.getAttribute('lang')).toBe('en');
+      // O conteúdo leva o idioma servido; o chrome da interface, não.
+      expect(container.querySelector('.sb-page-header')!.getAttribute('lang')).toBe('en');
+      expect(container.querySelector('[role=tabpanel]')!.getAttribute('lang')).toBe('en');
+      // Os dois títulos de tab vêm do conteúdo (o do corpo é "Overview" na fixture).
+      expect([...container.querySelectorAll('[role=tab]')].map((tab) => tab.getAttribute('lang'))).toEqual(['en', 'en']);
+      expect(container.querySelector('article.sb-page-body')!.hasAttribute('lang')).toBe(false);
+      expect(container.querySelector('[role=tablist]')!.closest('[lang]')).toBeNull();
     });
 
     it('sem fallback, nem aviso nem lang no conteúdo', async () => {
@@ -617,7 +623,7 @@ describe('doc pública em vários idiomas (SYS-176)', () => {
       await renderLocales('/docs/pt-br/fundamentos/cor/paleta', factory);
       expect(container.querySelector('h1')?.textContent).toBe('Paleta');
       expect(container.querySelector('.sb-fallback-notice')).toBeNull();
-      expect(container.querySelector('article.sb-page-body')!.hasAttribute('lang')).toBe(false);
+      expect(container.querySelector('[lang]:not(.sb-locale-item, .sb-locale-trigger span)')).toBeNull();
 
       await renderLocales('/docs/foundation/color/palette', factory);
       expect(container.querySelector('.sb-fallback-notice')).toBeNull();

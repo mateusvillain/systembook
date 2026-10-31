@@ -705,7 +705,7 @@ html:has(.sb-public[data-theme='dark']:not(.sb-public--preview)) {
   color: var(--sb-accent);
 }
 
-.sb-fallback-notice [lang] {
+.sb-fallback-notice-locale {
   color: var(--sb-fg);
   font-weight: 500;
 }

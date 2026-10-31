@@ -1,5 +1,7 @@
 import { useRef } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Languages } from 'lucide-react';
+import type { LocaleCode } from '@systembook/schema';
 import { PageRenderer } from './PageRenderer.js';
 import { InlineMarkdown } from './InlineMarkdown.js';
 import { TableOfContents } from './TableOfContents.js';
@@ -14,7 +16,6 @@ import { useDocsLocale } from '../content/dataSource.js';
 import { formatRich } from '../i18n/rich.js';
 import { useDocsPaths } from './docsRoutes.js';
 import { useMessages, useUiLocale } from '../i18n/UiLocale.js';
-import { Languages } from 'lucide-react';
 
 /**
  * Conteúdo de uma página na doc pública (TASK-52): resolve
@@ -70,8 +71,9 @@ export function PublicPageView() {
 
   const { titulo, subtitulo, snapshot } = query.data;
   // Fallback (SYS-185): sem tradução publicada no idioma da rota, a fonte serve
-  // o padrão. O aviso nomeia os dois idiomas, e o conteúdo leva o `lang` do
-  // servido para o leitor de tela pronunciá-lo certo.
+  // o padrão. O aviso nomeia os dois idiomas, e o conteúdo (cabeçalho, painel
+  // e títulos de tab — não o chrome da interface) leva o `lang` do servido
+  // para o leitor de tela pronunciá-lo certo.
   const servedLocale = query.data.locale;
   const fallback = !!routeLocale && servedLocale !== routeLocale;
   const contentLang = fallback ? servedLocale : undefined;
@@ -82,9 +84,9 @@ export function PublicPageView() {
 
   if (!snapshot) {
     return (
-      <article lang={contentLang}>
+      <article>
         {notice}
-        <header className="sb-page-header">
+        <header className="sb-page-header" lang={contentLang}>
           <h1 className="sb-public-title">{titulo}</h1>
           {subtitulo && (
             <p className="sb-page-subtitle">
@@ -113,9 +115,9 @@ export function PublicPageView() {
     // reservada para o TOC "Nesta página" (2.2). Colapsa para 1 coluna em
     // telas estreitas via media query em `public.css`.
     <div className="sb-page-grid">
-      <article className="sb-page-body" ref={bodyRef} lang={contentLang}>
+      <article className="sb-page-body" ref={bodyRef}>
         {notice}
-        <header className="sb-page-header">
+        <header className="sb-page-header" lang={contentLang}>
           <h1 className="sb-public-title">{titulo}</h1>
           {subtitulo && (
             <p className="sb-page-subtitle">
@@ -125,6 +127,7 @@ export function PublicPageView() {
         </header>
         <PageRenderer
           snapshot={snapshot}
+          lang={contentLang}
           activeTabId={activeTabId}
           onSelectTab={(nextTabId) =>
             navigate(
@@ -159,15 +162,16 @@ export function PublicPageView() {
  * idioma da interface; o nome de cada idioma é o rótulo dele (no próprio
  * idioma, como no seletor), marcado com `lang`.
  */
-function FallbackNotice({ requested, served }: { requested: string; served: string }) {
+function FallbackNotice({ requested, served }: { requested: LocaleCode; served: LocaleCode }) {
   const { locales } = useDocsLocale();
   const t = useMessages();
   const uiLocale = useUiLocale();
-  const name = (code: string) => (
-    <span lang={code}>{locales.find((info) => info.code === code)?.label ?? code}</span>
+  const name = (code: LocaleCode) => (
+    <span className="sb-fallback-notice-locale" lang={code}>{locales.find((info) => info.code === code)?.label ?? code}</span>
   );
   return (
-    // O `lang` do artigo é o do conteúdo; o aviso é da interface.
+    // Explícito: dentro de um trecho marcado com o idioma do conteúdo, o aviso
+    // continuaria sendo da interface.
     <p className="sb-fallback-notice" role="note" lang={uiLocale}>
       <Languages aria-hidden size={16} className="sb-fallback-notice-icon" />
       <span>{formatRich(t('page.fallback'), { requested: name(requested), served: name(served) })}</span>
