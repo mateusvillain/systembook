@@ -519,6 +519,20 @@ describe('doc pública em vários idiomas (SYS-176)', () => {
     expect(pt.getPageBySlug).not.toHaveBeenCalled();
   });
 
+  it('sem settings (falha), a doc segue nas rotas do padrão', async () => {
+    const failing: DocsDataSource = {
+      ...dataSource,
+      getSettings: async () => {
+        throw new Error('offline');
+      },
+    };
+    await renderLocales('/docs/foundation/color/palette', () => failing);
+    await settle();
+
+    expect(container.querySelector('h1')?.textContent).toBe('Palette');
+    expect(hrefs('.sb-public-pagelink')).toContain('/docs/foundation/color/palette');
+  });
+
   it('o redirect legado mantém o prefixo do idioma', async () => {
     const { factory } = sources();
     await renderLocales('/docs/pt-br/cor/paleta', factory);

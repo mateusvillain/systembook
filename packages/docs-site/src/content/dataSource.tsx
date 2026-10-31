@@ -9,7 +9,9 @@ import type { DocsDataSource, DocsDataSourceFactory, LocaleCode, LocaleInfo } fr
  *
  * A fonte é por idioma (SYS-176): o provider recebe uma fonte única (um idioma
  * só) ou uma `DocsDataSourceFactory`, e `useDocsDataSource()` devolve a do
- * idioma da rota (`DocsLocaleProvider`). Uma fonte por código, criada uma vez.
+ * idioma da rota (`DocsLocaleProvider`). Uma fonte por código, criada uma vez
+ * — por isso a fábrica precisa ser estável (definida fora do render): uma nova
+ * a cada render descarta as fontes e o cache de leitura delas.
  */
 type SourceForLocale = (locale: LocaleCode | null) => DocsDataSource;
 
@@ -70,13 +72,19 @@ function useSourceFor(): SourceForLocale {
 }
 
 /**
- * Fonte do idioma da rota. O padrão usa a mesma instância de
- * `useDefaultDocsDataSource` (`null` e `defaultLocale` são a mesma fonte).
+ * Chave da fonte do idioma da rota: `null` no padrão, que é a mesma fonte de
+ * `useDefaultDocsDataSource` (`null` e `defaultLocale` são a mesma fonte), e
+ * o código nos demais. As query keys usam a mesma chave.
  */
+export function useDocsSourceLocale(): LocaleCode | null {
+  const { locale, defaultLocale } = useDocsLocale();
+  return locale === defaultLocale ? null : locale;
+}
+
+/** Fonte do idioma da rota. */
 export function useDocsDataSource(): DocsDataSource {
   const sourceFor = useSourceFor();
-  const { locale, defaultLocale } = useDocsLocale();
-  return sourceFor(locale === defaultLocale ? null : locale);
+  return sourceFor(useDocsSourceLocale());
 }
 
 /**

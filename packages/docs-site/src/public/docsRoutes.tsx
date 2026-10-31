@@ -24,7 +24,7 @@ import { useDocsLocale } from '../content/dataSource.js';
 const DocsRoutesContext = createContext('');
 
 /** Normaliza o prefixo: começa com `/` e nunca termina com `/` (`''` = raiz). */
-function normalizePrefix(prefix: string): string {
+export function normalizePrefix(prefix: string): string {
   const trimmed = prefix.replace(/^\/+|\/+$/g, '');
   return trimmed ? `/${trimmed}` : '';
 }
